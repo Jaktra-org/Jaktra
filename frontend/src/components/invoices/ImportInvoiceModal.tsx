@@ -140,15 +140,15 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-[#010102] p-4 rounded-md border border-[#23252a] text-center">
+            <div className="bg-[#0e1013]/60 p-4 rounded-xl border border-[#1e2025] text-center">
               <div className="text-xl font-bold text-[#f7f8f8]">{importResult.imported}</div>
               <div className="text-xs text-[#8a8f98] font-medium">Imported</div>
             </div>
-            <div className="bg-[#010102] p-4 rounded-md border border-[#23252a] text-center">
+            <div className="bg-[#0e1013]/60 p-4 rounded-xl border border-[#1e2025] text-center">
               <div className="text-xl font-bold text-[#5e6ad2]">{importResult.updated}</div>
               <div className="text-xs text-[#5e6ad2] font-medium">Updated</div>
             </div>
-            <div className="bg-[#010102] p-4 rounded-md border border-[#23252a] text-center">
+            <div className="bg-[#0e1013]/60 p-4 rounded-xl border border-[#1e2025] text-center">
               <div className="text-xl font-bold text-amber-400">{importResult.skipped}</div>
               <div className="text-xs text-amber-400 font-medium">Skipped</div>
             </div>
@@ -159,7 +159,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
               <h4 className="text-xs font-semibold text-red-400 flex items-center mb-2">
                 <AlertCircle className="w-3.5 h-3.5 mr-1.5" /> Errors ({importResult.errors.length})
               </h4>
-              <div className="bg-red-950/40 p-3 rounded-md border border-red-900/50 max-h-32 overflow-y-auto">
+              <div className="bg-red-950/40 p-3 rounded-xl border border-red-900/50 max-h-32 overflow-y-auto">
                 <ul className="text-xs text-red-300 space-y-1">
                   {importResult.errors.map((err, idx) => (
                     <li key={idx} className="flex gap-2">
@@ -175,7 +175,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
           <div className="pt-4 flex justify-end">
             <button
               onClick={handleClose}
-              className="px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-md hover:bg-[#828fff] transition-colors"
+              className="px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-xl hover:bg-[#828fff] transition-colors shadow-lg shadow-[#5e6ad2]/20"
             >
               Done
             </button>
@@ -184,7 +184,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
       ) : (
         <div className="space-y-6 text-[#f7f8f8]">
           {error && (
-            <div className="p-3 bg-red-950/40 text-red-400 border border-red-900/50 rounded-md text-xs flex items-start">
+            <div className="p-3 bg-red-950/40 text-red-400 border border-red-900/50 rounded-xl text-xs flex items-start">
               <XCircle className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -195,8 +195,8 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              className={`border border-dashed rounded-lg p-8 flex flex-col items-center justify-center transition-colors cursor-pointer ${
-                isDragging ? "border-[#5e6ad2] bg-[#5e6ad2]/10" : "border-[#23252a] hover:border-[#34343a] bg-[#010102]"
+              className={`border border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
+                isDragging ? "border-[#5e6ad2] bg-[#5e6ad2]/10" : "border-[#1e2025]/80 hover:border-[#34343a] bg-[#0e1013]/40 hover:bg-[#0e1013]/60"
               }`}
               onClick={() => document.getElementById("csv-upload")?.click()}
             >
@@ -215,7 +215,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border border-[#23252a] rounded-md bg-[#010102]">
+              <div className="flex items-center justify-between p-3 border border-[#1e2025]/80 rounded-xl bg-[#0e1013]/40">
                 <div className="flex items-center overflow-hidden">
                   <FileUp className="w-4 h-4 text-[#5e6ad2] mr-2.5 flex-shrink-0" />
                   <span className="text-xs font-medium text-[#f7f8f8] truncate" title={file.name}>
@@ -228,33 +228,33 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
                 <button
                   type="button"
                   onClick={resetState}
-                  className="p-1 text-[#8a8f98] hover:text-[#f7f8f8] rounded-full hover:bg-[#141516] transition-colors"
+                  className="p-1 text-[#8a8f98] hover:text-[#f7f8f8] rounded-full hover:bg-[#1d212a] transition-colors"
                 >
                   <XCircle className="w-4 h-4" />
                 </button>
               </div>
 
               {preview.length === 0 && file && (
-                <div className="p-3 bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/20 rounded-md text-xs">
+                <div className="p-3 bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/20 rounded-xl text-xs">
                   <strong>Note:</strong> Client-side preview is not available for Excel spreadsheets, but the file is loaded and ready to upload and process.
                 </div>
               )}
 
               {preview.length > 0 && (
-                <div className="border border-[#23252a] rounded-md overflow-hidden bg-[#010102]">
-                  <div className="bg-[#141516] px-3 py-1.5 text-[10px] font-semibold text-[#8a8f98] border-b border-[#23252a] uppercase tracking-wider">
+                <div className="border border-[#1e2025]/80 rounded-xl overflow-hidden bg-[#0e1013]/40">
+                  <div className="bg-[#13161c]/80 px-3 py-1.5 text-[10px] font-semibold text-[#8a8f98] border-b border-[#1e2025] uppercase tracking-wider">
                     Data Preview (First 5 Rows)
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
-                      <thead className="bg-[#0f1011] border-b border-[#23252a]">
+                      <thead className="bg-[#13161c]/60 border-b border-[#1e2025]">
                         <tr>
                           {previewHeaders.map((header, i) => (
                             <th key={i} className="px-3 py-1.5 font-medium text-[#8a8f98] whitespace-nowrap text-[11px]">{header}</th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#23252a] bg-[#010102]">
+                      <tbody className="divide-y divide-[#1e2025]/50 bg-transparent">
                         {preview.map((row, i) => (
                           <tr key={i}>
                             {previewHeaders.map((header, j) => (
@@ -298,11 +298,11 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end space-x-3 border-t border-[#23252a]">
+              <div className="pt-4 flex justify-end space-x-3 border-t border-[#1e2025]">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] rounded-md hover:bg-[#141516] transition-colors"
+                  className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#13161c]/80 border border-[#1e2025] rounded-xl hover:bg-[#1d212a] transition-colors"
                 >
                   Cancel
                 </button>
@@ -310,7 +310,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
                   type="button"
                   onClick={handleImport}
                   disabled={mutation.isPending}
-                  className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-md hover:bg-[#828fff] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-xl hover:bg-[#828fff] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-[#5e6ad2]/20"
                 >
                   {mutation.isPending ? (
                     <>

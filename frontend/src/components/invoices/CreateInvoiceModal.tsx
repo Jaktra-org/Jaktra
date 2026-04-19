@@ -92,7 +92,7 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
               value={formData.invoiceNo}
               onChange={handleChange}
               placeholder="INV-001"
-              className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
+              className="flex h-9 w-full rounded-xl border border-[#1e2025]/80 bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
             />
           </div>
           <div className="space-y-1.5">
@@ -104,7 +104,7 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
               required
               value={formData.dueDate}
               onChange={handleChange}
-              className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
+              className="flex h-9 w-full rounded-xl border border-[#1e2025]/80 bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
             />
           </div>
         </div>
@@ -119,7 +119,7 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             value={formData.clientName}
             onChange={handleChange}
             placeholder="Acme Corp"
-            className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
+            className="flex h-9 w-full rounded-xl border border-[#1e2025]/80 bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
           />
         </div>
 
@@ -133,7 +133,7 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             value={formData.contactEmail}
             onChange={handleChange}
             placeholder="billing@acmecorp.com"
-            className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
+            className="flex h-9 w-full rounded-xl border border-[#1e2025]/80 bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
           />
         </div>
 
@@ -149,7 +149,7 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             value={formData.invoiceAmount}
             onChange={handleChange}
             placeholder="1500.00"
-            className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
+            className="flex h-9 w-full rounded-xl border border-[#1e2025]/80 bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
           />
         </div>
 
@@ -165,23 +165,23 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             onChange={handleChange}
             placeholder="e.g. Web Development Services – Q1 2026"
             maxLength={500}
-            className="flex w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-2 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1] resize-none"
+            className="flex w-full rounded-xl border border-[#1e2025]/80 bg-[#0e1013]/60 px-3 py-2 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1] resize-none"
           />
           <p className="text-[11px] text-[#62666d]">What this invoice is for — used to personalise follow-up emails.</p>
         </div>
 
-        <div className="pt-4 flex justify-end space-x-3 border-t border-[#23252a]">
+        <div className="pt-4 flex justify-end space-x-3 border-t border-[#1e2025]">
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] rounded-md hover:bg-[#141516] transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#13161c]/80 border border-[#1e2025] rounded-xl hover:bg-[#1d212a] transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-md hover:bg-[#828fff] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-xl hover:bg-[#828fff] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-[#5e6ad2]/20"
           >
             {mutation.isPending ? (
               <>
