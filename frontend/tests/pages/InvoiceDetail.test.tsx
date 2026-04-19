@@ -98,8 +98,8 @@ describe('InvoiceDetail page details and timeline tabs', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Client Alpha')).toBeInTheDocument();
-      expect(screen.getByText('INV-101')).toBeInTheDocument();
-      expect(screen.getByText(/created this invoice/i)).toBeInTheDocument();
+      expect(screen.getAllByText('INV-101').length).toBeGreaterThan(0);
+      expect(screen.getByText(/created/i)).toBeInTheDocument();
     });
   });
 

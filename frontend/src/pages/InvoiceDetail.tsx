@@ -332,6 +332,17 @@ export function InvoiceDetail() {
     return String(val);
   };
 
+  const FIELD_ORDER: Record<string, number> = {
+    invoiceNo: 1,
+    clientName: 2,
+    contactEmail: 3,
+    invoiceAmount: 4,
+    dueDate: 5,
+    paymentStatus: 6,
+    importOutcome: 7,
+    subject: 8,
+  };
+
   const getEventIconStyles = (event: GroupedInvoiceEvent) => {
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
@@ -579,7 +590,7 @@ export function InvoiceDetail() {
     if (type === 'invoice.created') {
       return (
         <span>
-          {actor} created this invoice for <span className="font-bold text-[#f7f8f8] font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span>
+          {actor} created invoice <span className="font-semibold text-[#f7f8f8] font-mono">{invoice?.invoiceNo}</span> for <span className="font-bold text-[#f7f8f8] font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span>
         </span>
       );
     }
@@ -607,7 +618,7 @@ export function InvoiceDetail() {
     if (type === 'invoice.imported' || type === 'invoice.bulk_imported') {
       return (
         <span>
-          {actor} imported this invoice
+          {actor} imported invoice <span className="font-semibold text-[#f7f8f8] font-mono">{invoice?.invoiceNo}</span>
         </span>
       );
     }
@@ -1061,33 +1072,35 @@ export function InvoiceDetail() {
                               )}
 
                               {keys.length > 1 && !event.isGrouped && (
-                                <div className="mt-3 pl-3 border-l-2 border-[#1e2025] space-y-1.5 py-1 text-xs text-[#8a8f98]">
-                                  {keys.map((key) => {
-                                    const oldVal = event.oldValues?.[key];
-                                    const newVal = event.newValues?.[key];
-                                    if (oldVal === newVal) return null;
+                                <div className="mt-3 pl-3 border-l-2 border-[#1e2025] grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 py-1 text-xs text-[#8a8f98]">
+                                  {[...keys]
+                                    .sort((a, b) => (FIELD_ORDER[a] ?? 99) - (FIELD_ORDER[b] ?? 99))
+                                    .map((key) => {
+                                      const oldVal = event.oldValues?.[key];
+                                      const newVal = event.newValues?.[key];
+                                      if (oldVal === newVal) return null;
 
-                                    const isDiffFirstTime = oldVal === null || oldVal === undefined || oldVal === '' || String(oldVal).toLowerCase() === 'none';
-                                    const displayLabel = key === 'subject' ? 'Invoice Description' : key.replace(/([A-Z])/g, ' $1');
-                                    const formattedOld = key === 'invoiceAmount' ? formatCurrency(oldVal) : key === 'dueDate' ? formatDateValue(oldVal) : String(oldVal ?? '—');
-                                    const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');
-                                    return (
-                                      <div key={key} className="flex justify-between items-center py-0.5 font-medium">
-                                        <span className="capitalize text-[#8a8f98] font-semibold">{displayLabel}</span>
-                                        <span>
-                                          {isDiffFirstTime ? (
-                                            <span>Set to <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span></span>
-                                          ) : (
-                                            <span>
-                                              <span className="line-through text-[#8a8f98] mr-1">{formattedOld}</span>
-                                              &rarr;
+                                      const isDiffFirstTime = oldVal === null || oldVal === undefined || oldVal === '' || String(oldVal).toLowerCase() === 'none';
+                                      const displayLabel = key === 'subject' ? 'Invoice Description' : key.replace(/([A-Z])/g, ' $1');
+                                      const formattedOld = key === 'invoiceAmount' ? formatCurrency(oldVal) : key === 'dueDate' ? formatDateValue(oldVal) : String(oldVal ?? '—');
+                                      const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');
+                                      return (
+                                        <div key={key} className="flex justify-between items-center py-0.5 font-medium">
+                                          <span className="capitalize text-[#8a8f98] font-semibold">{displayLabel}</span>
+                                          <span>
+                                            {isDiffFirstTime ? (
                                               <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span>
-                                            </span>
-                                          )}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
+                                            ) : (
+                                              <span>
+                                                <span className="line-through text-[#8a8f98] mr-1">{formattedOld}</span>
+                                                &rarr;
+                                                <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span>
+                                              </span>
+                                            )}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
                                 </div>
                               )}
 
