@@ -52,13 +52,13 @@ export function Dashboard() {
 
   const { data: legalInvoicesData } = useQuery({
     queryKey: ['legal-invoices-home'],
-    queryFn: () => invoiceService.getInvoices({ days_overdue_min: 31, limit: 10 }),
+    queryFn: () => invoiceService.getInvoices({ status: ['Pending', 'Overdue'], days_overdue_min: 31, limit: 10 }),
     refetchInterval: 30000,
   });
 
   const { data: highValueInvoicesData } = useQuery({
     queryKey: ['high-value-invoices-home'],
-    queryFn: () => invoiceService.getInvoices({ min_amount: 10000, days_overdue_min: 15, limit: 10 }),
+    queryFn: () => invoiceService.getInvoices({ status: ['Pending', 'Overdue'], min_amount: 10000, days_overdue_min: 15, limit: 10 }),
     refetchInterval: 30000,
   });
 
@@ -454,7 +454,7 @@ export function Dashboard() {
 
             {/* Action Item 1: Legal Escalations */}
             <Link
-              to="/invoices?days_overdue_min=31"
+              to="/invoices?status=unpaid&days_overdue_min=31"
               className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] transition-all group"
             >
               <div className="flex items-center space-x-3 min-w-0 pr-2">

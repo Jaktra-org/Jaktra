@@ -773,7 +773,7 @@ export function Invoices() {
                 ))
               ) : (
                 activeData!.data.map((invoice) => {
-                  const isLegalEscalation = invoice.urgencyTier === 'legal_escalation' || (invoice.daysOverdue !== undefined && invoice.daysOverdue > 30);
+                  const isLegalEscalation = invoice.paymentStatus !== 'Paid' && (invoice.urgencyTier === 'legal_escalation' || (invoice.daysOverdue !== undefined && invoice.daysOverdue > 30));
 
                   return (
                     <tr 
@@ -839,7 +839,7 @@ export function Invoices() {
                         </div>
                       </td>
                       <td className="p-3.5 px-4 align-middle">
-                        {invoice.daysOverdue && invoice.daysOverdue > 0 ? (
+                        {invoice.paymentStatus !== 'Paid' && invoice.daysOverdue && invoice.daysOverdue > 0 ? (
                           <span className={`font-medium ${isLegalEscalation ? 'text-red-400 font-semibold' : 'text-amber-400'}`}>
                             {invoice.daysOverdue} days
                           </span>
