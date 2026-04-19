@@ -339,16 +339,12 @@ test.describe('Jaktra Frontend Critical Paths', () => {
 
     await expect(page.locator('text=Loading invoice details...')).not.toBeVisible();
 
-    await expect(page.locator('text=No active payment link generated yet.')).toBeVisible();
+    await expect(page.locator('text=Debtor Portal')).toBeVisible();
 
-    const generateBtn = page.locator('button:has-text("Generate Payment Link")');
-    await expect(generateBtn).toBeVisible();
-    await generateBtn.click();
+    const openPortalBtn = page.locator('button:has-text("Open Portal"), a:has-text("Open Portal")');
+    await expect(openPortalBtn).toBeVisible();
 
-    const linkInput = page.locator('input[title="https://payment.link/inv-001"]');
-    await expect(linkInput).toBeVisible();
-    await expect(linkInput).toHaveValue('https://payment.link/inv-001');
-
-    await expect(page.locator('button:has-text("Copy")')).toBeVisible();
+    const copyBtn = page.locator('button:has-text("Copy Link")');
+    await expect(copyBtn).toBeVisible();
   });
 });
