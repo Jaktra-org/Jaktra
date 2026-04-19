@@ -217,12 +217,12 @@ export function Dashboard() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 flex-shrink-0">
         {/* Global Search Bar */}
         <div className="relative flex items-center w-full sm:w-96">
-          <Search className="absolute left-3.5 w-4 h-4 text-[#8a8f98] pointer-events-none" />
+          <Search className="absolute left-3.5 z-10 w-4 h-4 text-[#8a8f98] pointer-events-none" />
           <input
             type="text"
             readOnly
             placeholder="Search invoices, customers, disputes..."
-            className="w-full pl-10 pr-4 py-2 border border-[#1e2025] bg-[#111317] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none cursor-default select-none shadow-inner"
+            className="w-full pl-10 pr-4 py-2 border border-[#1e2025]/80 bg-[#13161c]/50 backdrop-blur-md rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none cursor-default select-none transition-all hover:bg-[#13161c]/70 hover:border-[#2e3444]"
           />
         </div>
 
@@ -231,11 +231,11 @@ export function Dashboard() {
           {/* Notification Bell */}
           <button
             onClick={() => navigate('/activity-log')}
-            className="relative p-2 border border-[#1e2025] bg-[#111317] hover:bg-[#181a20] rounded-xl text-[#8a8f98] hover:text-[#f7f8f8] transition-all"
+            className="relative p-2 border border-[#1e2025]/80 bg-[#13161c]/50 backdrop-blur-md hover:bg-[#1d212a] hover:border-[#2e3444] rounded-xl text-[#8a8f98] hover:text-[#f7f8f8] transition-all"
             aria-label="Notifications"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-[#111317]" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-[#13161c]" />
           </button>
 
           {/* New Invoice Action Button */}

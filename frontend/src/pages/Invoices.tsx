@@ -426,7 +426,7 @@ export function Invoices() {
         {/* Search & Filter Drawer Toggle */}
         <div className="flex items-center space-x-2">
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#62666d]" />
+            <Search className="absolute left-2.5 top-2.5 z-10 h-3.5 w-3.5 text-[#62666d] pointer-events-none" />
             <input
               type="text"
               placeholder="Search clients or invoice #..."
