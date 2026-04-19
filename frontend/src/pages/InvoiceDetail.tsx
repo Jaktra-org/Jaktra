@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoiceService } from "../services/invoice";
 import { eventService } from "../services/event";
 import { agentService } from "../services/agent";
@@ -8,7 +8,6 @@ import { TriggerFollowupModal } from "../components/invoices/TriggerFollowupModa
 import { communicationService } from "../services/communication";
 import { settingsService } from "../services/settings";
 import { Badge } from "../components/ui/Badge";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import { PaymentWarningModal } from "../components/common/PaymentWarningModal";
 import { usePaymentWarning } from "../hooks/usePaymentWarning";
 import { useAuth } from "../contexts/AuthContext";
@@ -16,7 +15,6 @@ import { EditInvoiceModal } from "../components/invoices/EditInvoiceModal";
 import { Modal } from "../components/ui/Modal";
 import { CommunicationList } from "../components/invoices/CommunicationList";
 import { getErrorMessage } from "../utils/error-utils";
-import { stripHtml } from "../utils/email-utils";
 import type { InvoiceEvent } from "../types/api";
 import {
   ArrowLeft, 
@@ -39,7 +37,10 @@ import {
   RotateCcw,
   XCircle,
   Copy,
-  Check
+  Check,
+  MoreVertical,
+  Activity,
+  ExternalLink
 } from "lucide-react";
 
 interface GroupedInvoiceEvent extends InvoiceEvent {
@@ -61,35 +62,52 @@ export function InvoiceDetail() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'timeline' | 'emails'>('timeline');
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'timeline' | 'emails' | 'payment-plan'>('timeline');
   const [error, setError] = useState<string | null>(null);
 
-  // Debtor Portal Link States & Mutations
-  const [regeneratedLink, setRegeneratedLink] = useState<{ url: string } | null>(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  // Debtor Portal Link State & Query
   const [isCopied, setIsCopied] = useState(false);
 
-  const { data: portalLinkStatus, refetch: refetchPortalLinkStatus } = useQuery({
-    queryKey: ["portal-link-status", id],
-    queryFn: () => invoiceService.getPortalLinkStatus(id!),
+  const { data: portalLinkData } = useQuery({
+    queryKey: ["portal-link-data", id],
+    queryFn: () => invoiceService.regeneratePortalLink(id!),
     enabled: !!id && (user?.role === 'admin' || user?.role === 'manager'),
   });
 
-  const regenerateLinkMutation = useMutation({
-    mutationFn: () => invoiceService.regeneratePortalLink(id!),
-    onMutate: () => setError(null),
-    onError: (err: unknown) => {
+  const handleCopyPortalLink = async () => {
+    try {
+      let targetUrl = portalLinkData?.url;
+      if (!targetUrl) {
+        const res = await invoiceService.regeneratePortalLink(id!);
+        targetUrl = res.url;
+      }
+      if (targetUrl) {
+        await navigator.clipboard.writeText(targetUrl);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      }
+    } catch (err) {
       setError(getErrorMessage(err));
-    },
-    onSuccess: (data) => {
-      setRegeneratedLink(data);
-      refetchPortalLinkStatus();
-      queryClient.invalidateQueries({ queryKey: ["invoice", id] });
     }
-  });
+  };
 
-  // Timeline Pagination State
-  const [timelinePage, setTimelinePage] = useState(1);
+  const handleOpenPortal = async () => {
+    try {
+      let targetUrl = portalLinkData?.url;
+      if (!targetUrl) {
+        const res = await invoiceService.regeneratePortalLink(id!);
+        targetUrl = res.url;
+      }
+      if (targetUrl) {
+        window.open(targetUrl, '_blank');
+      }
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  // Timeline State
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [activeHoverCard, setActiveHoverCard] = useState<{
     eventId: string;
@@ -97,8 +115,6 @@ export function InvoiceDetail() {
     role: string | null;
     email: string | null;
   } | null>(null);
-  const [accumulatedTimeline, setAccumulatedTimeline] = useState<GroupedInvoiceEvent[]>([]);
-  const [totalTimelineCount, setTotalTimelineCount] = useState(0);
 
   const { data: invoice, isLoading: isInvoiceLoading } = useQuery({
     queryKey: ["invoice", id],
@@ -112,38 +128,31 @@ export function InvoiceDetail() {
     enabled: !!id && !!invoice?.hasActivePaymentPlan,
   });
 
-  const { data: timelineResponse, isLoading: isTimelineLoading } = useQuery({
-    queryKey: ["invoice-timeline", id, timelinePage],
-    queryFn: () => eventService.getInvoiceTimeline(id!, {
-      page: timelinePage,
-      limit: 10,
-    }),
+  const {
+    data: infiniteTimelineData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isTimelineLoading,
+  } = useInfiniteQuery({
+    queryKey: ["invoice-timeline", id, invoice?.updatedAt],
+    queryFn: ({ pageParam = 1 }) => eventService.getInvoiceTimeline(id!, { page: pageParam as number, limit: 10 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (lastPage?.pagination && lastPage.pagination.page < lastPage.pagination.totalPages) {
+        return lastPage.pagination.page + 1;
+      }
+      return undefined;
+    },
     enabled: !!id,
   });
 
-  useEffect(() => {
-    if (timelineResponse?.data) {
-      Promise.resolve().then(() => {
-        if (timelinePage === 1) {
-          setAccumulatedTimeline(timelineResponse.data);
-        } else {
-          setAccumulatedTimeline(prev => {
-            const existingIds = new Set(prev.map(e => e.id));
-            const uniqueNew = timelineResponse.data.filter((e: GroupedInvoiceEvent) => !existingIds.has(e.id));
-            return [...prev, ...uniqueNew];
-          });
-        }
-        setTotalTimelineCount(timelineResponse.pagination.total);
-      });
-    }
-  }, [timelineResponse, timelinePage]);
+  const accumulatedTimeline = useMemo(() => {
+    if (!infiniteTimelineData?.pages) return [];
+    return infiniteTimelineData.pages.flatMap((page) => page?.data ?? []);
+  }, [infiniteTimelineData]);
 
-  // Reset timeline to page 1 whenever the invoice data updates (indicates a mutation occurred)
-  const [prevInvoiceUpdatedAt, setPrevInvoiceUpdatedAt] = useState(invoice?.updatedAt);
-  if (invoice?.updatedAt !== prevInvoiceUpdatedAt) {
-    setPrevInvoiceUpdatedAt(invoice?.updatedAt);
-    setTimelinePage(1);
-  }
+  const totalTimelineCount = infiniteTimelineData?.pages[0]?.pagination?.total ?? accumulatedTimeline.length;
 
   const { data: communications, isLoading: isCommsLoading } = useQuery({
     queryKey: ["invoice-communications", id],
@@ -746,10 +755,6 @@ export function InvoiceDetail() {
     };
   };
 
-
-
-
-
   const renderEventDescription = (event: GroupedInvoiceEvent) => {
     const payload = event.payload;
     const type = (event.actionType || event.eventType || '').toLowerCase();
@@ -797,677 +802,622 @@ export function InvoiceDetail() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12 text-[#f7f8f8]">
-      {/* Back Link */}
-      <div>
-        <Link to="/invoices" className="inline-flex items-center text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Back to Invoices
-        </Link>
-      </div>
-
-      {error && (
-        <div className="bg-red-950/40 border border-red-900/50 text-red-400 rounded-xl p-4 flex items-start gap-3 relative shadow-none">
-          <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-xs text-red-300">Action Failed</h3>
-            <p className="text-xs mt-0.5 opacity-90">{error}</p>
+    <div className="h-full w-full flex flex-col text-[#f7f8f8] overflow-hidden space-y-4">
+      {/* Top Fixed Area (Alerts & Header) */}
+      <div className="flex-shrink-0 space-y-4">
+        {/* Action Failed Error Alert */}
+        {error && (
+          <div className="bg-red-950/40 border border-red-900/50 text-red-400 rounded-xl p-4 flex items-start gap-3 relative shadow-none animate-in fade-in">
+            <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-xs text-red-300">Action Failed</h3>
+              <p className="text-xs mt-0.5 opacity-90">{error}</p>
+            </div>
+            <button 
+              onClick={() => setError(null)}
+              className="absolute top-3.5 right-3.5 text-red-400 hover:text-red-300 transition-colors focus:outline-none"
+            >
+              <span className="sr-only">Close</span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-          <button 
-            onClick={() => setError(null)}
-            className="absolute top-3.5 right-3.5 text-red-400 hover:text-red-300 transition-colors focus:outline-none"
-          >
-            <span className="sr-only">Close</span>
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
+        )}
 
-      {invoice.needsManualReview && (
-        <div className="bg-amber-950/40 border border-amber-900/50 text-amber-300 rounded-xl p-4 flex items-start gap-3 shadow-none">
-          <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-xs text-amber-200">Needs Manual Review</h3>
-            <p className="text-xs mt-1 text-amber-200/80 leading-relaxed">
-              This invoice is currently in the Dead Letter Queue due to multiple consecutive automated delivery failures.
-              Automated follow-ups are halted. Please check the recipient email address or provider settings, then manually retry or dismiss the DLQ entry to resume automated processing.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 bg-[#0f1011] p-5 rounded-xl border border-[#23252a] shadow-none">
-        <div>
-          <div className="flex items-center space-x-3 mb-1.5">
-            <h1 className="text-2xl font-bold tracking-tight text-[#f7f8f8]">{invoice.invoiceNo}</h1>
-            <div className="flex items-center gap-1.5">
-              <Badge variant={
-                invoice.paymentStatus === 'Paid' ? 'success' : 
-                invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
-              }>
-                {invoice.paymentStatus}
-              </Badge>
-              {invoice.needsManualReview && (
-                <Badge variant="warning" className="bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  Needs Manual Review
-                </Badge>
-              )}
-              {invoice.hasActivePaymentPlan && (
-                <Badge variant="success" className="bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
-                  Active Payment Plan
-                </Badge>
-              )}
+        {/* Manual Review DLQ Warning Banner */}
+        {invoice.needsManualReview && (
+          <div className="bg-amber-950/40 border border-amber-900/50 text-amber-300 rounded-xl p-4 flex items-start gap-3 shadow-none animate-in fade-in">
+            <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-xs text-amber-200">Needs Manual Review</h3>
+              <p className="text-xs mt-1 text-amber-200/80 leading-relaxed">
+                This invoice is currently in the Dead Letter Queue due to multiple consecutive automated delivery failures.
+                Automated follow-ups are halted. Please check the recipient email address or provider settings, then manually retry or dismiss the DLQ entry to resume automated processing.
+              </p>
             </div>
           </div>
-          <p className="text-2xl font-light text-[#f7f8f8] mt-2">
-            {formatCurrency(invoice.invoiceAmount)}
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap gap-2 md:justify-end">
-          
+        )}
+
+        {/* TOP HEADER ROW: Breadcrumb, Title & 3-Dots Dropdown Menu */}
+        <div className="flex items-center justify-between pb-3 border-b border-[#1e2025]/80">
+          <div className="space-y-1">
+            <Link to="/invoices" className="inline-flex items-center text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              Back to Invoices
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">{invoice.invoiceNo}</h1>
+          </div>
+
+          {/* 3-Dots Action Dropdown */}
           {user?.role !== 'viewer' && (
-            <>
+            <div className="relative">
               <button
-                onClick={() => setIsEditModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-9 px-3.5 py-1.5"
+                onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+                className="inline-flex items-center justify-center rounded-xl border border-[#1e2025] bg-[#13161c]/80 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#1d212a] h-9 w-9 p-0 transition-all active:scale-[0.98]"
+                aria-label="More options"
               >
-                <Edit className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
-                Edit
+                <MoreVertical className="h-5 w-5" />
               </button>
 
-              {(user?.role === 'admin' || user?.role === 'manager') && (
-                <button
-                  onClick={handleDelete}
-                  disabled={deleteMutation.isPending}
-                  className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-red-900/50 bg-[#0f1011] text-red-400 hover:bg-red-950/40 h-9 px-3.5 py-1.5 disabled:opacity-40"
-                >
-                  {deleteMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1.5 h-3.5 w-3.5" />}
-                  Delete
-                </button>
-              )}
-
-              {invoice.paymentStatus !== 'Paid' && (
+              {isActionsMenuOpen && (
                 <>
-                  <button
-                    onClick={() => statusMutation.mutate('Paid')}
-                    disabled={statusMutation.isPending}
-                    className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#27a644]/30 bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 h-9 px-3.5 py-1.5 disabled:opacity-40"
-                  >
-                    {statusMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />}
-                    Mark as Paid
-                  </button>
-
-                  {invoice.hasActivePaymentPlan && (
+                  <div className="fixed inset-0 z-20" onClick={() => setIsActionsMenuOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-52 rounded-xl border border-[#1e2025] bg-[#13161c]/95 backdrop-blur-xl shadow-2xl z-30 py-1.5 text-xs text-[#f7f8f8] animate-in zoom-in-95 duration-100">
                     <button
-                      onClick={() => cancelPlanMutation.mutate()}
-                      disabled={cancelPlanMutation.isPending}
-                      className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 h-9 px-3.5 py-1.5 disabled:opacity-40"
+                      onClick={() => {
+                        setIsActionsMenuOpen(false);
+                        setIsEditModalOpen(true);
+                      }}
+                      className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#1d212a] transition-colors"
                     >
-                      {cancelPlanMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <XCircle className="mr-1.5 h-3.5 w-3.5" />}
-                      Cancel Payment Plan
+                      <Edit className="mr-2.5 h-4 w-4 text-[#8a8f98]" />
+                      Edit
                     </button>
-                  )}
 
-                  <button
-                    onClick={handleTriggerFollowup}
-                    disabled={agentMutation.isPending}
-                    className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-3.5 py-1.5 disabled:opacity-40 shadow-none"
-                  >
-                    {agentMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-1.5 h-3.5 w-3.5" />}
-                    Trigger Follow-up
-                  </button>
+                    {invoice.paymentStatus !== 'Paid' && (
+                      <button
+                        onClick={() => {
+                          setIsActionsMenuOpen(false);
+                          statusMutation.mutate('Paid');
+                        }}
+                        disabled={statusMutation.isPending}
+                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#1d212a] text-[#27a644] transition-colors disabled:opacity-40"
+                      >
+                        <CheckCircle2 className="mr-2.5 h-4 w-4 text-[#27a644]" />
+                        Mark as Paid
+                      </button>
+                    )}
+
+                    {invoice.hasActivePaymentPlan && (
+                      <button
+                        onClick={() => {
+                          setIsActionsMenuOpen(false);
+                          cancelPlanMutation.mutate();
+                        }}
+                        disabled={cancelPlanMutation.isPending}
+                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#1d212a] text-amber-400 transition-colors disabled:opacity-40"
+                      >
+                        <XCircle className="mr-2.5 h-4 w-4 text-amber-400" />
+                        Cancel Payment Plan
+                      </button>
+                    )}
+
+                    {(user?.role === 'admin' || user?.role === 'manager') && (
+                      <button
+                        onClick={() => {
+                          setIsActionsMenuOpen(false);
+                          handleDelete();
+                        }}
+                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-red-950/40 text-red-400 transition-colors border-t border-[#1e2025]/80 mt-1 pt-2.5"
+                      >
+                        <Trash2 className="mr-2.5 h-4 w-4 text-red-400" />
+                        Delete Invoice
+                      </button>
+                    )}
+                  </div>
                 </>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Info Grid */}
-        <div className="md:col-span-1 space-y-6">
-          <Card className="border border-[#23252a] bg-[#0f1011]">
-            <CardHeader className="pb-2 border-b-0">
-              <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Client Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3.5">
-              <div>
-                <p className="text-xs text-[#8a8f98] mb-0.5">Company</p>
-                <p className="font-medium text-xs text-[#f7f8f8]">{invoice.clientName}</p>
+      {/* MAIN 2-COLUMN GRID LAYOUT */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0 overflow-hidden">
+        
+        {/* LEFT COLUMN (2/3 Width) - Tabs & Tab Panels */}
+        <div className="lg:col-span-2 flex flex-col h-full min-h-0 overflow-hidden">
+          {/* TABBED SUB-NAVIGATION BAR */}
+          <div className="border-b border-[#1e2025]/80 flex space-x-8 text-xs font-semibold flex-shrink-0 mb-4">
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`py-3 flex items-center space-x-2 border-b-2 transition-all cursor-pointer ${
+                activeTab === 'timeline'
+                  ? 'border-[#5e6ad2] text-[#5e6ad2]'
+                  : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#1e2025]'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              <span>Activity Timeline</span>
+              {accumulatedTimeline.length > 0 && (
+                <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] bg-[#13161c] border border-[#1e2025] text-[#8a8f98]">
+                  {totalTimelineCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('emails')}
+              className={`py-3 flex items-center space-x-2 border-b-2 transition-all cursor-pointer ${
+                activeTab === 'emails'
+                  ? 'border-[#5e6ad2] text-[#5e6ad2]'
+                  : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#1e2025]'
+              }`}
+            >
+              <Mail className="w-4 h-4" />
+              <span>Emails & Messages</span>
+              {communications && communications.length > 0 && (
+                <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] bg-[#13161c] border border-[#1e2025] text-[#8a8f98]">
+                  {communications.length}
+                </span>
+              )}
+            </button>
+
+            {invoice.hasActivePaymentPlan && (
+              <button
+                onClick={() => setActiveTab('payment-plan')}
+                className={`py-3 flex items-center space-x-2 border-b-2 transition-all cursor-pointer ${
+                  activeTab === 'payment-plan'
+                    ? 'border-[#5e6ad2] text-[#5e6ad2]'
+                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#1e2025]'
+                }`}
+              >
+                <Calendar className="w-4 h-4 text-[#27a644]" />
+                <span>Payment Plan</span>
+              </button>
+            )}
+          </div>
+
+          {/* TAB CONTENT AREA (FLEX FULL HEIGHT, INTERNALLY SCROLLABLE) */}
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
+            {/* 1. ACTIVITY & TIMELINE TAB */}
+            {activeTab === 'timeline' && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                {isTimelineLoading && accumulatedTimeline.length === 0 ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-7 w-7 animate-spin text-[#5e6ad2]" />
+                  </div>
+                ) : accumulatedTimeline.length === 0 ? (
+                  <div className="text-center py-12 text-[#8a8f98] text-xs">
+                    No activity recorded yet for this invoice.
+                  </div>
+                ) : (
+                  <div className="relative border-l border-[#1e2025] ml-3.5 space-y-4 py-1">
+                    {(() => {
+                      const displayTimeline = groupTimelineEvents(accumulatedTimeline);
+                      const toggleGroup = (id: string) => {
+                        setExpandedGroups(prev => ({ ...prev, [id]: !prev[id] }));
+                      };
+                      return displayTimeline.map((event) => {
+                        const type = (event.actionType || event.eventType || '').toLowerCase();
+                        const keys = (type === 'invoice.trashed' || type === 'invoice.restored')
+                          ? []
+                          : Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
+                        const isExpanded = !!expandedGroups[event.id];
+
+                        return (
+                          <div key={event.id} className="relative pl-6">
+                            <div className={`absolute -left-3 top-1.5 h-6 w-6 rounded-full bg-[#13161c] border border-[#1e2025] flex items-center justify-center ${getEventIconStyles(event)}`}>
+                              {renderEventIcon(event)}
+                            </div>
+
+                            <div className="bg-[#13161c]/40 rounded-xl p-3.5 border border-[#1e2025]/80 hover:bg-[#13161c]/70 transition-all">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+                                <div className="text-xs text-[#f7f8f8] leading-snug">
+                                  {getEventHeading(event)}
+                                  {event.isGrouped && (
+                                    <button 
+                                      onClick={() => toggleGroup(event.id)}
+                                      className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-[#13161c] hover:bg-[#1d212a] text-[#8a8f98] border border-[#1e2025] rounded-full transition-all inline-flex items-center gap-1 active:scale-95 cursor-pointer"
+                                    >
+                                      <span>{event.editsCount} edits</span>
+                                      <span>{isExpanded ? '▲' : '▼'}</span>
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-[#8a8f98] font-medium whitespace-nowrap self-start sm:self-center">
+                                  {new Date(event.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}, {new Date(event.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                </div>
+                              </div>
+
+                              {event.isGrouped && isExpanded && (
+                                <div className="mt-3 pl-3 border-l-2 border-[#1e2025] space-y-1.5 py-1 text-xs text-[#8a8f98]">
+                                  <p className="text-[10px] uppercase font-bold text-[#8a8f98] tracking-wider mb-1">Edit Revisions ({event.editsCount})</p>
+                                  {event.subEvents?.map((sub: InvoiceEvent) => {
+                                    const subKeys = Object.keys({ ...sub.oldValues, ...sub.newValues }).filter(k => sub.oldValues?.[k] !== sub.newValues?.[k]);
+                                    const subKey = subKeys[0];
+                                    const oldV = sub.oldValues?.[subKey];
+                                    const newV = sub.newValues?.[subKey];
+
+                                    const isSubFirstTime = oldV === null || oldV === undefined || oldV === '' || String(oldV).toLowerCase() === 'none';
+                                    const formattedOld = subKey === 'invoiceAmount' ? formatCurrency(oldV) : subKey === 'dueDate' ? formatDateValue(oldV) : String(oldV || '—');
+                                    const formattedNew = subKey === 'invoiceAmount' ? formatCurrency(newV) : subKey === 'dueDate' ? formatDateValue(newV) : String(newV || '—');
+
+                                    return (
+                                      <div key={sub.id} className="flex justify-between items-center py-1 border-b border-[#1e2025]/50 last:border-0">
+                                        <span className="text-[10px] text-[#8a8f98]">
+                                          {new Date(sub.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                        </span>
+                                        {isSubFirstTime ? (
+                                          <span>Set to <span className="font-semibold text-[#f7f8f8]">{formattedNew}</span></span>
+                                        ) : (
+                                          <span>Changed from <span className="line-through text-[#8a8f98]">{formattedOld}</span> to <span className="font-semibold text-[#f7f8f8]">{formattedNew}</span></span>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {keys.length > 1 && !event.isGrouped && (
+                                <div className="mt-3 pl-3 border-l-2 border-[#1e2025] space-y-1.5 py-1 text-xs text-[#8a8f98]">
+                                  {keys.map((key) => {
+                                    const oldVal = event.oldValues?.[key];
+                                    const newVal = event.newValues?.[key];
+                                    if (oldVal === newVal) return null;
+
+                                    const isDiffFirstTime = oldVal === null || oldVal === undefined || oldVal === '' || String(oldVal).toLowerCase() === 'none';
+                                    const displayLabel = key === 'subject' ? 'Invoice Description' : key.replace(/([A-Z])/g, ' $1');
+                                    const formattedOld = key === 'invoiceAmount' ? formatCurrency(oldVal) : key === 'dueDate' ? formatDateValue(oldVal) : String(oldVal ?? '—');
+                                    const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');
+                                    return (
+                                      <div key={key} className="flex justify-between items-center py-0.5 font-medium">
+                                        <span className="capitalize text-[#8a8f98] font-semibold">{displayLabel}</span>
+                                        <span>
+                                          {isDiffFirstTime ? (
+                                            <span>Set to <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span></span>
+                                          ) : (
+                                            <span>
+                                              <span className="line-through text-[#8a8f98] mr-1">{formattedOld}</span>
+                                              &rarr;
+                                              <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span>
+                                            </span>
+                                          )}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {renderEventDescription(event) && (
+                                <div className="text-xs text-[#8a8f98] mt-2 pl-3 border-l-2 border-[#1e2025] py-0.5">
+                                  {renderEventDescription(event)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
+
+                {hasNextPage && (
+                  <div className="flex justify-center pt-3">
+                    <button
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                      className="px-4 py-2 border border-[#1e2025] hover:border-[#2e3444] text-xs font-medium rounded-xl bg-[#13161c] text-[#f7f8f8] hover:bg-[#1d212a] transition-all disabled:opacity-40 inline-flex items-center gap-2"
+                    >
+                      {isFetchingNextPage && <Loader2 className="h-4 w-4 animate-spin text-[#5e6ad2]" />}
+                      Load More Events
+                    </button>
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="text-xs text-[#8a8f98] mb-0.5">Contact</p>
-                <div className="flex items-center text-xs text-[#f7f8f8]">
-                  <Mail className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
-                  <a href={`mailto:${invoice.contactEmail}`} className="hover:text-[#5e6ad2] hover:underline">{invoice.contactEmail}</a>
+            )}
+
+            {/* 2. EMAILS & MESSAGES TAB (INCLUDES TRIGGER FOLLOW-UP BUTTON AT TOP) */}
+            {activeTab === 'emails' && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between bg-[#13161c]/40 p-4 rounded-xl border border-[#1e2025]/80">
+                  <div>
+                    <h3 className="text-xs font-semibold text-[#f7f8f8]">Email & Communication Log</h3>
+                    <p className="text-[11px] text-[#8a8f98] mt-0.5">Automated reminders and debtor messages for this invoice.</p>
+                  </div>
+
+                  {user?.role !== 'viewer' && invoice.paymentStatus !== 'Paid' && (
+                    <button
+                      onClick={handleTriggerFollowup}
+                      disabled={agentMutation.isPending}
+                      className="inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-4 disabled:opacity-40 shadow-lg shadow-[#5e6ad2]/20 active:scale-[0.98]"
+                    >
+                      {agentMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-1.5 h-3.5 w-3.5" />}
+                      Trigger Follow-up
+                    </button>
+                  )}
                 </div>
+
+                {isCommsLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-7 w-7 animate-spin text-[#5e6ad2]" />
+                  </div>
+                ) : (
+                  <CommunicationList communications={communications || []} />
+                )}
               </div>
-            </CardContent>
-          </Card>
+            )}
 
-          {invoice.subject && (
-            <Card className="border border-[#23252a] bg-[#0f1011]">
-              <CardHeader className="pb-2 border-b-0">
-                <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Invoice Description</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-[#d0d6e0] leading-relaxed">{invoice.subject}</p>
-              </CardContent>
-            </Card>
-          )}
+            {/* 3. PAYMENT PLAN TAB */}
+            {activeTab === 'payment-plan' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                {(() => {
+                  const instList = invoice.hasActivePaymentPlan && installmentsResponse?.data
+                    ? (installmentsResponse.data as Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string }>)
+                    : [];
+                  const totalInst = instList.length;
+                  const paidInst = instList.filter(i => i.status === 'paid').length;
+                  const percentPaid = totalInst > 0 ? Math.round((paidInst / totalInst) * 100) : 0;
 
-          {(() => {
-            const instList = invoice.hasActivePaymentPlan && installmentsResponse?.data
-              ? (installmentsResponse.data as Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string }>)
-              : [];
-            const activeInstallment = instList.find(i => i.status !== 'paid');
-
-            // Calculate days overdue relative to active installment
-            let activeDaysOverdue = 0;
-            if (activeInstallment) {
-              const dueObj = new Date(activeInstallment.dueDate);
-              const nowObj = new Date();
-              nowObj.setHours(0, 0, 0, 0);
-              dueObj.setHours(0, 0, 0, 0);
-              const diffMs = nowObj.getTime() - dueObj.getTime();
-              activeDaysOverdue = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-            } else if (!invoice.hasActivePaymentPlan && invoice.daysOverdue) {
-              activeDaysOverdue = Math.max(0, invoice.daysOverdue);
-            }
-
-            const totalInst = instList.length;
-            const paidInst = instList.filter(i => i.status === 'paid').length;
-            const percentPaid = totalInst > 0 ? Math.round((paidInst / totalInst) * 100) : 0;
-
-            return (
-              <>
-                <Card className="border border-[#23252a] bg-[#0f1011]">
-                  <CardHeader className="pb-2 border-b-0">
-                    <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Aging &amp; Status</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3.5">
-                    <div>
-                      <p className="text-xs text-[#8a8f98] mb-0.5">
-                        {activeInstallment ? `Next Installment Due (#${activeInstallment.installmentNumber})` : 'Due Date'}
-                      </p>
-                      <div className="flex items-center text-xs text-[#f7f8f8] font-medium">
-                        <Calendar className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
-                        {new Date(activeInstallment ? activeInstallment.dueDate : invoice.dueDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-[#23252a]">
-                      <p className="text-xs text-[#8a8f98]">Days Overdue</p>
-                      <p className={`font-semibold text-xs ${activeDaysOverdue > 0 ? 'text-red-400' : 'text-[#f7f8f8]'}`}>
-                        {activeDaysOverdue}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-[#23252a]">
-                      <p className="text-xs text-[#8a8f98]">Follow-ups Sent</p>
-                      <p className="font-semibold text-xs text-[#f7f8f8]">{invoice.followupCount}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {invoice.hasActivePaymentPlan && totalInst > 0 && (
-                  <Card className="border border-[#27a644]/30 bg-[#27a644]/5">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xs font-semibold text-[#27a644] uppercase tracking-wider flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5 text-[#27a644]" />
-                          Agreed Installment Schedule
-                        </CardTitle>
-                        <span className="text-[10px] font-bold text-[#27a644] bg-[#27a644]/10 border border-[#27a644]/20 px-2 py-0.5 rounded-full">
+                  return (
+                    <div className="bg-[#13161c]/40 p-5 rounded-2xl border border-[#1e2025]/80 space-y-5">
+                      <div className="flex items-center justify-between pb-3 border-b border-[#1e2025]/80">
+                        <h3 className="text-xs font-semibold text-[#f7f8f8] flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-[#27a644]" /> Agreed Installment Schedule
+                        </h3>
+                        <span className="text-xs font-bold text-[#27a644] bg-[#27a644]/10 border border-[#27a644]/20 px-2.5 py-0.5 rounded-full">
                           {paidInst} of {totalInst} Paid ({percentPaid}%)
                         </span>
                       </div>
 
-                      {/* Visual Segmented Progress Bar */}
-                      <div className="mt-3 space-y-1">
-                        <div className="flex gap-1.5 h-2 w-full rounded-full overflow-hidden bg-[#141516] p-0.5">
-                          {instList.map((item, idx) => {
-                            let bgColor = 'bg-[#3e3e44]';
-                            if (item.status === 'paid') {
-                              bgColor = 'bg-[#27a644]';
-                            } else if (item.status === 'overdue') {
-                              bgColor = 'bg-red-500 animate-pulse';
-                            } else if (item.status === 'pending' && idx === paidInst) {
-                              bgColor = 'bg-amber-400';
-                            }
+                      <div className="flex gap-1.5 h-2.5 w-full rounded-full overflow-hidden bg-[#0e1013]/60 p-0.5 border border-[#1e2025]/80">
+                        {instList.map((item, idx) => {
+                          let bgColor = 'bg-[#2a2e39]';
+                          if (item.status === 'paid') bgColor = 'bg-[#27a644]';
+                          else if (item.status === 'overdue') bgColor = 'bg-red-500 animate-pulse';
+                          else if (item.status === 'pending' && idx === paidInst) bgColor = 'bg-amber-400';
 
-                            return (
-                              <div
-                                key={item.id}
-                                className={`h-full flex-1 rounded-sm transition-all duration-300 ${bgColor}`}
-                                title={`Installment #${item.installmentNumber}: ${item.status.toUpperCase()} (${formatCurrency(item.amount)})`}
-                              />
-                            );
-                          })}
-                        </div>
-                        <div className="flex justify-between text-[10px] font-medium text-[#8a8f98] pt-0.5">
-                          <span>Installment Progress</span>
-                          <span>{paidInst === totalInst ? 'All Installments Paid' : `Active: Installment #${paidInst + 1}`}</span>
-                        </div>
+                          return (
+                            <div
+                              key={item.id}
+                              className={`h-full flex-1 rounded-sm transition-all duration-300 ${bgColor}`}
+                              title={`Installment #${item.installmentNumber}: ${item.status.toUpperCase()} (${formatCurrency(item.amount)})`}
+                            />
+                          );
+                        })}
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="space-y-1.5">
-                        {instList.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between p-2 bg-[#0f1011] border border-[#23252a] rounded-md text-xs">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-1.5 h-1.5 rounded-full ${
-                                item.status === 'paid' ? 'bg-[#27a644]' : item.status === 'overdue' ? 'bg-red-400' : 'bg-amber-400'
-                              }`} />
-                              <div>
-                                <span className="font-semibold text-xs text-[#f7f8f8]">Installment #{item.installmentNumber}</span>
-                                <span className="block text-[10px] text-[#8a8f98]">Due {new Date(item.dueDate).toLocaleDateString()}</span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <span className="font-semibold text-xs text-[#f7f8f8]">{formatCurrency(item.amount)}</span>
-                              <span className={`block text-[9px] font-bold uppercase ${
-                                item.status === 'paid' ? 'text-[#27a644]' : item.status === 'overdue' ? 'text-red-400' : 'text-amber-400'
-                              }`}>
-                                {item.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            );
-          })()}
 
-          <Card className="border border-[#23252a] bg-[#0f1011]">
-            <CardHeader className="pb-2 border-b-0">
-              <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Payment Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3.5">
+                      <div className="overflow-hidden border border-[#1e2025]/80 rounded-xl bg-[#0e1013]/40">
+                        <table className="w-full text-xs text-left">
+                          <thead className="bg-[#13161c]/80 border-b border-[#1e2025] text-[#8a8f98]">
+                            <tr>
+                              <th className="px-3.5 py-2.5 font-semibold">Installment</th>
+                              <th className="px-3.5 py-2.5 font-semibold">Due Date</th>
+                              <th className="px-3.5 py-2.5 font-semibold">Amount</th>
+                              <th className="px-3.5 py-2.5 font-semibold text-right">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#1e2025]/50 text-[#d0d6e0]">
+                            {instList.map((item) => (
+                              <tr key={item.id} className="hover:bg-[#13161c]/50 transition-colors">
+                                <td className="px-3.5 py-2.5 font-semibold text-[#f7f8f8]">Installment #{item.installmentNumber}</td>
+                                <td className="px-3.5 py-2.5">{new Date(item.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                                <td className="px-3.5 py-2.5 font-mono font-medium">{formatCurrency(item.amount)}</td>
+                                <td className="px-3.5 py-2.5 text-right">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                    item.status === 'paid' ? 'bg-[#27a644]/15 text-[#27a644] border border-[#27a644]/30' :
+                                    item.status === 'overdue' ? 'bg-red-950/40 text-red-400 border border-red-900/50' :
+                                    'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                                  }`}>
+                                    {item.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN (1/3 Width) - Unified Summary & Links Card */}
+        <div className="lg:col-span-1 flex flex-col h-full min-h-0 overflow-y-auto custom-scrollbar">
+          <div className="bg-[#13161c]/40 p-6 rounded-2xl border border-[#1e2025]/80 space-y-6">
+            
+            {/* 1. Summary Section: Amount, Status, Company Name, Contact, Description */}
+            <div className="space-y-4 pb-5 border-b border-[#1e2025]/80">
               <div>
-                <p className="text-xs text-[#8a8f98] mb-1.5">Payment Link</p>
-                {invoice.paymentLink ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium ${
-                        invoice.paymentLink.status === 'active' ? 'bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20' :
-                        invoice.paymentLink.status === 'paid' ? 'bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20' :
-                        'bg-[#141516] text-[#8a8f98] border border-[#23252a]'
-                      }`}>
-                        {invoice.paymentLink.status.charAt(0).toUpperCase() + invoice.paymentLink.status.slice(1)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="text" 
-                        readOnly 
-                        value={invoice.paymentLink.url} 
-                        className="w-full text-xs p-1.5 border border-[#23252a] rounded bg-[#010102] text-[#d0d6e0] truncate"
-                        title={invoice.paymentLink.url}
-                      />
-                      {invoice.paymentLink.status === 'active' && invoice.paymentStatus !== 'Paid' && (
-                        <button 
-                          onClick={() => navigator.clipboard.writeText(invoice.paymentLink!.url)}
-                          className="px-2 py-1.5 bg-[#0f1011] border border-[#23252a] rounded text-xs font-medium text-[#f7f8f8] hover:bg-[#141516] transition-colors flex-shrink-0"
-                        >
-                          Copy
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="text-xs text-[#8a8f98] italic">
-                      No active payment link generated yet.
-                      {invoice.paymentStatus !== 'Paid' && <p className="text-[11px] text-[#8a8f98] mt-0.5">A fallback link from settings may be used in emails.</p>}
-                    </div>
-                    {invoice.paymentStatus !== 'Paid' && user?.role !== 'viewer' && (
-                      <button
-                        onClick={() => generateLinkMutation.mutate()}
-                        disabled={generateLinkMutation.isPending}
-                        className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] h-8 px-3 disabled:opacity-40"
-                      >
-                        {generateLinkMutation.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
-                        Generate Payment Link
-                      </button>
-                    )}
+                <span className="text-[11px] font-medium text-[#8a8f98] uppercase tracking-wider block mb-1">Amount</span>
+                <span className="text-3xl font-extrabold text-[#f7f8f8] tracking-tight">{formatCurrency(invoice.invoiceAmount)}</span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="text-[#8a8f98]">Status</span>
+                <Badge variant={
+                  invoice.paymentStatus === 'Paid' ? 'success' : 
+                  invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
+                }>
+                  {invoice.paymentStatus}
+                </Badge>
+              </div>
+
+              <div className="space-y-2 text-xs pt-1">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[#8a8f98]">Company Name</span>
+                  <span className="font-semibold text-[#f7f8f8]">{invoice.clientName}</span>
+                </div>
+
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[#8a8f98]">Contact</span>
+                  <a href={`mailto:${invoice.contactEmail}`} className="font-medium text-[#5e6ad2] hover:underline">
+                    {invoice.contactEmail}
+                  </a>
+                </div>
+
+                {invoice.subject && (
+                  <div className="pt-2">
+                    <span className="text-[#8a8f98] text-[11px] block mb-1">Description</span>
+                    <p className="text-xs text-[#d0d6e0] bg-[#0e1013]/60 p-2.5 rounded-lg border border-[#1e2025]">
+                      {invoice.subject}
+                    </p>
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
 
-          {(user?.role === 'admin' || user?.role === 'manager') && (
-            <Card className="border border-[#23252a] bg-[#0f1011]">
-              <CardHeader className="pb-2 border-b-0">
-                <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Debtor Portal Link</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3.5">
-                {portalLinkStatus ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#8a8f98]">Status</span>
-                      {!portalLinkStatus.exists ? (
-                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-[#141516] text-[#8a8f98]">
-                          No link generated yet
-                        </span>
-                      ) : portalLinkStatus.revokedAt ? (
-                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-red-950/40 text-red-400 border border-red-900/50">
-                          Revoked
-                        </span>
-                      ) : (
-                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
-                          Active
-                        </span>
-                      )}
+              <div className="space-y-2 text-xs pt-2 border-t border-[#1e2025]/50">
+                {invoice.hasActivePaymentPlan ? (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#8a8f98]">Original Due Date</span>
+                      <span className="font-semibold text-[#f7f8f8]">
+                        {new Date(invoice.originalDueDate || invoice.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
                     </div>
-
-                    {portalLinkStatus.exists && (
-                      <div className="text-xs text-[#8a8f98] space-y-1.5 pt-2 border-t border-[#23252a]">
-                        <div className="flex justify-between">
-                          <span>Created At</span>
-                          <span className="font-medium text-[#f7f8f8]">{new Date(portalLinkStatus.createdAt!).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Last Viewed</span>
-                          <span className="font-medium text-[#f7f8f8]">
-                            {portalLinkStatus.viewedAt ? new Date(portalLinkStatus.viewedAt).toLocaleString() : 'Never'}
+                    {(() => {
+                      const instList = installmentsResponse?.data
+                        ? (installmentsResponse.data as Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string }>)
+                        : [];
+                      const nextInst = instList.find(i => i.status === 'pending' || i.status === 'overdue');
+                      return (
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#8a8f98]">Next Installment Due Date</span>
+                          <span className="font-semibold text-[#5e6ad2]">
+                            {nextInst ? new Date(nextInst.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : 'All Paid'}
                           </span>
                         </div>
-                        {portalLinkStatus.revokedAt && (
-                          <div className="flex justify-between text-red-400">
-                            <span>Revoked At</span>
-                            <span className="font-medium">{new Date(portalLinkStatus.revokedAt).toLocaleString()}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {regeneratedLink ? (
-                      <div className="space-y-2 pt-2 border-t border-[#23252a]">
-                        <div className="rounded-md bg-amber-950/40 border border-amber-900/50 p-2 flex gap-2 text-xs text-amber-300">
-                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                          <span>Copy this URL now. For security, the full URL cannot be retrieved again.</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="text" 
-                            readOnly 
-                            value={regeneratedLink.url} 
-                            className="w-full text-xs p-1.5 border border-[#23252a] rounded bg-[#010102] text-[#d0d6e0] truncate"
-                            title={regeneratedLink.url}
-                          />
-                          <button 
-                            onClick={() => {
-                              navigator.clipboard.writeText(regeneratedLink.url);
-                              setIsCopied(true);
-                              setTimeout(() => setIsCopied(false), 2000);
-                            }}
-                            className="px-2 py-1.5 bg-[#0f1011] border border-[#23252a] rounded text-xs font-medium text-[#f7f8f8] hover:bg-[#141516] transition-colors flex-shrink-0 flex items-center justify-center"
-                          >
-                            {isCopied ? <Check className="w-3.5 h-3.5 text-[#27a644]" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="pt-1">
-                        <button
-                          onClick={() => setIsConfirmOpen(true)}
-                          className="w-full inline-flex items-center justify-center rounded-md text-xs font-medium border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] h-8 px-3"
-                        >
-                          Regenerate Portal Link
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                      );
+                    })()}
+                  </>
                 ) : (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#5e6ad2]" />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Tabs Area */}
-        <div className="md:col-span-2">
-          <Card id="history-tabs" className="h-full border border-[#23252a] bg-[#0f1011]">
-            <div className="flex border-b border-[#23252a]">
-              <button
-                className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${
-                  activeTab === 'timeline' 
-                    ? 'border-[#5e6ad2] text-[#5e6ad2]' 
-                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
-                }`}
-                onClick={() => setActiveTab('timeline')}
-              >
-
-                Event Timeline
-              </button>
-              <button
-                className={`flex-1 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'emails' 
-                    ? 'border-[#5e6ad2] text-[#5e6ad2]' 
-                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
-                }`}
-                onClick={() => setActiveTab('emails')}
-              >
-                Emails & Messages
-              </button>
-            </div>
-            
-            <CardContent className="pt-6">
-              {activeTab === 'timeline' ? (
-                // TIMELINE TAB
-                <div>
-
-
-                  <div className="flex justify-between items-center mb-6">
-                    <span className="text-xs text-[#8a8f98] font-medium">
-                      Showing {accumulatedTimeline.length} of {totalTimelineCount} events
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#8a8f98]">Due Date</span>
+                    <span className="font-semibold text-[#f7f8f8]">
+                      {new Date(invoice.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
+                )}
 
-                  {isTimelineLoading && accumulatedTimeline.length === 0 ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-[#5e6ad2]" />
-                    </div>
-                  ) : accumulatedTimeline.length === 0 ? (
-                    <div className="text-center py-8 text-[#8a8f98] text-xs">
-                      No events recorded matching the criteria.
-                    </div>
-                  ) : (
-                    <div className="relative border-l border-[#23252a] ml-3.5 space-y-4 py-1">
-                      {(() => {
-                        const displayTimeline = groupTimelineEvents(accumulatedTimeline);
-                        const toggleGroup = (id: string) => {
-                          setExpandedGroups(prev => ({ ...prev, [id]: !prev[id] }));
-                        };
-                        return displayTimeline.map((event) => {
-                          const type = (event.actionType || event.eventType || '').toLowerCase();
-                          const keys = (type === 'invoice.trashed' || type === 'invoice.restored')
-                            ? []
-                            : Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
-                          const isExpanded = !!expandedGroups[event.id];
-                          
-                          return (
-                            <div key={event.id} className="relative pl-6 animate-timeline-fade-in">
-                              {/* Circular Icon Marker */}
-                              <div className={`absolute -left-3 top-1 h-6 w-6 rounded-full bg-[#0f1011] border border-[#23252a] flex items-center justify-center shadow-none ${getEventIconStyles(event)}`}>
-                                {renderEventIcon(event)}
-                              </div>
-                              
-                              {/* Card Content */}
-                              <div className="bg-[#0f1011] rounded-lg p-3 border border-[#23252a] hover:bg-[#141516]/60 transition-all duration-150">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
-                                  {/* Primary Text */}
-                                  <div className="text-xs text-[#f7f8f8] leading-snug">
-                                    {getEventHeading(event)}
-                                    
-                                    {/* Collapsible edit revisions trigger */}
-                                    {event.isGrouped && (
-                                      <button 
-                                        onClick={() => toggleGroup(event.id)}
-                                        className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-[#141516] hover:bg-[#18191a] text-[#8a8f98] border border-[#23252a] rounded-full transition-all inline-flex items-center gap-0.5 active:scale-95 cursor-pointer"
-                                      >
-                                        <span>{event.editsCount} edits</span>
-                                        <span>{isExpanded ? '▲' : '▼'}</span>
-                                      </button>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Secondary metadata row */}
-                                  <div className="text-[10px] text-[#8a8f98] font-medium whitespace-nowrap self-start sm:self-center">
-                                    {new Date(event.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}, {new Date(event.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                  </div>
-                                </div>
+                {(invoice.daysOverdue ?? 0) > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#8a8f98]">Days Overdue</span>
+                    <span className="font-bold text-red-400">
+                      {invoice.daysOverdue} Days
+                    </span>
+                  </div>
+                )}
 
-                                {/* Collapsible edits expansion panel */}
-                                {event.isGrouped && isExpanded && (
-                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-[11px] text-[#8a8f98]">
-                                    <p className="text-[9px] uppercase font-bold text-[#8a8f98] tracking-wider mb-1">Edit History ({event.editsCount} revisions)</p>
-                                    {event.subEvents?.map((sub: InvoiceEvent) => {
-                                      const subKeys = Object.keys({ ...sub.oldValues, ...sub.newValues }).filter(k => sub.oldValues?.[k] !== sub.newValues?.[k]);
-                                      const subKey = subKeys[0];
-                                      const oldV = sub.oldValues?.[subKey];
-                                      const newV = sub.newValues?.[subKey];
-                                      
-                                      const isSubFirstTime = oldV === null || oldV === undefined || oldV === '' || String(oldV).toLowerCase() === 'none';
-                                      
-                                      const formattedOld = subKey === 'invoiceAmount' ? formatCurrency(oldV) : subKey === 'dueDate' ? formatDateValue(oldV) : String(oldV || '—');
-                                      const formattedNew = subKey === 'invoiceAmount' ? formatCurrency(newV) : subKey === 'dueDate' ? formatDateValue(newV) : String(newV || '—');
-                                      
-                                      return (
-                                        <div key={sub.id} className="flex justify-between items-center py-0.5 border-b border-[#23252a] last:border-0 font-medium">
-                                          <span className="text-[10px] text-[#8a8f98]">
-                                            {new Date(sub.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                          </span>
-                                          {isSubFirstTime ? (
-                                            <span>
-                                              Set to <span className="font-semibold text-[#f7f8f8]">{formattedNew}</span>
-                                            </span>
-                                          ) : (
-                                            <span>
-                                              Changed from <span className="line-through text-[#8a8f98]">{formattedOld}</span> to <span className="font-semibold text-[#f7f8f8]">{formattedNew}</span>
-                                            </span>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-[#8a8f98]">Follow-ups Sent</span>
+                  <span className="font-semibold text-[#f7f8f8]">{invoice.followupCount}</span>
+                </div>
+              </div>
+            </div>
 
-                                {/* Diff List for Multi-field changes */}
-                                {keys.length > 1 && !event.isGrouped && (
-                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-xs text-[#8a8f98]">
-                                    {keys.map((key) => {
-                                      const oldVal = event.oldValues?.[key];
-                                      const newVal = event.newValues?.[key];
-                                      if (oldVal === newVal) return null;
-                                      
-                                      const isDiffFirstTime = oldVal === null || oldVal === undefined || oldVal === '' || String(oldVal).toLowerCase() === 'none';
-                                      const displayLabel = key === 'subject' ? 'Invoice Description' : key.replace(/([A-Z])/g, ' $1');
-                                      
-                                      const formattedOld = key === 'invoiceAmount' ? formatCurrency(oldVal) : key === 'dueDate' ? formatDateValue(oldVal) : String(oldVal ?? '—');
-                                      const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');
-                                      return (
-                                        <div key={key} className="flex justify-between items-center py-0.5 font-medium">
-                                          <span className="capitalize text-[#8a8f98] font-semibold">{displayLabel}</span>
-                                          <span>
-                                            {isDiffFirstTime ? (
-                                              <span>
-                                                Set to <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span>
-                                              </span>
-                                            ) : (
-                                              <span>
-                                                <span className="line-through text-[#8a8f98] mr-1">{formattedOld}</span>
-                                                &rarr;
-                                                <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span>
-                                              </span>
-                                            )}
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+            {/* 2. Payment Link Section */}
+            <div className="space-y-2.5 text-xs pb-5 border-b border-[#1e2025]/80">
+              <div className="flex items-center justify-between">
+                <span className="text-[#8a8f98] font-medium">Payment Link</span>
+                {invoice.paymentLink && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                    invoice.paymentLink.status === 'active' ? 'bg-[#5e6ad2]/15 text-[#5e6ad2]' :
+                    invoice.paymentLink.status === 'paid' ? 'bg-[#27a644]/15 text-[#27a644]' : 'bg-[#13161c] text-[#8a8f98]'
+                  }`}>
+                    {invoice.paymentLink.status.toUpperCase()}
+                  </span>
+                )}
+              </div>
 
-                                {/* Payload descriptions if any */}
-                                {renderEventDescription(event) && (
-                                  <div className="text-xs text-[#8a8f98] mt-2 pl-3 border-l-2 border-[#23252a] py-0.5">
-                                    {renderEventDescription(event)}
-                                  </div>
-                                )}
-
-                                {/* Customer Inbound Dispute Email details */}
-                                {type === 'dispute.received' && event.payload && (
-                                  <div className="mt-2 pl-3 border-l-2 border-[#5e6ad2] space-y-1 py-1 text-xs text-[#f7f8f8] bg-[#5e6ad2]/10 rounded-r-md p-2">
-                                    {typeof event.payload.subject === 'string' && event.payload.subject && (
-                                      <div><span className="font-semibold text-[#f7f8f8]">Subject:</span> {event.payload.subject}</div>
-                                    )}
-                                    {typeof event.payload.body === 'string' && event.payload.body && (
-                                      <div className="text-[#8a8f98] line-clamp-2"><span className="font-semibold text-[#f7f8f8]">Message:</span> {stripHtml(event.payload.body)}</div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Legacy/Generic payloads */}
-                                {!event.oldValues && !event.newValues && event.payload && !type.startsWith('dispute.') && (
-                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-[11px] text-[#8a8f98] font-mono">
-                                    {Object.entries(event.payload).map(([k, v]) => {
-                                      if (v === null || v === undefined || k === 'error' || k === 'reason') return null;
-                                      return (
-                                        <div key={k} className="flex gap-2">
-                                          <span className="font-semibold text-[#8a8f98] capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
-                                          <span className="text-[#d0d6e0] select-all truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-                  )}
-
-                  {/* Load More Button */}
-                  {totalTimelineCount > accumulatedTimeline.length && (
-                    <div className="flex justify-center pt-6 border-t border-[#23252a] mt-6">
-                      <button
-                        onClick={() => setTimelinePage(prev => prev + 1)}
-                        disabled={isTimelineLoading}
-                        className="px-3.5 py-1.5 border border-[#23252a] hover:border-[#34343a] text-xs font-medium rounded-md bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] transition-all disabled:opacity-40 inline-flex items-center gap-2"
-                      >
-                        {isTimelineLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#5e6ad2]" />}
-                        Load More Events
-                      </button>
-                    </div>
+              {invoice.paymentLink ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={invoice.paymentLink.url} 
+                      className="w-full text-xs p-2 border border-[#1e2025] rounded-lg bg-[#0e1013]/60 text-[#d0d6e0] font-mono truncate"
+                      title={invoice.paymentLink.url}
+                    />
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(invoice.paymentLink!.url);
+                        setIsCopied(true);
+                        setTimeout(() => setIsCopied(false), 2000);
+                      }}
+                      className="px-2.5 py-2 bg-[#13161c] border border-[#1e2025] rounded-lg text-xs font-medium text-[#f7f8f8] hover:bg-[#1d212a] transition-colors flex items-center gap-1 flex-shrink-0"
+                    >
+                      {isCopied ? <Check className="w-3 h-3 text-[#27a644]" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
+                  {invoice.paymentStatus !== 'Paid' && user?.role !== 'viewer' && (
+                    <button
+                      onClick={() => generateLinkMutation.mutate()}
+                      disabled={generateLinkMutation.isPending}
+                      className="w-full inline-flex items-center justify-center rounded-xl text-xs font-medium border border-[#1e2025] bg-[#13161c] hover:bg-[#1d212a] text-[#8a8f98] hover:text-[#f7f8f8] h-7 px-3 transition-colors disabled:opacity-40"
+                    >
+                      {generateLinkMutation.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
+                      Regenerate Payment Link
+                    </button>
                   )}
                 </div>
               ) : (
-                // EMAILS TAB
-                isCommsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#5e6ad2]" />
-                  </div>
-                ) : (
-                  <CommunicationList communications={communications || []} />
-                )
+                invoice.paymentStatus !== 'Paid' && user?.role !== 'viewer' ? (
+                  <button
+                    onClick={() => generateLinkMutation.mutate()}
+                    disabled={generateLinkMutation.isPending}
+                    className="w-full inline-flex items-center justify-center rounded-xl text-xs font-medium border border-[#1e2025] bg-[#13161c] hover:bg-[#1d212a] text-[#f7f8f8] h-8 px-3 transition-colors disabled:opacity-40"
+                  >
+                    {generateLinkMutation.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
+                    Generate Payment Link
+                  </button>
+                ) : null
               )}
-            </CardContent>
-          </Card>
+            </div>
+            {/* 3. Debtor Portal Section */}
+            {(user?.role === 'admin' || user?.role === 'manager') && (
+              <div className="space-y-3 text-xs pt-1">
+                <span className="text-[#8a8f98] font-medium block">Debtor Portal</span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleOpenPortal}
+                    className="flex-1 inline-flex items-center justify-center rounded-xl text-xs font-semibold border border-[#1e2025] bg-[#13161c] hover:bg-[#1d212a] text-[#f7f8f8] h-9 px-3 transition-colors active:scale-[0.98]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
+                    Open Portal
+                  </button>
+                  <button
+                    onClick={handleCopyPortalLink}
+                    className="flex-1 inline-flex items-center justify-center rounded-xl text-xs font-semibold border border-[#1e2025] bg-[#13161c] hover:bg-[#1d212a] text-[#f7f8f8] h-9 px-3 transition-colors active:scale-[0.98]"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-[#27a644] mr-1.5" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+                        Copy Link
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
+
       </div>
 
+      {/* MODALS */}
       {invoice && (
         <EditInvoiceModal
           isOpen={isEditModalOpen}
@@ -1503,10 +1453,10 @@ export function InvoiceDetail() {
           <p className="text-xs text-[#8a8f98]">
             This action cannot be undone. All event logs, metrics, and associated data for Invoice <strong className="text-[#f7f8f8]">{invoice.invoiceNo}</strong> will be permanently soft-deleted.
           </p>
-          <div className="flex justify-end gap-2.5 pt-4 border-t border-[#23252a]">
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-[#1e2025]">
             <button
               onClick={() => setIsDeleteModalOpen(false)}
-              className="px-3.5 py-1.5 border border-[#23252a] hover:bg-[#141516] text-xs font-medium rounded-md bg-[#0f1011] text-[#f7f8f8] transition-all"
+              className="px-4 py-2 border border-[#1e2025] hover:bg-[#1d212a] text-xs font-medium rounded-xl bg-[#13161c] text-[#f7f8f8] transition-all"
             >
               Cancel
             </button>
@@ -1516,49 +1466,12 @@ export function InvoiceDetail() {
                 deleteMutation.mutate();
               }}
               disabled={deleteMutation.isPending}
-              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-xs font-semibold text-white rounded-md transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-xs font-semibold text-white rounded-xl transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
             >
               {deleteMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Delete Invoice
             </button>
           </div>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
-        title="Regenerate Debtor Portal Link"
-        description="Are you sure you want to regenerate the portal link?"
-      >
-        <div className="space-y-4">
-          <p className="text-xs text-[#8a8f98]">
-            This action will immediately revoke the existing portal link. Any debtor currently viewing or trying to access the old link will lose access and see an error.
-          </p>
-          <div className="rounded-md bg-amber-950/40 border border-amber-900/50 p-3 flex gap-2 text-xs text-amber-300">
-            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
-            <span>Regenerating the link does NOT automatically send a new email. You will need to copy and share the new link manually.</span>
-          </div>
-          <div className="flex justify-end gap-2.5 pt-4 border-t border-[#23252a]">
-            <button
-              onClick={() => setIsConfirmOpen(false)}
-              className="px-3.5 py-1.5 border border-[#23252a] hover:bg-[#141516] text-xs font-medium rounded-md bg-[#0f1011] text-[#f7f8f8] transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                setIsConfirmOpen(false);
-                regenerateLinkMutation.mutate();
-              }}
-              disabled={regenerateLinkMutation.isPending}
-              className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-xs font-semibold text-white rounded-md transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
-            >
-              {regenerateLinkMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Regenerate Link
-            </button>
-          </div>
-
         </div>
       </Modal>
     </div>

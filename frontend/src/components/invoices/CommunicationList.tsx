@@ -12,8 +12,8 @@ export function CommunicationList({ communications }: CommunicationListProps) {
 
   if (communications.length === 0) {
     return (
-      <div className="py-8 text-center border border-dashed border-[#23252a] rounded-lg bg-[#0f1011]">
-        <MessageSquare className="h-7 w-7 text-[#8a8f98] mx-auto mb-2" />
+      <div className="py-12 text-center border border-dashed border-[#1e2025] rounded-xl bg-[#0e1013]/40">
+        <MessageSquare className="h-8 w-8 text-[#8a8f98] mx-auto mb-2 opacity-50" />
         <h3 className="text-xs font-semibold text-[#f7f8f8]">No communications</h3>
         <p className="text-xs text-[#8a8f98] mt-1">No emails or messages have been sent for this invoice yet.</p>
       </div>
@@ -45,7 +45,7 @@ export function CommunicationList({ communications }: CommunicationListProps) {
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#141516] text-[#8a8f98] border border-[#23252a]">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#13161c] text-[#8a8f98] border border-[#1e2025]">
             <Clock className="w-3 h-3 mr-1" />
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </span>
@@ -81,22 +81,22 @@ export function CommunicationList({ communications }: CommunicationListProps) {
   return (
     <div className="space-y-3">
       {communications.map((comm) => (
-        <div key={comm.id} className="border border-[#23252a] rounded-lg overflow-hidden bg-[#0f1011] shadow-none transition-all">
+        <div key={comm.id} className="border border-[#1e2025]/80 rounded-xl overflow-hidden bg-[#13161c]/40 transition-all">
           {/* Header Row (Always visible) */}
           <div 
-            className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[#141516]/60 transition-colors"
+            className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#13161c]/80 transition-colors"
             onClick={() => toggleExpand(comm.id)}
           >
-            <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 rounded-full bg-[#5e6ad2]/20 border border-[#5e6ad2]/30 flex items-center justify-center flex-shrink-0">
-                <Mail className="h-4 w-4 text-[#5e6ad2]" />
+            <div className="flex items-center space-x-3.5">
+              <div className="h-9 w-9 rounded-xl bg-[#5e6ad2]/15 border border-[#5e6ad2]/30 flex items-center justify-center flex-shrink-0">
+                <Mail className="h-4.5 w-4.5 text-[#5e6ad2]" />
               </div>
               <div>
                 <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
                   {comm.subject || 'No Subject'}
                 </h4>
-                <div className="flex items-center mt-0.5 text-[11px] text-[#8a8f98] space-x-2">
-                  <span>To: {comm.recipient}</span>
+                <div className="flex items-center mt-1 text-[11px] text-[#8a8f98] space-x-2">
+                  <span>To: <strong className="text-[#d0d6e0] font-normal">{comm.recipient}</strong></span>
                   <span>•</span>
                   <span>{new Date(comm.createdAt).toLocaleString(undefined, {
                     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -115,9 +115,9 @@ export function CommunicationList({ communications }: CommunicationListProps) {
 
           {/* Expanded Body */}
           {expandedId === comm.id && (
-            <div className="border-t border-[#23252a] bg-[#010102] p-4 animate-in slide-in-from-top-2 duration-200">
+            <div className="border-t border-[#1e2025]/80 bg-[#0e1013]/60 p-4 animate-in slide-in-from-top-2 duration-200">
               {comm.errorMsg && (
-                <div className="mb-3 p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 font-medium">
+                <div className="mb-3 p-3 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 font-medium">
                   <span className="font-semibold">Delivery Error:</span> {getErrorMessage(comm.errorMsg)}
                 </div>
               )}
@@ -126,24 +126,24 @@ export function CommunicationList({ communications }: CommunicationListProps) {
                 <h5 className="text-[10px] font-semibold text-[#8a8f98] uppercase tracking-wider">Message Body</h5>
                 {comm.providerMessageId && (
                   <span className="text-[10px] text-[#62666d] font-mono" title="Provider Message ID">
-                    ID: {comm.providerMessageId.substring(0, 12)}...
+                    ID: {comm.providerMessageId.substring(0, 16)}...
                   </span>
                 )}
               </div>
               
-              <div className="bg-[#0f1011] border border-[#23252a] rounded-md p-3.5 text-xs text-[#f7f8f8] font-sans shadow-none overflow-auto max-h-[500px]">
+              <div className="bg-[#13161c]/80 border border-[#1e2025] rounded-xl p-4 text-xs text-[#f7f8f8] font-sans shadow-none overflow-auto max-h-[500px]">
                 {/* Render HTML if it contains HTML tags, otherwise text */}
                 {comm.body && (comm.body.includes('<html') || comm.body.includes('<div') || comm.body.includes('<p>')) ? (
                   <div dangerouslySetInnerHTML={{ __html: comm.body }} />
                 ) : (
-                  <pre className="whitespace-pre-wrap font-sans text-xs text-[#d0d6e0]">{comm.body}</pre>
+                  <pre className="whitespace-pre-wrap font-sans text-xs text-[#d0d6e0] leading-relaxed">{comm.body}</pre>
                 )}
               </div>
               
               {/* Detailed Timestamps footer */}
               {comm.sentAt && (
                 <div className="mt-3 text-[11px] text-[#8a8f98]">
-                  Sent: <span className="font-medium text-[#f7f8f8]">{new Date(comm.sentAt).toLocaleString()}</span>
+                  Sent At: <span className="font-medium text-[#f7f8f8]">{new Date(comm.sentAt).toLocaleString()}</span>
                 </div>
               )}
             </div>

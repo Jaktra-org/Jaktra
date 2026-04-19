@@ -45,6 +45,10 @@ describe('Invoices list page', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(invoiceService.getTrashedInvoices).mockResolvedValue({
+      data: [],
+      pagination: { total: 0, page: 1, limit: 50, totalPages: 0 },
+    });
   });
 
   it('performs debounced query requests when the user types in the search input box', async () => {

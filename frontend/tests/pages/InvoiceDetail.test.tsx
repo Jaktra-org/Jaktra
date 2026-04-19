@@ -134,14 +134,18 @@ describe('InvoiceDetail page details and timeline tabs', () => {
       expect(screen.getByText('Subject')).toBeInTheDocument();
     });
 
-    // Click Delete Button
-    const deleteBtn = screen.getByRole('button', { name: /^Delete$/i });
+    // Open Actions menu and click Delete Invoice
+    const actionsBtn = screen.getByRole('button', { name: /More options/i });
+    await act(async () => {
+      actionsBtn.click();
+    });
+    const deleteBtn = screen.getByRole('button', { name: /Delete Invoice/i });
     await act(async () => {
       deleteBtn.click();
     });
 
     // Click Delete Invoice in confirmation modal
-    const confirmDeleteBtn = screen.getByRole('button', { name: /Delete Invoice/i });
+    const confirmDeleteBtn = screen.getAllByRole('button', { name: /Delete Invoice/i })[1] || screen.getByRole('button', { name: /Delete Invoice/i });
     await act(async () => {
       confirmDeleteBtn.click();
     });
