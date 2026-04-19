@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import { invoiceService } from "../services/invoice";
 import type { ListInvoicesParams, Invoice } from "../types/api";
-import { Card } from "../components/ui/Card";
 import { useAuth } from "../contexts/AuthContext";
 import { Badge } from "../components/ui/Badge";
 import { CreateInvoiceModal } from "../components/invoices/CreateInvoiceModal";
@@ -357,7 +356,7 @@ export function Invoices() {
             <button
               onClick={handleExportCSV}
               disabled={!activeData?.data || activeData.data.length === 0}
-              className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] hover:border-[#34343a] h-9 px-3.5 disabled:opacity-40"
+              className="inline-flex items-center justify-center rounded-xl text-xs font-medium transition-all border border-[#1e2025]/80 bg-[#13161c]/50 text-[#f7f8f8] hover:bg-[#1d212a] hover:border-[#2e3444] h-9 px-3.5 disabled:opacity-40"
             >
               <Download className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
               Export CSV
@@ -367,14 +366,14 @@ export function Invoices() {
             <>
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] hover:border-[#34343a] h-9 px-3.5"
+                className="inline-flex items-center justify-center rounded-xl text-xs font-medium transition-all border border-[#1e2025]/80 bg-[#13161c]/50 text-[#f7f8f8] hover:bg-[#1d212a] hover:border-[#2e3444] h-9 px-3.5"
               >
                 <Upload className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
                 Import CSV
               </button>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-3.5"
+                className="inline-flex items-center justify-center rounded-xl text-xs font-medium transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-3.5 shadow-lg shadow-[#5e6ad2]/20"
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add Invoice
@@ -394,58 +393,57 @@ export function Invoices() {
         </div>
       )}
 
-      <Card className="flex flex-col border border-[#23252a] bg-[#0f1011]">
-        {/* Filters Top Header */}
-        <div className="p-3.5 border-b border-[#23252a] flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-[#010102]/60">
-          {/* Main Status Tabs */}
-          <div className="flex items-center space-x-1 bg-[#141516] p-1 rounded-md border border-[#23252a] flex-wrap gap-y-1">
-            {['All', 'Unpaid', 'Paid', 'Overdue'].map((status) => (
-              <button
-                key={status}
-                onClick={() => handleStatusFilter(status)}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                  !isTrashView && currentStatus === status
-                    ? 'bg-[#18191a] text-[#5e6ad2] border border-[#23252a] shadow-sm'
-                    : 'text-[#8a8f98] hover:text-[#f7f8f8]'
-                }`}
-              >
-                {status}
-              </button>
-            ))}
+      {/* Filters Top Header */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+        {/* Main Status Tabs */}
+        <div className="flex items-center space-x-1 bg-[#13161c]/60 p-1 rounded-xl border border-[#1e2025]/80 flex-wrap gap-y-1">
+          {['All', 'Unpaid', 'Paid', 'Overdue'].map((status) => (
             <button
-              onClick={handleTrashTab}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                isTrashView
-                  ? 'bg-[#18191a] text-amber-400 border border-[#23252a] shadow-sm'
+              key={status}
+              onClick={() => handleStatusFilter(status)}
+              className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${
+                !isTrashView && currentStatus === status
+                  ? 'bg-[#1d212a] text-[#5e6ad2] border border-[#2e3444] shadow-sm'
                   : 'text-[#8a8f98] hover:text-[#f7f8f8]'
               }`}
             >
-              <Trash2 className="h-3 w-3" />
-              Trash
+              {status}
             </button>
+          ))}
+          <button
+            onClick={handleTrashTab}
+            className={`px-3 py-1 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
+              isTrashView
+                ? 'bg-[#1d212a] text-amber-400 border border-[#2e3444] shadow-sm'
+                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+            }`}
+          >
+            <Trash2 className="h-3 w-3" />
+            Trash
+          </button>
+        </div>
+
+        {/* Search & Filter Drawer Toggle */}
+        <div className="flex items-center space-x-2">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#62666d]" />
+            <input
+              type="text"
+              placeholder="Search clients or invoice #..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="flex h-8.5 w-full rounded-xl border border-[#1e2025]/80 bg-[#13161c]/50 px-3 py-1.5 pl-8.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e69d1] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
+            />
           </div>
 
-          {/* Search & Filter Drawer Toggle */}
-          <div className="flex items-center space-x-2">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#62666d]" />
-              <input
-                type="text"
-                placeholder="Search clients or invoice #..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="flex h-8.5 w-full rounded-md border border-[#23252a] bg-[#0f1011] px-3 py-1.5 pl-8.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e69d1] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
-              />
-            </div>
-
-            <button
-              onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-              className={`inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border h-8.5 px-3 gap-1.5 ${
-                isFilterPanelOpen || activeFilterCount > 0
-                  ? 'bg-[#5e6ad2]/10 border-[#5e6ad2]/40 text-[#5e6ad2]'
-                  : 'bg-[#0f1011] border-[#23252a] text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
-              }`}
-            >
+          <button
+            onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+            className={`inline-flex items-center justify-center text-xs font-medium transition-all border h-8.5 px-3 gap-1.5 rounded-xl ${
+              isFilterPanelOpen || activeFilterCount > 0
+                ? 'bg-[#5e6ad2]/15 border-[#5e6ad2]/40 text-[#5e6ad2]'
+                : 'bg-[#13161c]/50 border-[#1e2025]/80 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#181a22]'
+            }`}
+          >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               <span>Filters</span>
               {activeFilterCount > 0 && (
@@ -461,7 +459,7 @@ export function Invoices() {
 
         {/* Expandable Advanced Multi-Filter Drawer Panel */}
         {isFilterPanelOpen && !isTrashView && (
-          <div className="p-4 border-b border-[#23252a] bg-[#141516]/80 space-y-3 transition-all animate-in fade-in duration-150">
+          <div className="p-3.5 rounded-xl border border-[#1e2025]/60 bg-[#13161c]/30 space-y-3 transition-all animate-in fade-in duration-150">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-semibold text-[#f7f8f8] flex items-center gap-1.5">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-[#5e6ad2]" /> Advanced Filter Controls
@@ -483,13 +481,13 @@ export function Invoices() {
                 <select
                   value={params.aging_bucket || ''}
                   onChange={(e) => handleAgingBucket(e.target.value)}
-                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
                 >
-                  <option value="">All Aging Buckets</option>
-                  <option value="0_7">0 - 7 Days Overdue</option>
-                  <option value="8_14">8 - 14 Days Overdue</option>
-                  <option value="15_30">15 - 30 Days Overdue</option>
-                  <option value="30_plus">30+ Days Overdue</option>
+                  <option value="" className="bg-[#13161c] text-[#f7f8f8]">All Aging Buckets</option>
+                  <option value="0_7" className="bg-[#13161c] text-[#f7f8f8]">0 - 7 Days Overdue</option>
+                  <option value="8_14" className="bg-[#13161c] text-[#f7f8f8]">8 - 14 Days Overdue</option>
+                  <option value="15_30" className="bg-[#13161c] text-[#f7f8f8]">15 - 30 Days Overdue</option>
+                  <option value="30_plus" className="bg-[#13161c] text-[#f7f8f8]">30+ Days Overdue</option>
                 </select>
               </div>
 
@@ -503,11 +501,11 @@ export function Invoices() {
                     page: 1,
                     has_payment_plan: e.target.value === 'true' ? true : e.target.value === 'false' ? false : undefined
                   }))}
-                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
                 >
-                  <option value="">All</option>
-                  <option value="true">Active Payment Plan</option>
-                  <option value="false">No Payment Plan</option>
+                  <option value="" className="bg-[#13161c] text-[#f7f8f8]">All</option>
+                  <option value="true" className="bg-[#13161c] text-[#f7f8f8]">Active Payment Plan</option>
+                  <option value="false" className="bg-[#13161c] text-[#f7f8f8]">No Payment Plan</option>
                 </select>
               </div>
 
@@ -517,11 +515,11 @@ export function Invoices() {
                 <select
                   value={params.followup_status || ''}
                   onChange={(e) => setParams(prev => ({ ...prev, page: 1, followup_status: (e.target.value as ListInvoicesParams['followup_status']) || undefined }))}
-                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
                 >
-                  <option value="">All History</option>
-                  <option value="none">No Follow-ups (0)</option>
-                  <option value="has_followups">1+ Follow-ups Sent</option>
+                  <option value="" className="bg-[#13161c] text-[#f7f8f8]">All History</option>
+                  <option value="none" className="bg-[#13161c] text-[#f7f8f8]">No Follow-ups (0)</option>
+                  <option value="has_followups" className="bg-[#13161c] text-[#f7f8f8]">1+ Follow-ups Sent</option>
                 </select>
               </div>
 
@@ -533,7 +531,7 @@ export function Invoices() {
                   placeholder="Min $"
                   value={params.min_amount || ''}
                   onChange={(e) => setParams(prev => ({ ...prev, page: 1, min_amount: e.target.value ? Number(e.target.value) : undefined }))}
-                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-3 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2]"
                 />
               </div>
 
@@ -545,7 +543,7 @@ export function Invoices() {
                   placeholder="Min Days"
                   value={params.days_overdue_min !== undefined ? params.days_overdue_min : ''}
                   onChange={(e) => setParams(prev => ({ ...prev, page: 1, days_overdue_min: e.target.value !== '' ? Number(e.target.value) : undefined }))}
-                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-3 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2]"
                 />
               </div>
             </div>
@@ -554,7 +552,7 @@ export function Invoices() {
 
         {/* Active Filter Pills Strip */}
         {activeFilterCount > 0 && !isTrashView && (
-          <div className="px-3.5 py-2 border-b border-[#23252a]/60 bg-[#08080a] flex items-center justify-between gap-2 flex-wrap text-xs">
+          <div className="px-3.5 py-2 border-b border-[#1e2025]/60 bg-[#13161c]/30 flex items-center justify-between gap-2 flex-wrap text-xs">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] text-[#8a8f98]">Active Filters:</span>
 
@@ -621,7 +619,7 @@ export function Invoices() {
         <div className="relative w-full overflow-auto">
           <table className="w-full caption-bottom text-xs">
             <thead>
-              <tr className="border-b border-[#23252a] bg-[#0f1011]">
+              <tr className="border-b border-[#23252a]/70">
                 <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('invoiceNo')}>
                   <div className="flex items-center">Invoice No {renderSortIcon('invoiceNo')}</div>
                 </th>
@@ -660,7 +658,7 @@ export function Invoices() {
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#23252a]/50">
+            <tbody className="divide-y divide-[#1e2025]/50">
               {isLoading_ ? (
                 <tr>
                   <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-8 text-center text-[#8a8f98]">
@@ -749,7 +747,7 @@ export function Invoices() {
                               await restoreMutation.mutateAsync(invoice.id);
                             }}
                             disabled={restoreMutation.isPending}
-                            className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] h-7 px-2.5 gap-1"
+                            className="inline-flex items-center justify-center rounded-lg text-xs font-medium transition-all border border-[#1e2025] bg-[#13161c]/80 hover:bg-[#1d212a] text-[#f7f8f8] h-7 px-2.5 gap-1"
                           >
                             <RotateCcw className="h-3 w-3" />
                             Restore
@@ -760,7 +758,7 @@ export function Invoices() {
                                 setInvoiceToDelete(invoice);
                                 setIsConfirmDeleteModalOpen(true);
                               }}
-                              className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-red-900/50 bg-red-950/30 hover:bg-red-900/40 text-red-400 h-7 px-2.5 gap-1"
+                              className="inline-flex items-center justify-center rounded-lg text-xs font-medium transition-all border border-red-900/50 bg-red-950/30 hover:bg-red-900/40 text-red-400 h-7 px-2.5 gap-1"
                             >
                               <Trash2 className="h-3 w-3" />
                               Delete permanently
@@ -779,8 +777,8 @@ export function Invoices() {
                     <tr 
                       key={invoice.id} 
                       onClick={() => navigate(`/invoices/${invoice.id}`)}
-                      className={`transition-colors hover:bg-[#141516]/60 cursor-pointer ${
-                        isLegalEscalation ? 'bg-red-950/10 hover:bg-red-950/20' : ''
+                      className={`transition-colors hover:bg-[#181a22]/50 cursor-pointer ${
+                        isLegalEscalation ? 'bg-red-950/20 hover:bg-red-950/30' : ''
                       }`}
                     >
                       <td className="p-3.5 px-4 align-middle font-medium text-[#f7f8f8]">
@@ -848,7 +846,7 @@ export function Invoices() {
                         )}
                       </td>
                       <td className="p-3.5 px-4 align-middle text-[#d0d6e0]">
-                        <span className="px-2 py-0.5 rounded bg-[#141516] border border-[#23252a] text-[11px]">
+                        <span className="px-2 py-0.5 rounded-lg bg-[#13161c]/80 border border-[#1e2025] text-[11px]">
                           {invoice.followupCount} sent
                         </span>
                       </td>
@@ -862,7 +860,7 @@ export function Invoices() {
 
         {/* Pagination */}
         {activeData && activeData.pagination && activeData.pagination.totalPages > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[#23252a] bg-[#010102]/60 text-xs">
+          <div className="flex items-center justify-between pt-3 text-xs">
             <div className="text-[#8a8f98]">
               Showing <span className="font-medium text-[#f7f8f8]">{((params.page || 1) - 1) * (params.limit || 50) + (activeData.pagination.total > 0 ? 1 : 0)}</span> to <span className="font-medium text-[#f7f8f8]">{Math.min((params.page || 1) * (params.limit || 50), activeData.pagination.total)}</span> of <span className="font-medium text-[#f7f8f8]">{activeData.pagination.total}</span> results
             </div>
@@ -870,7 +868,7 @@ export function Invoices() {
               <button
                 onClick={() => setParams(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
                 disabled={(params.page || 1) <= 1}
-                className="inline-flex items-center justify-center rounded-md transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-7 w-7 p-0 disabled:opacity-40"
+                className="inline-flex items-center justify-center rounded-lg transition-all border border-[#1e2025] bg-[#13161c]/80 text-[#f7f8f8] hover:bg-[#1d212a] h-7 w-7 p-0 disabled:opacity-40"
                 aria-label="Previous page"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -879,7 +877,7 @@ export function Invoices() {
               <button
                 onClick={() => setParams(prev => ({ ...prev, page: Math.min(activeData.pagination.totalPages, (prev.page || 1) + 1) }))}
                 disabled={(params.page || 1) >= activeData.pagination.totalPages}
-                className="inline-flex items-center justify-center rounded-md transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-7 w-7 p-0 disabled:opacity-40"
+                className="inline-flex items-center justify-center rounded-lg transition-all border border-[#1e2025] bg-[#13161c]/80 text-[#f7f8f8] hover:bg-[#1d212a] h-7 w-7 p-0 disabled:opacity-40"
                 aria-label="Next page"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -888,7 +886,6 @@ export function Invoices() {
             </div>
           </div>
         )}
-      </Card>
 
       <CreateInvoiceModal 
         isOpen={isCreateModalOpen} 

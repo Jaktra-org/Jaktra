@@ -6,14 +6,14 @@ export type CardProps = React.HTMLAttributes<HTMLDivElement>;
 export function Card({ className, ...props }: CardProps) {
   return (
     <div
-      className={cn("rounded-xl border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] shadow-none transition-colors", className)}
+      className={cn("rounded-2xl border border-[#1e2025] bg-[#0e1013]/70 backdrop-blur-md text-[#f7f8f8] shadow-xl transition-colors", className)}
       {...props}
     />
   );
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col space-y-1.5 p-5 border-b border-[#23252a]/50", className)} {...props} />;
+  return <div className={cn("flex flex-col space-y-1.5 p-5 border-b border-[#1e2025]/60", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
