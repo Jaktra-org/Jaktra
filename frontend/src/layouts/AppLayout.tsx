@@ -13,7 +13,7 @@ export function AppLayout() {
     { label: "Home", path: "/", icon: Home },
     { label: "Invoices", path: "/invoices", icon: FileText },
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Payment Plans", path: "/payment-plans", icon: FileText }] : []),
-    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Disputes", path: "/disputes", icon: MessageSquare }] : []),
+    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Inquiries", path: "/disputes", icon: MessageSquare }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "DLQ", path: "/dlq", icon: AlertTriangle }] : []),
     { label: "Agent", path: "/agent", icon: Bot },
     { label: "Analytics", path: "/analytics", icon: BarChart3 },

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { disputeService, type InboundEmailReview, type DisputeStatus, type ThreadItem } from '../services/dispute';
 import { 
-  MessageSquare, CheckCircle, RefreshCw, Edit3, Clock, ChevronDown, ChevronUp, ExternalLink,
+  CheckCircle, RefreshCw, Edit3, Clock, ChevronDown, ChevronUp, ExternalLink,
   ChevronLeft, ChevronRight, Loader2, Sparkles, AlertCircle, Send, RotateCcw, Archive
 } from 'lucide-react';
 import { getErrorMessage } from '../utils/error-utils';
@@ -237,49 +237,48 @@ export function Disputes() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 bg-[#010102] text-[#f7f8f8]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-[#f7f8f8] tracking-tight flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-[#5e6ad2]" />
-            Disputes Review Queue
-          </h1>
-          <p className="text-xs text-[#8a8f98] mt-0.5">
-            Review inbound customer communications, generate AI draft replies, and manage dispute resolution lifecycle.
-          </p>
+    <div className="h-full w-full flex flex-col text-[#f7f8f8] overflow-hidden space-y-4">
+      {/* Top Fixed Area (Header & Controls) */}
+      <div className="flex-shrink-0 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#1e2025]/80">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">
+              Inbound Inquiries
+            </h1>
+            <p className="text-xs text-[#8a8f98] mt-1">
+              Review inbound customer communications, generate AI draft replies, and manage inquiry resolution lifecycle.
+            </p>
+          </div>
+
+          <button
+            onClick={() => refetchDisputes()}
+            className="inline-flex items-center justify-center rounded-xl text-xs font-semibold border border-[#1e2025] bg-[#13161c] text-[#f7f8f8] hover:bg-[#1d212a] transition-all h-9 px-3.5 shadow-none active:scale-[0.98] cursor-pointer self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-[#8a8f98] mr-1.5" />
+            <span>Refresh</span>
+          </button>
         </div>
 
-        <button
-          onClick={() => refetchDisputes()}
-          className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] hover:bg-[#141516] hover:border-[#34343a] rounded-md transition-all shadow-none self-start sm:self-auto"
-        >
-          <RefreshCw className="w-3.5 h-3.5 text-[#8a8f98]" />
-          <span>Refresh</span>
-        </button>
-      </div>
+        {disputesError && (
+          <div className="p-3.5 bg-red-950/40 border border-red-900/50 text-red-400 text-xs rounded-xl flex items-center space-x-2 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>Failed to load disputes: {getErrorMessage(disputesError)}</span>
+          </div>
+        )}
 
-      {disputesError && (
-        <div className="p-3.5 bg-red-950/40 border border-red-900/50 text-red-400 text-xs rounded-lg flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>Failed to load disputes: {getErrorMessage(disputesError)}</span>
-        </div>
-      )}
-
-      {/* Primary Navigation Tabs (Status) */}
-      <div className="border-b border-[#23252a]">
-        <nav className="flex space-x-4">
+        {/* Primary Navigation Tabs (Status) */}
+        <div className="flex items-center space-x-1 bg-[#13161c]/60 p-1 rounded-xl border border-[#1e2025]/80 flex-wrap gap-y-1">
           <button
             onClick={() => { setActiveStatus('pending'); setPage(1); }}
-            className={`pb-3 px-1 border-b-2 font-medium text-xs flex items-center space-x-2 transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all cursor-pointer ${
               activeStatus === 'pending'
-                ? 'border-[#5e6ad2] text-[#5e6ad2]'
-                : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
+                ? 'bg-[#1d212a] text-[#5e6ad2] border border-[#2e3444] shadow-sm font-semibold'
+                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
             }`}
           >
             <span>Pending</span>
-            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${
-              activeStatus === 'pending' ? 'bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20' : 'bg-[#141516] text-[#8a8f98] border border-[#23252a]'
+            <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
+              activeStatus === 'pending' ? 'bg-[#5e6ad2]/20 text-[#5e6ad2]' : 'bg-[#141516] text-[#8a8f98]'
             }`}>
               {statusCounts.pending}
             </span>
@@ -287,15 +286,15 @@ export function Disputes() {
 
           <button
             onClick={() => { setActiveStatus('resolved'); setPage(1); }}
-            className={`pb-3 px-1 border-b-2 font-medium text-xs flex items-center space-x-2 transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all cursor-pointer ${
               activeStatus === 'resolved'
-                ? 'border-[#27a644] text-[#27a644]'
-                : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
+                ? 'bg-[#1d212a] text-[#27a644] border border-[#2e3444] shadow-sm font-semibold'
+                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
             }`}
           >
             <span>Resolved</span>
-            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${
-              activeStatus === 'resolved' ? 'bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20' : 'bg-[#141516] text-[#8a8f98] border border-[#23252a]'
+            <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
+              activeStatus === 'resolved' ? 'bg-[#27a644]/20 text-[#27a644]' : 'bg-[#141516] text-[#8a8f98]'
             }`}>
               {statusCounts.resolved}
             </span>
@@ -303,307 +302,307 @@ export function Disputes() {
 
           <button
             onClick={() => { setActiveStatus('archived'); setPage(1); }}
-            className={`pb-3 px-1 border-b-2 font-medium text-xs flex items-center space-x-2 transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all cursor-pointer ${
               activeStatus === 'archived'
-                ? 'border-amber-500 text-amber-400'
-                : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
+                ? 'bg-[#1d212a] text-amber-400 border border-[#2e3444] shadow-sm font-semibold'
+                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
             }`}
           >
             <span>Archived</span>
-            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${
-              activeStatus === 'archived' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-[#141516] text-[#8a8f98] border border-[#23252a]'
+            <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
+              activeStatus === 'archived' ? 'bg-amber-500/20 text-amber-400' : 'bg-[#141516] text-[#8a8f98]'
             }`}>
               {statusCounts.archived}
             </span>
           </button>
-        </nav>
-      </div>
-
-      {/* Secondary Sub-Category Filters */}
-      <div className="flex flex-wrap gap-2 pt-1">
-        {([
-          { id: 'all', label: 'All', count: categoryCounts.all },
-          { id: 'dispute', label: 'Disputes', count: categoryCounts.dispute },
-          { id: 'question', label: 'Questions', count: categoryCounts.question },
-          { id: 'payment_promise', label: 'Payment Promises', count: categoryCounts.payment_promise },
-          { id: 'unclear', label: 'Unclear', count: categoryCounts.unclear },
-
-        ] as const).map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => { setActiveCategory(tab.id as DisputeTab); setPage(1); }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors flex items-center space-x-1.5 border ${
-              activeCategory === tab.id
-                ? 'bg-[#5e6ad2]/20 text-[#5e6ad2] border-[#5e6ad2]/30 shadow-none'
-                : 'bg-[#141516] text-[#8a8f98] border-[#23252a] hover:bg-[#18191a] hover:text-[#f7f8f8]'
-            }`}
-          >
-            <span>{tab.label}</span>
-            <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-semibold ${
-              activeCategory === tab.id ? 'bg-[#5e6ad2]/30 text-[#f7f8f8]' : 'bg-[#23252a] text-[#8a8f98]'
-            }`}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Main Review Queue List */}
-      {groupedList.length === 0 ? (
-        <div className="bg-[#0f1011] border border-[#23252a] rounded-xl p-12 text-center space-y-3">
-          <CheckCircle className="w-10 h-10 text-[#5e6ad2] mx-auto opacity-80" />
-          <h3 className="text-sm font-semibold text-[#f7f8f8]">
-            No {activeStatus} items found
-          </h3>
-          <p className="text-xs text-[#8a8f98] max-w-sm mx-auto">
-            {activeStatus === 'pending'
-              ? 'All customer replies have been processed and resolved.'
-              : `There are currently no items marked as ${activeStatus}.`}
-          </p>
         </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="flex justify-between items-center text-[10px] text-[#8a8f98] font-semibold uppercase tracking-wider px-1">
-            <span className="capitalize">{activeStatus} Items ({groupedList.length})</span>
+
+        {/* Secondary Sub-Category Filters */}
+        <div className="flex flex-wrap gap-1.5 pt-0.5">
+          {([
+            { id: 'all', label: 'All', count: categoryCounts.all },
+            { id: 'dispute', label: 'Disputes', count: categoryCounts.dispute },
+            { id: 'question', label: 'Questions', count: categoryCounts.question },
+            { id: 'payment_promise', label: 'Payment Promises', count: categoryCounts.payment_promise },
+            { id: 'unclear', label: 'Unclear', count: categoryCounts.unclear },
+          ] as const).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveCategory(tab.id as DisputeTab); setPage(1); }}
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-all flex items-center space-x-1.5 cursor-pointer border ${
+                activeCategory === tab.id
+                  ? 'bg-[#5e6ad2]/20 text-[#5e6ad2] border-[#5e6ad2]/40 font-semibold'
+                  : 'bg-[#13161c]/40 text-[#8a8f98] border-[#1e2025]/80 hover:bg-[#1d212a] hover:text-[#f7f8f8]'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
+                activeCategory === tab.id ? 'bg-[#5e6ad2]/30 text-[#f7f8f8]' : 'bg-[#1e2025] text-[#8a8f98]'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Review Queue List (Scrollable) */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-3">
+        {groupedList.length === 0 ? (
+          <div className="border border-dashed border-[#1e2025] bg-[#13161c]/30 rounded-2xl py-16 px-6 text-center flex flex-col items-center justify-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2]">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-semibold text-[#f7f8f8]">
+              No {activeStatus} items found
+            </h3>
+            <p className="text-xs text-[#8a8f98] max-w-sm leading-relaxed">
+              {activeStatus === 'pending'
+                ? 'All customer replies have been processed and resolved.'
+                : `There are currently no items marked as ${activeStatus}.`}
+            </p>
           </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-[10px] text-[#8a8f98] font-semibold uppercase tracking-wider px-1">
+              <span className="capitalize">{activeStatus} Items ({groupedList.length})</span>
+            </div>
 
-          {groupedList.map((group) => {
-            const isGroupExpanded = expandedGroupKey === group.groupKey;
-            const primaryItem = group.items[0];
-            const uniqueClassifications = Array.from(
-              new Set(group.items.map((i) => i.classification).filter(Boolean))
-            );
+            {groupedList.map((group) => {
+              const isGroupExpanded = expandedGroupKey === group.groupKey;
+              const primaryItem = group.items[0];
+              const uniqueClassifications = Array.from(
+                new Set(group.items.map((i) => i.classification).filter(Boolean))
+              );
 
-            return (
-              <div
-                key={group.groupKey}
-                className="bg-[#0f1011] border border-[#23252a] hover:border-[#34343a] rounded-xl transition-all overflow-hidden shadow-none"
-              >
-                {/* Group Box Header */}
+              return (
                 <div
-                  onClick={() => toggleExpandGroup(group.groupKey)}
-                  className="p-4 cursor-pointer hover:bg-[#141516]/60 transition-colors space-y-2.5"
+                  key={group.groupKey}
+                  className="bg-[#13161c]/40 border border-[#1e2025]/80 hover:border-[#2e3444] rounded-2xl transition-all overflow-hidden shadow-none"
                 >
-                  <div className="flex items-center justify-between gap-3 text-xs flex-wrap">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {group.clientName && (
-                        <span className="font-bold text-[#f7f8f8] bg-[#141516] px-2.5 py-1 rounded-md border border-[#23252a] shadow-none">
-                          {group.clientName}
-                        </span>
-                      )}
-                      {group.invoiceId ? (
-                        <Link 
-                          to={`/invoices/${group.invoiceId}`} 
-                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                          className="inline-flex items-center font-bold text-[#5e6ad2] hover:text-[#828fff] bg-[#5e6ad2]/10 hover:bg-[#5e6ad2]/20 px-2.5 py-1 rounded-md border border-[#5e6ad2]/20 transition-colors shadow-none"
-                        >
-                          Invoice: #{group.invoiceNo || group.invoiceId}
-                          <ExternalLink className="w-3 h-3 ml-1" />
-                        </Link>
-                      ) : group.invoiceNo ? (
-                        <span className="font-bold text-[#5e6ad2] bg-[#5e6ad2]/10 px-2.5 py-1 rounded-md border border-[#5e6ad2]/20 shadow-none">
-                          Invoice: #{group.invoiceNo}
-                        </span>
-                      ) : null}
-                      <span className="font-medium text-[#8a8f98] bg-[#010102] px-2.5 py-1 rounded-md border border-[#23252a]">
-                        {group.sender}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      {/* Render all unique classification tags for this invoice */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {uniqueClassifications.map((cat) => (
-                          <span
-                            key={cat}
-                            className={`px-2.5 py-1 text-xs font-bold rounded-full border capitalize ${
-                              classificationConfigs[cat]?.bg || classificationConfigs.unclear.bg
-                            }`}
-                          >
-                            {classificationConfigs[cat]?.label || 'Unclear'}
+                  {/* Group Box Header */}
+                  <div
+                    onClick={() => toggleExpandGroup(group.groupKey)}
+                    className="p-4 cursor-pointer hover:bg-[#13161c]/80 transition-colors space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-3 text-xs flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {group.clientName && (
+                          <span className="font-bold text-[#f7f8f8] bg-[#0e1013]/60 px-2.5 py-1 rounded-xl border border-[#1e2025]">
+                            {group.clientName}
                           </span>
-                        ))}
+                        )}
+                        {group.invoiceId ? (
+                          <Link 
+                            to={`/invoices/${group.invoiceId}`} 
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                            className="inline-flex items-center font-bold text-[#5e6ad2] hover:text-[#828fff] bg-[#5e6ad2]/10 hover:bg-[#5e6ad2]/20 px-2.5 py-1 rounded-xl border border-[#5e6ad2]/20 transition-colors font-mono"
+                          >
+                            Invoice: #{group.invoiceNo || group.invoiceId}
+                            <ExternalLink className="w-3 h-3 ml-1.5" />
+                          </Link>
+                        ) : group.invoiceNo ? (
+                          <span className="font-bold text-[#5e6ad2] bg-[#5e6ad2]/10 px-2.5 py-1 rounded-xl border border-[#5e6ad2]/20 font-mono">
+                            Invoice: #{group.invoiceNo}
+                          </span>
+                        ) : null}
+                        <span className="font-medium text-[#8a8f98] bg-[#0e1013]/60 px-2.5 py-1 rounded-xl border border-[#1e2025]">
+                          {group.sender}
+                        </span>
                       </div>
 
-                      <span className="text-[#8a8f98] text-xs font-medium flex items-center">
-                        <Clock className="w-3.5 h-3.5 mr-1 text-[#62666d]" />
-                        {new Date(group.latestCreatedAt).toLocaleString()}
-                      </span>
-                      <button
-                        type="button"
-                        className="p-1 hover:bg-[#141516] rounded text-[#8a8f98] hover:text-[#f7f8f8] transition-colors"
-                      >
-                        {isGroupExpanded ? <ChevronUp className="w-4 h-4 text-[#8a8f98]" /> : <ChevronDown className="w-4 h-4 text-[#8a8f98]" />}
-                      </button>
+                      <div className="flex items-center gap-3">
+                        {/* Render all unique classification tags for this invoice */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {uniqueClassifications.map((cat) => (
+                            <span
+                              key={cat}
+                              className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border capitalize ${
+                                classificationConfigs[cat]?.bg || classificationConfigs.unclear.bg
+                              }`}
+                            >
+                              {classificationConfigs[cat]?.label || 'Unclear'}
+                            </span>
+                          ))}
+                        </div>
+
+                        <span className="text-[#8a8f98] text-xs font-medium flex items-center">
+                          <Clock className="w-3.5 h-3.5 mr-1 text-[#62666d]" />
+                          {new Date(group.latestCreatedAt).toLocaleString()}
+                        </span>
+                        <button
+                          type="button"
+                          className="p-1 hover:bg-[#1d212a] rounded-lg text-[#8a8f98] hover:text-[#f7f8f8] transition-colors"
+                        >
+                          {isGroupExpanded ? <ChevronUp className="w-4 h-4 text-[#8a8f98]" /> : <ChevronDown className="w-4 h-4 text-[#8a8f98]" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* One Line Summary of latest customer reply */}
+                    <div className="bg-[#0e1013]/60 border border-[#1e2025] rounded-xl p-3 text-xs text-[#d0d6e0] font-medium truncate">
+                      {getAiSummary(primaryItem) || '(No preview content)'}
                     </div>
                   </div>
 
-                  {/* One Line Summary of latest customer reply */}
-                  <div className="bg-[#010102] border border-[#23252a] rounded-lg p-2.5 text-xs text-[#d0d6e0] font-medium truncate">
-                    {getAiSummary(primaryItem) || '(No preview content)'}
-                  </div>
-                </div>
+                  {/* Expanded Box Content */}
+                  {isGroupExpanded && (() => {
+                    // Build a single unified, strictly chronological timeline for the invoice group
+                    const groupTimelineItems: Array<{
+                      id: string;
+                      kind: 'inbound' | 'outbound';
+                      timestamp: number;
+                      inboundItem?: InboundEmailReview;
+                      outboundMsg?: ThreadItem;
+                    }> = [];
 
-                {/* Expanded Box Content */}
-                {isGroupExpanded && (() => {
-                  // Build a single unified, strictly chronological timeline for the invoice group
-                  const groupTimelineItems: Array<{
-                    id: string;
-                    kind: 'inbound' | 'outbound';
-                    timestamp: number;
-                    inboundItem?: InboundEmailReview;
-                    outboundMsg?: ThreadItem;
-                  }> = [];
+                    for (const item of group.items) {
+                      groupTimelineItems.push({
+                        id: item.id,
+                        kind: 'inbound',
+                        timestamp: new Date(item.createdAt).getTime(),
+                        inboundItem: item,
+                      });
+                    }
 
-                  // 1. Add all inbound emails in group.items
-                  for (const item of group.items) {
-                    groupTimelineItems.push({
-                      id: item.id,
-                      kind: 'inbound',
-                      timestamp: new Date(item.createdAt).getTime(),
-                      inboundItem: item,
-                    });
-                  }
-
-                  // 2. Add all unique outbound replies from item.thread across group.items
-                  const outboundMap = new Map<string, ThreadItem>();
-                  for (const item of group.items) {
-                    for (const msg of item.thread || []) {
-                      if (msg.direction === 'outbound' && !outboundMap.has(msg.id)) {
-                        outboundMap.set(msg.id, msg);
+                    const outboundMap = new Map<string, ThreadItem>();
+                    for (const item of group.items) {
+                      for (const msg of item.thread || []) {
+                        if (msg.direction === 'outbound' && !outboundMap.has(msg.id)) {
+                          outboundMap.set(msg.id, msg);
+                        }
                       }
                     }
-                  }
 
-                  for (const msg of outboundMap.values()) {
-                    groupTimelineItems.push({
-                      id: msg.id,
-                      kind: 'outbound',
-                      timestamp: new Date(msg.createdAt).getTime(),
-                      outboundMsg: msg,
-                    });
-                  }
+                    for (const msg of outboundMap.values()) {
+                      groupTimelineItems.push({
+                        id: msg.id,
+                        kind: 'outbound',
+                        timestamp: new Date(msg.createdAt).getTime(),
+                        outboundMsg: msg,
+                      });
+                    }
 
-                  // 3. Sort strictly by timestamp ascending (earliest to latest)
-                  groupTimelineItems.sort((a, b) => a.timestamp - b.timestamp);
+                    groupTimelineItems.sort((a, b) => a.timestamp - b.timestamp);
 
-                  return (
-                    <div className="border-t border-[#23252a] bg-[#010102] p-4 space-y-4">
-                      {/* Unified Conversation Timeline for all items of this invoice */}
-                      <div className="space-y-3">
-                        {groupTimelineItems.map((tItem) => {
-                          if (tItem.kind === 'inbound' && tItem.inboundItem) {
-                            return <InboundChatBubble key={tItem.id} item={tItem.inboundItem} />;
-                          }
-                          if (tItem.kind === 'outbound' && tItem.outboundMsg) {
-                            return <OutboundChatBubble key={tItem.id} msg={tItem.outboundMsg} />;
-                          }
-                          return null;
-                        })}
+                    return (
+                      <div className="border-t border-[#1e2025]/80 bg-[#0e1013]/60 p-4 space-y-4">
+                        {/* Unified Conversation Timeline */}
+                        <div className="space-y-3">
+                          {groupTimelineItems.map((tItem) => {
+                            if (tItem.kind === 'inbound' && tItem.inboundItem) {
+                              return <InboundChatBubble key={tItem.id} item={tItem.inboundItem} />;
+                            }
+                            if (tItem.kind === 'outbound' && tItem.outboundMsg) {
+                              return <OutboundChatBubble key={tItem.id} msg={tItem.outboundMsg} />;
+                            }
+                            return null;
+                          })}
+                        </div>
+
+                      {/* Single Reply & Auto-Generate Action Area */}
+                      <ItemActionArea
+                        item={primaryItem}
+                        activeStatus={activeStatus}
+                        isEditingThisItem={editingId === primaryItem.id}
+                        draftResponse={editingId === primaryItem.id ? draftResponse : (primaryItem.suggestedResponse || '')}
+                        setDraftResponse={setDraftResponse}
+                        onStartEdit={handleStartEdit}
+                        onCancelEdit={handleCancelEdit}
+                        onSendReply={handleSendReply}
+                        onGenerateDraft={handleGenerateDraft}
+                        isGeneratingThisItem={generatingId === primaryItem.id}
+                        failedDraftId={failedDraftId}
+                        sendReplyPending={sendReplyMutation.isPending}
+                      />
+
+                      {/* Single Invoice Group Resolution Actions Bar */}
+                      <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-[#1e2025]/80">
+                        {activeStatus === 'pending' && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={statusMutation.isPending}
+                              onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'resolved'))}
+                              className="px-3.5 py-1.5 bg-[#27a644] hover:bg-[#208a38] text-white rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all shadow-none cursor-pointer"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              <span>Mark Resolved</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={statusMutation.isPending}
+                              onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'archived'))}
+                              className="px-3.5 py-1.5 bg-[#13161c] hover:bg-[#1d212a] text-[#f7f8f8] border border-[#1e2025] rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all cursor-pointer"
+                            >
+                              <Archive className="w-3.5 h-3.5 text-[#8a8f98]" />
+                              <span>Archive</span>
+                            </button>
+                          </>
+                        )}
+
+                        {activeStatus === 'resolved' && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={statusMutation.isPending}
+                              onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
+                              className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#4b55c4] text-white rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all shadow-none cursor-pointer"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>Reopen to Pending</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={statusMutation.isPending}
+                              onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'archived'))}
+                              className="px-3.5 py-1.5 bg-[#13161c] hover:bg-[#1d212a] text-[#f7f8f8] border border-[#1e2025] rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all cursor-pointer"
+                            >
+                              <Archive className="w-3.5 h-3.5 text-[#8a8f98]" />
+                              <span>Archive</span>
+                            </button>
+                          </>
+                        )}
+
+                        {activeStatus === 'archived' && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={statusMutation.isPending}
+                              onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
+                              className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#4b55c4] text-white rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all shadow-none cursor-pointer"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>Reopen to Pending</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={statusMutation.isPending}
+                              onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'resolved'))}
+                              className="px-3.5 py-1.5 bg-[#27a644] hover:bg-[#208a38] text-white rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all shadow-none cursor-pointer"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              <span>Mark Resolved</span>
+                            </button>
+                          </>
+                        )}
                       </div>
-
-                    {/* Single Reply & Auto-Generate Action Area */}
-                    <ItemActionArea
-                      item={primaryItem}
-                      activeStatus={activeStatus}
-                      isEditingThisItem={editingId === primaryItem.id}
-                      draftResponse={editingId === primaryItem.id ? draftResponse : (primaryItem.suggestedResponse || '')}
-                      setDraftResponse={setDraftResponse}
-                      onStartEdit={handleStartEdit}
-                      onCancelEdit={handleCancelEdit}
-                      onSendReply={handleSendReply}
-                      onGenerateDraft={handleGenerateDraft}
-                      isGeneratingThisItem={generatingId === primaryItem.id}
-                      failedDraftId={failedDraftId}
-                      sendReplyPending={sendReplyMutation.isPending}
-                    />
-
-                    {/* Single Invoice Group Resolution Actions Bar (Once per Invoice Box) */}
-                    <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-[#23252a]">
-                      {activeStatus === 'pending' && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={statusMutation.isPending}
-                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'resolved'))}
-                            className="px-3.5 py-1.5 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            <span>Mark Resolved</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={statusMutation.isPending}
-                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'archived'))}
-                            className="px-3.5 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors cursor-pointer"
-                          >
-                            <Archive className="w-3.5 h-3.5 text-[#8a8f98]" />
-                            <span>Archive</span>
-                          </button>
-                        </>
-                      )}
-
-                      {activeStatus === 'resolved' && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={statusMutation.isPending}
-                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
-                            className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Reopen to Pending</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={statusMutation.isPending}
-                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'archived'))}
-                            className="px-3.5 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors cursor-pointer"
-                          >
-                            <Archive className="w-3.5 h-3.5 text-[#8a8f98]" />
-                            <span>Archive</span>
-                          </button>
-                        </>
-                      )}
-
-                      {activeStatus === 'archived' && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={statusMutation.isPending}
-                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
-                            className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Reopen to Pending</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={statusMutation.isPending}
-                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'resolved'))}
-                            className="px-3.5 py-1.5 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            <span>Mark Resolved</span>
-                          </button>
-                        </>
-                      )}
                     </div>
-                  </div>
-                );
-              })()}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  );
+                })()}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Pagination Controls */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-[#23252a]">
+        <div className="flex items-center justify-between pt-4 border-t border-[#1e2025]/80 flex-shrink-0">
           <p className="text-xs text-[#8a8f98]">
             Page <span className="font-semibold text-[#f7f8f8]">{pagination.page}</span> of{' '}
             <span className="font-semibold text-[#f7f8f8]">{pagination.totalPages}</span>
@@ -613,14 +612,14 @@ export function Disputes() {
             <button
               onClick={() => setPage(prev => Math.max(prev - 1, 1))}
               disabled={page === 1}
-              className="p-1.5 text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] rounded-md border border-[#23252a] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-2 text-[#f7f8f8] bg-[#13161c] hover:bg-[#1d212a] rounded-xl border border-[#1e2025] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => setPage(prev => Math.min(prev + 1, pagination.totalPages))}
               disabled={page === pagination.totalPages}
-              className="p-1.5 text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] rounded-md border border-[#23252a] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-2 text-[#f7f8f8] bg-[#13161c] hover:bg-[#1d212a] rounded-xl border border-[#1e2025] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -773,7 +772,7 @@ function ItemActionArea({
       {activeStatus === 'pending' && (
         <>
           {/* AI Reply Instruction Input Block */}
-          <div className="bg-[#0f1011] border border-[#23252a] rounded-lg p-4 space-y-3">
+          <div className="bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-[#f7f8f8] uppercase tracking-wider flex items-center">
                 <Sparkles className="w-3.5 h-3.5 text-[#5e6ad2] mr-1.5" />
@@ -789,7 +788,7 @@ function ItemActionArea({
                   key={chipText}
                   type="button"
                   onClick={() => handleChipClick(chipText)}
-                  className="px-2.5 py-1 text-xs font-medium bg-[#141516] text-[#f7f8f8] border border-[#23252a] hover:border-[#5e6ad2] hover:text-[#5e6ad2] hover:bg-[#5e6ad2]/10 rounded-full transition-colors flex items-center space-x-1 shadow-none"
+                  className="px-3 py-1 text-xs font-medium bg-[#13161c] text-[#f7f8f8] border border-[#1e2025] hover:border-[#5e6ad2] hover:text-[#5e6ad2] hover:bg-[#5e6ad2]/10 rounded-full transition-all flex items-center space-x-1 shadow-none cursor-pointer"
                 >
                   <span>+</span>
                   <span>{chipText}</span>
@@ -803,13 +802,13 @@ function ItemActionArea({
                 value={instruction}
                 onChange={(e) => setInstruction(e.target.value)}
                 placeholder={categoryConfig.placeholder}
-                className="flex-1 px-3 py-2 text-xs border border-[#23252a] rounded-md focus:ring-1 focus:ring-[#5e69d1] bg-[#010102] text-[#f7f8f8]"
+                className="flex-1 px-3.5 py-2 text-xs border border-[#1e2025] rounded-xl focus:border-[#5e6ad2] focus:outline-none focus:ring-1 focus:ring-[#5e6ad2] bg-[#0e1013]/60 text-[#f7f8f8] placeholder-[#62666d]"
               />
               <button
                 type="button"
                 disabled={!instruction.trim() || isGeneratingThisItem}
                 onClick={() => onGenerateDraft(item.id, instruction)}
-                className="px-3.5 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-semibold disabled:opacity-40 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-colors shadow-none"
+                className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#4b55c4] text-white rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-all shadow-none cursor-pointer"
               >
                 {isGeneratingThisItem ? (
                   <>
@@ -827,7 +826,7 @@ function ItemActionArea({
 
             {/* AI Generation Error & Retry state */}
             {failedDraftId === item.id && (
-              <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 flex items-center justify-between">
+              <div className="p-3.5 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 flex items-center justify-between animate-in fade-in">
                 <div className="flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
                   <span>AI response generation timed out or failed. Please click retry.</span>
@@ -835,7 +834,7 @@ function ItemActionArea({
                 <button
                   type="button"
                   onClick={() => onGenerateDraft(item.id, instruction || 'Generate standard response')}
-                  className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded text-xs transition-colors flex-shrink-0"
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-xs transition-all flex-shrink-0 cursor-pointer"
                 >
                   Retry
                 </button>
@@ -852,7 +851,7 @@ function ItemActionArea({
                   <button
                     type="button"
                     onClick={() => onStartEdit(item)}
-                    className="flex items-center text-xs font-medium text-[#5e6ad2] hover:text-[#828fff]"
+                    className="flex items-center text-xs font-medium text-[#5e6ad2] hover:text-[#828fff] cursor-pointer transition-colors"
                   >
                     <Edit3 className="w-3.5 h-3.5 mr-1" />
                     Edit Draft
@@ -866,20 +865,20 @@ function ItemActionArea({
                     rows={6}
                     value={draftResponse}
                     onChange={(e) => setDraftResponse(e.target.value)}
-                    className="w-full p-3 border border-[#23252a] rounded-md text-xs font-sans focus:ring-1 focus:ring-[#5e69d1] bg-[#010102] text-[#f7f8f8]"
+                    className="w-full p-3.5 border border-[#1e2025] rounded-xl text-xs font-sans focus:border-[#5e6ad2] focus:outline-none focus:ring-1 focus:ring-[#5e6ad2] bg-[#0e1013]/60 text-[#f7f8f8]"
                   />
                   <div className="flex justify-end space-x-2">
                     <button
                       type="button"
                       onClick={onCancelEdit}
-                      className="px-3 py-1.5 border border-[#23252a] rounded-md text-xs font-medium text-[#8a8f98] bg-[#0f1011] hover:bg-[#141516] hover:text-[#f7f8f8]"
+                      className="px-3.5 py-1.5 border border-[#1e2025] rounded-xl text-xs font-medium text-[#8a8f98] bg-[#13161c] hover:bg-[#1d212a] hover:text-[#f7f8f8] transition-all cursor-pointer"
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="bg-[#0f1011] border border-[#23252a] p-3.5 rounded-md text-xs text-[#f7f8f8] font-sans whitespace-pre-wrap leading-relaxed">
+                <div className="bg-[#0e1013]/60 border border-[#1e2025] p-4 rounded-xl text-xs text-[#f7f8f8] font-sans whitespace-pre-wrap leading-relaxed">
                   {draftResponse}
                 </div>
               )}
@@ -890,12 +889,12 @@ function ItemActionArea({
 
       {/* Send Reply Action for this sub-box */}
       {activeStatus === 'pending' && (
-        <div className="flex justify-end pt-2 border-t border-[#23252a]">
+        <div className="flex justify-end pt-2 border-t border-[#1e2025]/80">
           <button
             type="button"
             disabled={sendReplyPending || !activeDraftContent}
             onClick={() => onSendReply(item)}
-            className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-semibold disabled:opacity-40 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
+            className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#4b55c4] text-white rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center space-x-1.5 transition-all shadow-none cursor-pointer"
           >
             {sendReplyPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             <span>Send Reply</span>

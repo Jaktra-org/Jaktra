@@ -18,7 +18,7 @@ describe('AppLayout layout component', () => {
     expect(screen.getByRole('link', { name: 'Invoices' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Agent' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'DLQ' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Disputes' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Inquiries' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Activity Log' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
   });
@@ -37,7 +37,7 @@ describe('AppLayout layout component', () => {
     
     // Restricted links should NOT render
     expect(screen.queryByRole('link', { name: 'DLQ' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Disputes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Inquiries' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Activity Log' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Settings' })).not.toBeInTheDocument();
   });
