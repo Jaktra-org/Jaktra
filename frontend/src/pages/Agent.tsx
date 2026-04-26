@@ -6,7 +6,6 @@ import { dlqService } from '../services/dlq';
 import { ToneSelector } from '../components/agent/ToneSelector';
 import { settingsService } from '../services/settings';
 import { RunList } from '../components/agent/RunList';
-import { ActivityFeed } from '../components/agent/ActivityFeed';
 import { PaymentWarningModal } from '../components/common/PaymentWarningModal';
 import { usePaymentWarning } from '../hooks/usePaymentWarning';
 import { useAuth } from '../contexts/AuthContext';
@@ -200,63 +199,57 @@ export function Agent() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl p-5 space-y-4">
-                  <div className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Autopilot Status</div>
-                  <div className="flex items-center space-x-4">
-                    <div className="relative flex h-3.5 w-3.5">
-                      {isRunning ? (
-                        <>
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5e6ad2] opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#5e6ad2]"></span>
-                        </>
-                      ) : (
-                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#3e3e44]"></span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-[#f7f8f8] text-base">
-                        {isRunning ? 'Processing Batch...' : 'Idle / Ready'}
-                      </p>
-                      <p className="text-xs text-[#8a8f98] mt-0.5">
-                        {isRunning ? 'Analyzing invoices and dispatching emails.' : 'Waiting for next scheduled run or manual trigger.'}
-                      </p>
-                    </div>
+            <div className="space-y-4">
+              <div className="bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl p-5 space-y-4">
+                <div className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Autopilot Status</div>
+                <div className="flex items-center space-x-4">
+                  <div className="relative flex h-3.5 w-3.5">
+                    {isRunning ? (
+                      <>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5e6ad2] opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#5e6ad2]"></span>
+                      </>
+                    ) : (
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#3e3e44]"></span>
+                    )}
                   </div>
-
-                  <div className="pt-4 border-t border-[#1e2025]/80">
-                    <p className="text-xs text-[#8a8f98] mb-1">Total Invoices Processed (All Time)</p>
-                    <p className="text-2xl font-bold text-[#f7f8f8] font-mono">
-                      {runsResponse?.runs.reduce((acc, run) => acc + run.invoicesProcessed, 0) || 0}
+                  <div>
+                    <p className="font-semibold text-[#f7f8f8] text-base">
+                      {isRunning ? 'Processing Batch...' : 'Idle / Ready'}
+                    </p>
+                    <p className="text-xs text-[#8a8f98] mt-0.5">
+                      {isRunning ? 'Analyzing invoices and dispatching emails.' : 'Waiting for next scheduled run or manual trigger.'}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl overflow-hidden">
-                  <div className="p-4 border-b border-[#1e2025]/80">
-                    <h3 className="text-sm font-semibold text-[#f7f8f8]">Run History</h3>
-                  </div>
-                  <div className="p-0">
-                    {isLoading ? (
-                      <div className="flex justify-center items-center py-12">
-                        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
-                      </div>
-                    ) : runsResponse && runsResponse.runs.length > 0 ? (
-                      <RunList runs={runsResponse.runs} />
-                    ) : (
-                      <div className="text-center py-12 text-[#8a8f98]">
-                        <Bot className="w-10 h-10 text-[#3e3e44] mx-auto mb-3" />
-                        <p className="text-sm font-semibold text-[#f7f8f8]">No autopilot runs recorded yet.</p>
-                        <p className="text-xs mt-1">Click "Run Autopilot" to trigger the first batch.</p>
-                      </div>
-                    )}
-                  </div>
+                <div className="pt-4 border-t border-[#1e2025]/80">
+                  <p className="text-xs text-[#8a8f98] mb-1">Total Invoices Processed (All Time)</p>
+                  <p className="text-2xl font-bold text-[#f7f8f8] font-mono">
+                    {runsResponse?.runs.reduce((acc, run) => acc + run.invoicesProcessed, 0) || 0}
+                  </p>
                 </div>
               </div>
 
-              <div className="lg:col-span-1 min-h-[500px]">
-                <ActivityFeed isRunning={isRunning} />
+              <div className="bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl overflow-hidden">
+                <div className="p-4 border-b border-[#1e2025]/80">
+                  <h3 className="text-sm font-semibold text-[#f7f8f8]">Run History</h3>
+                </div>
+                <div className="p-0">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
+                    </div>
+                  ) : runsResponse && runsResponse.runs.length > 0 ? (
+                    <RunList runs={runsResponse.runs} />
+                  ) : (
+                    <div className="text-center py-12 text-[#8a8f98]">
+                      <Bot className="w-10 h-10 text-[#3e3e44] mx-auto mb-3" />
+                      <p className="text-sm font-semibold text-[#f7f8f8]">No autopilot runs recorded yet.</p>
+                      <p className="text-xs mt-1">Click "Run Autopilot" to trigger the first batch.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </>
