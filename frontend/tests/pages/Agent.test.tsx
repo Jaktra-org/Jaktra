@@ -19,6 +19,13 @@ vi.mock('../../src/services/settings', () => ({
     getIntegrations: vi.fn(),
   },
 }));
+
+vi.mock('../../src/services/dlq', () => ({
+  dlqService: {
+    getEntries: vi.fn().mockResolvedValue([]),
+    deleteEntry: vi.fn(),
+  },
+}));
 describe('Agent page controls', () => {
   const mockSettings = {
     defaultEmailProvider: 'smtp',

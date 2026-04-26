@@ -17,7 +17,6 @@ describe('AppLayout layout component', () => {
     expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Invoices' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Autopilot' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'DLQ' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Inquiries' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Activity Log' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();

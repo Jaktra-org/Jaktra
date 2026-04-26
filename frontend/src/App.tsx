@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "./layouts/AppLayout";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
@@ -8,7 +8,6 @@ import { Invoices } from "./pages/Invoices";
 import { InvoiceDetail } from "./pages/InvoiceDetail";
 import { TrashedInvoiceDetail } from "./pages/TrashedInvoiceDetail";
 import { Agent } from "./pages/Agent";
-import { DLQ } from "./pages/DLQ";
 import { Analytics } from "./pages/Analytics";
 import { Settings } from "./pages/Settings";
 import { ActivityLog } from "./pages/ActivityLog";
@@ -40,7 +39,7 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           
           <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
-            <Route path="/dlq" element={<DLQ />} />
+            <Route path="/dlq" element={<Navigate to="/agent?tab=dlq" replace />} />
             <Route path="/disputes" element={<Disputes />} />
             <Route path="/payment-plans" element={<PaymentPlans />} />
             <Route path="/settings" element={<Settings />} />

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { Home, FileText, Bot, BarChart3, AlertTriangle, Settings, History, MessageSquare } from "lucide-react";
+import { Home, FileText, Bot, BarChart3, Settings, History, MessageSquare } from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -14,7 +14,6 @@ export function AppLayout() {
     { label: "Invoices", path: "/invoices", icon: FileText },
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Payment Plans", path: "/payment-plans", icon: FileText }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Inquiries", path: "/disputes", icon: MessageSquare }] : []),
-    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "DLQ", path: "/dlq", icon: AlertTriangle }] : []),
     { label: "Autopilot", path: "/agent", icon: Bot },
     { label: "Analytics", path: "/analytics", icon: BarChart3 },
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Activity Log", path: "/activity-log", icon: History }] : []),

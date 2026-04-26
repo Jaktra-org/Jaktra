@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../utils/error-utils';
 import { Modal } from '../components/ui/Modal';
 
-export function DLQ() {
+export function DLQ({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [retryingId, setRetryingId] = useState<string | null>(null);
@@ -70,16 +70,17 @@ export function DLQ() {
   const targetDismissEntry = entries.find(e => e.invoiceId === dismissingId);
 
   return (
-    <div className="h-full w-full flex flex-col text-[#f7f8f8] overflow-hidden space-y-4">
-      {/* Header */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#1e2025]/80">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">
-            Dead Letter Queue
-          </h1>
-          <p className="text-xs text-[#8a8f98] mt-1">Manage and resolve invoices that failed to process automatically.</p>
+    <div className={embedded ? "space-y-4" : "h-full w-full flex flex-col text-[#f7f8f8] overflow-hidden space-y-4"}>
+      {!embedded && (
+        <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#1e2025]/80">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">
+              Dead Letter Queue
+            </h1>
+            <p className="text-xs text-[#8a8f98] mt-1">Manage and resolve invoices that failed to process automatically.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {criticalCount > 0 && (
         <div className="bg-red-950/40 border border-red-900/50 text-red-400 px-4 py-3.5 rounded-2xl flex items-start flex-shrink-0 animate-in fade-in">
@@ -108,7 +109,7 @@ export function DLQ() {
         </div>
       )}
 
-      {/* Main Table Card (Scrollable & Full Width) */}
+      {/* Main Table Card */}
       <div className="flex-1 min-h-0 flex flex-col bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl overflow-hidden">
         <div className="p-4 border-b border-[#1e2025]/80 flex-shrink-0">
           <h2 className="text-sm font-semibold text-[#f7f8f8] tracking-tight">Failed Invoices</h2>
