@@ -237,7 +237,7 @@ export function TrashedInvoiceDetail() {
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
     const renderActor = () => {
-      const displayName = event.actorName || (event.source === 'agent' ? 'AI Agent' : event.source === 'webhook' ? 'Webhook' : 'System');
+      const displayName = event.actorName || (event.source === 'agent' ? 'Autopilot' : event.source === 'webhook' ? 'Webhook' : 'System');
       if (!event.actorName) {
         return <span className="font-semibold text-[#f7f8f8]">{displayName}</span>;
       }
@@ -352,7 +352,7 @@ export function TrashedInvoiceDetail() {
     }
     if (type === 'followup.sent') {
       const recipient = getRecipientEmail(event);
-      return <span>AI agent sent follow-up email to <span className="font-semibold text-[#f7f8f8]">{recipient}</span></span>;
+      return <span>Autopilot sent follow-up email to <span className="font-semibold text-[#f7f8f8]">{recipient}</span></span>;
     }
     if (type === 'followup.skipped') {
       return <span>AI follow-up skipped (already contacted recently)</span>;

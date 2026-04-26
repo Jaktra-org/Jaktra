@@ -15,7 +15,7 @@ export function AppLayout() {
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Payment Plans", path: "/payment-plans", icon: FileText }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Inquiries", path: "/disputes", icon: MessageSquare }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "DLQ", path: "/dlq", icon: AlertTriangle }] : []),
-    { label: "Agent", path: "/agent", icon: Bot },
+    { label: "Autopilot", path: "/agent", icon: Bot },
     { label: "Analytics", path: "/analytics", icon: BarChart3 },
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Activity Log", path: "/activity-log", icon: History }] : []),
   ];

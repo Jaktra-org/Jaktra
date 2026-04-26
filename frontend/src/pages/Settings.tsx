@@ -228,7 +228,7 @@ function GeneralSettings() {
             <option value="Asia/Singapore">Singapore (SGT)</option>
             <option value="Australia/Sydney">Sydney (AEST)</option>
           </select>
-          <p className="text-[11px] text-[#8a8f98]">This timezone is used for agent scheduling and dashboard reporting.</p>
+          <p className="text-[11px] text-[#8a8f98]">This timezone is used for autopilot scheduling and dashboard reporting.</p>
         </div>
 
         <div className="space-y-1.5">
@@ -589,15 +589,15 @@ function EmailSettings() {
       {/* Agent Preferences */}
       <Card className="border border-[#23252a] bg-[#0f1011]">
         <CardHeader>
-          <CardTitle className="text-base text-[#f7f8f8]">Agent Preferences</CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">Control how the AI agent behaves when sending follow-up emails.</CardDescription>
+          <CardTitle className="text-base text-[#f7f8f8]">Autopilot Preferences</CardTitle>
+          <CardDescription className="text-xs text-[#8a8f98]">Control how Autopilot behaves when sending follow-up emails.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-start justify-between gap-6">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-[#f7f8f8]">Payment link warning</p>
               <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                When enabled, the agent will warn you before sending emails without a payment link.
+                When enabled, Autopilot will warn you before sending emails without a payment link.
               </p>
             </div>
             <button

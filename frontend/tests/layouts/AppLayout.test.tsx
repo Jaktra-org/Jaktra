@@ -16,7 +16,7 @@ describe('AppLayout layout component', () => {
     // Check all admin sidebar link items exist
     expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Invoices' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Agent' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Autopilot' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'DLQ' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Inquiries' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Activity Log' })).toBeInTheDocument();

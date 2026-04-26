@@ -235,7 +235,7 @@ function AgentPerformanceTab() {
         <CardContent className="flex flex-col items-center justify-center py-16">
           <Zap className="w-10 h-10 text-[#3e3e44] mb-3" />
           <h3 className="text-base font-medium text-[#f7f8f8]">No performance data available yet.</h3>
-          <p className="text-xs text-[#8a8f98] mt-1">Run the agent to begin collecting analytics.</p>
+          <p className="text-xs text-[#8a8f98] mt-1">Run Autopilot to begin collecting analytics.</p>
         </CardContent>
       </Card>
     );

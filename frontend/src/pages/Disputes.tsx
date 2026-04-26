@@ -696,7 +696,7 @@ function OutboundChatBubble({ msg }: { msg: ThreadItem }) {
         <div className="flex items-center space-x-2">
           <span className="font-bold uppercase tracking-wider text-[10px]">Tenant Reply</span>
           <span className="px-2 py-0.5 text-[10px] font-bold bg-[#5e6ad2]/20 text-[#5e6ad2] rounded-full border border-[#5e6ad2]/30">
-            💬 Dispute Agent
+            💬 Autopilot
           </span>
         </div>
         <div className="flex items-center space-x-2 text-[#8a8f98]">

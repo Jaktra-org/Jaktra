@@ -88,8 +88,8 @@ describe('Dashboard page math aggregations', () => {
       expect(screen.getByText(/Actionable Queue/i)).toBeInTheDocument();
       // 3. Portfolio metrics
       expect(screen.getByText('Total Due')).toBeInTheDocument();
-      // 4. AI Agent Status
-      expect(screen.getByText('AI Agent')).toBeInTheDocument();
+      // 4. Autopilot Status
+      expect(screen.getByText('Autopilot')).toBeInTheDocument();
     });
   });
 

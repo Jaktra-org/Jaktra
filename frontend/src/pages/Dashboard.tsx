@@ -559,10 +559,10 @@ export function Dashboard() {
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
-                    Agent Execution Error
+                    Autopilot Execution Error
                   </h4>
                   <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">
-                    AI Agent dispatch cycle experienced errors
+                    Autopilot dispatch cycle experienced errors
                   </p>
                 </div>
               </div>
@@ -577,7 +577,7 @@ export function Dashboard() {
 
       </div>
 
-      {/* Bottom Section: Recent Activity Feed & AI Agent Widget */}
+      {/* Bottom Section: Recent Activity Feed & Autopilot Widget */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch -mt-4">
         {/* Card 1: Recent Activity Feed */}
         <div>
@@ -625,13 +625,13 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* Card 2: AI Agent Status Widget */}
+        {/* Card 2: Autopilot Status Widget */}
         <Card className="border border-[#1e2025] bg-[#0e1013] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xl relative overflow-hidden h-full">
           {/* Top Section & Large SVG */}
           <div className="relative">
             {/* Header */}
             <div className="flex items-center justify-between relative z-10">
-              <h3 className="text-sm font-semibold text-[#f7f8f8]">AI Agent</h3>
+              <h3 className="text-sm font-semibold text-[#f7f8f8]">Autopilot</h3>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse" />
                 Active
@@ -644,7 +644,7 @@ export function Dashboard() {
                 Next run: <strong className="text-[#f7f8f8]">Today, 4:00 PM</strong>
               </div>
               <p className="text-xs text-[#8a8f98] mt-1.5 leading-relaxed">
-                AI is analyzing accounts and preparing next actions.
+                Autopilot is analyzing accounts and preparing next actions.
               </p>
             </div>
 
@@ -652,7 +652,7 @@ export function Dashboard() {
             <div className="absolute right-0 -top-7 pointer-events-none z-0">
               <img 
                 src={botSendingMailsSvg} 
-                alt="AI Agent Sending Mails" 
+                alt="Autopilot Sending Mails"  
                 className="w-56 h-56 sm:w-72 sm:h-72 object-contain drop-shadow-[0_12px_36px_rgba(94,106,210,0.35)] transition-transform hover:scale-105" 
               />
             </div>

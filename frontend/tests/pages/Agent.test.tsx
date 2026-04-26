@@ -43,7 +43,7 @@ describe('Agent page controls', () => {
     await waitFor(() => {
       expect(screen.getByText('Email not configured')).toBeInTheDocument();
       // Run button should be disabled
-      expect(screen.getByRole('button', { name: /Run Agent Now/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /Run Autopilot/i })).toBeDisabled();
     });
   });
 
@@ -56,10 +56,10 @@ describe('Agent page controls', () => {
     renderWithProviders(<Agent />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Run Agent Now/i })).toBeEnabled();
+      expect(screen.getByRole('button', { name: /Run Autopilot/i })).toBeEnabled();
     });
 
-    const runBtn = screen.getByRole('button', { name: /Run Agent Now/i });
+    const runBtn = screen.getByRole('button', { name: /Run Autopilot/i });
     await act(async () => {
       runBtn.click();
     });
