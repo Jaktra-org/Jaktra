@@ -60,7 +60,7 @@ describe('Analytics page metric queries', () => {
     renderWithProviders(<Analytics />);
 
     await waitFor(() => {
-      expect(screen.getByText('Aging Pyramid')).toBeInTheDocument();
+      expect(screen.getByText('Aging Risk Breakdown')).toBeInTheDocument();
       expect(screen.getAllByText('$60,000')[0]).toBeInTheDocument(); // totalReceivable
       expect(screen.getAllByText('$120,000')[0]).toBeInTheDocument(); // totalCollected
     });
