@@ -458,6 +458,49 @@ export function ActivityLog() {
       );
     };
 
+    if (action.includes('payment_plan') || (evt.description && evt.description.toLowerCase().includes('payment plan'))) {
+      const invoiceNo = String(evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || evt.payload?.invoiceNo || 'unknown');
+      const clientName = String(evt.clientName || evt.payload?.clientName || evt.newValues?.clientName || evt.oldValues?.clientName || '');
+      const clientSuffix = clientName ? ` (${clientName})` : '';
+
+      if (action.includes('requested') || (evt.description && evt.description.toLowerCase().includes('proposed'))) {
+        const installments = String(evt.payload?.installments || evt.newValues?.installments || '3');
+        const amount = evt.payload?.proposedAmountPerMonth || evt.newValues?.proposedAmountPerMonth;
+        const formattedAmount = amount ? `₹${Number(amount).toLocaleString('en-IN')}` : '';
+        const actorName = clientName || 'Client';
+
+        return (
+          <span className="text-[#d0d6e0]">
+            <span className="font-semibold text-[#f7f8f8]">{actorName}</span> proposed a payment plan of <span className="font-semibold text-[#f7f8f8]">{installments} monthly installments</span>{formattedAmount ? ` of ${formattedAmount}` : ''} for Invoice {renderInvoiceLink(invoiceNo)}
+          </span>
+        );
+      }
+
+      if (action.includes('approved') || (evt.description && evt.description.toLowerCase().includes('approved'))) {
+        return (
+          <span className="text-[#d0d6e0]">
+            {actor} approved payment plan request for Invoice {renderInvoiceLink(invoiceNo)}<span className="font-semibold text-[#f7f8f8]">{clientSuffix}</span>
+          </span>
+        );
+      }
+
+      if (action.includes('denied') || (evt.description && evt.description.toLowerCase().includes('denied'))) {
+        return (
+          <span className="text-[#d0d6e0]">
+            {actor} denied payment plan request for Invoice {renderInvoiceLink(invoiceNo)}<span className="font-semibold text-[#f7f8f8]">{clientSuffix}</span>
+          </span>
+        );
+      }
+
+      if (action.includes('cancelled') || (evt.description && evt.description.toLowerCase().includes('cancelled'))) {
+        return (
+          <span className="text-[#d0d6e0]">
+            {actor} cancelled active payment plan for Invoice {renderInvoiceLink(invoiceNo)}<span className="font-semibold text-[#f7f8f8]">{clientSuffix}</span>
+          </span>
+        );
+      }
+    }
+
     if (action === 'user.invited') {
       const email = String(evt.newValues?.email || evt.payload?.email || 'new user');
       const role = String(evt.newValues?.role || evt.payload?.role || 'member');

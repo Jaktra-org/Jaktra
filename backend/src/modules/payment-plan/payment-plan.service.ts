@@ -78,7 +78,7 @@ export class PaymentPlanService {
         { source: 'system', name: 'Customer Portal' },
         {
           description: `Customer proposed a payment plan of ${installments} monthly installments of ${invoice.currency || 'INR'} ${proposedAmountPerMonth}.`,
-          payload: { installments, proposedAmountPerMonth },
+          payload: { installments, proposedAmountPerMonth, invoiceNo: invoice.invoiceNo, clientName: invoice.clientName },
           tx,
         }
       );
@@ -197,6 +197,7 @@ export class PaymentPlanService {
         actor,
         {
           description: 'Manager approved the payment plan request.',
+          payload: { invoiceNo: invoice.invoiceNo, clientName: invoice.clientName },
           tx,
         }
       );
@@ -215,6 +216,7 @@ export class PaymentPlanService {
       throw new ValidationError('Payment plan request is no longer pending.');
     }
 
+    const invoice = await this.invoiceRepo.findById(plan.invoiceId);
     const reviewerId = ('userId' in actor && actor.userId) || null;
 
     await this.db.transaction(async (tx) => {
@@ -234,6 +236,7 @@ export class PaymentPlanService {
         actor,
         {
           description: 'Manager denied the payment plan request.',
+          payload: { invoiceNo: invoice?.invoiceNo, clientName: invoice?.clientName },
           tx,
         }
       );
@@ -361,6 +364,7 @@ export class PaymentPlanService {
         actor,
         {
           description: 'Manager cancelled the active payment plan.',
+          payload: { invoiceNo: invoice.invoiceNo, clientName: invoice.clientName },
           tx,
         }
       );
