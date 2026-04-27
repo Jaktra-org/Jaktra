@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, act, waitFor } from '../test-utils';
+import { screen, waitFor } from '../test-utils';
 import { renderWithProviders } from '../test-utils';
 import { Analytics } from '../../src/pages/Analytics';
 import { analyticsService } from '../../src/services/analytics';
@@ -39,7 +39,7 @@ vi.mock('recharts', async (importOriginal) => {
   };
 });
 
-describe('Analytics page tabs and metric queries', () => {
+describe('Analytics page metric queries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -51,41 +51,18 @@ describe('Analytics page tabs and metric queries', () => {
     totalOverdue: 15000,
   };
 
-  it('toggles tabs and renders metric aggregations', async () => {
+  it('renders financial metric aggregations and aging breakdown', async () => {
     vi.mocked(settingsService.getSettings).mockResolvedValue({} as any);
     vi.mocked(invoiceService.getInvoices).mockResolvedValue({ data: [], pagination: { total: 0, page: 1, limit: 100, totalPages: 1 } });
     vi.mocked(analyticsService.getSummary).mockResolvedValue(mockSummary);
     vi.mocked(analyticsService.getAging).mockResolvedValue([]);
-    vi.mocked(analyticsService.getAgentPerformance).mockResolvedValue({
-      totalRuns: 10,
-      invoicesProcessed: 50,
-      emailsSent: 45,
-      errorRate: 2,
-    });
-    vi.mocked(analyticsService.getEmailVolume).mockResolvedValue([
-      { date: '2026-07-12', sent: 10, opened: 8, clicked: 4 },
-    ]);
-    vi.mocked(analyticsService.getChannelBreakdown).mockResolvedValue([]);
-    vi.mocked(analyticsService.getTierEffectiveness).mockResolvedValue([]);
 
     renderWithProviders(<Analytics />);
-
-    // By default, renders the Agent Performance tab
-    await waitFor(() => {
-      expect(screen.getByText('Emails Sent Per Day')).toBeInTheDocument();
-      expect(screen.getByText('Total Runs')).toBeInTheDocument();
-      expect(screen.getByText('10')).toBeInTheDocument(); // totalRuns
-    });
-
-    // Toggle Financial Metrics tab
-    const financialTabBtn = screen.getByRole('button', { name: /Financial Metrics/i });
-    await act(async () => {
-      financialTabBtn.click();
-    });
 
     await waitFor(() => {
       expect(screen.getByText('Aging Pyramid')).toBeInTheDocument();
       expect(screen.getAllByText('$60,000')[0]).toBeInTheDocument(); // totalReceivable
+      expect(screen.getAllByText('$120,000')[0]).toBeInTheDocument(); // totalCollected
     });
   });
 });
