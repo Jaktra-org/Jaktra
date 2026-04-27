@@ -43,17 +43,19 @@ describe('Settings page tabs and general auto-save configurations', () => {
       },
     });
 
-    // Profile page renders initially
-    expect(screen.getByText('Profile Settings')).toBeInTheDocument();
+    // General page renders initially by default
+    await waitFor(() => {
+      expect(screen.getByText('General Settings')).toBeInTheDocument();
+    });
 
-    // Click General Tab
-    const generalTabBtn = screen.getByRole('button', { name: /General/i });
+    // Click Profile & Security Tab
+    const profileTabBtn = screen.getByRole('button', { name: /Profile/i });
     await act(async () => {
-      generalTabBtn.click();
+      profileTabBtn.click();
     });
 
     await waitFor(() => {
-      expect(screen.getByText('General Settings')).toBeInTheDocument();
+      expect(screen.getByText('Account Session & Authentication')).toBeInTheDocument();
     });
   });
 

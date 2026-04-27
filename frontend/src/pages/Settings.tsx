@@ -4,9 +4,9 @@ import { settingsService } from '../services/settings';
 import { authService } from '../services/auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { 
-  Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, 
+  Loader2, Save, Building, Clock, DollarSign, 
   Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon, Trash2, 
-  X, ChevronRight, Check, LogOut, Zap, FileText 
+  X, ChevronRight, Check, LogOut, Zap, ShieldCheck, HelpCircle, Copy, AlertTriangle
 } from 'lucide-react';
 import type { TenantSettings, IntegrationsResponse, SmtpConfig, SendgridSetupProgress } from '../types/api';
 
@@ -22,8 +22,8 @@ import { SendGridWizardStep3 } from './Settings/SendGridWizardStep3';
 export function Settings() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'general' | 'autopilot' | 'retention' | 'email' | 'integrations' | 'team' | 'billing'
-  >('profile');
+    'general' | 'integrations' | 'customization' | 'team' | 'security' | 'billing' | 'support'
+  >('general');
 
   return (
     <div className="w-full text-[#f7f8f8] space-y-6 pb-12">
@@ -31,7 +31,7 @@ export function Settings() {
       <div className="border-b border-[#1e2025] pb-4">
         <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">Settings</h1>
         <p className="text-[#8a8f98] text-xs mt-1">
-          Manage your organization profile, autopilot automation rules, email delivery, data retention, and team preferences.
+          Manage your organization profile, email &amp; payment integrations, automation rules, security, and support.
         </p>
       </div>
 
@@ -39,42 +39,24 @@ export function Settings() {
         {/* Sidebar Nav */}
         <div className="w-full md:w-64 bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl p-2 space-y-1 flex-shrink-0">
           <TabButton 
-            active={activeTab === 'profile'} 
-            onClick={() => setActiveTab('profile')} 
-            icon={<UserIcon className="w-4 h-4 mr-2.5 text-[#5e6ad2]" />} 
-            label="Profile & Security" 
+            active={activeTab === 'general'} 
+            onClick={() => setActiveTab('general')} 
+            icon={<Building className="w-4 h-4 mr-2.5 text-[#5e6ad2]" />} 
+            label="General" 
           />
           {user?.role === 'admin' && (
             <>
-              <TabButton 
-                active={activeTab === 'general'} 
-                onClick={() => setActiveTab('general')} 
-                icon={<Building className="w-4 h-4 mr-2.5 text-[#5e6ad2]" />} 
-                label="General" 
-              />
-              <TabButton 
-                active={activeTab === 'autopilot'} 
-                onClick={() => setActiveTab('autopilot')} 
-                icon={<Zap className="w-4 h-4 mr-2.5 text-amber-400" />} 
-                label="Autopilot & Rules" 
-              />
-              <TabButton 
-                active={activeTab === 'retention'} 
-                onClick={() => setActiveTab('retention')} 
-                icon={<Trash2 className="w-4 h-4 mr-2.5 text-rose-400" />} 
-                label="Data Retention" 
-              />
-              <TabButton 
-                active={activeTab === 'email'} 
-                onClick={() => setActiveTab('email')} 
-                icon={<Mail className="w-4 h-4 mr-2.5 text-[#5e6ad2]" />} 
-                label="Email Config" 
-              />
               <TabButton 
                 active={activeTab === 'integrations'} 
                 onClick={() => setActiveTab('integrations')} 
                 icon={<LinkIcon className="w-4 h-4 mr-2.5 text-emerald-400" />} 
                 label="Integrations" 
+              />
+              <TabButton 
+                active={activeTab === 'customization'} 
+                onClick={() => setActiveTab('customization')} 
+                icon={<Zap className="w-4 h-4 mr-2.5 text-amber-400" />} 
+                label="Preferences & Automation" 
               />
             </>
           )}
@@ -84,6 +66,12 @@ export function Settings() {
             icon={<Users className="w-4 h-4 mr-2.5 text-[#5e6ad2]" />} 
             label="Team & Access" 
           />
+          <TabButton 
+            active={activeTab === 'security'} 
+            onClick={() => setActiveTab('security')} 
+            icon={<ShieldCheck className="w-4 h-4 mr-2.5 text-violet-400" />} 
+            label="Profile & Security" 
+          />
           {user?.role === 'admin' && (
             <TabButton 
               active={activeTab === 'billing'} 
@@ -92,23 +80,23 @@ export function Settings() {
               label="Billing & Plans" 
             />
           )}
+          <TabButton 
+            active={activeTab === 'support'} 
+            onClick={() => setActiveTab('support')} 
+            icon={<HelpCircle className="w-4 h-4 mr-2.5 text-rose-400" />} 
+            label="Support" 
+          />
         </div>
 
         {/* Main Content Pane */}
         <div className="flex-1 w-full space-y-6 min-w-0">
-          {activeTab === 'profile' && <ProfileSettings />}
-          {activeTab === 'general' && user?.role === 'admin' && <GeneralSettings />}
-          {activeTab === 'autopilot' && user?.role === 'admin' && <AutopilotSettings />}
-          {activeTab === 'retention' && user?.role === 'admin' && <RetentionSettings />}
-          {activeTab === 'email' && user?.role === 'admin' && <EmailSettings />}
-          {activeTab === 'integrations' && user?.role === 'admin' && <IntegrationsTab />}
+          {activeTab === 'general' && <GeneralSettings />}
+          {activeTab === 'integrations' && user?.role === 'admin' && <IntegrationsSection />}
+          {activeTab === 'customization' && user?.role === 'admin' && <CustomizationSettings />}
           {activeTab === 'team' && <TeamSettings />}
-          {activeTab === 'billing' && user?.role === 'admin' && (
-            <PlaceholderTab 
-              title="Billing & Subscription Plans" 
-              description="Manage your subscription tier, view invoices, and update default billing payment methods." 
-            />
-          )}
+          {activeTab === 'security' && <SecuritySettings />}
+          {activeTab === 'billing' && user?.role === 'admin' && <BillingSection />}
+          {activeTab === 'support' && <SupportSection />}
         </div>
       </div>
     </div>
@@ -140,12 +128,20 @@ function TabButton({ active, onClick, icon, label }: TabButtonProps) {
 }
 
 /* ============================================================================
- * 1. GENERAL / ORGANIZATION SETTINGS
+ * 1. GENERAL SETTINGS (Email, Display Name, Company Name, Timezone)
  * ============================================================================ */
 function GeneralSettings() {
   const queryClient = useQueryClient();
+  const { user, updateUser } = useAuth();
+  
+  // Profile Display Name State
+  const [displayName, setDisplayName] = useState(user?.name || '');
+  const [profileSaveStatus, setProfileSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [profileError, setProfileError] = useState('');
+
+  // Tenant General Settings State (Company Name & Timezone)
   const [formData, setFormData] = useState<Partial<TenantSettings>>({});
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [tenantSaveStatus, setTenantSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
@@ -160,16 +156,35 @@ function GeneralSettings() {
     }
   }, [settings]);
 
-  const mutation = useMutation({
+  // Profile update mutation
+  const profileMutation = useMutation({
+    mutationFn: (newName: string) => authService.updateProfile(newName),
+    onMutate: () => {
+      setProfileSaveStatus('saving');
+      setProfileError('');
+    },
+    onSuccess: (updatedUser) => {
+      setProfileSaveStatus('saved');
+      updateUser(updatedUser);
+      setTimeout(() => setProfileSaveStatus('idle'), 2000);
+    },
+    onError: (err: unknown) => {
+      setProfileSaveStatus('error');
+      setProfileError(getErrorMessage(err));
+    },
+  });
+
+  // Tenant settings auto-save mutation
+  const tenantMutation = useMutation({
     mutationFn: (newSettings: Partial<TenantSettings>) => settingsService.updateSettings(newSettings),
-    onMutate: () => setSaveStatus('saving'),
+    onMutate: () => setTenantSaveStatus('saving'),
     onError: () => {
-      setSaveStatus('idle');
+      setTenantSaveStatus('idle');
     },
     onSuccess: () => {
-      setSaveStatus('saved');
+      setTenantSaveStatus('saved');
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      setTimeout(() => setTenantSaveStatus('idle'), 2000);
     },
   });
 
@@ -182,14 +197,23 @@ function GeneralSettings() {
 
     if (hasChanges) {
       const timer = setTimeout(() => {
-        mutation.mutate(formData);
+        tenantMutation.mutate(formData);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [formData, settings, mutation]);
+  }, [formData, settings, tenantMutation]);
 
-  const handleChange = (field: keyof TenantSettings, value: unknown) => {
+  const handleTenantChange = (field: keyof TenantSettings, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleProfileSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      setProfileError('Display name cannot be empty.');
+      return;
+    }
+    profileMutation.mutate(displayName.trim());
   };
 
   if (isLoading) {
@@ -207,403 +231,101 @@ function GeneralSettings() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-bold text-[#f7f8f8]">General Settings</CardTitle>
-              <CardDescription className="text-xs text-[#8a8f98]">Manage your organization profile, timezone, and payment link details.</CardDescription>
+              <CardDescription className="text-xs text-[#8a8f98]">Manage your personal identity, company profile, and default timezone.</CardDescription>
             </div>
             <div className="flex items-center h-8">
-              {saveStatus === 'saving' && <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-[#5e6ad2]" /> Saving...</span>}
-              {saveStatus === 'saved' && <span className="text-xs text-[#27a644] flex items-center"><Save className="w-3.5 h-3.5 mr-1.5" /> Saved</span>}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-              <Building className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-              Company Name
-            </label>
-            <input
-              type="text"
-              value={formData.companyName || ''}
-              onChange={(e) => handleChange('companyName', e.target.value)}
-              className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
-              placeholder="e.g. Acme Corp"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-              <Clock className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-              Timezone
-            </label>
-            <select
-              value={formData.timezone || 'UTC'}
-              onChange={(e) => handleChange('timezone', e.target.value)}
-              className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none cursor-pointer"
-            >
-              <option value="UTC">UTC</option>
-              <option value="America/New_York">Eastern Time (ET)</option>
-              <option value="America/Chicago">Central Time (CT)</option>
-              <option value="America/Denver">Mountain Time (MT)</option>
-              <option value="America/Los_Angeles">Pacific Time (PT)</option>
-              <option value="Europe/London">London (GMT)</option>
-              <option value="Europe/Paris">Central Europe (CET)</option>
-              <option value="Asia/Dubai">Dubai (GST)</option>
-              <option value="Asia/Kolkata">India (IST)</option>
-              <option value="Asia/Singapore">Singapore (SGT)</option>
-              <option value="Australia/Sydney">Sydney (AEST)</option>
-            </select>
-            <p className="text-[11px] text-[#8a8f98]">Used for scheduled autopilot execution and reporting timelines.</p>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-              <DollarSign className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
-              Default Currency
-            </label>
-            <select
-              value="USD"
-              disabled
-              className="w-full p-2.5 border border-[#1e2025] bg-[#1e2025]/40 text-[#8a8f98] rounded-xl text-xs cursor-not-allowed"
-            >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="INR">INR (₹)</option>
-            </select>
-            <p className="text-[11px] text-[#8a8f98]">Multi-currency support is enabled per invoice.</p>
-          </div>
-
-          <div className="pt-4 border-t border-[#1e2025] space-y-4">
-            <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-              <LinkIcon className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-              Payment & Branding Links
-            </h4>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[#8a8f98]">Default Payment Link URL</label>
-              <input
-                type="text"
-                value={formData.paymentLink || ''}
-                onChange={(e) => handleChange('paymentLink', e.target.value)}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
-                placeholder="https://razorpay.me/@yourcompany"
-              />
-              <p className="text-[11px] text-[#8a8f98]">Used in collection email buttons when custom payment links are not attached to invoices.</p>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[#8a8f98]">Bank Details for Emails &amp; Invoices</label>
-              <textarea
-                rows={3}
-                value={formData.bankDetails || ''}
-                onChange={(e) => handleChange('bankDetails', e.target.value)}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
-                placeholder="Bank Name: HDFC Bank&#10;Account No: 502000XXXXXX&#10;IFSC: HDFC0001234"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* ============================================================================
- * 2. AUTOPILOT & RULES SETTINGS
- * ============================================================================ */
-function AutopilotSettings() {
-  const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<Partial<TenantSettings>>({});
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['settings'],
-    queryFn: settingsService.getSettings,
-  });
-
-  useEffect(() => {
-    if (settings) {
-      Promise.resolve().then(() => {
-        setFormData(settings);
-      });
-    }
-  }, [settings]);
-
-  const mutation = useMutation({
-    mutationFn: (newSettings: Partial<TenantSettings>) => settingsService.updateSettings(newSettings),
-    onMutate: () => setSaveStatus('saving'),
-    onError: () => {
-      setSaveStatus('idle');
-    },
-    onSuccess: () => {
-      setSaveStatus('saved');
-      queryClient.invalidateQueries({ queryKey: ['settings'] });
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    },
-  });
-
-  useEffect(() => {
-    if (!settings) return;
-
-    const hasChanges = Object.keys(formData).some(
-      key => formData[key as keyof TenantSettings] !== settings[key as keyof TenantSettings]
-    );
-
-    if (hasChanges) {
-      const timer = setTimeout(() => {
-        mutation.mutate(formData);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [formData, settings, mutation]);
-
-  const handleChange = (field: keyof TenantSettings, value: unknown) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
-                <Zap className="w-4 h-4 mr-2 text-amber-400" />
-                Autopilot &amp; Execution Rules
-              </CardTitle>
-              <CardDescription className="text-xs text-[#8a8f98]">Configure execution schedules, safety limits, and payment link enforcement rules.</CardDescription>
-            </div>
-            <div className="flex items-center h-8">
-              {saveStatus === 'saving' && <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-[#5e6ad2]" /> Saving...</span>}
-              {saveStatus === 'saved' && <span className="text-xs text-[#27a644] flex items-center"><Save className="w-3.5 h-3.5 mr-1.5" /> Saved</span>}
+              {(tenantSaveStatus === 'saving' || profileSaveStatus === 'saving') && (
+                <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-[#5e6ad2]" /> Saving...</span>
+              )}
+              {(tenantSaveStatus === 'saved' || profileSaveStatus === 'saved') && (
+                <span className="text-xs text-[#27a644] flex items-center"><Save className="w-3.5 h-3.5 mr-1.5" /> Saved</span>
+              )}
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-              <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
-              Daily Execution Schedule (Hour)
-            </label>
-            <select
-              value={formData.scheduleHour ?? 9}
-              onChange={(e) => handleChange('scheduleHour', Number(e.target.value))}
-              className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none cursor-pointer"
-            >
-              {Array.from({ length: 24 }).map((_, i) => (
-                <option key={i} value={i}>
-                  {i.toString().padStart(2, '0')}:00 {i < 12 ? 'AM' : 'PM'}
-                </option>
-              ))}
-            </select>
-            <p className="text-[11px] text-[#8a8f98]">Autopilot runs automatically every day at this hour in your configured timezone.</p>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-              <FileText className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
-              Idempotency Deduplication Window (Hours)
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="168"
-              value={formData.idempotencyWindowHours ?? 24}
-              onChange={(e) => handleChange('idempotencyWindowHours', Number(e.target.value))}
-              className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
-            />
-            <p className="text-[11px] text-[#8a8f98]">Prevents sending duplicate follow-up communications to the same invoice within this window.</p>
-          </div>
-
-          <div className="pt-4 border-t border-[#1e2025]">
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-[#f7f8f8]">Payment Link Enforcement Warning</p>
-                <p className="text-[11px] text-[#8a8f98] mt-0.5 leading-relaxed">
-                  When active, Autopilot warns you before queueing emails for invoices that do not have a payment link.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const val = !formData.skipPaymentWarning;
-                  handleChange('skipPaymentWarning', val);
-                }}
-                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                  formData.skipPaymentWarning
-                    ? 'bg-[#1e2025]/40 text-[#8a8f98] border-[#1e2025] hover:bg-[#1e2025]'
-                    : 'bg-[#27a644]/10 text-[#27a644] border-[#27a644]/30 font-semibold'
-                }`}
-              >
-                {formData.skipPaymentWarning ? 'Warning Disabled' : '✓ Warning Active'}
-              </button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* ============================================================================
- * 3. DATA RETENTION SETTINGS
- * ============================================================================ */
-function RetentionSettings() {
-  const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<Partial<TenantSettings>>({});
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['settings'],
-    queryFn: settingsService.getSettings,
-  });
-
-  useEffect(() => {
-    if (settings) {
-      Promise.resolve().then(() => {
-        setFormData(settings);
-      });
-    }
-  }, [settings]);
-
-  const mutation = useMutation({
-    mutationFn: (newSettings: Partial<TenantSettings>) => settingsService.updateSettings(newSettings),
-    onMutate: () => setSaveStatus('saving'),
-    onError: () => {
-      setSaveStatus('idle');
-    },
-    onSuccess: () => {
-      setSaveStatus('saved');
-      queryClient.invalidateQueries({ queryKey: ['settings'] });
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    },
-  });
-
-  const localError = formData.autoPurgeEnabled && formData.autoPurgeDays !== undefined && formData.autoPurgeDays < 7
-    ? "Auto-purge retention period must be at least 7 days"
-    : null;
-
-  useEffect(() => {
-    if (!settings || localError) return;
-
-    const hasChanges = Object.keys(formData).some(
-      key => formData[key as keyof TenantSettings] !== settings[key as keyof TenantSettings]
-    );
-
-    if (hasChanges) {
-      const timer = setTimeout(() => {
-        mutation.mutate(formData);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [formData, settings, localError, mutation]);
-
-  const handleChange = (field: keyof TenantSettings, value: unknown) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
-                <Trash2 className="w-4 h-4 mr-2 text-rose-400" />
-                Data Retention &amp; Cleanup Policies
-              </CardTitle>
-              <CardDescription className="text-xs text-[#8a8f98]">Configure automatic cleanup for trashed invoices and archived dispute records.</CardDescription>
-            </div>
-            <div className="flex items-center h-8">
-              {saveStatus === 'saving' && <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-[#5e6ad2]" /> Saving...</span>}
-              {saveStatus === 'saved' && <span className="text-xs text-[#27a644] flex items-center"><Save className="w-3.5 h-3.5 mr-1.5" /> Saved</span>}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Invoice Trash Retention (Auto-Purge) */}
-          <div className="space-y-4">
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-[#f7f8f8]">Automatic Invoice Trash Purge</p>
-                <p className="text-[11px] text-[#8a8f98] mt-0.5 leading-relaxed">
-                  Permanently delete invoices that have remained in the Trash past the retention threshold.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  handleChange('autoPurgeEnabled', !formData.autoPurgeEnabled);
-                }}
-                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                  formData.autoPurgeEnabled
-                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 font-semibold'
-                    : 'bg-[#1e2025]/40 text-[#8a8f98] border-[#1e2025] hover:bg-[#1e2025]'
-                }`}
-              >
-                {formData.autoPurgeEnabled ? '✓ Auto-Purge Enabled' : 'Auto-Purge Disabled'}
-              </button>
-            </div>
-
-            {formData.autoPurgeEnabled && (
-              <div className="space-y-1.5 max-w-xs pt-1">
-                <label className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider">
-                  Invoice Retention Period (Days)
-                </label>
-                <input
-                  type="number"
-                  min="7"
-                  value={formData.autoPurgeDays || 30}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    handleChange('autoPurgeDays', isNaN(val) ? 7 : val);
-                  }}
-                  className={`w-full p-2.5 border rounded-xl text-xs font-medium bg-[#0f1011] text-[#f7f8f8] ${
-                    localError ? 'border-red-900/50 text-red-400' : 'border-[#1e2025] focus:border-[#5e6ad2]'
-                  }`}
-                />
-                {localError ? (
-                  <p className="text-[11px] text-red-400 font-medium">{localError}</p>
-                ) : (
-                  <p className="text-[10px] text-[#8a8f98]">Minimum retention period is 7 days.</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Archived Disputes Purge */}
-          <div className="pt-5 border-t border-[#1e2025] space-y-2">
-            <p className="text-xs font-bold text-[#f7f8f8]">Archived Disputes Cleanup</p>
-            <div className="space-y-1.5 max-w-xs pt-1">
-              <label className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider">
-                Auto-delete Archived Disputes (Days)
+          {/* User Profile Info */}
+          <form onSubmit={handleProfileSubmit} className="space-y-4 pb-6 border-b border-[#1e2025]">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+                <Mail className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
+                Email Address (Not Editable)
               </label>
               <input
-                type="number"
-                min="1"
-                value={formData.autoPurgeArchivedDisputesDays ?? 30}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  handleChange('autoPurgeArchivedDisputesDays', isNaN(val) ? 30 : val);
-                }}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] text-[#f7f8f8] rounded-xl text-xs font-medium focus:border-[#5e6ad2]"
+                type="email"
+                value={user?.email || ''}
+                disabled
+                className="w-full p-2.5 border border-[#1e2025] rounded-xl bg-[#1e2025]/40 text-[#8a8f98] text-xs cursor-not-allowed"
               />
-              <p className="text-[10px] text-[#8a8f98]">Archived disputes older than this number of days will be purged automatically.</p>
+              <p className="text-[10px] text-[#8a8f98]">Your account email address is managed by your administrator and cannot be changed.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+                <UserIcon className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
+                Display Name
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="flex-1 p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
+                  placeholder="e.g. John Doe"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={profileSaveStatus === 'saving' || displayName.trim() === user?.name}
+                  className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-xl text-xs font-medium transition-colors disabled:opacity-40 flex items-center justify-center cursor-pointer flex-shrink-0"
+                >
+                  {profileSaveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
+                  Save Name
+                </button>
+              </div>
+              {profileError && <p className="text-xs text-red-400 font-medium">{profileError}</p>}
+            </div>
+          </form>
+
+          {/* Tenant Company & Localization Info */}
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+                <Building className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
+                Company Name
+              </label>
+              <input
+                type="text"
+                value={formData.companyName || ''}
+                onChange={(e) => handleTenantChange('companyName', e.target.value)}
+                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
+                placeholder="e.g. Acme Corp"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+                <Clock className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
+                Timezone
+              </label>
+              <select
+                value={formData.timezone || 'UTC'}
+                onChange={(e) => handleTenantChange('timezone', e.target.value)}
+                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none cursor-pointer"
+              >
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">Eastern Time (ET)</option>
+                <option value="America/Chicago">Central Time (CT)</option>
+                <option value="America/Denver">Mountain Time (MT)</option>
+                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                <option value="Europe/London">London (GMT)</option>
+                <option value="Europe/Paris">Central Europe (CET)</option>
+                <option value="Asia/Dubai">Dubai (GST)</option>
+                <option value="Asia/Kolkata">India (IST)</option>
+                <option value="Asia/Singapore">Singapore (SGT)</option>
+                <option value="Australia/Sydney">Sydney (AEST)</option>
+              </select>
+              <p className="text-[11px] text-[#8a8f98]">This timezone is used for scheduled autopilot execution and reporting timelines.</p>
             </div>
           </div>
         </CardContent>
@@ -613,8 +335,20 @@ function RetentionSettings() {
 }
 
 /* ============================================================================
- * 4. EMAIL DELIVERY CONFIGURATION
+ * 2. INTEGRATIONS SECTION (Payment Gateways & Email Providers)
  * ============================================================================ */
+function IntegrationsSection() {
+  return (
+    <div className="space-y-6">
+      {/* Payment Gateways (Razorpay) */}
+      <IntegrationsTab />
+
+      {/* Email Delivery Integrations */}
+      <EmailSettings />
+    </div>
+  );
+}
+
 function EmailSettings() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -674,8 +408,11 @@ function EmailSettings() {
     <div className="space-y-6">
       <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-base font-bold text-[#f7f8f8]">Email Delivery Providers</CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">Configure outbound email delivery providers (SendGrid API or Custom SMTP).</CardDescription>
+          <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
+            <Mail className="w-4 h-4 mr-2 text-[#5e6ad2]" />
+            Email Delivery Integration
+          </CardTitle>
+          <CardDescription className="text-xs text-[#8a8f98]">Connect SendGrid API or custom outbound SMTP server for sending collection emails.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Default Provider Selector */}
@@ -716,7 +453,7 @@ function EmailSettings() {
               <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${smtpProgress?.isActive ? 'bg-[#27a644]' : smtpProgress?.overallStatus === 'partially_configured' ? 'bg-amber-400' : smtp?.isConfigured ? (smtp.lastValidationResult === 'valid' ? 'bg-[#27a644]' : 'bg-red-400') : 'bg-[#3e3e44]'}`} />
               <div>
                 <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
-                  Custom SMTP
+                  Custom SMTP Server
                   {smtpProgress?.isActive && (
                     <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">Active ✓</span>
                   )}
@@ -727,7 +464,7 @@ function EmailSettings() {
                 <p className="text-[11px] text-[#8a8f98] mt-0.5">
                   {smtpProgress?.overallStatus === 'active' || smtp?.isConfigured
                     ? `${smtpProgress?.step1ConnectionDetails.host || smtp?.displayHost}:${smtpProgress?.step1ConnectionDetails.port || smtp?.port}`
-                    : 'Not configured — connect your outbound SMTP mail server.'}
+                    : 'Not configured — connect your outbound SMTP mail server credentials.'}
                 </p>
               </div>
             </div>
@@ -780,7 +517,7 @@ function EmailSettings() {
                   />
                   <div>
                     <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
-                      SendGrid API
+                      SendGrid API Integration
                       {isSendgridFullyActive && (
                         <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">
                           Active ✓
@@ -851,39 +588,69 @@ function EmailSettings() {
 }
 
 /* ============================================================================
- * 5. PROFILE & USER SECURITY SETTINGS
+ * 3. PREFERENCES & AUTOMATION (Currency, Autopilot Rules, Safeguards, Data Retention)
  * ============================================================================ */
-function ProfileSettings() {
-  const { user, updateUser, logout } = useAuth();
-  const [name, setName] = useState(user?.name || '');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+function CustomizationSettings() {
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState<Partial<TenantSettings>>({});
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ['settings'],
+    queryFn: settingsService.getSettings,
+  });
+
+  useEffect(() => {
+    if (settings) {
+      Promise.resolve().then(() => {
+        setFormData(settings);
+      });
+    }
+  }, [settings]);
 
   const mutation = useMutation({
-    mutationFn: (newName: string) => authService.updateProfile(newName),
-    onMutate: () => {
-      setSaveStatus('saving');
-      setErrorMessage('');
+    mutationFn: (newSettings: Partial<TenantSettings>) => settingsService.updateSettings(newSettings),
+    onMutate: () => setSaveStatus('saving'),
+    onError: () => {
+      setSaveStatus('idle');
     },
-    onSuccess: (updatedUser) => {
+    onSuccess: () => {
       setSaveStatus('saved');
-      updateUser(updatedUser);
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
       setTimeout(() => setSaveStatus('idle'), 2000);
-    },
-    onError: (err: unknown) => {
-      setSaveStatus('error');
-      setErrorMessage(getErrorMessage(err));
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setErrorMessage('Name cannot be empty.');
-      return;
+  const localError = formData.autoPurgeEnabled && formData.autoPurgeDays !== undefined && formData.autoPurgeDays < 7
+    ? "Auto-purge retention period must be at least 7 days"
+    : null;
+
+  useEffect(() => {
+    if (!settings || localError) return;
+
+    const hasChanges = Object.keys(formData).some(
+      key => formData[key as keyof TenantSettings] !== settings[key as keyof TenantSettings]
+    );
+
+    if (hasChanges) {
+      const timer = setTimeout(() => {
+        mutation.mutate(formData);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
-    mutation.mutate(name.trim());
+  }, [formData, settings, localError, mutation]);
+
+  const handleChange = (field: keyof TenantSettings, value: unknown) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -891,8 +658,11 @@ function ProfileSettings() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-base font-bold text-[#f7f8f8]">Profile Settings</CardTitle>
-              <CardDescription className="text-xs text-[#8a8f98]">Manage your personal user profile and display details.</CardDescription>
+              <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
+                <Zap className="w-4 h-4 mr-2 text-amber-400" />
+                Preferences &amp; Automation
+              </CardTitle>
+              <CardDescription className="text-xs text-[#8a8f98]">Configure currency defaults, autopilot execution rules, safety warnings, and data retention policies.</CardDescription>
             </div>
             <div className="flex items-center h-8">
               {saveStatus === 'saving' && <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-[#5e6ad2]" /> Saving...</span>}
@@ -900,49 +670,177 @@ function ProfileSettings() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8a8f98]">Email Address</label>
-              <input
-                type="email"
-                value={user?.email || ''}
-                disabled
-                className="w-full p-2.5 border border-[#1e2025] rounded-xl bg-[#1e2025]/40 text-[#8a8f98] text-xs cursor-not-allowed"
-              />
-              <p className="text-[10px] text-[#8a8f98]">Your login email is managed by your tenant administrator.</p>
-            </div>
+        <CardContent className="space-y-6">
+          {/* Currency Selection */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+              <DollarSign className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+              Default System Currency
+            </label>
+            <select
+              value="USD"
+              disabled
+              className="w-full p-2.5 border border-[#1e2025] bg-[#1e2025]/40 text-[#8a8f98] rounded-xl text-xs cursor-not-allowed"
+            >
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="INR">INR (₹)</option>
+            </select>
+            <p className="text-[11px] text-[#8a8f98]">Multi-currency billing is supported dynamically per invoice.</p>
+          </div>
+
+          {/* Autopilot & Execution Rules */}
+          <div className="pt-5 border-t border-[#1e2025] space-y-4">
+            <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+              <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+              Autopilot &amp; Execution Rules
+            </h4>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8a8f98]">Display Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
-                placeholder="e.g. John Doe"
-                required
-              />
-            </div>
-
-            {errorMessage && (
-              <p className="text-xs text-red-400 font-medium">{errorMessage}</p>
-            )}
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="submit"
-                disabled={saveStatus === 'saving' || name.trim() === user?.name}
-                className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-xl text-xs font-medium transition-colors disabled:opacity-40 flex items-center justify-center cursor-pointer"
+              <label className="text-xs font-semibold text-[#8a8f98]">Daily Execution Schedule (Hour)</label>
+              <select
+                value={formData.scheduleHour ?? 9}
+                onChange={(e) => handleChange('scheduleHour', Number(e.target.value))}
+                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none cursor-pointer"
               >
-                {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
-                Save Changes
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <option key={i} value={i}>
+                    {i.toString().padStart(2, '0')}:00 {i < 12 ? 'AM' : 'PM'}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-[#8a8f98]">Autopilot runs automatically every day at this hour in your configured timezone.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8a8f98]">Idempotency Window (Hours)</label>
+              <input
+                type="number"
+                min="1"
+                max="168"
+                value={formData.idempotencyWindowHours ?? 24}
+                onChange={(e) => handleChange('idempotencyWindowHours', Number(e.target.value))}
+                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
+              />
+              <p className="text-[11px] text-[#8a8f98]">Prevents sending duplicate follow-up communications to the same invoice within this window.</p>
+            </div>
+          </div>
+
+          {/* Safeguards & Warning Signs */}
+          <div className="pt-5 border-t border-[#1e2025] space-y-3">
+            <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+              <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+              Collection Safeguards &amp; Warning Signs
+            </h4>
+            <div className="flex items-start justify-between gap-6 pt-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[#f7f8f8]">Payment Link Enforcement Warning</p>
+                <p className="text-[11px] text-[#8a8f98] mt-0.5 leading-relaxed">
+                  When enabled, Autopilot warns you before queueing emails for invoices that do not have a payment link attached.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleChange('skipPaymentWarning', !formData.skipPaymentWarning)}
+                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+                  formData.skipPaymentWarning
+                    ? 'bg-[#1e2025]/40 text-[#8a8f98] border-[#1e2025] hover:bg-[#1e2025]'
+                    : 'bg-[#27a644]/10 text-[#27a644] border-[#27a644]/30 font-semibold'
+                }`}
+              >
+                {formData.skipPaymentWarning ? 'Warning Disabled' : '✓ Warning Active'}
               </button>
             </div>
-          </form>
+          </div>
+
+          {/* Data Retention & Cleanup Policies */}
+          <div className="pt-5 border-t border-[#1e2025] space-y-4">
+            <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+              <Trash2 className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
+              Data Retention &amp; Cleanup Policies
+            </h4>
+
+            {/* Invoice Trash Retention (Auto-Purge) */}
+            <div className="space-y-3">
+              <div className="flex items-start justify-between gap-6">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-[#f7f8f8]">Automatic Invoice Trash Purge</p>
+                  <p className="text-[11px] text-[#8a8f98] mt-0.5 leading-relaxed">
+                    Permanently delete invoices that have remained in the Trash past the retention threshold.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleChange('autoPurgeEnabled', !formData.autoPurgeEnabled)}
+                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+                    formData.autoPurgeEnabled
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 font-semibold'
+                      : 'bg-[#1e2025]/40 text-[#8a8f98] border-[#1e2025] hover:bg-[#1e2025]'
+                  }`}
+                >
+                  {formData.autoPurgeEnabled ? '✓ Auto-Purge Enabled' : 'Auto-Purge Disabled'}
+                </button>
+              </div>
+
+              {formData.autoPurgeEnabled && (
+                <div className="space-y-1.5 max-w-xs pt-1">
+                  <label className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider">
+                    Invoice Retention Period (Days)
+                  </label>
+                  <input
+                    type="number"
+                    min="7"
+                    value={formData.autoPurgeDays || 30}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      handleChange('autoPurgeDays', isNaN(val) ? 7 : val);
+                    }}
+                    className={`w-full p-2.5 border rounded-xl text-xs font-medium bg-[#0f1011] text-[#f7f8f8] ${
+                      localError ? 'border-red-900/50 text-red-400' : 'border-[#1e2025] focus:border-[#5e6ad2]'
+                    }`}
+                  />
+                  {localError ? (
+                    <p className="text-[11px] text-red-400 font-medium">{localError}</p>
+                  ) : (
+                    <p className="text-[10px] text-[#8a8f98]">Minimum retention period is 7 days.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Archived Disputes Purge */}
+            <div className="space-y-1.5 max-w-xs pt-2">
+              <label className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider">
+                Archived Disputes Cleanup (Days)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={formData.autoPurgeArchivedDisputesDays ?? 30}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  handleChange('autoPurgeArchivedDisputesDays', isNaN(val) ? 30 : val);
+                }}
+                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] text-[#f7f8f8] rounded-xl text-xs font-medium focus:border-[#5e6ad2]"
+              />
+              <p className="text-[10px] text-[#8a8f98]">Archived disputes older than this number of days will be purged automatically.</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
-      
+    </div>
+  );
+}
+
+/* ============================================================================
+ * 4. SECURITY & ACCOUNT SETTINGS (2FA & Sign Out)
+ * ============================================================================ */
+function SecuritySettings() {
+  const { user, updateUser, logout } = useAuth();
+
+  return (
+    <div className="space-y-6">
       <MfaSetup
         mfaEnabled={user?.mfaEnabled ?? false}
         onMfaChange={(enabled) => {
@@ -954,8 +852,8 @@ function ProfileSettings() {
 
       <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-base font-bold text-[#f7f8f8]">Account Session</CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">Manage your current active user session.</CardDescription>
+          <CardTitle className="text-base font-bold text-[#f7f8f8]">Account Session &amp; Authentication</CardTitle>
+          <CardDescription className="text-xs text-[#8a8f98]">Manage your current active user session and sign out of your account.</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-between pt-2">
           <div>
@@ -976,18 +874,98 @@ function ProfileSettings() {
   );
 }
 
-function PlaceholderTab({ title, description }: { title: string; description: string }) {
+/* ============================================================================
+ * 5. BILLING & SUBSCRIPTIONS
+ * ============================================================================ */
+function BillingSection() {
   return (
-    <Card className="border-dashed border border-[#1e2025] bg-[#13161c]/40 rounded-2xl">
-      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-        <SettingsIcon className="w-10 h-10 text-[#3e3e44] mb-3" />
-        <h3 className="text-base font-semibold text-[#f7f8f8]">{title}</h3>
-        <p className="text-[#8a8f98] text-xs mt-1 max-w-sm">{description}</p>
+    <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
+      <CardHeader>
+        <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
+          <CreditCard className="w-4 h-4 mr-2 text-cyan-400" />
+          Billing &amp; Subscription Plans
+        </CardTitle>
+        <CardDescription className="text-xs text-[#8a8f98]">View your current tier and billing information.</CardDescription>
+      </CardHeader>
+      <CardContent className="py-8 text-center space-y-3">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#27a644]/10 border border-[#27a644]/30 text-[#27a644] mx-auto">
+          <Check className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-[#f7f8f8]">Free Early Access Tier</h3>
+          <p className="text-xs text-[#8a8f98] max-w-md mx-auto mt-1 leading-relaxed">
+            Jaktra Enterprise is completely free during Early Access. All automated workflows, AI dispute resolutions, and payment link integrations are fully included without operational limits.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
+/* ============================================================================
+ * 6. SUPPORT
+ * ============================================================================ */
+function SupportSection() {
+  const [copied, setCopied] = useState(false);
+  const supportEmail = "support@jaktra.site";
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(supportEmail);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
+      <CardHeader>
+        <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
+          <HelpCircle className="w-4 h-4 mr-2 text-rose-400" />
+          Contact Support
+        </CardTitle>
+        <CardDescription className="text-xs text-[#8a8f98]">Get dedicated technical support and assistance for your tenant configuration.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="p-5 border border-[#1e2025] rounded-xl bg-[#0f1011] space-y-4">
+          <div>
+            <h4 className="text-xs font-bold text-[#f7f8f8]">Dedicated Technical Assistance</h4>
+            <p className="text-xs text-[#8a8f98] mt-1 leading-relaxed">
+              If you have any questions regarding email provider setup, domain webhooks, payment reconciliation, or custom AI agent rules, reach out directly to our engineering support team.
+            </p>
+          </div>
+
+          <div className="p-3 bg-[#13161c] border border-[#1e2025] rounded-xl flex items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <Mail className="w-4 h-4 text-rose-400 flex-shrink-0" />
+              <div>
+                <span className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider block">Official Support Email</span>
+                <span className="text-xs font-mono font-bold text-[#f7f8f8] select-all">{supportEmail}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="px-3 py-1.5 bg-[#1e2025] hover:bg-[#1e2025]/80 text-[#f7f8f8] rounded-lg text-xs font-medium transition-colors flex items-center cursor-pointer"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 mr-1 text-[#27a644]" /> : <Copy className="w-3.5 h-3.5 mr-1 text-[#8a8f98]" />}
+                {copied ? 'Copied' : 'Copy Email'}
+              </button>
+              <a
+                href={`mailto:${supportEmail}`}
+                className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-lg text-xs font-medium transition-colors inline-flex items-center"
+              >
+                Send Email
+              </a>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* Modals */
 interface SmtpSetupModalProps {
   isOpen: boolean;
   onClose: () => void;
