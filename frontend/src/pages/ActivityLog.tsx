@@ -211,10 +211,67 @@ export function ActivityLog() {
   });
   // Local formatCurrency and formatDateValue have been removed in favor of imported utilities
 
-  const getEventIcon = (actionType: string) => {
+  const getEventIcon = (actionType: string, description?: string | null) => {
+    const desc = (description || '').toLowerCase();
+    const action = (actionType || '').toLowerCase();
+
+    if (action.includes('payment_plan') || desc.includes('payment plan')) {
+      if (desc.includes('approved') || desc.includes('proposed') || action.includes('approved')) {
+        return <CreditCard className="h-4 w-4 text-emerald-400" />;
+      }
+      if (desc.includes('denied') || desc.includes('cancelled') || action.includes('denied')) {
+        return <XCircle className="h-4 w-4 text-red-400" />;
+      }
+      return <CreditCard className="h-4 w-4 text-[#5e6ad2]" />;
+    }
+
+    if (action.startsWith('user.') || action.startsWith('auth.')) {
+      return <Shield className="h-4 w-4 text-violet-400" />;
+    }
+
+    if (action.startsWith('settings.')) {
+      return <SettingsIcon className="h-4 w-4 text-amber-400" />;
+    }
+
+    if (action.startsWith('integration.')) {
+      return <Zap className="h-4 w-4 text-emerald-400" />;
+    }
+
+    if (action.startsWith('payment.received')) {
+      return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
+    }
+
+    if (action.startsWith('payment.')) {
+      return <CreditCard className="h-4 w-4 text-cyan-400" />;
+    }
+
+    if (action === 'invoice.trashed') {
+      return <Trash2 className="h-4 w-4 text-amber-400" />;
+    }
+
+    if (action === 'invoice.restored') {
+      return <RotateCcw className="h-4 w-4 text-emerald-400" />;
+    }
+
+    if (action === 'invoice.permanently_deleted') {
+      return <XCircle className="h-4 w-4 text-red-400" />;
+    }
+
+    if (action.startsWith('invoice.')) {
+      return <FileText className="h-4 w-4 text-[#5e6ad2]" />;
+    }
+
+    if (action.startsWith('dlq.')) {
+      return <AlertTriangle className="h-4 w-4 text-amber-400" />;
+    }
+
+    if (action.startsWith('agent.') || action.startsWith('reconciler.')) {
+      return <Play className="h-4 w-4 text-indigo-400" />;
+    }
+
     const config = getEventConfig(actionType);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return React.createElement(config.icon as any, { className: `h-5 w-5 ${config.colorClass}` });
+    return React.createElement(config.icon as any, { className: `h-4 w-4 ${config.colorClass}` });
   };
 
 
@@ -724,37 +781,39 @@ export function ActivityLog() {
       );
     }
 
-    if (action === 'dlq.cleared') {
+    if (evt.description) {
+      const cleanDesc = evt.description.replace(/^(Manager|Customer|System)\s+/i, '');
+      const startsWithVerb = /^(approved|denied|cancelled|proposed|created|updated|deleted|sent|triggered|imported)/i.test(cleanDesc);
       return (
-        <span>
-          {actor} cleared all dead-letter queue (DLQ) alerts
+        <span className="text-[#d0d6e0]">
+          {actor} {startsWithVerb ? cleanDesc : `executed ${cleanDesc}`}
         </span>
       );
     }
 
     return (
       <span className="text-[#d0d6e0]">
-        {actor} executed <span className="font-semibold text-[#f7f8f8]">{evt.description || evt.actionType}</span>
+        {actor} executed <span className="font-semibold text-[#f7f8f8]">{evt.actionType}</span>
       </span>
     );
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-1 py-2 bg-[#010102] text-[#f7f8f8]">
+    <div className="w-full text-[#f7f8f8] space-y-6 pb-8">
       {/* Clean standard page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#23252a] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#1e2025] pb-4">
         <div>
-          <h1 className="text-xl font-bold text-[#f7f8f8]">Activity Log</h1>
-          <p className="text-xs text-[#8a8f98] mt-0.5">
+          <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">Activity Log</h1>
+          <p className="text-xs text-[#8a8f98] mt-1">
             Track administrative, user, settings, integration, and agent operations across your entire organization.
           </p>
         </div>
         <button 
           onClick={() => fetchEvents(true)}
           disabled={loading || refreshing}
-          className="flex items-center justify-center space-x-2 bg-[#0f1011] hover:bg-[#141516] transition-all text-[#f7f8f8] font-medium text-xs px-3 py-1.5 rounded-md border border-[#23252a] disabled:opacity-40 self-start sm:self-center"
+          className="flex items-center justify-center space-x-2 bg-[#13161c] hover:bg-[#1e2025] transition-all text-[#f7f8f8] font-medium text-xs px-3.5 py-2 rounded-xl border border-[#1e2025] disabled:opacity-40 self-start sm:self-center cursor-pointer"
         >
-          <RefreshCw className={`h-3.5 w-3.5 text-[#8a8f98] ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 text-[#5e6ad2] ${refreshing ? 'animate-spin' : ''}`} />
           <span>{refreshing ? 'Refreshing...' : 'Refresh Feed'}</span>
         </button>
       </div>
@@ -772,7 +831,7 @@ export function ActivityLog() {
               setSearchTerm(e.target.value);
               setPage(1); // Reset page to 1 when searching
             }}
-            className="w-full pl-9 pr-4 py-2 bg-[#0f1011] border border-[#23252a] rounded-md text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:ring-1 focus:ring-[#5e69d1] transition-all text-xs"
+            className="w-full pl-9 pr-4 py-2.5 bg-[#13161c]/60 border border-[#1e2025] rounded-xl text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#5e6ad2] transition-all text-xs"
           />
         </div>
 
@@ -784,7 +843,7 @@ export function ActivityLog() {
               setSelectedSource(e.target.value);
               setPage(1);
             }}
-            className="w-full px-3 py-2 bg-[#0f1011] border border-[#23252a] rounded-md text-[#f7f8f8] font-medium focus:outline-none focus:ring-1 focus:ring-[#5e69d1] transition-all text-xs appearance-none cursor-pointer"
+            className="w-full px-3 py-2.5 bg-[#13161c]/60 border border-[#1e2025] rounded-xl text-[#f7f8f8] font-medium focus:outline-none focus:border-[#5e6ad2] transition-all text-xs appearance-none cursor-pointer"
           >
             <option value="all">All Sources</option>
             <option value="ui">UI Console</option>
@@ -804,7 +863,7 @@ export function ActivityLog() {
               setSelectedDateRange(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-9 pr-9 py-2 bg-[#0f1011] border border-[#23252a] rounded-md text-[#f7f8f8] font-medium focus:outline-none focus:ring-1 focus:ring-[#5e69d1] transition-all text-xs appearance-none cursor-pointer"
+            className="w-full pl-9 pr-9 py-2.5 bg-[#13161c]/60 border border-[#1e2025] rounded-xl text-[#f7f8f8] font-medium focus:outline-none focus:border-[#5e6ad2] transition-all text-xs appearance-none cursor-pointer"
           >
             <option value="all">All Time</option>
             <option value="24h">Last 24 Hours</option>
@@ -816,7 +875,7 @@ export function ActivityLog() {
       </div>
 
       {/* Category Pills */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[#23252a] scrollbar-track-transparent">
+      <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[#1e2025] scrollbar-track-transparent">
         {categories.map((cat) => (
           <button
             key={cat.id}
@@ -824,10 +883,10 @@ export function ActivityLog() {
               setSelectedCategory(cat.id);
               setPage(1);
             }}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium tracking-wide whitespace-nowrap transition-all duration-150 border ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide whitespace-nowrap transition-all duration-150 border cursor-pointer ${
               selectedCategory === cat.id
                 ? "bg-[#5e6ad2] text-white border-[#5e6ad2]"
-                : "bg-[#0f1011] text-[#8a8f98] border-[#23252a] hover:bg-[#141516] hover:text-[#f7f8f8]"
+                : "bg-[#13161c]/60 text-[#8a8f98] border-[#1e2025] hover:bg-[#1e2025] hover:text-[#f7f8f8]"
             }`}
           >
             {cat.label}
@@ -847,27 +906,27 @@ export function ActivityLog() {
       )}
 
       {/* Feed List Container */}
-      <div className="bg-[#0f1011] rounded-xl border border-[#23252a] shadow-none overflow-hidden">
-        <div className="p-4 border-b border-[#23252a] flex items-center justify-between">
+      <div className="bg-[#13161c]/40 rounded-2xl border border-[#1e2025]/80 shadow-none overflow-hidden">
+        <div className="p-4 border-b border-[#1e2025] flex items-center justify-between">
           <h2 className="text-sm font-bold text-[#f7f8f8]">Activity History</h2>
           <span className="text-xs text-[#8a8f98] font-medium">Total Events: {total}</span>
         </div>
 
         {/* Loading state (skeleton cards) */}
         {loading ? (
-          <div className="divide-y divide-[#23252a]/50 animate-pulse">
+          <div className="divide-y divide-[#1e2025]/60 animate-pulse">
             {[1, 2, 3, 4].map(idx => (
               <div key={idx} className="p-4 flex items-start gap-4">
-                <div className="h-9 w-9 rounded-lg bg-[#141516] flex-shrink-0" />
+                <div className="h-9 w-9 rounded-lg bg-[#1e2025] flex-shrink-0" />
                 <div className="flex-1 space-y-2.5">
                   <div className="flex justify-between items-center">
-                    <div className="h-3.5 bg-[#141516] rounded w-1/3" />
-                    <div className="h-3 bg-[#141516] rounded w-20" />
+                    <div className="h-3.5 bg-[#1e2025] rounded w-1/3" />
+                    <div className="h-3 bg-[#1e2025] rounded w-20" />
                   </div>
-                  <div className="h-3 bg-[#141516] rounded w-2/3" />
+                  <div className="h-3 bg-[#1e2025] rounded w-2/3" />
                   <div className="flex space-x-2 pt-1">
-                    <div className="h-4 bg-[#141516] rounded w-16" />
-                    <div className="h-4 bg-[#141516] rounded w-24" />
+                    <div className="h-4 bg-[#1e2025] rounded w-16" />
+                    <div className="h-4 bg-[#1e2025] rounded w-24" />
                   </div>
                 </div>
               </div>
@@ -876,7 +935,7 @@ export function ActivityLog() {
         ) : filteredEvents.length === 0 ? (
           /* Empty state */
           <div className="p-16 text-center space-y-3">
-            <div className="h-10 w-10 rounded-full bg-[#141516] border border-[#23252a] text-[#8a8f98] mx-auto flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-[#1e2025] border border-[#1e2025] text-[#8a8f98] mx-auto flex items-center justify-center">
               <History className="h-5 w-5" />
             </div>
             <div className="space-y-1">
@@ -888,12 +947,12 @@ export function ActivityLog() {
           </div>
         ) : (
           /* Feed List */
-          <div className="divide-y divide-[#23252a]/50">
+          <div className="divide-y divide-[#1e2025]/60">
             {filteredEvents.map((evt) => (
-              <div key={evt.id} className="p-4 hover:bg-[#141516]/60 transition-colors flex items-start gap-3.5 group">
+              <div key={evt.id} className="p-4 hover:bg-[#1e2025]/40 transition-colors flex items-start gap-3.5 group">
                 {/* Event Type Icon wrapper */}
-                <div className="h-9 w-9 rounded-lg bg-[#010102] border border-[#23252a] flex-shrink-0 flex items-center justify-center">
-                  {getEventIcon(evt.actionType)}
+                <div className="h-9 w-9 rounded-xl bg-[#13161c] border border-[#1e2025] flex-shrink-0 flex items-center justify-center">
+                  {getEventIcon(evt.actionType, evt.description)}
                 </div>
 
                 <div className="flex-1 min-w-0 space-y-1">
@@ -914,7 +973,7 @@ export function ActivityLog() {
                   <div className="flex flex-wrap gap-2 items-center text-xs">
                     {/* Source badge */}
                     <span 
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border border-[#23252a] bg-[#141516] text-[#8a8f98] cursor-default"
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium border border-[#1e2025] bg-[#13161c] text-[#8a8f98] cursor-default"
                       title={getSourceTooltip(evt.source)}
                     >
                       {evt.source.toUpperCase()}
@@ -930,7 +989,7 @@ export function ActivityLog() {
                   evt.invoiceDeletedAt ? (
                     <Link 
                       to={`/invoices/${evt.invoiceId}/trashed`}
-                      className="p-1 hover:bg-[#141516] rounded-md transition-colors self-center flex-shrink-0 hidden sm:block"
+                      className="p-1.5 hover:bg-[#1e2025] rounded-lg transition-colors self-center flex-shrink-0 hidden sm:block"
                       title="View Trashed Invoice Detail"
                     >
                       <ArrowRight className="h-3.5 w-3.5 text-amber-400 group-hover:translate-x-0.5 transition-all" />
@@ -938,7 +997,7 @@ export function ActivityLog() {
                   ) : (
                     <Link 
                       to={`/invoices/${evt.invoiceId}`}
-                      className="p-1 hover:bg-[#141516] rounded-md transition-colors self-center flex-shrink-0 hidden sm:block"
+                      className="p-1.5 hover:bg-[#1e2025] rounded-lg transition-colors self-center flex-shrink-0 hidden sm:block"
                       title="View Invoice Detail"
                     >
                       <ArrowRight className="h-3.5 w-3.5 text-[#5e6ad2] group-hover:translate-x-0.5 transition-all" />
@@ -954,7 +1013,7 @@ export function ActivityLog() {
 
         {/* Pagination footer */}
         {totalPages > 1 && (
-          <div className="p-3 bg-[#010102]/60 border-t border-[#23252a] flex items-center justify-between text-xs text-[#8a8f98]">
+          <div className="p-3 bg-[#13161c]/80 border-t border-[#1e2025] flex items-center justify-between text-xs text-[#8a8f98]">
             <div>
               Page <span className="font-semibold text-[#f7f8f8]">{page}</span> of <span className="font-semibold text-[#f7f8f8]">{totalPages}</span>
             </div>
@@ -962,14 +1021,14 @@ export function ActivityLog() {
               <button 
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}
-                className="px-3 py-1 border border-[#23252a] rounded-md bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] disabled:opacity-40 text-xs font-medium transition-colors"
+                className="px-3 py-1 border border-[#1e2025] rounded-lg bg-[#13161c] hover:bg-[#1e2025] text-[#f7f8f8] disabled:opacity-40 text-xs font-medium transition-colors cursor-pointer"
               >
                 Previous
               </button>
               <button 
                 onClick={() => handlePageChange(page + 1)}
                 disabled={page === totalPages}
-                className="px-3 py-1 border border-[#23252a] rounded-md bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] disabled:opacity-40 text-xs font-medium transition-colors"
+                className="px-3 py-1 border border-[#1e2025] rounded-lg bg-[#13161c] hover:bg-[#1e2025] text-[#f7f8f8] disabled:opacity-40 text-xs font-medium transition-colors cursor-pointer"
               >
                 Next
               </button>
