@@ -243,6 +243,7 @@ export interface TenantSettings {
   paymentLink: string | null;
   bankDetails: string | null;
   timezone: string;
+  currency?: string;
   scheduleHour: number;
   idempotencyWindowHours: number;
   defaultEmailProvider?: 'sendgrid' | 'smtp' | null;
