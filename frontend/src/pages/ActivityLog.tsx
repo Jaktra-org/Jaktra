@@ -918,7 +918,7 @@ export function ActivityLog() {
       </div>
 
       {/* Category Pills */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[#1e2025] scrollbar-track-transparent">
+      <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl overflow-x-auto scrollbar-thin scrollbar-thumb-[#1e2025] scrollbar-track-transparent">
         {categories.map((cat) => (
           <button
             key={cat.id}
@@ -926,10 +926,10 @@ export function ActivityLog() {
               setSelectedCategory(cat.id);
               setPage(1);
             }}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide whitespace-nowrap transition-all duration-150 border cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all duration-150 cursor-pointer ${
               selectedCategory === cat.id
-                ? "bg-[#5e6ad2] text-white border-[#5e6ad2]"
-                : "bg-[#13161c]/60 text-[#8a8f98] border-[#1e2025] hover:bg-[#1e2025] hover:text-[#f7f8f8]"
+                ? "bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm"
+                : "bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium"
             }`}
           >
             {cat.label}

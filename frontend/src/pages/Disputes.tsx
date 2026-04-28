@@ -266,14 +266,14 @@ export function Disputes() {
           </div>
         )}
 
-        {/* Primary Navigation Tabs (Status) */}
-        <div className="flex items-center space-x-1 bg-[#13161c]/60 p-1 rounded-xl border border-[#1e2025]/80 flex-wrap gap-y-1">
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-wrap">
           <button
             onClick={() => { setActiveStatus('pending'); setPage(1); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
               activeStatus === 'pending'
-                ? 'bg-[#1d212a] text-[#5e6ad2] border border-[#2e3444] shadow-sm font-semibold'
-                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
             <span>Pending</span>
@@ -286,10 +286,10 @@ export function Disputes() {
 
           <button
             onClick={() => { setActiveStatus('resolved'); setPage(1); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
               activeStatus === 'resolved'
-                ? 'bg-[#1d212a] text-[#27a644] border border-[#2e3444] shadow-sm font-semibold'
-                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                ? 'bg-[#1a1e2e] text-[#27a644] border border-[#282f45] font-semibold shadow-sm'
+                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
             <span>Resolved</span>
@@ -302,10 +302,10 @@ export function Disputes() {
 
           <button
             onClick={() => { setActiveStatus('archived'); setPage(1); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
               activeStatus === 'archived'
-                ? 'bg-[#1d212a] text-amber-400 border border-[#2e3444] shadow-sm font-semibold'
-                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                ? 'bg-[#1a1e2e] text-amber-400 border border-[#282f45] font-semibold shadow-sm'
+                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
             <span>Archived</span>
@@ -318,7 +318,7 @@ export function Disputes() {
         </div>
 
         {/* Secondary Sub-Category Filters */}
-        <div className="flex flex-wrap gap-1.5 pt-0.5">
+        <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-wrap">
           {([
             { id: 'all', label: 'All', count: categoryCounts.all },
             { id: 'dispute', label: 'Disputes', count: categoryCounts.dispute },
@@ -329,10 +329,10 @@ export function Disputes() {
             <button
               key={tab.id}
               onClick={() => { setActiveCategory(tab.id as DisputeTab); setPage(1); }}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-all flex items-center space-x-1.5 cursor-pointer border ${
+              className={`px-3 py-1 text-xs rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
                 activeCategory === tab.id
-                  ? 'bg-[#5e6ad2]/20 text-[#5e6ad2] border-[#5e6ad2]/40 font-semibold'
-                  : 'bg-[#13161c]/40 text-[#8a8f98] border-[#1e2025]/80 hover:bg-[#1d212a] hover:text-[#f7f8f8]'
+                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                  : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
               <span>{tab.label}</span>

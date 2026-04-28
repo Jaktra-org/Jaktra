@@ -396,15 +396,15 @@ export function Invoices() {
       {/* Filters Top Header */}
       <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
         {/* Main Status Tabs */}
-        <div className="flex items-center space-x-1 bg-[#13161c]/60 p-1 rounded-xl border border-[#1e2025]/80 flex-wrap gap-y-1">
+        <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-wrap">
           {['All', 'Unpaid', 'Paid', 'Overdue'].map((status) => (
             <button
               key={status}
               onClick={() => handleStatusFilter(status)}
-              className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${
+              className={`px-3.5 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
                 !isTrashView && currentStatus === status
-                  ? 'bg-[#1d212a] text-[#5e6ad2] border border-[#2e3444] shadow-sm'
-                  : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                  : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
               {status}
@@ -412,10 +412,10 @@ export function Invoices() {
           ))}
           <button
             onClick={handleTrashTab}
-            className={`px-3 py-1 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               isTrashView
-                ? 'bg-[#1d212a] text-amber-400 border border-[#2e3444] shadow-sm'
-                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                ? 'bg-[#1a1e2e] text-amber-400 border border-[#282f45] font-semibold shadow-sm'
+                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
             <Trash2 className="h-3 w-3" />

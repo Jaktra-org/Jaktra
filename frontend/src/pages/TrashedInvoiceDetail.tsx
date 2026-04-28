@@ -647,27 +647,29 @@ export function TrashedInvoiceDetail() {
         {/* Tabs Area */}
         <div className="md:col-span-2">
           <Card className="h-full border border-[#23252a] bg-[#0f1011]">
-            <div className="flex border-b border-[#23252a]">
-              <button
-                className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${
-                  activeTab === 'timeline' 
-                    ? 'border-[#5e6ad2] text-[#5e6ad2]' 
-                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
-                }`}
-                onClick={() => setActiveTab('timeline')}
-              >
-                Event Timeline
-              </button>
-              <button
-                className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${
-                  activeTab === 'emails' 
-                    ? 'border-[#5e6ad2] text-[#5e6ad2]' 
-                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
-                }`}
-                onClick={() => setActiveTab('emails')}
-              >
-                Emails &amp; Messages
-              </button>
+            <div className="p-3 border-b border-[#23252a]">
+              <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl w-fit">
+                <button
+                  className={`px-3.5 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                    activeTab === 'timeline' 
+                      ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm' 
+                      : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
+                  }`}
+                  onClick={() => setActiveTab('timeline')}
+                >
+                  Event Timeline
+                </button>
+                <button
+                  className={`px-3.5 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                    activeTab === 'emails' 
+                      ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm' 
+                      : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
+                  }`}
+                  onClick={() => setActiveTab('emails')}
+                >
+                  Emails &amp; Messages
+                </button>
+              </div>
             </div>
             
             <CardContent className="pt-5">

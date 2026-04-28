@@ -940,19 +940,19 @@ export function InvoiceDetail() {
         {/* LEFT COLUMN (2/3 Width) - Tabs & Tab Panels */}
         <div className="lg:col-span-2 flex flex-col h-full min-h-0 overflow-hidden">
           {/* TABBED SUB-NAVIGATION BAR */}
-          <div className="border-b border-[#1e2025]/80 flex space-x-8 text-xs font-semibold flex-shrink-0 mb-4">
+          <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-shrink-0 mb-4 w-fit">
             <button
               onClick={() => setActiveTab('timeline')}
-              className={`py-3 flex items-center space-x-2 border-b-2 transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
                 activeTab === 'timeline'
-                  ? 'border-[#5e6ad2] text-[#5e6ad2]'
-                  : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#1e2025]'
+                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                  : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
               <Activity className="w-4 h-4" />
               <span>Activity Timeline</span>
               {accumulatedTimeline.length > 0 && (
-                <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] bg-[#13161c] border border-[#1e2025] text-[#8a8f98]">
+                <span className="ml-1 px-2 py-0.2 rounded-full text-[10px] bg-[#13161c] border border-[#1e2025] text-[#8a8f98]">
                   {totalTimelineCount}
                 </span>
               )}
@@ -960,16 +960,16 @@ export function InvoiceDetail() {
 
             <button
               onClick={() => setActiveTab('emails')}
-              className={`py-3 flex items-center space-x-2 border-b-2 transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
                 activeTab === 'emails'
-                  ? 'border-[#5e6ad2] text-[#5e6ad2]'
-                  : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#1e2025]'
+                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                  : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
               <Mail className="w-4 h-4" />
-              <span>Emails & Messages</span>
+              <span>Emails &amp; Messages</span>
               {communications && communications.length > 0 && (
-                <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] bg-[#13161c] border border-[#1e2025] text-[#8a8f98]">
+                <span className="ml-1 px-2 py-0.2 rounded-full text-[10px] bg-[#13161c] border border-[#1e2025] text-[#8a8f98]">
                   {communications.length}
                 </span>
               )}
@@ -978,10 +978,10 @@ export function InvoiceDetail() {
             {invoice.hasActivePaymentPlan && (
               <button
                 onClick={() => setActiveTab('payment-plan')}
-                className={`py-3 flex items-center space-x-2 border-b-2 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
                   activeTab === 'payment-plan'
-                    ? 'border-[#5e6ad2] text-[#5e6ad2]'
-                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#1e2025]'
+                    ? 'bg-[#1a1e2e] text-[#27a644] border border-[#282f45] font-semibold shadow-sm'
+                    : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
                 }`}
               >
                 <Calendar className="w-4 h-4 text-[#27a644]" />

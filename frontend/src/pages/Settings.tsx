@@ -37,7 +37,7 @@ export function Settings() {
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
         {/* Sidebar Nav */}
-        <div className="w-full md:w-64 bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl p-2 space-y-1 flex-shrink-0">
+        <div className="w-full md:w-64 bg-transparent border border-[#1e2025]/80 rounded-2xl p-1.5 space-y-1 flex-shrink-0">
           <TabButton 
             active={activeTab === 'general'} 
             onClick={() => setActiveTab('general')} 
@@ -115,10 +115,10 @@ function TabButton({ active, onClick, icon, label }: TabButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center px-3.5 py-2.5 text-xs font-medium rounded-xl transition-all cursor-pointer ${
+      className={`w-full flex items-center px-3.5 py-2.5 text-xs rounded-xl transition-all cursor-pointer ${
         active 
-          ? 'bg-[#5e6ad2] text-white font-semibold shadow-none' 
-          : 'text-[#8a8f98] hover:bg-[#1e2025]/60 hover:text-[#f7f8f8]'
+          ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-bold shadow-sm' 
+          : 'text-[#8a8f98] hover:bg-[#181a26]/40 hover:text-[#f7f8f8] border border-transparent font-medium'
       }`}
     >
       {icon}
@@ -1251,10 +1251,10 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
         <div className="px-6 py-3 bg-[#0f1011] border-b border-[#1e2025] flex items-center justify-between">
           <div className="flex items-center space-x-2 text-xs font-medium">
             <button type="button" onClick={() => goToStep(1)}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full transition-colors cursor-pointer ${
-                wizardStep === 1 ? 'bg-[#5e6ad2] text-white font-bold'
-                  : isStep1Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20'
-                  : 'bg-[#1e2025] text-[#8a8f98]'
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                wizardStep === 1 ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-bold shadow-sm'
+                  : isStep1Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20 font-medium'
+                  : 'bg-[#1e2025]/40 text-[#8a8f98] font-medium'
               }`}>
               <span>1. API Key</span>
               {isStep1Done && <Check className="w-3 h-3 text-[#27a644]" />}
@@ -1263,11 +1263,11 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
             <ChevronRight className="w-3.5 h-3.5 text-[#3e3e44]" />
 
             <button type="button" disabled={!isStep1Done} onClick={() => isStep1Done && goToStep(2)}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full transition-colors ${
-                wizardStep === 2 ? 'bg-[#5e6ad2] text-white font-bold'
-                  : isStep2Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20'
-                  : !isStep1Done ? 'bg-[#1e2025] text-[#8a8f98]/40 cursor-not-allowed'
-                  : 'bg-[#1e2025] text-[#8a8f98] hover:bg-[#1e2025]/80 cursor-pointer'
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
+                wizardStep === 2 ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-bold shadow-sm'
+                  : isStep2Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20 font-medium'
+                  : !isStep1Done ? 'bg-[#1e2025]/20 text-[#8a8f98]/40 cursor-not-allowed font-medium'
+                  : 'bg-[#1e2025]/40 text-[#8a8f98] hover:bg-[#1e2025]/80 cursor-pointer font-medium'
               }`}>
               <span>2. Sender &amp; Mode</span>
               {isStep2Done && <Check className="w-3 h-3 text-[#27a644]" />}
@@ -1276,11 +1276,11 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
             <ChevronRight className="w-3.5 h-3.5 text-[#3e3e44]" />
 
             <button type="button" disabled={!isStep2Done} onClick={() => isStep2Done && goToStep(3)}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full transition-colors ${
-                wizardStep === 3 ? 'bg-[#5e6ad2] text-white font-bold'
-                  : isStep3Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20'
-                  : !isStep2Done ? 'bg-[#1e2025] text-[#8a8f98]/40 cursor-not-allowed'
-                  : 'bg-[#1e2025] text-[#8a8f98] hover:bg-[#1e2025]/80 cursor-pointer'
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
+                wizardStep === 3 ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-bold shadow-sm'
+                  : isStep3Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20 font-medium'
+                  : !isStep2Done ? 'bg-[#1e2025]/20 text-[#8a8f98]/40 cursor-not-allowed font-medium'
+                  : 'bg-[#1e2025]/40 text-[#8a8f98] hover:bg-[#1e2025]/80 cursor-pointer font-medium'
               }`}>
               <span>3. Webhook</span>
               {isStep3Done && <Check className="w-3 h-3 text-[#27a644]" />}

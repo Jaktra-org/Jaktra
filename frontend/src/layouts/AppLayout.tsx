@@ -46,10 +46,10 @@ export function AppLayout() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center justify-center md:justify-start rounded-md p-1.5 md:px-2.5 md:py-1.5 text-xs font-medium transition-all ${
+                  `flex items-center justify-center md:justify-start rounded-xl p-1.5 md:px-2.5 md:py-2 text-xs font-semibold transition-all ${
                     isActive
-                      ? "bg-[#141516] text-[#5e6ad2] border border-[#23252a]"
-                      : "text-[#8a8f98] hover:bg-[#141516]/60 hover:text-[#f7f8f8]"
+                      ? "bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] shadow-sm"
+                      : "text-[#8a8f98] hover:bg-[#181a26]/40 hover:text-[#f7f8f8]"
                   }`
                 }
                 title={item.label}
@@ -66,10 +66,10 @@ export function AppLayout() {
             <NavLink
               to="/settings"
               className={({ isActive }) =>
-                `flex items-center justify-center md:justify-start rounded-md p-1.5 md:px-2.5 md:py-1.5 text-xs font-medium transition-all ${
+                `flex items-center justify-center md:justify-start rounded-xl p-1.5 md:px-2.5 md:py-2 text-xs font-semibold transition-all ${
                   isActive
-                    ? "bg-[#141516] text-[#5e6ad2] border border-[#23252a]"
-                    : "text-[#8a8f98] hover:bg-[#141516]/60 hover:text-[#f7f8f8]"
+                    ? "bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] shadow-sm"
+                    : "text-[#8a8f98] hover:bg-[#181a26]/40 hover:text-[#f7f8f8]"
                 }`
               }
               title="Settings"

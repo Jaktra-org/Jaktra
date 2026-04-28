@@ -130,23 +130,23 @@ export function Agent() {
         </div>
 
         {/* Navigation Tabs (Overview vs DLQ) */}
-        <div className="flex items-center space-x-1 bg-[#13161c]/60 p-1 rounded-xl border border-[#1e2025]/80 w-fit">
+        <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl w-fit">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
               activeTab === 'overview'
-                ? 'bg-[#1d212a] text-[#f7f8f8] border border-[#2e3444] shadow-sm'
-                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
-            Overview & Runs
+            Overview &amp; Runs
           </button>
           <button
             onClick={() => setActiveTab('dlq')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
               activeTab === 'dlq'
-                ? 'bg-[#1d212a] text-[#f7f8f8] border border-[#2e3444] shadow-sm'
-                : 'text-[#8a8f98] hover:text-[#f7f8f8]'
+                ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
             <span>Failed Invoices (DLQ)</span>
