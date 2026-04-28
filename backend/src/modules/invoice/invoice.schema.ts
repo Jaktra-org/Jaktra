@@ -28,7 +28,7 @@ export const updateInvoiceStatusSchema = z.object({
 
 export const listInvoicesSchema = z.object({
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(50),
+  limit: z.coerce.number().min(1).max(200).default(15),
   sort_by: z.enum(['dueDate', 'invoiceAmount', 'createdAt', 'clientName', 'invoiceNo']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
   status: z.union([z.string(), z.array(z.string())]).optional(),
