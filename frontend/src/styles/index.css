@@ -16,13 +16,13 @@
   --color-hairline-strong: #34343a;
   --color-hairline-tertiary: #3e3e44;
 
-  /* Linear Signature Lavender-Blue Accent */
-  --color-primary-50: #eeeffb;
-  --color-primary-100: #d6d9f7;
-  --color-primary-500: #5e6ad2;
-  --color-primary-600: #5e69d1;
-  --color-primary-700: #4a54b3;
-  --color-primary-hover: #828fff;
+  /* Linear Signature Monochrome Accent Scale */
+  --color-primary-50: #f7f8f8;
+  --color-primary-100: #e1e4e8;
+  --color-primary-500: #f7f8f8;
+  --color-primary-600: #e1e4e8;
+  --color-primary-700: #d0d6e0;
+  --color-primary-hover: #e1e4e8;
 
   /* Linear Ink / Typography */
   --color-ink: #f7f8f8;
@@ -55,8 +55,8 @@
     --muted-foreground: #8a8f98;
     --border: #23252a;
     --hairline: #23252a;
-    --primary: #5e6ad2;
-    --primary-hover: #828fff;
+    --primary: #f7f8f8;
+    --primary-hover: #e1e4e8;
   }
 
   * {
@@ -74,7 +74,7 @@
 
 /* Style HTML native select options to prevent browser default gray/white dropdown menus */
 select option {
-  background-color: #13161c;
+  background-color: #0f1011;
   color: #f7f8f8;
   padding: 8px 12px;
 }
@@ -82,8 +82,18 @@ select option:hover,
 select option:focus,
 select option:active,
 select option:checked {
-  background-color: #1a1e2e !important;
-  color: #5e6ad2 !important;
+  background-color: #18191a !important;
+  color: #f7f8f8 !important;
+}
+
+/* Hide native Edge / IE / Safari password reveal and clear buttons to prevent broken browser icon overlays */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Custom Scrollbar for Linear Aesthetic */
@@ -115,7 +125,7 @@ select option:checked {
   border-radius: 2px;
 }
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #5e6ad2;
+  background: #34343a;
 }
 
 @keyframes timelineFadeIn {
