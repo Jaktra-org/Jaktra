@@ -8,8 +8,8 @@ export const updateSettingsSchema = z.object({
   companyName: z.string().optional(),
   senderName: z.string().optional(),
   senderEmail: z.string().email().optional(),
-  replyTo: z.string().email().optional().nullable(),
-  paymentLink: z.string().url().optional().nullable(),
+  replyTo: z.string().email().or(z.literal('')).optional().nullable(),
+  paymentLink: z.string().url().or(z.literal('')).optional().nullable(),
   bankDetails: z.string().optional().nullable(),
   timezone: z.string().optional(),
   scheduleHour: z.number().min(0).max(23).optional(),
@@ -19,7 +19,7 @@ export const updateSettingsSchema = z.object({
   autoPurgeDays: z.number().min(7, { message: "Auto-purge retention period must be at least 7 days" }).optional(),
   autoPurgeArchivedDisputesDays: z.number().min(1, { message: "Dispute purge retention period must be at least 1 day" }).optional(),
   dlqThreshold: z.number().min(1).optional(),
-});
+}).strip();
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
 
