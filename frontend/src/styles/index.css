@@ -72,6 +72,20 @@
   }
 }
 
+/* Style HTML native select options to prevent browser default gray/white dropdown menus */
+select option {
+  background-color: #13161c;
+  color: #f7f8f8;
+  padding: 8px 12px;
+}
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked {
+  background-color: #1a1e2e !important;
+  color: #5e6ad2 !important;
+}
+
 /* Custom Scrollbar for Linear Aesthetic */
 ::-webkit-scrollbar {
   width: 6px;

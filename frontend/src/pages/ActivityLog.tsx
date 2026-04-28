@@ -9,6 +9,7 @@ import {
 import { eventService } from "../services/event";
 import type { InvoiceEvent } from "../types/api";
 import { formatCurrency, formatDateValue } from "../utils/format";
+import { CustomSelect } from "../components/ui/CustomSelect";
 
 const categoryActionTypeMap: Record<string, string[]> = {
   invoices: [
@@ -879,42 +880,38 @@ export function ActivityLog() {
         </div>
 
         {/* Source Filter Dropdown */}
-        <div className="relative">
-          <select
-            value={selectedSource}
-            onChange={(e) => {
-              setSelectedSource(e.target.value);
-              setPage(1);
-            }}
-            className="w-full px-3 py-2.5 bg-[#13161c]/60 border border-[#1e2025] rounded-xl text-[#f7f8f8] font-medium focus:outline-none focus:border-[#5e6ad2] transition-all text-xs appearance-none cursor-pointer"
-          >
-            <option value="all">All Sources</option>
-            <option value="ui">UI Console</option>
-            <option value="agent">AI Agent</option>
-            <option value="webhook">Webhooks</option>
-            <option value="api">Integrations / API</option>
-          </select>
-          <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8a8f98] pointer-events-none" />
-        </div>
+        <CustomSelect
+          value={selectedSource}
+          onChange={(val) => {
+            setSelectedSource(val);
+            setPage(1);
+          }}
+          rightIcon={<Filter className="h-3.5 w-3.5 text-[#8a8f98]" />}
+          options={[
+            { label: "All Sources", value: "all" },
+            { label: "UI Console", value: "ui" },
+            { label: "AI Agent", value: "agent" },
+            { label: "Webhooks", value: "webhook" },
+            { label: "Integrations / API", value: "api" },
+          ]}
+        />
 
         {/* Date Filter Dropdown */}
-        <div className="relative">
-          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8a8f98] pointer-events-none" />
-          <select
-            value={selectedDateRange}
-            onChange={(e) => {
-              setSelectedDateRange(e.target.value);
-              setPage(1);
-            }}
-            className="w-full pl-9 pr-9 py-2.5 bg-[#13161c]/60 border border-[#1e2025] rounded-xl text-[#f7f8f8] font-medium focus:outline-none focus:border-[#5e6ad2] transition-all text-xs appearance-none cursor-pointer"
-          >
-            <option value="all">All Time</option>
-            <option value="24h">Last 24 Hours</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-          </select>
-          <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8a8f98] pointer-events-none" />
-        </div>
+        <CustomSelect
+          value={selectedDateRange}
+          onChange={(val) => {
+            setSelectedDateRange(val);
+            setPage(1);
+          }}
+          icon={<Calendar className="h-3.5 w-3.5 text-[#8a8f98]" />}
+          rightIcon={<Filter className="h-3.5 w-3.5 text-[#8a8f98]" />}
+          options={[
+            { label: "All Time", value: "all" },
+            { label: "Last 24 Hours", value: "24h" },
+            { label: "Last 7 Days", value: "7d" },
+            { label: "Last 30 Days", value: "30d" },
+          ]}
+        />
       </div>
 
       {/* Category Pills */}

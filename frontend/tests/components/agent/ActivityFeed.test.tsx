@@ -52,7 +52,9 @@ describe('ActivityFeed component', () => {
 
     // Toggle filter select to errors only (which displays halted/errors)
     const select = screen.getByRole('combobox');
-    await userEvent.selectOptions(select, 'errors');
+    await userEvent.click(select);
+    const errorOption = screen.getByText('Errors / Halted');
+    await userEvent.click(errorOption);
 
     // Only halted is error type, email_sent is normal
     expect(screen.getByText('halted')).toBeInTheDocument();

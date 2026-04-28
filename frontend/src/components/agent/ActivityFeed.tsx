@@ -5,6 +5,7 @@ import { RefreshCw, FileText, Send, Mail, AlertTriangle, CheckCircle2, MessageSq
 import { Link } from 'react-router-dom';
 import type { InvoiceEvent } from '../../types/api';
 import { getErrorMessage } from '../../utils/error-utils';
+import { CustomSelect } from '../ui/CustomSelect';
 
 interface ActivityFeedProps {
   isRunning: boolean;
@@ -70,15 +71,16 @@ export function ActivityFeed({ isRunning }: ActivityFeedProps) {
         </div>
 
         <div className="flex items-center space-x-2">
-          <select 
+          <CustomSelect 
             value={filter} 
-            onChange={(e) => setFilter(e.target.value as 'all' | 'activity' | 'errors')}
-            className="text-xs border-[#23252a] rounded-md py-1 pl-2 pr-7 focus:ring-1 focus:ring-[#5e69d1] text-[#f7f8f8] bg-[#0f1011]"
-          >
-            <option value="all">All Events</option>
-            <option value="activity">Activity Only</option>
-            <option value="errors">Errors / Halted</option>
-          </select>
+            onChange={(val) => setFilter(val as 'all' | 'activity' | 'errors')}
+            className="w-36"
+            options={[
+              { label: "All Events", value: "all" },
+              { label: "Activity Only", value: "activity" },
+              { label: "Errors / Halted", value: "errors" },
+            ]}
+          />
           
           <button 
             onClick={() => refetch()}

@@ -8,6 +8,7 @@ import { Badge } from "../components/ui/Badge";
 import { CreateInvoiceModal } from "../components/invoices/CreateInvoiceModal";
 import { ImportInvoiceModal } from "../components/invoices/ImportInvoiceModal";
 import { ConfirmDestructiveModal } from "../components/common/ConfirmDestructiveModal";
+import { CustomSelect } from "../components/ui/CustomSelect";
 import { 
   Search, 
   Download, 
@@ -478,49 +479,49 @@ export function Invoices() {
               {/* Aging Bucket */}
               <div>
                 <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Aging Bucket</label>
-                <select
+                <CustomSelect
                   value={params.aging_bucket || ''}
-                  onChange={(e) => handleAgingBucket(e.target.value)}
-                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
-                >
-                  <option value="" className="bg-[#13161c] text-[#f7f8f8]">All Aging Buckets</option>
-                  <option value="0_7" className="bg-[#13161c] text-[#f7f8f8]">0 - 7 Days Overdue</option>
-                  <option value="8_14" className="bg-[#13161c] text-[#f7f8f8]">8 - 14 Days Overdue</option>
-                  <option value="15_30" className="bg-[#13161c] text-[#f7f8f8]">15 - 30 Days Overdue</option>
-                  <option value="30_plus" className="bg-[#13161c] text-[#f7f8f8]">30+ Days Overdue</option>
-                </select>
+                  onChange={(val) => handleAgingBucket(val)}
+                  options={[
+                    { label: "All Aging Buckets", value: "" },
+                    { label: "0 - 7 Days Overdue", value: "0_7" },
+                    { label: "8 - 14 Days Overdue", value: "8_14" },
+                    { label: "15 - 30 Days Overdue", value: "15_30" },
+                    { label: "30+ Days Overdue", value: "30_plus" },
+                  ]}
+                />
               </div>
 
               {/* Payment Plan */}
               <div>
                 <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Payment Plan Status</label>
-                <select
+                <CustomSelect
                   value={params.has_payment_plan === undefined ? '' : params.has_payment_plan ? 'true' : 'false'}
-                  onChange={(e) => setParams(prev => ({
+                  onChange={(val) => setParams(prev => ({
                     ...prev,
                     page: 1,
-                    has_payment_plan: e.target.value === 'true' ? true : e.target.value === 'false' ? false : undefined
+                    has_payment_plan: val === 'true' ? true : val === 'false' ? false : undefined
                   }))}
-                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
-                >
-                  <option value="" className="bg-[#13161c] text-[#f7f8f8]">All</option>
-                  <option value="true" className="bg-[#13161c] text-[#f7f8f8]">Active Payment Plan</option>
-                  <option value="false" className="bg-[#13161c] text-[#f7f8f8]">No Payment Plan</option>
-                </select>
+                  options={[
+                    { label: "All Plans", value: "" },
+                    { label: "Active Payment Plan", value: "true" },
+                    { label: "No Payment Plan", value: "false" },
+                  ]}
+                />
               </div>
 
               {/* Follow-up Status */}
               <div>
                 <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Follow-up History</label>
-                <select
+                <CustomSelect
                   value={params.followup_status || ''}
-                  onChange={(e) => setParams(prev => ({ ...prev, page: 1, followup_status: (e.target.value as ListInvoicesParams['followup_status']) || undefined }))}
-                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
-                >
-                  <option value="" className="bg-[#13161c] text-[#f7f8f8]">All History</option>
-                  <option value="none" className="bg-[#13161c] text-[#f7f8f8]">No Follow-ups (0)</option>
-                  <option value="has_followups" className="bg-[#13161c] text-[#f7f8f8]">1+ Follow-ups Sent</option>
-                </select>
+                  onChange={(val) => setParams(prev => ({ ...prev, page: 1, followup_status: (val as ListInvoicesParams['followup_status']) || undefined }))}
+                  options={[
+                    { label: "All History", value: "" },
+                    { label: "No Follow-ups (0)", value: "none" },
+                    { label: "1+ Follow-ups Sent", value: "has_followups" },
+                  ]}
+                />
               </div>
 
               {/* Min Amount */}
