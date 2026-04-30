@@ -13,11 +13,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5e69d1] disabled:pointer-events-none disabled:opacity-40 cursor-pointer select-none",
+          "inline-flex items-center justify-center rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34343a] disabled:pointer-events-none disabled:opacity-40 cursor-pointer select-none",
           {
-            "bg-[#5e6ad2] text-white hover:bg-[#828fff] active:bg-[#5e69d1] shadow-sm": variant === "primary",
+            "bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] shadow-sm font-semibold": variant === "primary",
             "bg-[#0f1011] text-[#f7f8f8] border border-[#23252a] hover:bg-[#141516] hover:border-[#34343a]": variant === "secondary",
-            "border border-[#23252a] bg-transparent text-[#f7f8f8] hover:bg-[#0f1011] hover:border-[#34343a]": variant === "outline",
+            "border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] hover:border-[#34343a]": variant === "outline",
             "bg-transparent text-[#d0d6e0] hover:bg-[#0f1011] hover:text-[#f7f8f8]": variant === "ghost",
             "bg-red-950/40 text-red-400 border border-red-900/50 hover:bg-red-900/60": variant === "danger",
             "h-8 px-3 text-xs": size === "sm",
