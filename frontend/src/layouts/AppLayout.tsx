@@ -15,13 +15,12 @@ export function AppLayout() {
   const navItems = [
     { label: "Dashboard", path: "/", icon: LayoutDashboard },
     { label: "Invoices", path: "/invoices", icon: FileText },
+    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Payment Plans", path: "/payment-plans", icon: FileText }] : []),
+    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Disputes", path: "/disputes", icon: MessageSquare }] : []),
+    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "DLQ", path: "/dlq", icon: AlertTriangle }] : []),
     { label: "Agent", path: "/agent", icon: Bot },
     { label: "Analytics", path: "/analytics", icon: BarChart3 },
-    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "DLQ", path: "/dlq", icon: AlertTriangle }] : []),
-    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Disputes", path: "/disputes", icon: MessageSquare }] : []),
-    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Payment Plans", path: "/payment-plans", icon: FileText }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Activity Log", path: "/activity-log", icon: History }] : []),
-    ...(user?.role !== 'viewer' ? [{ label: "Settings", path: "/settings", icon: Settings }] : []),
   ];
 
   useEffect(() => {
@@ -63,7 +62,12 @@ export function AppLayout() {
     };
   }, [isResizing]);
 
-  const currentNavItem = navItems.find(item => 
+  const allNavItems = [
+    ...navItems,
+    ...(user?.role !== 'viewer' ? [{ label: "Settings", path: "/settings", icon: Settings }] : []),
+  ];
+
+  const currentNavItem = allNavItems.find(item => 
     item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path)
   );
   const breadcrumb = currentNavItem ? currentNavItem.label : "Dashboard";
@@ -111,6 +115,25 @@ export function AppLayout() {
             );
           })}
         </nav>
+
+        {user?.role !== 'viewer' && (
+          <div className="p-2 md:px-3 md:py-2.5 border-t border-[#23252a]/70">
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `flex items-center justify-center md:justify-start rounded-md p-2 md:px-3 md:py-1.5 text-xs font-medium transition-all ${
+                  isActive
+                    ? "bg-[#141516] text-[#5e6ad2] border border-[#23252a]"
+                    : "text-[#8a8f98] hover:bg-[#141516]/60 hover:text-[#f7f8f8]"
+                }`
+              }
+              title="Settings"
+            >
+              <Settings className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden md:block ml-2.5 truncate">Settings</span>
+            </NavLink>
+          </div>
+        )}
       </aside>
 
       <main className="flex-1 min-h-0 overflow-hidden flex flex-col bg-[#010102] w-full">

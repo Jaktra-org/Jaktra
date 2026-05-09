@@ -16,7 +16,7 @@ import { SendGridWizardStep2 } from './Settings/SendGridWizardStep2';
 import { SendGridWizardStep3 } from './Settings/SendGridWizardStep3';
 
 export function Settings() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'general' | 'email' | 'integrations' | 'team' | 'billing'>(
     'profile'
   );
@@ -76,16 +76,6 @@ export function Settings() {
               label="Billing" 
             />
           )}
-
-          <div className="pt-3 mt-3 border-t border-[#23252a]">
-            <button
-              onClick={() => logout()}
-              className="w-full flex items-center px-3 py-2 text-xs font-medium rounded-md transition-all text-red-400 hover:bg-red-950/40 hover:border hover:border-red-900/50"
-            >
-              <LogOut className="w-4 h-4 mr-2.5" />
-              Log Out
-            </button>
-          </div>
         </div>
 
         {/* Content Area */}
