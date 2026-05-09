@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, act } from '../test-utils';
+import { screen } from '../test-utils';
 import { renderWithProviders } from '../test-utils';
 import { AppLayout } from '../../src/layouts/AppLayout';
 
@@ -42,29 +42,15 @@ describe('AppLayout layout component', () => {
     expect(screen.queryByRole('link', { name: 'Settings' })).not.toBeInTheDocument();
   });
 
-  it('toggles profile menu user dropdown options on click', async () => {
-    const logoutMock = vi.fn();
+  it('renders breadcrumb header for active navigation route', () => {
     renderWithProviders(<AppLayout />, {
       authState: {
         user: { id: 'u1', name: 'Admin Jane', email: 'j@a.com', role: 'admin', tenantId: 't1', mfaEnabled: false },
         isLoading: false,
         isAuthenticated: true,
-        logout: logoutMock,
       },
     });
 
-    // Renders initials
-    const initialsBtn = screen.getByText('AJ');
-    expect(initialsBtn).toBeInTheDocument();
-
-    // Menu dropdown initially hidden
-    expect(screen.queryByText('Admin Jane')).not.toBeInTheDocument();
-
-    // Click to toggle dropdown open
-    await act(async () => {
-      initialsBtn.click();
-    });
-
-    expect(screen.getByText('Admin Jane')).toBeInTheDocument();
+    expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
   });
 });

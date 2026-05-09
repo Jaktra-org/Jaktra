@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../services/settings';
 import { authService } from '../services/auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
-import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon, Trash2, X, ChevronRight, Check } from 'lucide-react';
+import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon, Trash2, X, ChevronRight, Check, LogOut } from 'lucide-react';
 import type { TenantSettings, IntegrationsResponse, SmtpConfig, SendgridSetupProgress } from '../types/api';
 
 import { getErrorMessage } from '../utils/error-utils';
@@ -16,7 +16,7 @@ import { SendGridWizardStep2 } from './Settings/SendGridWizardStep2';
 import { SendGridWizardStep3 } from './Settings/SendGridWizardStep3';
 
 export function Settings() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'general' | 'email' | 'integrations' | 'team' | 'billing'>(
     'profile'
   );
@@ -76,6 +76,16 @@ export function Settings() {
               label="Billing" 
             />
           )}
+
+          <div className="pt-3 mt-3 border-t border-[#23252a]">
+            <button
+              onClick={() => logout()}
+              className="w-full flex items-center px-3 py-2 text-xs font-medium rounded-md transition-all text-red-400 hover:bg-red-950/40 hover:border hover:border-red-900/50"
+            >
+              <LogOut className="w-4 h-4 mr-2.5" />
+              Log Out
+            </button>
+          </div>
         </div>
 
         {/* Content Area */}
@@ -1048,7 +1058,7 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
 }
 
 function ProfileSettings() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -1145,7 +1155,27 @@ function ProfileSettings() {
           }
         }}
       />
+
+      <Card className="border border-[#23252a] bg-[#0f1011]">
+        <CardHeader>
+          <CardTitle className="text-base text-[#f7f8f8]">Account Session</CardTitle>
+          <CardDescription className="text-xs text-[#8a8f98]">Manage active session and sign out of your account.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between pt-2">
+          <div>
+            <p className="text-xs font-semibold text-[#f7f8f8]">{user?.name || 'User'}</p>
+            <p className="text-[11px] text-[#8a8f98]">{user?.email}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => logout()}
+            className="px-4 py-2 bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/50 rounded-md text-xs font-medium transition-colors flex items-center justify-center cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5 mr-1.5" />
+            Log Out
+          </button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
