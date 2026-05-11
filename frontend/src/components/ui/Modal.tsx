@@ -36,31 +36,32 @@ export function Modal({ isOpen, onClose, title, description, children, className
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150">
       <div
         ref={modalRef}
-        className={`bg-white w-full rounded-xl shadow-xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200 ${className}`}
+        className={`bg-[#0f1011] border border-[#23252a] text-[#f7f8f8] w-full rounded-xl shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 ${className}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#23252a]/70">
           <div>
-            <h2 id="modal-title" className="text-lg font-semibold text-slate-900">{title}</h2>
-            {description && <p className="text-sm text-slate-500 mt-1">{description}</p>}
+            <h2 id="modal-title" className="text-base font-semibold text-[#f7f8f8] tracking-tight">{title}</h2>
+            {description && <p className="text-xs text-[#8a8f98] mt-0.5">{description}</p>}
           </div>
           <button
             onClick={onClose}
-            className="p-2 -mr-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+            className="p-1.5 -mr-1.5 text-[#8a8f98] hover:text-[#f7f8f8] rounded-md hover:bg-[#141516] transition-colors"
             aria-label="Close modal"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="overflow-y-auto px-6 py-6">
+        <div className="overflow-y-auto px-5 py-5 text-sm text-[#d0d6e0]">
           {children}
         </div>
       </div>
     </div>
   );
 }
+

@@ -4,7 +4,7 @@ export function Spinner({ className }: { className?: string }) {
   return (
     <svg
       data-testid="spinner"
-      className={cn("animate-spin text-blue-600", className)}
+      className={cn("animate-spin text-[#5e6ad2]", className)}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -18,3 +18,4 @@ export function Spinner({ className }: { className?: string }) {
     </svg>
   );
 }
+
