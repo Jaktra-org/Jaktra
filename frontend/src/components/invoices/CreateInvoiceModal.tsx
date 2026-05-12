@@ -74,16 +74,16 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
       title="Add New Invoice"
       description="Manually add a single invoice to the system."
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 text-[#f7f8f8]">
         {error && (
-          <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm">
+          <div className="p-3 bg-red-950/40 text-red-400 border border-red-900/50 rounded-md text-xs font-medium">
             {error}
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="invoiceNo" className="text-sm font-medium text-slate-700">Invoice Number</label>
+          <div className="space-y-1.5">
+            <label htmlFor="invoiceNo" className="text-xs font-medium text-[#8a8f98]">Invoice Number</label>
             <input
               id="invoiceNo"
               name="invoiceNo"
@@ -92,11 +92,11 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
               value={formData.invoiceNo}
               onChange={handleChange}
               placeholder="INV-001"
-              className="flex h-10 w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="dueDate" className="text-sm font-medium text-slate-700">Due Date</label>
+          <div className="space-y-1.5">
+            <label htmlFor="dueDate" className="text-xs font-medium text-[#8a8f98]">Due Date</label>
             <input
               id="dueDate"
               name="dueDate"
@@ -104,13 +104,13 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
               required
               value={formData.dueDate}
               onChange={handleChange}
-              className="flex h-10 w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="clientName" className="text-sm font-medium text-slate-700">Client Name</label>
+        <div className="space-y-1.5">
+          <label htmlFor="clientName" className="text-xs font-medium text-[#8a8f98]">Client Name</label>
           <input
             id="clientName"
             name="clientName"
@@ -119,12 +119,12 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             value={formData.clientName}
             onChange={handleChange}
             placeholder="Acme Corp"
-            className="flex h-10 w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+            className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="contactEmail" className="text-sm font-medium text-slate-700">Contact Email</label>
+        <div className="space-y-1.5">
+          <label htmlFor="contactEmail" className="text-xs font-medium text-[#8a8f98]">Contact Email</label>
           <input
             id="contactEmail"
             name="contactEmail"
@@ -133,12 +133,12 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             value={formData.contactEmail}
             onChange={handleChange}
             placeholder="billing@acmecorp.com"
-            className="flex h-10 w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+            className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="invoiceAmount" className="text-sm font-medium text-slate-700">Amount ($)</label>
+        <div className="space-y-1.5">
+          <label htmlFor="invoiceAmount" className="text-xs font-medium text-[#8a8f98]">Amount ($)</label>
           <input
             id="invoiceAmount"
             name="invoiceAmount"
@@ -149,13 +149,13 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             value={formData.invoiceAmount}
             onChange={handleChange}
             placeholder="1500.00"
-            className="flex h-10 w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+            className="flex h-9 w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="subject" className="text-sm font-medium text-slate-700">
-            Invoice Description <span className="text-slate-400 font-normal">(optional)</span>
+        <div className="space-y-1.5">
+          <label htmlFor="subject" className="text-xs font-medium text-[#8a8f98]">
+            Invoice Description <span className="text-[#62666d] font-normal">(optional)</span>
           </label>
           <textarea
             id="subject"
@@ -165,27 +165,27 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             onChange={handleChange}
             placeholder="e.g. Web Development Services – Q1 2026"
             maxLength={500}
-            className="flex w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+            className="flex w-full rounded-md border border-[#23252a] bg-[#010102] px-3 py-2 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:ring-1 focus:ring-[#5e69d1] resize-none"
           />
-          <p className="text-xs text-slate-400">What this invoice is for — used to personalise follow-up emails.</p>
+          <p className="text-[11px] text-[#62666d]">What this invoice is for — used to personalise follow-up emails.</p>
         </div>
 
-        <div className="pt-4 flex justify-end space-x-3">
+        <div className="pt-4 flex justify-end space-x-3 border-t border-[#23252a]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+            className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] rounded-md hover:bg-[#141516] transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-md hover:bg-[#828fff] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {mutation.isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Saving...
               </>
             ) : (
               "Save Invoice"
@@ -195,4 +195,5 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
       </form>
     </Modal>
   );
+
 }
