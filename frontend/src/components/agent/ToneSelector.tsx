@@ -21,7 +21,7 @@ export function ToneSelector({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={cn(
-        "flex h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 text-slate-700 font-medium",
+        "flex h-9 rounded-md border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] focus:outline-none focus:ring-1 focus:ring-[#5e69d1] disabled:cursor-not-allowed disabled:opacity-40 font-medium",
         className
       )}
       {...props}
