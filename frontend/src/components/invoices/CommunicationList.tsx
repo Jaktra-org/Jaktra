@@ -12,10 +12,10 @@ export function CommunicationList({ communications }: CommunicationListProps) {
 
   if (communications.length === 0) {
     return (
-      <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
-        <MessageSquare className="h-8 w-8 text-slate-400 mx-auto mb-3" />
-        <h3 className="text-sm font-medium text-slate-900">No communications</h3>
-        <p className="text-sm text-slate-500 mt-1">No emails or messages have been sent for this invoice yet.</p>
+      <div className="py-8 text-center border border-dashed border-[#23252a] rounded-lg bg-[#0f1011]">
+        <MessageSquare className="h-7 w-7 text-[#8a8f98] mx-auto mb-2" />
+        <h3 className="text-xs font-semibold text-[#f7f8f8]">No communications</h3>
+        <p className="text-xs text-[#8a8f98] mt-1">No emails or messages have been sent for this invoice yet.</p>
       </div>
     );
   }
@@ -31,21 +31,21 @@ export function CommunicationList({ communications }: CommunicationListProps) {
       case 'clicked':
       case 'sent':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
             <CheckCircle2 className="w-3 h-3 mr-1" />
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </span>
         );
       case 'failed':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-950/40 text-red-400 border border-red-900/50">
             <XCircle className="w-3 h-3 mr-1" />
             Failed
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#141516] text-[#8a8f98] border border-[#23252a]">
             <Clock className="w-3 h-3 mr-1" />
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </span>
@@ -57,19 +57,19 @@ export function CommunicationList({ communications }: CommunicationListProps) {
     switch (source) {
       case 'bulk_ai_agent':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
             🤖 Bulk AI Agent
           </span>
         );
       case 'invoice_manual':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#5e6ad2]/20 text-[#5e6ad2] border border-[#5e6ad2]/30">
             ⚡ Invoice Manual
           </span>
         );
       case 'dispute_agent':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-950/40 text-purple-400 border border-purple-900/50">
             💬 Dispute Agent
           </span>
         );
@@ -79,23 +79,23 @@ export function CommunicationList({ communications }: CommunicationListProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {communications.map((comm) => (
-        <div key={comm.id} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm transition-all">
+        <div key={comm.id} className="border border-[#23252a] rounded-lg overflow-hidden bg-[#0f1011] shadow-none transition-all">
           {/* Header Row (Always visible) */}
           <div 
-            className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50"
+            className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[#141516]/60 transition-colors"
             onClick={() => toggleExpand(comm.id)}
           >
-            <div className="flex items-center space-x-4">
-              <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <Mail className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 rounded-full bg-[#5e6ad2]/20 border border-[#5e6ad2]/30 flex items-center justify-center flex-shrink-0">
+                <Mail className="h-4 w-4 text-[#5e6ad2]" />
               </div>
               <div>
-                <h4 className="text-sm font-medium text-slate-900 flex items-center">
+                <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
                   {comm.subject || 'No Subject'}
                 </h4>
-                <div className="flex items-center mt-1 text-xs text-slate-500 space-x-3">
+                <div className="flex items-center mt-0.5 text-[11px] text-[#8a8f98] space-x-2">
                   <span>To: {comm.recipient}</span>
                   <span>•</span>
                   <span>{new Date(comm.createdAt).toLocaleString(undefined, {
@@ -104,46 +104,46 @@ export function CommunicationList({ communications }: CommunicationListProps) {
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2.5">
               {getSourceBadge(comm.source)}
               {getStatusBadge(comm.status)}
-              <div className="text-slate-400">
-                {expandedId === comm.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              <div className="text-[#8a8f98]">
+                {expandedId === comm.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </div>
             </div>
           </div>
 
           {/* Expanded Body */}
           {expandedId === comm.id && (
-            <div className="border-t border-slate-200 bg-slate-50 p-4 animate-in slide-in-from-top-2 duration-200">
+            <div className="border-t border-[#23252a] bg-[#010102] p-4 animate-in slide-in-from-top-2 duration-200">
               {comm.errorMsg && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+                <div className="mb-3 p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 font-medium">
                   <span className="font-semibold">Delivery Error:</span> {getErrorMessage(comm.errorMsg)}
                 </div>
               )}
               
-              <div className="flex justify-between items-center mb-3">
-                <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Message Body</h5>
+              <div className="flex justify-between items-center mb-2">
+                <h5 className="text-[10px] font-semibold text-[#8a8f98] uppercase tracking-wider">Message Body</h5>
                 {comm.providerMessageId && (
-                  <span className="text-xs text-slate-400 font-mono" title="Provider Message ID">
+                  <span className="text-[10px] text-[#62666d] font-mono" title="Provider Message ID">
                     ID: {comm.providerMessageId.substring(0, 12)}...
                   </span>
                 )}
               </div>
               
-              <div className="bg-white border border-slate-200 rounded-md p-4 text-sm text-slate-800 font-sans shadow-inner overflow-auto max-h-[500px]">
+              <div className="bg-[#0f1011] border border-[#23252a] rounded-md p-3.5 text-xs text-[#f7f8f8] font-sans shadow-none overflow-auto max-h-[500px]">
                 {/* Render HTML if it contains HTML tags, otherwise text */}
                 {comm.body && (comm.body.includes('<html') || comm.body.includes('<div') || comm.body.includes('<p>')) ? (
                   <div dangerouslySetInnerHTML={{ __html: comm.body }} />
                 ) : (
-                  <pre className="whitespace-pre-wrap font-sans">{comm.body}</pre>
+                  <pre className="whitespace-pre-wrap font-sans text-xs text-[#d0d6e0]">{comm.body}</pre>
                 )}
               </div>
               
               {/* Detailed Timestamps footer */}
               {comm.sentAt && (
-                <div className="mt-4 text-xs text-slate-500">
-                  Sent: <span className="font-medium text-slate-700">{new Date(comm.sentAt).toLocaleString()}</span>
+                <div className="mt-3 text-[11px] text-[#8a8f98]">
+                  Sent: <span className="font-medium text-[#f7f8f8]">{new Date(comm.sentAt).toLocaleString()}</span>
                 </div>
               )}
             </div>
@@ -153,3 +153,4 @@ export function CommunicationList({ communications }: CommunicationListProps) {
     </div>
   );
 }
+
