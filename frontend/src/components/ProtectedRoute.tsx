@@ -8,11 +8,12 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: string[] }) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
-        <Spinner className="h-8 w-8 text-blue-600" />
+      <div className="flex h-screen w-screen items-center justify-center bg-[#010102]">
+        <Spinner className="h-8 w-8 text-[#5e6ad2]" />
       </div>
     );
   }
+
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

@@ -39,18 +39,18 @@ export class ReactErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6 text-center">
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-8 shadow-lg">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 mb-6">
-              <AlertTriangle className="h-7 w-7 text-red-600" />
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#010102] p-6 text-center text-[#f7f8f8]">
+          <div className="w-full max-w-md bg-[#0f1011] border border-[#23252a] rounded-xl p-8 shadow-none">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-950/40 border border-red-900/50 mb-5">
+              <AlertTriangle className="h-6 w-6 text-red-400" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">Something went wrong</h1>
-            <p className="text-sm text-slate-500 mb-6">
+            <h1 className="text-xl font-semibold tracking-tight text-[#f7f8f8] mb-1.5">Something went wrong</h1>
+            <p className="text-xs text-[#8a8f98] mb-6">
               An unexpected error occurred while rendering this page.
             </p>
             {import.meta.env.DEV && this.state.error && (
-              <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mb-6 text-left max-h-40 overflow-auto">
-                <code className="text-xs text-red-600 block break-all whitespace-pre-wrap font-mono">
+              <div className="bg-[#010102] border border-[#23252a] rounded-lg p-3.5 mb-6 text-left max-h-40 overflow-auto">
+                <code className="text-[11px] text-red-400 block break-all whitespace-pre-wrap font-mono">
                   {getErrorMessage(this.state.error)}
                 </code>
               </div>
@@ -58,16 +58,16 @@ export class ReactErrorBoundary extends Component<Props, State> {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={this.handleReload}
-                className="inline-flex items-center justify-center rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 px-4 py-2 text-sm shadow transition-colors"
+                className="inline-flex items-center justify-center rounded-md bg-[#5e6ad2] text-white font-medium hover:bg-[#828fff] px-3.5 py-1.5 text-xs transition-colors"
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 Reload Page
               </button>
               <button
                 onClick={this.handleReset}
-                className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 px-4 py-2 text-sm shadow-sm transition-colors"
+                className="inline-flex items-center justify-center rounded-md border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] font-medium hover:bg-[#141516] px-3.5 py-1.5 text-xs transition-colors"
               >
-                <Home className="mr-2 h-4 w-4" />
+                <Home className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
                 Go to Home
               </button>
             </div>
@@ -78,4 +78,5 @@ export class ReactErrorBoundary extends Component<Props, State> {
 
     return this.props.children;
   }
+
 }
