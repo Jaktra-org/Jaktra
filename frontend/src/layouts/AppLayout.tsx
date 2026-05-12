@@ -85,10 +85,10 @@ export function AppLayout() {
     : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
+    <div className="flex h-screen w-full bg-[#010102] text-[#f7f8f8] overflow-hidden">
       <aside 
         style={{ width: isMobile ? undefined : sidebarWidth }}
-        className={`relative flex flex-col border-r border-slate-200 bg-white text-slate-600 z-20 flex-shrink-0 ${isMobile ? 'w-16' : ''} ${!isResizing ? 'transition-all duration-300' : ''}`}
+        className={`relative flex flex-col border-r border-[#23252a] bg-[#0f1011] text-[#8a8f98] z-20 flex-shrink-0 ${isMobile ? 'w-16' : ''} ${!isResizing ? 'transition-all duration-300' : ''}`}
       >
         {!isMobile && (
           <div 
@@ -98,12 +98,14 @@ export function AppLayout() {
           />
         )}
         
-        <div className="flex h-16 items-center justify-center md:justify-start md:px-6 border-b border-slate-200">
-          <Bot className="h-6 w-6 text-blue-600 flex-shrink-0" />
-          <span className="text-lg font-bold text-slate-900 tracking-tight hidden md:block ml-2 whitespace-nowrap overflow-hidden">Jaktra</span>
+        <div className="flex h-14 items-center justify-center md:justify-start md:px-5 border-b border-[#23252a]/70">
+          <div className="h-7 w-7 rounded-md bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center flex-shrink-0">
+            <Bot className="h-4 w-4 text-[#5e6ad2]" />
+          </div>
+          <span className="text-sm font-semibold text-[#f7f8f8] tracking-tight hidden md:block ml-2.5 whitespace-nowrap overflow-hidden">Jaktra</span>
         </div>
         
-        <nav className="flex-1 space-y-1 px-2 md:px-3 py-4 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 space-y-1 px-2 md:px-3 py-3 overflow-y-auto overflow-x-hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -111,36 +113,36 @@ export function AppLayout() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center justify-center md:justify-start rounded-md p-2 md:px-3 md:py-2 text-sm font-medium transition-colors ${
+                  `flex items-center justify-center md:justify-start rounded-md p-2 md:px-3 md:py-1.5 text-xs font-medium transition-all ${
                     isActive
-                       ? "bg-blue-50 text-blue-700"
-                      : "hover:bg-slate-100 hover:text-slate-900"
+                      ? "bg-[#141516] text-[#5e6ad2] border border-[#23252a]"
+                      : "text-[#8a8f98] hover:bg-[#141516]/60 hover:text-[#f7f8f8]"
                   }`
                 }
                 title={item.label}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                <span className="hidden md:block ml-3 truncate">{item.label}</span>
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden md:block ml-2.5 truncate">{item.label}</span>
               </NavLink>
             );
           })}
         </nav>
 
-        <div className="border-t border-slate-200 p-2 md:p-4">
+        <div className="border-t border-[#23252a]/70 p-2 md:p-3">
           <button 
             onClick={() => logout()}
-            className="flex w-full items-center justify-center md:justify-start rounded-md p-2 md:px-3 md:py-2 text-sm font-medium hover:bg-slate-100 hover:text-slate-900 transition-colors"
+            className="flex w-full items-center justify-center md:justify-start rounded-md p-2 md:px-3 md:py-1.5 text-xs font-medium text-[#8a8f98] hover:bg-[#141516] hover:text-[#f7f8f8] transition-colors"
             title="Logout"
           >
-            <LogOut className="h-5 w-5 flex-shrink-0" />
-            <span className="hidden md:block ml-3 truncate">Logout</span>
+            <LogOut className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden md:block ml-2.5 truncate">Logout</span>
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 min-h-0 overflow-hidden flex flex-col bg-slate-50 w-full">
-        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6 shadow-sm flex-shrink-0">
-          <div className="text-sm md:text-base font-semibold text-slate-800">
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col bg-[#010102] w-full">
+        <header className="flex h-14 items-center justify-between border-b border-[#23252a] bg-[#010102] px-4 md:px-6 flex-shrink-0">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#8a8f98]">
             {breadcrumb}
           </div>
           
@@ -148,27 +150,27 @@ export function AppLayout() {
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="flex items-center space-x-2 rounded-full focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
                 aria-expanded={isDropdownOpen}
                 aria-haspopup="true"
               >
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold hover:bg-blue-200 transition-colors">
+                <div className="h-7 w-7 rounded-full bg-[#141516] border border-[#23252a] flex items-center justify-center text-[#5e6ad2] font-semibold text-xs hover:border-[#34343a] transition-colors">
                   {initials}
                 </div>
               </button>
               
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-50 overflow-hidden transform origin-top-right transition-all">
-                  <div className="px-4 py-3 border-b border-slate-100">
-                    <p className="text-sm font-medium text-slate-900 truncate">{user?.name || 'User'}</p>
-                    <p className="text-xs text-slate-500 truncate mt-1">{user?.email}</p>
+                <div className="absolute right-0 mt-2 w-56 rounded-lg bg-[#0f1011] border border-[#23252a] shadow-2xl z-50 overflow-hidden transform origin-top-right transition-all">
+                  <div className="px-4 py-3 border-b border-[#23252a]/70">
+                    <p className="text-xs font-medium text-[#f7f8f8] truncate">{user?.name || 'User'}</p>
+                    <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">{user?.email}</p>
                   </div>
                   <div className="py-1">
                     <button 
                       onClick={() => logout()}
-                      className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-slate-50 transition-colors"
+                      className="flex w-full items-center px-4 py-2 text-xs text-red-400 hover:bg-[#141516] transition-colors"
                     >
-                      <LogOut className="mr-2 h-4 w-4" />
+                      <LogOut className="mr-2 h-3.5 w-3.5" />
                       Logout
                     </button>
                   </div>
@@ -178,10 +180,11 @@ export function AppLayout() {
           </div>
         </header>
         
-        <div className="flex-1 min-h-0 p-4 md:p-6 overflow-auto">
+        <div className="flex-1 min-h-0 p-4 md:p-6 overflow-auto bg-[#010102]">
           <Outlet />
         </div>
       </main>
     </div>
   );
 }
+
