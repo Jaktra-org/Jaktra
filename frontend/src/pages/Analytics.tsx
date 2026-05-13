@@ -13,36 +13,36 @@ export function Analytics() {
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center">
-            <TrendingUp className="w-8 h-8 text-blue-600 mr-3" />
+          <h1 className="text-xl font-bold tracking-tight text-[#f7f8f8] flex items-center">
+            <TrendingUp className="w-6 h-6 text-[#5e6ad2] mr-2.5" />
             Analytics & BI
           </h1>
-          <p className="text-slate-500 mt-1">Real-time business intelligence and AI performance metrics.</p>
+          <p className="text-xs text-[#8a8f98] mt-0.5">Real-time business intelligence and AI performance metrics.</p>
         </div>
       </div>
 
-      <div className="border-b border-slate-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-[#23252a]">
+        <nav className="-mb-px flex space-x-6">
           <button
             onClick={() => setActiveTab('financial')}
             className={`${
               activeTab === 'financial'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+                ? 'border-[#5e6ad2] text-[#5e6ad2]'
+                : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
+            } whitespace-nowrap py-3 px-1 border-b-2 font-medium text-xs flex items-center transition-colors`}
           >
-            <LayoutDashboard className="w-4 h-4 mr-2" />
+            <LayoutDashboard className="w-3.5 h-3.5 mr-2" />
             Financial Metrics
           </button>
           <button
             onClick={() => setActiveTab('agent')}
             className={`${
               activeTab === 'agent'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+                ? 'border-[#5e6ad2] text-[#5e6ad2]'
+                : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
+            } whitespace-nowrap py-3 px-1 border-b-2 font-medium text-xs flex items-center transition-colors`}
           >
-            <Zap className="w-4 h-4 mr-2" />
+            <Zap className="w-3.5 h-3.5 mr-2" />
             Agent Performance
           </button>
         </nav>
@@ -68,49 +68,49 @@ function FinancialMetricsTab() {
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
   const tierConfig: Record<string, { label: string, color: string }> = {
-    stage_1_warm: { label: 'Warm (Stage 1)', color: '#3b82f6' },
-    stage_2_firm: { label: 'Firm (Stage 2)', color: '#eab308' },
-    stage_3_serious: { label: 'Serious (Stage 3)', color: '#f97316' },
-    stage_4_stern: { label: 'Stern (Stage 4)', color: '#ef4444' },
-    legal_escalation: { label: 'Legal Escalation', color: '#7f1d1d' },
+    stage_1_warm: { label: 'Warm (Stage 1)', color: '#5e6ad2' },
+    stage_2_firm: { label: 'Firm (Stage 2)', color: '#828fff' },
+    stage_3_serious: { label: 'Serious (Stage 3)', color: '#f59e0b' },
+    stage_4_stern: { label: 'Stern (Stage 4)', color: '#eb5757' },
+    legal_escalation: { label: 'Legal Escalation', color: '#991b1b' },
   };
 
   const agingChartData = (agingData || []).map(d => ({
     name: tierConfig[d.tier]?.label || d.tier,
     value: d.totalAmount,
     count: d.count,
-    fill: tierConfig[d.tier]?.color || '#cbd5e1'
+    fill: tierConfig[d.tier]?.color || '#3e3e44'
   })).reverse();
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Total Receivable" value={summaryData?.totalReceivable} loading={isSummaryLoading} formatter={formatCurrency} icon={<DollarSign className="w-4 h-4 text-slate-400" />} />
-        <MetricCard title="Total Collected" value={summaryData?.totalCollected} loading={isSummaryLoading} formatter={formatCurrency} icon={<DollarSign className="w-4 h-4 text-emerald-500" />} valueColor="text-emerald-600" />
-        <MetricCard title="Total Overdue" value={summaryData?.totalOverdue} loading={isSummaryLoading} formatter={formatCurrency} icon={<AlertCircle className="w-4 h-4 text-red-500" />} valueColor="text-red-600" />
-        <MetricCard title="Active Invoices" value={summaryData?.invoiceCount} loading={isSummaryLoading} icon={<Clock className="w-4 h-4 text-blue-500" />} />
+        <MetricCard title="Total Receivable" value={summaryData?.totalReceivable} loading={isSummaryLoading} formatter={formatCurrency} icon={<DollarSign className="w-4 h-4 text-[#62666d]" />} />
+        <MetricCard title="Total Collected" value={summaryData?.totalCollected} loading={isSummaryLoading} formatter={formatCurrency} icon={<DollarSign className="w-4 h-4 text-[#27a644]" />} valueColor="text-[#27a644]" />
+        <MetricCard title="Total Overdue" value={summaryData?.totalOverdue} loading={isSummaryLoading} formatter={formatCurrency} icon={<AlertCircle className="w-4 h-4 text-red-400" />} valueColor="text-red-400" />
+        <MetricCard title="Active Invoices" value={summaryData?.invoiceCount} loading={isSummaryLoading} icon={<Clock className="w-4 h-4 text-[#5e6ad2]" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="h-full">
+        <Card className="h-full border border-[#23252a] bg-[#0f1011]">
           <CardHeader>
             <CardTitle>Aging Pyramid</CardTitle>
             <CardDescription>Capital exposure grouped by collection tier</CardDescription>
           </CardHeader>
           <CardContent>
             {isAgingLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-slate-300" />
+              <div className="h-[280px] flex items-center justify-center text-xs text-[#8a8f98]">
+                <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
               </div>
             ) : (
-              <div className="h-[300px] w-full">
+              <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={agingChartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                    <XAxis type="number" tickFormatter={(val) => `$${val / 1000}k`} stroke="#94a3b8" fontSize={12} />
-                    <YAxis dataKey="name" type="category" width={120} stroke="#64748b" fontSize={12} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={40}>
+                  <BarChart data={agingChartData} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#23252a" />
+                    <XAxis type="number" tickFormatter={(val) => `$${val / 1000}k`} stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} />
+                    <YAxis dataKey="name" type="category" width={110} stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} />
+                    <Tooltip content={<CustomTooltip />} cursor={{fill: '#141516'}} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={36}>
                       {agingChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
@@ -138,24 +138,24 @@ function AgentPerformanceTab() {
   const formatPercentage = (val: number) => `${val}%`;
 
   const tierConfig: Record<string, { label: string, color: string }> = {
-    stage_1_warm: { label: 'Warm', color: '#3b82f6' },
-    stage_2_firm: { label: 'Firm', color: '#eab308' },
-    stage_3_serious: { label: 'Serious', color: '#f97316' },
-    stage_4_stern: { label: 'Stern', color: '#ef4444' },
-    legal_escalation: { label: 'Legal', color: '#7f1d1d' },
+    stage_1_warm: { label: 'Warm', color: '#5e6ad2' },
+    stage_2_firm: { label: 'Firm', color: '#828fff' },
+    stage_3_serious: { label: 'Serious', color: '#f59e0b' },
+    stage_4_stern: { label: 'Stern', color: '#eb5757' },
+    legal_escalation: { label: 'Legal', color: '#991b1b' },
   };
 
   const chartTierData = (tierData || []).map(d => ({
     name: tierConfig[d.tier]?.label || d.tier,
     successRate: d.successRate,
     avgDaysToPayment: d.avgDaysToPayment,
-    fill: tierConfig[d.tier]?.color || '#cbd5e1'
+    fill: tierConfig[d.tier]?.color || '#3e3e44'
   }));
 
   const chartChannelData = (channelData || []).map(d => ({
     name: d.channel.charAt(0).toUpperCase() + d.channel.slice(1),
     count: d.count,
-    fill: d.channel === 'email' ? '#3b82f6' : d.channel === 'sms' ? '#f59e0b' : '#22c55e'
+    fill: d.channel === 'email' ? '#5e6ad2' : d.channel === 'sms' ? '#f59e0b' : '#27a644'
   }));
 
   const isLoading = isAgentLoading || isEmailVolLoading || isTierLoading || isChannelLoading;
@@ -166,11 +166,11 @@ function AgentPerformanceTab() {
 
   if (isDataEmpty) {
     return (
-      <Card className="border-dashed border-2 border-slate-200 bg-slate-50/50 mt-6">
+      <Card className="border-dashed border border-[#23252a] bg-[#0f1011] mt-6">
         <CardContent className="flex flex-col items-center justify-center py-16">
-          <Zap className="w-12 h-12 text-slate-300 mb-4" />
-          <h3 className="text-xl font-medium text-slate-700">No performance data available yet.</h3>
-          <p className="text-slate-500 mt-2">Run the agent to begin collecting analytics.</p>
+          <Zap className="w-10 h-10 text-[#3e3e44] mb-3" />
+          <h3 className="text-base font-medium text-[#f7f8f8]">No performance data available yet.</h3>
+          <p className="text-xs text-[#8a8f98] mt-1">Run the agent to begin collecting analytics.</p>
         </CardContent>
       </Card>
     );
@@ -179,30 +179,30 @@ function AgentPerformanceTab() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
-        <MetricCard title="Total Runs" value={agentData?.totalRuns} loading={isLoading} icon={<Zap className="w-4 h-4 text-blue-500" />} />
-        <MetricCard title="Invoices Processed" value={agentData?.invoicesProcessed} loading={isLoading} icon={<LayoutDashboard className="w-4 h-4 text-emerald-500" />} />
-        <MetricCard title="Emails Sent" value={agentData?.emailsSent} loading={isLoading} icon={<Send className="w-4 h-4 text-blue-500" />} />
-        <MetricCard title="Error Rate" value={agentData?.errorRate} loading={isLoading} formatter={formatPercentage} icon={<AlertCircle className="w-4 h-4 text-red-500" />} valueColor="text-red-600" />
+        <MetricCard title="Total Runs" value={agentData?.totalRuns} loading={isLoading} icon={<Zap className="w-4 h-4 text-[#5e6ad2]" />} />
+        <MetricCard title="Invoices Processed" value={agentData?.invoicesProcessed} loading={isLoading} icon={<LayoutDashboard className="w-4 h-4 text-[#27a644]" />} />
+        <MetricCard title="Emails Sent" value={agentData?.emailsSent} loading={isLoading} icon={<Send className="w-4 h-4 text-[#5e6ad2]" />} />
+        <MetricCard title="Error Rate" value={agentData?.errorRate} loading={isLoading} formatter={formatPercentage} icon={<AlertCircle className="w-4 h-4 text-red-400" />} valueColor="text-red-400" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="border border-[#23252a] bg-[#0f1011]">
           <CardHeader>
             <CardTitle>Emails Sent Per Day</CardTitle>
             <CardDescription>Daily outbound email volume</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="h-[300px] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-300" /></div>
+              <div className="h-[280px] flex items-center justify-center text-xs text-[#8a8f98]"><Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" /></div>
             ) : (
-              <div className="h-[300px] w-full">
+              <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={emailVol} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-                    <YAxis stroke="#94a3b8" fontSize={12} />
-                    <Tooltip labelFormatter={(val) => new Date(val).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} />
-                    <Line type="monotone" dataKey="emailsSent" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <LineChart data={emailVol} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#23252a" />
+                    <XAxis dataKey="date" stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+                    <YAxis stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} />
+                    <Tooltip content={<CustomLineTooltip />} />
+                    <Line type="monotone" dataKey="emailsSent" stroke="#5e6ad2" strokeWidth={2.5} dot={{ r: 3, fill: '#5e6ad2' }} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -210,23 +210,23 @@ function AgentPerformanceTab() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-[#23252a] bg-[#0f1011]">
           <CardHeader>
             <CardTitle>Success Rate by Tier</CardTitle>
             <CardDescription>Conversion percentage of followed-up invoices</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="h-[300px] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-300" /></div>
+              <div className="h-[280px] flex items-center justify-center text-xs text-[#8a8f98]"><Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" /></div>
             ) : (
-              <div className="h-[300px] w-full">
+              <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartTierData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                    <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `${val}%`} />
-                    <Tooltip formatter={(value) => [`${value}%`, 'Success Rate']} />
-                    <Bar dataKey="successRate" radius={[4, 4, 0, 0]} maxBarSize={50}>
+                  <BarChart data={chartTierData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#23252a" />
+                    <XAxis dataKey="name" stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} />
+                    <YAxis stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} tickFormatter={(val) => `${val}%`} />
+                    <Tooltip content={<CustomTierTooltip />} cursor={{fill: '#141516'}} />
+                    <Bar dataKey="successRate" radius={[4, 4, 0, 0]} maxBarSize={45}>
                       {chartTierData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                     </Bar>
                   </BarChart>
@@ -236,23 +236,23 @@ function AgentPerformanceTab() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-[#23252a] bg-[#0f1011]">
           <CardHeader>
             <CardTitle>Average Time-To-Payment</CardTitle>
             <CardDescription>Days to collect grouped by urgency tier</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="h-[300px] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-300" /></div>
+              <div className="h-[280px] flex items-center justify-center text-xs text-[#8a8f98]"><Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" /></div>
             ) : (
-              <div className="h-[300px] w-full">
+              <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartTierData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                    <YAxis stroke="#94a3b8" fontSize={12} />
-                    <Tooltip formatter={(value) => [`${value} days`, 'Avg Time to Payment']} />
-                    <Bar dataKey="avgDaysToPayment" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                  <BarChart data={chartTierData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#23252a" />
+                    <XAxis dataKey="name" stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} />
+                    <YAxis stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} />
+                    <Tooltip content={<CustomDaysTooltip />} cursor={{fill: '#141516'}} />
+                    <Bar dataKey="avgDaysToPayment" fill="#5e6ad2" radius={[4, 4, 0, 0]} maxBarSize={45} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -260,23 +260,23 @@ function AgentPerformanceTab() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-[#23252a] bg-[#0f1011]">
           <CardHeader>
             <CardTitle>Channel Effectiveness</CardTitle>
             <CardDescription>Communication volume breakdown by channel</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="h-[300px] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-300" /></div>
+              <div className="h-[280px] flex items-center justify-center text-xs text-[#8a8f98]"><Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" /></div>
             ) : (
-              <div className="h-[300px] w-full">
+              <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartChannelData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                    <XAxis type="number" stroke="#94a3b8" fontSize={12} />
-                    <YAxis dataKey="name" type="category" width={80} stroke="#64748b" fontSize={12} />
-                    <Tooltip />
-                    <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={40}>
+                  <BarChart data={chartChannelData} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#23252a" />
+                    <XAxis type="number" stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} />
+                    <YAxis dataKey="name" type="category" width={80} stroke="#34343a" fontSize={11} tick={{fill: '#8a8f98'}} />
+                    <Tooltip content={<CustomChannelTooltip />} cursor={{fill: '#141516'}} />
+                    <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={36}>
                       {chartChannelData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                     </Bar>
                   </BarChart>
@@ -290,27 +290,79 @@ function AgentPerformanceTab() {
   );
 }
 
-// Reusable Components
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Array<{
-    name: string;
-    value: number;
-    payload: {
-      name: string;
-      count: number;
-    };
-  }>;
+interface TooltipPayloadItem {
+  name?: string;
+  value?: number;
+  payload: {
+    name?: string;
+    count?: number;
+    [key: string]: unknown;
+  };
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string | number;
+}
+
+// Custom Tooltips for Dark Theme
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const item = payload[0];
     return (
-      <div className="bg-white border border-slate-200 p-3 shadow-lg rounded-md text-xs">
-        <p className="font-medium text-slate-900 mb-1">{item.payload.name}</p>
-        <p className="text-sm text-slate-600 font-semibold">{formatCurrencyUSD(item.value)}</p>
-        <p className="text-xs text-slate-500 mt-1">{item.payload.count} Invoices</p>
+      <div className="bg-[#0f1011] border border-[#23252a] p-2.5 shadow-2xl rounded-md text-xs">
+        <p className="font-medium text-[#f7f8f8] mb-0.5">{item.payload.name}</p>
+        <p className="text-xs text-[#5e6ad2] font-semibold">{formatCurrencyUSD(item.value ?? 0)}</p>
+        <p className="text-[11px] text-[#8a8f98] mt-0.5">{item.payload.count} Invoices</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomLineTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (active && payload && payload.length && label != null) {
+    return (
+      <div className="bg-[#0f1011] border border-[#23252a] p-2.5 shadow-2xl rounded-md text-xs">
+        <p className="font-medium text-[#f7f8f8] mb-0.5">{new Date(label).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+        <p className="text-xs text-[#5e6ad2] font-semibold">{payload[0].value} Emails Sent</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomTierTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#0f1011] border border-[#23252a] p-2.5 shadow-2xl rounded-md text-xs">
+        <p className="font-medium text-[#f7f8f8] mb-0.5">{payload[0].payload.name}</p>
+        <p className="text-xs text-[#27a644] font-semibold">{payload[0].value}% Success Rate</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomDaysTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#0f1011] border border-[#23252a] p-2.5 shadow-2xl rounded-md text-xs">
+        <p className="font-medium text-[#f7f8f8] mb-0.5">{payload[0].payload.name}</p>
+        <p className="text-xs text-[#5e6ad2] font-semibold">{payload[0].value} days to payment</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomChannelTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#0f1011] border border-[#23252a] p-2.5 shadow-2xl rounded-md text-xs">
+        <p className="font-medium text-[#f7f8f8] mb-0.5">{payload[0].payload.name}</p>
+        <p className="text-xs text-[#5e6ad2] font-semibold">{payload[0].value} Sent</p>
       </div>
     );
   }
@@ -326,16 +378,16 @@ interface MetricCardProps {
   valueColor?: string;
 }
 
-function MetricCard({ title, value, loading, formatter, icon, valueColor = "text-slate-900" }: MetricCardProps) {
+function MetricCard({ title, value, loading, formatter, icon, valueColor = "text-[#f7f8f8]" }: MetricCardProps) {
   return (
-    <Card>
-      <CardContent className="p-6">
+    <Card className="border border-[#23252a] bg-[#0f1011]">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between space-x-2">
-          <h3 className="text-sm font-medium text-slate-500">{title}</h3>
+          <h3 className="text-xs font-medium text-[#8a8f98]">{title}</h3>
           {icon}
         </div>
-        <div className={`mt-4 flex items-baseline text-3xl font-bold ${valueColor}`}>
-          {loading ? <Loader2 className="w-6 h-6 animate-spin text-slate-300" /> : (formatter ? formatter((value as number) || 0) : (value || 0))}
+        <div className={`mt-3 flex items-baseline text-2xl font-bold ${valueColor}`}>
+          {loading ? <Loader2 className="w-5 h-5 animate-spin text-[#5e6ad2]" /> : (formatter ? formatter((value as number) || 0) : (value || 0))}
         </div>
       </CardContent>
     </Card>
@@ -344,20 +396,21 @@ function MetricCard({ title, value, loading, formatter, icon, valueColor = "text
 
 function ComingSoonCard({ title, description }: { title: string, description: string }) {
   return (
-    <Card className="h-full border-dashed border-2 border-slate-200 bg-slate-50/50">
+    <Card className="h-full border-dashed border border-[#23252a] bg-[#0f1011]/50">
       <CardHeader>
-        <CardTitle className="text-slate-700">{title}</CardTitle>
+        <CardTitle className="text-[#d0d6e0]">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center py-12">
-        <div className="bg-slate-100 p-4 rounded-full mb-4">
-          <Construction className="w-8 h-8 text-slate-400" />
+      <CardContent className="flex flex-col items-center justify-center py-10">
+        <div className="bg-[#141516] border border-[#23252a] p-3 rounded-full mb-3">
+          <Construction className="w-6 h-6 text-[#8a8f98]" />
         </div>
-        <h4 className="text-lg font-medium text-slate-700">Coming Soon</h4>
-        <p className="text-sm text-slate-500 text-center max-w-[250px] mt-2">
+        <h4 className="text-sm font-medium text-[#f7f8f8]">Coming Soon</h4>
+        <p className="text-xs text-[#8a8f98] text-center max-w-[240px] mt-1">
           This chart requires historical analytics data. Backend aggregation endpoints are under development.
         </p>
       </CardContent>
     </Card>
   );
 }
+
