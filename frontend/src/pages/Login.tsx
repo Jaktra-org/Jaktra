@@ -75,26 +75,26 @@ export function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 p-4">
-      <Card className="w-full max-w-md border-0 shadow-2xl">
-        <CardHeader className="space-y-4 text-center pb-8">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
+    <div className="flex min-h-screen items-center justify-center bg-[#010102] text-[#f7f8f8] p-4">
+      <Card className="w-full max-w-md border border-[#23252a] bg-[#0f1011] shadow-2xl">
+        <CardHeader className="space-y-4 text-center pb-6 border-b border-[#23252a]/60">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/20">
             {step === "mfa" ? (
-              <ShieldCheck className="h-8 w-8 text-blue-600" />
+              <ShieldCheck className="h-6 w-6 text-[#5e6ad2]" />
             ) : (
-              <Bot className="h-8 w-8 text-blue-600" />
+              <Bot className="h-6 w-6 text-[#5e6ad2]" />
             )}
           </div>
           <div>
             {step === "credentials" ? (
               <>
-                <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
-                <p className="text-sm text-slate-500 mt-2">Sign in to your Jaktra account</p>
+                <CardTitle className="text-xl font-bold tracking-tight text-[#f7f8f8]">Welcome back</CardTitle>
+                <p className="text-xs text-[#8a8f98] mt-1.5">Sign in to your Jaktra account</p>
               </>
             ) : (
               <>
-                <CardTitle className="text-2xl font-bold tracking-tight">Two-factor authentication</CardTitle>
-                <p className="text-sm text-slate-500 mt-2">
+                <CardTitle className="text-xl font-bold tracking-tight text-[#f7f8f8]">Two-factor authentication</CardTitle>
+                <p className="text-xs text-[#8a8f98] mt-1.5">
                   {useBackupCode
                     ? "Enter one of your backup codes"
                     : "Enter the 6-digit code from your authenticator app"}
@@ -104,15 +104,15 @@ export function Login() {
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pt-6">
           {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 mb-4">
+            <div className="rounded-md bg-red-950/40 border border-red-900/50 p-3 text-xs text-red-400 mb-4">
               {error}
             </div>
           )}
 
           {step === "credentials" && (
-            <form onSubmit={handleCredentialsSubmit} className="space-y-6">
+            <form onSubmit={handleCredentialsSubmit} className="space-y-5">
               <div className="space-y-4">
                 <Input
                   label="Email address"
@@ -136,7 +136,7 @@ export function Login() {
                   <div className="text-right mt-1.5">
                     <Link
                       to="/forgot-password"
-                      className="text-xs font-semibold text-blue-600 hover:text-blue-500"
+                      className="text-xs font-medium text-[#5e6ad2] hover:text-[#828fff] transition-colors"
                     >
                       Forgot password?
                     </Link>
@@ -146,9 +146,9 @@ export function Login() {
               <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
                 Sign in
               </Button>
-              <p className="text-center text-sm text-slate-600">
+              <p className="text-center text-xs text-[#8a8f98]">
                 Don't have an account?{" "}
-                <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-500">
+                <Link to="/register" className="font-semibold text-[#5e6ad2] hover:text-[#828fff] transition-colors">
                   Register
                 </Link>
               </p>
@@ -156,7 +156,7 @@ export function Login() {
           )}
 
           {step === "mfa" && (
-            <form onSubmit={handleMfaSubmit} className="space-y-6">
+            <form onSubmit={handleMfaSubmit} className="space-y-5">
               <div className="space-y-4">
                 <Input
                   label={useBackupCode ? "Backup code" : "Authenticator code"}
@@ -179,7 +179,7 @@ export function Login() {
               <div className="space-y-2 text-center">
                 <button
                   type="button"
-                  className="text-sm text-blue-600 hover:text-blue-500 underline"
+                  className="text-xs text-[#5e6ad2] hover:text-[#828fff] transition-colors"
                   onClick={() => {
                     setUseBackupCode((v) => !v);
                     setMfaCode("");
@@ -191,7 +191,7 @@ export function Login() {
                 <div>
                   <button
                     type="button"
-                    className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mx-auto"
+                    className="flex items-center gap-1 text-xs text-[#8a8f98] hover:text-[#f7f8f8] mx-auto transition-colors"
                     onClick={handleBackToCredentials}
                   >
                     <ArrowLeft className="h-3 w-3" />
@@ -206,3 +206,4 @@ export function Login() {
     </div>
   );
 }
+

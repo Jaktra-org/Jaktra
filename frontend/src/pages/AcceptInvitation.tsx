@@ -67,17 +67,17 @@ export function AcceptInvitation() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#010102] text-[#f7f8f8] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <Card>
+          <Card className="border border-[#23252a] bg-[#0f1011] shadow-2xl">
             <CardContent className="py-12 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
-                <ShieldCheck className="w-8 h-8 text-emerald-600" />
+              <div className="w-14 h-14 bg-[#27a644]/10 border border-[#27a644]/30 rounded-full flex items-center justify-center mb-6">
+                <ShieldCheck className="w-7 h-7 text-[#27a644]" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Invitation Accepted!</h2>
-              <p className="text-slate-600">Your account has been created successfully.</p>
-              <p className="text-sm text-slate-500 mt-6 flex items-center">
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <h2 className="text-xl font-bold text-[#f7f8f8] mb-2 tracking-tight">Invitation Accepted!</h2>
+              <p className="text-xs text-[#8a8f98]">Your account has been created successfully.</p>
+              <p className="text-xs text-[#8a8f98] mt-6 flex items-center">
+                <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin text-[#5e6ad2]" />
                 Redirecting to login...
               </p>
             </CardContent>
@@ -88,34 +88,34 @@ export function AcceptInvitation() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#010102] text-[#f7f8f8] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center mb-6">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-            <MailCheck className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 rounded-xl flex items-center justify-center shadow-lg">
+            <MailCheck className="w-6 h-6 text-[#5e6ad2]" />
           </div>
         </div>
-        <h2 className="text-center text-3xl font-extrabold text-slate-900">
+        <h2 className="text-center text-2xl font-bold text-[#f7f8f8] tracking-tight">
           Join the Team
         </h2>
-        <p className="mt-2 text-center text-sm text-slate-600">
+        <p className="mt-2 text-center text-xs text-[#8a8f98]">
           Set up your profile to accept the invitation
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card>
+        <Card className="border border-[#23252a] bg-[#0f1011] shadow-2xl">
           <form onSubmit={handleSubmit}>
             <CardContent className="pt-6 space-y-4">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
-                  <AlertCircle className="w-5 h-5 text-red-600 mr-2 shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700">{error}</p>
+                <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-md flex items-start">
+                  <AlertCircle className="w-4 h-4 text-red-400 mr-2 shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-400">{error}</p>
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 block">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-[#d0d6e0] block">
                   Full Name
                 </label>
                 <input
@@ -124,13 +124,13 @@ export function AcceptInvitation() {
                   disabled={!token || mutation.isPending}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
+                  className="w-full px-3 py-2 border border-[#23252a] bg-[#0f1011] rounded-md text-sm text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e69d1] focus:outline-none focus:ring-1 focus:ring-[#5e69d1] disabled:opacity-40"
                   placeholder="Jane Doe"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 block">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-[#d0d6e0] block">
                   Password
                 </label>
                 <input
@@ -139,18 +139,18 @@ export function AcceptInvitation() {
                   disabled={!token || mutation.isPending}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
+                  className="w-full px-3 py-2 border border-[#23252a] bg-[#0f1011] rounded-md text-sm text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e69d1] focus:outline-none focus:ring-1 focus:ring-[#5e69d1] disabled:opacity-40"
                   placeholder="••••••••"
                   minLength={8}
                 />
-                <p className="text-xs text-slate-500">Must be at least 8 characters long.</p>
+                <p className="text-[11px] text-[#8a8f98]">Must be at least 8 characters long.</p>
               </div>
             </CardContent>
-            <div className="bg-slate-50 border-t px-6 py-4 rounded-b-lg">
+            <div className="bg-[#141516] border-t border-[#23252a] px-6 py-4 rounded-b-xl">
               <button
                 type="submit"
                 disabled={!token || mutation.isPending}
-                className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center items-center py-2 px-4 rounded-md text-xs font-medium text-white bg-[#5e6ad2] hover:bg-[#828fff] focus:outline-none focus:ring-1 focus:ring-[#5e69d1] disabled:opacity-40 transition-colors"
               >
                 {mutation.isPending ? (
                   <>
@@ -168,3 +168,4 @@ export function AcceptInvitation() {
     </div>
   );
 }
+

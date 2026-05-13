@@ -94,25 +94,25 @@ export function Register() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 p-4">
-      <Card className="w-full max-w-md border-0 shadow-2xl transition-all duration-300">
+    <div className="flex min-h-screen items-center justify-center bg-[#010102] text-[#f7f8f8] p-4">
+      <Card className="w-full max-w-md border border-[#23252a] bg-[#0f1011] shadow-2xl transition-all duration-300">
         {step === "register" ? (
           <>
-            <CardHeader className="space-y-4 text-center pb-8">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 animate-pulse">
-                <Bot className="h-8 w-8 text-blue-600" />
+            <CardHeader className="space-y-4 text-center pb-6 border-b border-[#23252a]/60">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/20">
+                <Bot className="h-6 w-6 text-[#5e6ad2]" />
               </div>
               <div>
-                <CardTitle className="text-2xl font-bold tracking-tight">Create an account</CardTitle>
-                <p className="text-sm text-slate-500 mt-2">
+                <CardTitle className="text-xl font-bold tracking-tight text-[#f7f8f8]">Create an account</CardTitle>
+                <p className="text-xs text-[#8a8f98] mt-1.5">
                   Start automating your credit operations
                 </p>
               </div>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
-                  <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 transition-all duration-200">
+                  <div className="rounded-md bg-red-950/40 border border-red-900/50 p-3 text-xs text-red-400 transition-all duration-200">
                     {error}
                   </div>
                 )}
@@ -166,9 +166,9 @@ export function Register() {
                 <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
                   Register
                 </Button>
-                <p className="text-center text-sm text-slate-600">
+                <p className="text-center text-xs text-[#8a8f98]">
                   Already have an account?{" "}
-                  <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-500">
+                  <Link to="/login" className="font-semibold text-[#5e6ad2] hover:text-[#828fff] transition-colors">
                     Sign in
                   </Link>
                 </p>
@@ -177,26 +177,26 @@ export function Register() {
           </>
         ) : (
           <>
-            <CardHeader className="space-y-4 text-center pb-8">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-                <Mail className="h-8 w-8 text-blue-600 animate-bounce" />
+            <CardHeader className="space-y-4 text-center pb-6 border-b border-[#23252a]/60">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/20">
+                <Mail className="h-6 w-6 text-[#5e6ad2]" />
               </div>
               <div>
-                <CardTitle className="text-2xl font-bold tracking-tight">Verify your email</CardTitle>
-                <p className="text-sm text-slate-500 mt-2 px-4">
-                  We sent a 6-digit verification code to <span className="font-semibold text-slate-700">{email}</span>
+                <CardTitle className="text-xl font-bold tracking-tight text-[#f7f8f8]">Verify your email</CardTitle>
+                <p className="text-xs text-[#8a8f98] mt-1.5 px-4">
+                  We sent a 6-digit verification code to <span className="font-semibold text-[#f7f8f8]">{email}</span>
                 </p>
               </div>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleVerify} className="space-y-6">
+            <CardContent className="pt-6">
+              <form onSubmit={handleVerify} className="space-y-5">
                 {error && (
-                  <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 transition-all duration-200">
+                  <div className="rounded-md bg-red-950/40 border border-red-900/50 p-3 text-xs text-red-400 transition-all duration-200">
                     {error}
                   </div>
                 )}
                 {resendSuccess && (
-                  <div className="rounded-md bg-green-50 p-3 text-sm text-green-600 transition-all duration-200">
+                  <div className="rounded-md bg-[#27a644]/10 border border-[#27a644]/30 p-3 text-xs text-[#27a644] transition-all duration-200">
                     {resendSuccess}
                   </div>
                 )}
@@ -217,10 +217,10 @@ export function Register() {
                   Verify Code
                 </Button>
 
-                <div className="flex flex-col space-y-4 text-center text-sm">
+                <div className="flex flex-col space-y-3 text-center text-xs">
                   <div>
                     {resendCooldown > 0 ? (
-                      <span className="text-slate-500">
+                      <span className="text-[#8a8f98]">
                         Resend code in {resendCooldown}s
                       </span>
                     ) : (
@@ -228,7 +228,7 @@ export function Register() {
                         type="button"
                         onClick={handleResend}
                         disabled={isLoading}
-                        className="font-semibold text-blue-600 hover:text-blue-500 disabled:opacity-50"
+                        className="font-semibold text-[#5e6ad2] hover:text-[#828fff] disabled:opacity-40 transition-colors"
                       >
                         Resend code
                       </button>
@@ -243,9 +243,9 @@ export function Register() {
                       setResendSuccess("");
                       setCode("");
                     }}
-                    className="inline-flex items-center justify-center font-medium text-slate-600 hover:text-slate-800 mt-2"
+                    className="inline-flex items-center justify-center font-medium text-[#8a8f98] hover:text-[#f7f8f8] mt-2 transition-colors"
                   >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
                     Use a different email address
                   </button>
                 </div>
@@ -257,3 +257,4 @@ export function Register() {
     </div>
   );
 }
+
