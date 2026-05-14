@@ -153,8 +153,8 @@ export function Invoices() {
   };
 
   const renderSortIcon = (field: ListInvoicesParams['sort_by']) => {
-    if (params.sort_by !== field) return <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />;
-    return params.order === 'asc' ? <ArrowUp className="ml-1 h-3 w-3 text-blue-600" /> : <ArrowDown className="ml-1 h-3 w-3 text-blue-600" />;
+    if (params.sort_by !== field) return <ArrowUpDown className="ml-1 h-3 w-3 text-[#62666d]" />;
+    return params.order === 'asc' ? <ArrowUp className="ml-1 h-3 w-3 text-[#5e6ad2]" /> : <ArrowDown className="ml-1 h-3 w-3 text-[#5e6ad2]" />;
   };
 
   return (
@@ -162,17 +162,17 @@ export function Invoices() {
       {/* Header & Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Invoices</h1>
-          <p className="text-sm text-slate-500">Manage your collection portfolio and track aging accounts.</p>
+          <h1 className="text-xl font-bold tracking-tight text-[#f7f8f8]">Invoices</h1>
+          <p className="text-xs text-[#8a8f98] mt-0.5">Manage your collection portfolio and track aging accounts.</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5">
           {!isTrashView && (
             <button
               onClick={handleExportCSV}
               disabled={!activeData?.data || activeData.data.length === 0}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-10 px-4 py-2"
+              className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] hover:border-[#34343a] h-9 px-3.5 disabled:opacity-40"
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
               Export CSV
             </button>
           )}
@@ -180,16 +180,16 @@ export function Invoices() {
             <>
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-10 px-4 py-2"
+                className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] hover:border-[#34343a] h-9 px-3.5"
               >
-                <Upload className="mr-2 h-4 w-4" />
+                <Upload className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
                 Import CSV
               </button>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2"
+                className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-3.5"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add Invoice
               </button>
             </>
@@ -198,27 +198,27 @@ export function Invoices() {
       </div>
 
       {isError_ && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
-          <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+        <div className="bg-red-950/40 border border-red-900/50 text-red-400 px-4 py-3 rounded-lg flex items-start">
+          <AlertCircle className="w-4 h-4 mr-2.5 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-medium">Failed to load invoices</h4>
-            <p className="text-sm mt-1">{getErrorMessage(error_)}</p>
+            <h4 className="font-medium text-xs">Failed to load invoices</h4>
+            <p className="text-xs mt-0.5 opacity-90">{getErrorMessage(error_)}</p>
           </div>
         </div>
       )}
 
-      <Card className="flex flex-col">
+      <Card className="flex flex-col border border-[#23252a] bg-[#0f1011]">
         {/* Filters */}
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center bg-slate-50/50">
-          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-md">
+        <div className="p-3.5 border-b border-[#23252a] flex flex-col sm:flex-row gap-3 justify-between items-center bg-[#010102]/60">
+          <div className="flex items-center space-x-1 bg-[#141516] p-1 rounded-md border border-[#23252a]">
             {['All', 'Pending', 'Overdue', 'Paid'].map((status) => (
               <button
                 key={status}
                 onClick={() => handleStatusFilter(status)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
                   !isTrashView && currentStatus === status
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#18191a] text-[#5e6ad2] border border-[#23252a] shadow-sm'
+                    : 'text-[#8a8f98] hover:text-[#f7f8f8]'
                 }`}
               >
                 {status}
@@ -226,103 +226,103 @@ export function Invoices() {
             ))}
             <button
               onClick={handleTrashTab}
-              className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
                 isTrashView
-                  ? 'bg-white text-amber-700 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#18191a] text-amber-400 border border-[#23252a] shadow-sm'
+                  : 'text-[#8a8f98] hover:text-[#f7f8f8]'
               }`}
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-3 w-3" />
               Trash
             </button>
           </div>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#62666d]" />
             <input
               type="text"
               placeholder="Search clients..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 pl-9 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-8.5 w-full rounded-md border border-[#23252a] bg-[#0f1011] px-3 py-1.5 pl-8.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e69d1] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
             />
           </div>
         </div>
 
         {/* Table */}
         <div className="relative w-full overflow-auto">
-          <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b bg-slate-50/50">
-              <tr className="border-b transition-colors hover:bg-slate-100/50 data-[state=selected]:bg-slate-100">
-                <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('invoiceNo')}>
+          <table className="w-full caption-bottom text-xs">
+            <thead>
+              <tr className="border-b border-[#23252a] bg-[#0f1011]">
+                <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('invoiceNo')}>
                   <div className="flex items-center">Invoice No {renderSortIcon('invoiceNo')}</div>
                 </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('clientName')}>
+                <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('clientName')}>
                   <div className="flex items-center">Client {renderSortIcon('clientName')}</div>
                 </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('invoiceAmount')}>
+                <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('invoiceAmount')}>
                   <div className="flex items-center">Amount {renderSortIcon('invoiceAmount')}</div>
                 </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('dueDate')}>
+                <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('dueDate')}>
                   <div className="flex items-center">Due Date {renderSortIcon('dueDate')}</div>
                 </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('paymentStatus')}>
+                <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('paymentStatus')}>
                   <div className="flex items-center">Status {renderSortIcon('paymentStatus')}</div>
                 </th>
                 {isTrashView ? (
                   <>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
+                    <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98]">
                       <div className="flex items-center">Deleted On</div>
                     </th>
                     {(user?.role === 'admin' || user?.role === 'manager') && (
-                      <th className="h-12 px-4 text-right align-middle font-medium text-slate-500 w-64">
+                      <th className="h-10 px-4 text-right align-middle font-medium text-[#8a8f98] w-64">
                         <span>Actions</span>
                       </th>
                     )}
                   </>
                 ) : (
                   <>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
+                    <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98]">
                       <div className="flex items-center">Days Overdue</div>
                     </th>
-                    <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('followupCount')}>
+                    <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('followupCount')}>
                       <div className="flex items-center">Follow-ups {renderSortIcon('followupCount')}</div>
                     </th>
                   </>
                 )}
               </tr>
             </thead>
-             <tbody className="[&_tr:last-child]:border-0">
+            <tbody className="divide-y divide-[#23252a]/50">
               {isLoading_ ? (
                 <tr>
-                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-8 text-center text-slate-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-8 text-center text-[#8a8f98]">
                     <div className="flex flex-col items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+                      <Loader2 className="h-6 w-6 animate-spin text-[#5e6ad2] mb-3" />
                       <p>{isTrashView ? 'Loading trash...' : 'Loading invoices...'}</p>
                     </div>
                   </td>
                 </tr>
               ) : isError_ ? (
                 <tr>
-                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-8 text-center text-red-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-8 text-center text-red-400">
                     Failed to load {isTrashView ? 'trash' : 'invoices'}. Please try again.
                   </td>
                 </tr>
               ) : !activeData?.data || activeData.data.length === 0 ? (
                 <tr>
-                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-12 text-center text-slate-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-12 text-center text-[#8a8f98]">
                     <div className="flex flex-col items-center justify-center">
                       {isTrashView ? (
                         <>
-                          <Trash2 className="h-12 w-12 text-slate-300 mb-4" />
-                          <p className="text-lg font-medium text-slate-900">Trash is empty</p>
-                          <p className="text-sm">Deleted invoices will appear here.</p>
+                          <Trash2 className="h-10 w-10 text-[#3e3e44] mb-3" />
+                          <p className="text-sm font-medium text-[#f7f8f8]">Trash is empty</p>
+                          <p className="text-xs mt-0.5">Deleted invoices will appear here.</p>
                         </>
                       ) : (
                         <>
-                          <FileText className="h-12 w-12 text-slate-300 mb-4" />
-                          <p className="text-lg font-medium text-slate-900">No invoices found</p>
-                          <p className="text-sm">Adjust your filters or add a new invoice to get started.</p>
+                          <FileText className="h-10 w-10 text-[#3e3e44] mb-3" />
+                          <p className="text-sm font-medium text-[#f7f8f8]">No invoices found</p>
+                          <p className="text-xs mt-0.5">Adjust your filters or add a new invoice to get started.</p>
                         </>
                       )}
                     </div>
@@ -333,22 +333,22 @@ export function Invoices() {
                   <tr
                     key={invoice.id}
                     onClick={() => navigate(`/invoices/${invoice.id}/trashed`)}
-                    className="border-b transition-colors hover:bg-amber-50/60 cursor-pointer opacity-75"
+                    className="transition-colors hover:bg-amber-950/20 cursor-pointer opacity-80"
                   >
-                    <td className="p-4 align-middle font-medium text-slate-500">
+                    <td className="p-3.5 px-4 align-middle font-medium text-[#8a8f98]">
                       {invoice.invoiceNo}
                     </td>
-                    <td className="p-4 align-middle">
-                      <div className="font-medium text-slate-600">{invoice.clientName}</div>
-                      <div className="text-xs text-slate-400">{invoice.contactEmail}</div>
+                    <td className="p-3.5 px-4 align-middle">
+                      <div className="font-medium text-[#f7f8f8]">{invoice.clientName}</div>
+                      <div className="text-[11px] text-[#8a8f98]">{invoice.contactEmail}</div>
                     </td>
-                    <td className="p-4 align-middle text-slate-500">
+                    <td className="p-3.5 px-4 align-middle text-[#8a8f98]">
                       {formatCurrency(invoice.invoiceAmount)}
                     </td>
-                    <td className="p-4 align-middle text-slate-400">
+                    <td className="p-3.5 px-4 align-middle text-[#8a8f98]">
                       {new Date(invoice.dueDate).toLocaleDateString()}
                     </td>
-                    <td className="p-4 align-middle">
+                    <td className="p-3.5 px-4 align-middle">
                       <div className="flex items-center gap-1.5">
                         <Badge variant={
                           invoice.paymentStatus === 'Paid' ? 'success' :
@@ -357,33 +357,33 @@ export function Invoices() {
                           {invoice.paymentStatus}
                         </Badge>
                         {invoice.needsManualReview && (
-                          <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200" title="Blocked due to DLQ failures">
+                          <Badge variant="warning" className="bg-amber-500/10 text-amber-400 border-amber-500/30" title="Blocked due to DLQ failures">
                             Manual Review
                           </Badge>
                         )}
                         {invoice.hasActivePaymentPlan && (
-                          <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                          <Badge variant="success" className="bg-[#27a644]/10 text-[#27a644] border-[#27a644]/30">
                             Payment Plan
                           </Badge>
                         )}
                       </div>
                     </td>
-                    <td className="p-4 align-middle text-slate-400 text-sm">
+                    <td className="p-3.5 px-4 align-middle text-[#8a8f98]">
                       {invoice.deletedAt
                         ? new Date(invoice.deletedAt).toLocaleDateString()
                         : '—'}
                     </td>
                     {(user?.role === 'admin' || user?.role === 'manager') && (
-                      <td className="p-4 align-middle text-right" onClick={(e) => e.stopPropagation()}>
+                      <td className="p-3.5 px-4 align-middle text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={async () => {
                               await restoreMutation.mutateAsync(invoice.id);
                             }}
                             disabled={restoreMutation.isPending}
-                            className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 h-8 px-3 py-1 gap-1"
+                            className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] h-7 px-2.5 gap-1"
                           >
-                            <RotateCcw className="h-3.5 w-3.5" />
+                            <RotateCcw className="h-3 w-3" />
                             Restore
                           </button>
                           {user?.role === 'admin' && (
@@ -392,9 +392,9 @@ export function Invoices() {
                                 setInvoiceToDelete(invoice);
                                 setIsConfirmDeleteModalOpen(true);
                               }}
-                              className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors border border-red-200 bg-white hover:bg-red-50 hover:border-red-300 text-red-600 h-8 px-3 py-1 gap-1"
+                              className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-red-900/50 bg-red-950/30 hover:bg-red-900/40 text-red-400 h-7 px-2.5 gap-1"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3 w-3" />
                               Delete permanently
                             </button>
                           )}
@@ -408,29 +408,29 @@ export function Invoices() {
                   <tr 
                     key={invoice.id} 
                     onClick={() => navigate(`/invoices/${invoice.id}`)}
-                    className="border-b transition-colors hover:bg-slate-50 cursor-pointer"
+                    className="transition-colors hover:bg-[#141516]/60 cursor-pointer"
                   >
-                    <td className="p-4 align-middle font-medium text-slate-900">
+                    <td className="p-3.5 px-4 align-middle font-medium text-[#f7f8f8]">
                       {invoice.invoiceNo}
                     </td>
-                    <td className="p-4 align-middle">
-                      <div className="font-medium text-slate-900">{invoice.clientName}</div>
-                      <div className="text-xs text-slate-500">{invoice.contactEmail}</div>
+                    <td className="p-3.5 px-4 align-middle">
+                      <div className="font-medium text-[#f7f8f8]">{invoice.clientName}</div>
+                      <div className="text-[11px] text-[#8a8f98]">{invoice.contactEmail}</div>
                     </td>
-                    <td className="p-4 align-middle">
+                    <td className="p-3.5 px-4 align-middle text-[#f7f8f8]">
                       {formatCurrency(invoice.invoiceAmount)}
                     </td>
-                    <td className="p-4 align-middle text-slate-600">
+                    <td className="p-3.5 px-4 align-middle text-[#d0d6e0]">
                       <div>
                         {new Date(invoice.dueDate).toLocaleDateString()}
                         {invoice.hasActivePaymentPlan && (
-                          <span className="block text-[11px] text-emerald-700 font-medium">
+                          <span className="block text-[10px] text-[#5e6ad2] font-medium">
                             {invoice.activeInstallmentNumber ? `Inst #${invoice.activeInstallmentNumber} Due` : 'Payment Plan'}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="p-4 align-middle">
+                    <td className="p-3.5 px-4 align-middle">
                       <div className="flex items-center gap-1.5">
                         <Badge variant={
                           invoice.paymentStatus === 'Paid' ? 'success' : 
@@ -439,20 +439,20 @@ export function Invoices() {
                           {invoice.paymentStatus}
                         </Badge>
                         {invoice.needsManualReview && (
-                          <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200" title="Blocked due to DLQ failures">
+                          <Badge variant="warning" className="bg-amber-500/10 text-amber-400 border-amber-500/30" title="Blocked due to DLQ failures">
                             Manual Review
                           </Badge>
                         )}
                       </div>
                     </td>
-                    <td className="p-4 align-middle">
+                    <td className="p-3.5 px-4 align-middle">
                       {invoice.daysOverdue && invoice.daysOverdue > 0 ? (
-                        <span className="font-medium text-red-600">{invoice.daysOverdue} days</span>
+                        <span className="font-medium text-red-400">{invoice.daysOverdue} days</span>
                       ) : (
-                        <span className="text-slate-400">0 days</span>
+                        <span className="text-[#62666d]">0 days</span>
                       )}
                     </td>
-                    <td className="p-4 align-middle text-slate-600">
+                    <td className="p-3.5 px-4 align-middle text-[#d0d6e0]">
                       {invoice.followupCount}
                     </td>
                   </tr>
@@ -464,25 +464,25 @@ export function Invoices() {
 
         {/* Pagination */}
         {activeData && activeData.pagination.totalPages > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/50">
-            <div className="text-sm text-slate-500">
-              Showing <span className="font-medium">{(params.page! - 1) * params.limit! + 1}</span> to <span className="font-medium">{Math.min(params.page! * params.limit!, activeData.pagination.total)}</span> of <span className="font-medium">{activeData.pagination.total}</span> results
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[#23252a] bg-[#010102]/60 text-xs">
+            <div className="text-[#8a8f98]">
+              Showing <span className="font-medium text-[#f7f8f8]">{(params.page! - 1) * params.limit! + 1}</span> to <span className="font-medium text-[#f7f8f8]">{Math.min(params.page! * params.limit!, activeData.pagination.total)}</span> of <span className="font-medium text-[#f7f8f8]">{activeData.pagination.total}</span> results
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-1.5">
               <button
                 onClick={() => setParams(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
                 disabled={params.page === 1}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-8 w-8 p-0"
+                className="inline-flex items-center justify-center rounded-md transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-7 w-7 p-0 disabled:opacity-40"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3.5 w-3.5" />
                 <span className="sr-only">Previous page</span>
               </button>
               <button
                 onClick={() => setParams(prev => ({ ...prev, page: Math.min(activeData!.pagination.totalPages, (prev.page || 1) + 1) }))}
                 disabled={params.page === activeData!.pagination.totalPages}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-8 w-8 p-0"
+                className="inline-flex items-center justify-center rounded-md transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-7 w-7 p-0 disabled:opacity-40"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5" />
                 <span className="sr-only">Next page</span>
               </button>
             </div>
@@ -516,3 +516,4 @@ export function Invoices() {
     </div>
   );
 }
+
