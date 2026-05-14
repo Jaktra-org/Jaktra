@@ -247,8 +247,8 @@ export function InvoiceDetail() {
   if (isInvoiceLoading || !invoice) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-        <p className="text-slate-500">Loading invoice details...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-[#5e6ad2] mb-3" />
+        <p className="text-[#8a8f98] text-xs">Loading invoice details...</p>
       </div>
     );
   }
@@ -258,7 +258,7 @@ export function InvoiceDetail() {
     
     // 1. Paid status or payment received
     if (type.includes('received') || (event.newValues && event.newValues.paymentStatus === 'Paid')) {
-      return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
+      return <CheckCircle2 className="w-4 h-4 text-[#27a644]" />;
     }
     
     // 2. Invoice update changes
@@ -267,49 +267,49 @@ export function InvoiceDetail() {
       
       // Money change (amount)
       if (changedKeys.includes('invoiceAmount')) {
-        return <DollarSign className="w-4 h-4 text-emerald-600" />;
+        return <DollarSign className="w-4 h-4 text-[#27a644]" />;
       }
       
       // Date change (due date)
       if (changedKeys.includes('dueDate')) {
-        return <Clock className="w-4 h-4 text-amber-500" />;
+        return <Clock className="w-4 h-4 text-amber-400" />;
       }
 
       // Status change
       if (changedKeys.includes('paymentStatus')) {
-        return <RefreshCw className="w-4 h-4 text-blue-500" />;
+        return <RefreshCw className="w-4 h-4 text-[#5e6ad2]" />;
       }
     }
     if (type === 'invoice.trashed') {
-      return <Trash2 className="w-4 h-4 text-amber-500" />;
+      return <Trash2 className="w-4 h-4 text-amber-400" />;
     }
     if (type === 'invoice.restored') {
-      return <RotateCcw className="w-4 h-4 text-emerald-600" />;
+      return <RotateCcw className="w-4 h-4 text-[#27a644]" />;
     }
     if (type === 'invoice.permanently_deleted') {
-      return <XCircle className="w-4 h-4 text-rose-600" />;
+      return <XCircle className="w-4 h-4 text-red-400" />;
     }
 
     // 3. Fallbacks based on action/event types
     if (type.includes('create') || type.includes('import')) {
-      return <FileText className="w-4 h-4 text-blue-600" />;
+      return <FileText className="w-4 h-4 text-[#5e6ad2]" />;
     }
     if (type.includes('sent')) {
-      return <Send className="w-4 h-4 text-indigo-600" />;
+      return <Send className="w-4 h-4 text-[#5e6ad2]" />;
     }
     if (type.includes('opened')) {
-      return <Eye className="w-4 h-4 text-purple-600" />;
+      return <Eye className="w-4 h-4 text-[#828fff]" />;
     }
     if (type.includes('clicked')) {
-      return <MousePointer className="w-4 h-4 text-indigo-600" />;
+      return <MousePointer className="w-4 h-4 text-[#828fff]" />;
     }
     if (type.includes('received') || type.includes('status')) {
-      return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+      return <CheckCircle2 className="w-4 h-4 text-[#27a644]" />;
     }
     if (type.includes('halt') || type.includes('bounce') || type.includes('dlq') || type.includes('error')) {
-      return <AlertTriangle className="w-4 h-4 text-rose-600" />;
+      return <AlertTriangle className="w-4 h-4 text-red-400" />;
     }
-    return <MessageSquare className="w-4 h-4 text-slate-500" />;
+    return <MessageSquare className="w-4 h-4 text-[#8a8f98]" />;
   };
 
   const formatDateValue = (val: unknown) => {
@@ -362,7 +362,7 @@ export function InvoiceDetail() {
       return 'bg-red-50 text-red-600 border-red-100';
     }
     
-    return 'bg-slate-50 text-slate-500 border-slate-200';
+    return 'bg-[#141516] text-[#8a8f98] border border-[#23252a]';
   };
 
   const getRecipientEmail = (event: GroupedInvoiceEvent) => {
@@ -415,7 +415,7 @@ export function InvoiceDetail() {
       const displayName = event.actorName || (event.source === 'agent' ? 'AI Agent' : event.source === 'webhook' ? 'Webhook' : 'System');
       
       if (!event.actorName) {
-        return <span className="font-semibold text-slate-900">{displayName}</span>;
+        return <span className="font-semibold text-[#f7f8f8]">{displayName}</span>;
       }
       
       const isCardOpen = activeHoverCard?.eventId === event.id;
@@ -432,29 +432,29 @@ export function InvoiceDetail() {
           })}
           onMouseLeave={() => setActiveHoverCard(null)}
         >
-          <span className="font-bold text-slate-955 border-b border-dotted border-slate-400 hover:text-blue-600 transition-colors cursor-pointer">
+          <span className="font-bold text-[#f7f8f8] border-b border-dotted border-[#8a8f98] hover:text-[#5e6ad2] transition-colors cursor-pointer">
             {event.actorName}
           </span>
           
           {isCardOpen && (
-            <span className="absolute z-50 bottom-full left-0 mb-2 w-60 bg-white border border-slate-200 rounded-xl p-3 shadow-lg text-left block pointer-events-none animate-timeline-fade-in font-sans leading-normal">
+            <span className="absolute z-50 bottom-full left-0 mb-2 w-60 bg-[#0f1011] border border-[#23252a] rounded-xl p-3 shadow-none text-left block pointer-events-none animate-timeline-fade-in font-sans leading-normal text-[#f7f8f8]">
               <span className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                <span className="w-8 h-8 rounded-full bg-[#5e6ad2]/20 border border-[#5e6ad2]/30 text-[#5e6ad2] text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                   {initials}
                 </span>
                 <span className="block min-w-0">
-                  <span className="block font-bold text-slate-900 text-xs truncate">{event.actorName}</span>
+                  <span className="block font-bold text-[#f7f8f8] text-xs truncate">{event.actorName}</span>
                   {event.actorRole && (
-                    <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                    <span className="block text-[9px] text-[#8a8f98] font-bold uppercase tracking-wider mt-0.5">
                       {event.actorRole}
                     </span>
                   )}
                 </span>
               </span>
               {event.actorEmail && (
-                <span className="block mt-2 pt-1.5 border-t border-slate-100">
-                  <span className="block text-[8px] uppercase font-bold text-slate-400 tracking-wider">Email</span>
-                  <span className="block text-[10px] text-slate-600 font-mono truncate select-all">{event.actorEmail}</span>
+                <span className="block mt-2 pt-1.5 border-t border-[#23252a]">
+                  <span className="block text-[8px] uppercase font-bold text-[#8a8f98] tracking-wider">Email</span>
+                  <span className="block text-[10px] text-[#d0d6e0] font-mono truncate select-all">{event.actorEmail}</span>
                 </span>
               )}
             </span>
@@ -480,13 +480,13 @@ export function InvoiceDetail() {
           if (isFirstTime) {
             return (
               <span>
-                {actor} set the invoice amount to <span className="font-bold text-slate-955 font-mono">{formatCurrency(newVal)}</span>
+                {actor} set the invoice amount to <span className="font-bold text-[#f7f8f8] font-mono">{formatCurrency(newVal)}</span>
               </span>
             );
           }
           return (
             <span>
-              {actor} changed the invoice amount from <span className="line-through text-slate-400 font-mono">{formatCurrency(oldVal)}</span> to <span className="font-bold text-slate-955 font-mono">{formatCurrency(newVal)}</span>
+              {actor} changed the invoice amount from <span className="line-through text-[#8a8f98] font-mono">{formatCurrency(oldVal)}</span> to <span className="font-bold text-[#f7f8f8] font-mono">{formatCurrency(newVal)}</span>
             </span>
           );
         }
@@ -495,13 +495,13 @@ export function InvoiceDetail() {
           if (isFirstTime) {
             return (
               <span>
-                {actor} set the due date to <span className="font-bold text-slate-955">{formatDateValue(newVal)}</span>
+                {actor} set the due date to <span className="font-bold text-[#f7f8f8]">{formatDateValue(newVal)}</span>
               </span>
             );
           }
           return (
             <span>
-              {actor} pushed the due date from <span className="line-through text-slate-400">{formatDateValue(oldVal)}</span> to <span className="font-bold text-slate-955">{formatDateValue(newVal)}</span>
+              {actor} pushed the due date from <span className="line-through text-[#8a8f98]">{formatDateValue(oldVal)}</span> to <span className="font-bold text-[#f7f8f8]">{formatDateValue(newVal)}</span>
             </span>
           );
         }
@@ -510,13 +510,13 @@ export function InvoiceDetail() {
           if (isFirstTime) {
             return (
               <span>
-                {actor} set payment status to <span className="font-bold text-slate-955">{String(newVal)}</span>
+                {actor} set payment status to <span className="font-bold text-[#f7f8f8]">{String(newVal)}</span>
               </span>
             );
           }
           return (
             <span>
-              {actor} changed payment status from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span>
+              {actor} changed payment status from <span className="line-through text-[#8a8f98]">{String(oldVal)}</span> to <span className="font-bold text-[#f7f8f8]">{String(newVal)}</span>
             </span>
           );
         }
@@ -525,13 +525,13 @@ export function InvoiceDetail() {
           if (isFirstTime) {
             return (
               <span>
-                {actor} set client name to <span className="font-bold text-slate-955">{String(newVal)}</span>
+                {actor} set client name to <span className="font-bold text-[#f7f8f8]">{String(newVal)}</span>
               </span>
             );
           }
           return (
             <span>
-              {actor} updated client name from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span>
+              {actor} updated client name from <span className="line-through text-[#8a8f98]">{String(oldVal)}</span> to <span className="font-bold text-[#f7f8f8]">{String(newVal)}</span>
             </span>
           );
         }
@@ -540,13 +540,13 @@ export function InvoiceDetail() {
           if (isFirstTime) {
             return (
               <span>
-                {actor} set contact email to <span className="font-semibold text-slate-900">{String(newVal)}</span>
+                {actor} set contact email to <span className="font-semibold text-[#f7f8f8]">{String(newVal)}</span>
               </span>
             );
           }
           return (
             <span>
-              {actor} updated contact email from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-semibold text-slate-900">{String(newVal)}</span>
+              {actor} updated contact email from <span className="line-through text-[#8a8f98]">{String(oldVal)}</span> to <span className="font-semibold text-[#f7f8f8]">{String(newVal)}</span>
             </span>
           );
         }
@@ -554,7 +554,7 @@ export function InvoiceDetail() {
         // Fallback for single unknown field
         return (
           <span>
-            {actor} updated <span className="font-semibold text-slate-900">{key}</span>
+            {actor} updated <span className="font-semibold text-[#f7f8f8]">{key}</span>
           </span>
         );
       } else if (keys.length > 1) {
@@ -570,7 +570,7 @@ export function InvoiceDetail() {
     if (type === 'invoice.created') {
       return (
         <span>
-          {actor} created this invoice for <span className="font-bold text-slate-955 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span>
+          {actor} created this invoice for <span className="font-bold text-[#f7f8f8] font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span>
         </span>
       );
     }
@@ -605,14 +605,14 @@ export function InvoiceDetail() {
     if (type === 'payment.received') {
       return (
         <span>
-          Payment of <span className="font-bold text-emerald-600 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span> received successfully
+          Payment of <span className="font-bold text-[#27a644] font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span> received successfully
         </span>
       );
     }
     if (type === 'payment.link_generated') {
       return (
         <span>
-          Payment link generated for <span className="font-semibold text-slate-900">{invoice?.clientName}</span>
+          Payment link generated for <span className="font-semibold text-[#f7f8f8]">{invoice?.clientName}</span>
         </span>
       );
     }
@@ -620,7 +620,7 @@ export function InvoiceDetail() {
       const tone = String(event.payload?.tone || 'default');
       return (
         <span>
-          {actor} triggered AI follow-up (tone: <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[11px] border border-slate-200">{tone}</span>)
+          {actor} triggered AI follow-up (tone: <span className="font-mono bg-[#141516] text-[#f7f8f8] px-1.5 py-0.5 rounded text-[11px] border border-[#23252a]">{tone}</span>)
         </span>
       );
     }
@@ -628,7 +628,7 @@ export function InvoiceDetail() {
       const recipient = getRecipientEmail(event);
       return (
         <span>
-          AI agent sent follow-up email to <span className="font-semibold text-slate-900">{recipient}</span>
+          AI agent sent follow-up email to <span className="font-semibold text-[#f7f8f8]">{recipient}</span>
         </span>
       );
     }
@@ -758,8 +758,8 @@ export function InvoiceDetail() {
       if (payload?.error) {
         return (
           <div>
-            <p className="font-semibold text-red-600">Follow-up failed with error</p>
-            <p className="text-xs text-slate-600 mt-1 bg-red-50 p-2 border border-red-100 rounded font-mono">
+            <p className="font-semibold text-red-400">Follow-up failed with error</p>
+            <p className="text-xs text-red-300 mt-1 bg-red-950/40 p-2 border border-red-900/50 rounded font-mono">
               {getErrorMessage(payload.error)}
             </p>
           </div>
@@ -768,9 +768,9 @@ export function InvoiceDetail() {
       if (payload?.reason === 'no_automated_channel') {
         return (
           <div>
-            <p className="font-semibold text-slate-800">Follow-up halted</p>
-            <p className="text-xs text-slate-600 mt-1">
-              No automated communication channels configured for the <span className="font-mono bg-slate-100 px-1 rounded">{String(payload.tier || 'unknown')}</span> tier.
+            <p className="font-semibold text-[#f7f8f8]">Follow-up halted</p>
+            <p className="text-xs text-[#8a8f98] mt-1">
+              No automated communication channels configured for the <span className="font-mono bg-[#141516] text-[#f7f8f8] px-1.5 py-0.5 rounded border border-[#23252a]">{String(payload.tier || 'unknown')}</span> tier.
             </p>
           </div>
         );
@@ -779,8 +779,8 @@ export function InvoiceDetail() {
     if (type.includes('skipped')) {
       return (
         <div>
-          <p className="font-semibold text-slate-800">Follow-up skipped</p>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="font-semibold text-[#f7f8f8]">Follow-up skipped</p>
+          <p className="text-xs text-[#8a8f98] mt-1">
             Skipped because a follow-up was recently sent.
           </p>
         </div>
@@ -789,7 +789,7 @@ export function InvoiceDetail() {
     if (payload?.subject) {
       return (
         <div>
-          <p className="text-xs text-slate-500 font-mono bg-slate-50 p-1 rounded">Subject: {String(payload.subject)}</p>
+          <p className="text-xs text-[#8a8f98] font-mono bg-[#141516] p-1.5 rounded border border-[#23252a]">Subject: {String(payload.subject)}</p>
         </div>
       );
     }
@@ -797,25 +797,25 @@ export function InvoiceDetail() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12 text-[#f7f8f8]">
       {/* Back Link */}
       <div>
-        <Link to="/invoices" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Link to="/invoices" className="inline-flex items-center text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
           Back to Invoices
         </Link>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start gap-3 relative shadow-sm">
-          <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="bg-red-950/40 border border-red-900/50 text-red-400 rounded-xl p-4 flex items-start gap-3 relative shadow-none">
+          <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-semibold text-sm">Action Failed</h3>
-            <p className="text-sm mt-1">{error}</p>
+            <h3 className="font-semibold text-xs text-red-300">Action Failed</h3>
+            <p className="text-xs mt-0.5 opacity-90">{error}</p>
           </div>
           <button 
             onClick={() => setError(null)}
-            className="absolute top-4 right-4 text-red-500 hover:text-red-700 transition-colors focus:outline-none"
+            className="absolute top-3.5 right-3.5 text-red-400 hover:text-red-300 transition-colors focus:outline-none"
           >
             <span className="sr-only">Close</span>
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -826,11 +826,11 @@ export function InvoiceDetail() {
       )}
 
       {invoice.needsManualReview && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 flex items-start gap-3 shadow-sm">
-          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="bg-amber-950/40 border border-amber-900/50 text-amber-300 rounded-xl p-4 flex items-start gap-3 shadow-none">
+          <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-semibold text-sm">Needs Manual Review</h3>
-            <p className="text-sm mt-1">
+            <h3 className="font-semibold text-xs text-amber-200">Needs Manual Review</h3>
+            <p className="text-xs mt-1 text-amber-200/80 leading-relaxed">
               This invoice is currently in the Dead Letter Queue due to multiple consecutive automated delivery failures.
               Automated follow-ups are halted. Please check the recipient email address or provider settings, then manually retry or dismiss the DLQ entry to resume automated processing.
             </p>
@@ -839,10 +839,10 @@ export function InvoiceDetail() {
       )}
 
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 bg-[#0f1011] p-5 rounded-xl border border-[#23252a] shadow-none">
         <div>
-          <div className="flex items-center space-x-3 mb-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{invoice.invoiceNo}</h1>
+          <div className="flex items-center space-x-3 mb-1.5">
+            <h1 className="text-2xl font-bold tracking-tight text-[#f7f8f8]">{invoice.invoiceNo}</h1>
             <div className="flex items-center gap-1.5">
               <Badge variant={
                 invoice.paymentStatus === 'Paid' ? 'success' : 
@@ -851,18 +851,18 @@ export function InvoiceDetail() {
                 {invoice.paymentStatus}
               </Badge>
               {invoice.needsManualReview && (
-                <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200">
+                <Badge variant="warning" className="bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   Needs Manual Review
                 </Badge>
               )}
               {invoice.hasActivePaymentPlan && (
-                <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                <Badge variant="success" className="bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
                   Active Payment Plan
                 </Badge>
               )}
             </div>
           </div>
-          <p className="text-3xl font-light text-slate-900 mt-4">
+          <p className="text-2xl font-light text-[#f7f8f8] mt-2">
             {formatCurrency(invoice.invoiceAmount)}
           </p>
         </div>
@@ -873,9 +873,9 @@ export function InvoiceDetail() {
             <>
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-10 px-4 py-2"
+                className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-9 px-3.5 py-1.5"
               >
-                <Edit className="mr-2 h-4 w-4" />
+                <Edit className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
                 Edit
               </button>
 
@@ -883,9 +883,9 @@ export function InvoiceDetail() {
                 <button
                   onClick={handleDelete}
                   disabled={deleteMutation.isPending}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 h-10 px-4 py-2 disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-red-900/50 bg-[#0f1011] text-red-400 hover:bg-red-950/40 h-9 px-3.5 py-1.5 disabled:opacity-40"
                 >
-                  {deleteMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  {deleteMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1.5 h-3.5 w-3.5" />}
                   Delete
                 </button>
               )}
@@ -895,9 +895,9 @@ export function InvoiceDetail() {
                   <button
                     onClick={() => statusMutation.mutate('Paid')}
                     disabled={statusMutation.isPending}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 h-10 px-4 py-2 disabled:opacity-50"
+                    className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#27a644]/30 bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 h-9 px-3.5 py-1.5 disabled:opacity-40"
                   >
-                    {statusMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                    {statusMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />}
                     Mark as Paid
                   </button>
 
@@ -905,9 +905,9 @@ export function InvoiceDetail() {
                     <button
                       onClick={() => cancelPlanMutation.mutate()}
                       disabled={cancelPlanMutation.isPending}
-                      className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 h-10 px-4 py-2 disabled:opacity-50"
+                      className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 h-9 px-3.5 py-1.5 disabled:opacity-40"
                     >
-                      {cancelPlanMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                      {cancelPlanMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <XCircle className="mr-1.5 h-3.5 w-3.5" />}
                       Cancel Payment Plan
                     </button>
                   )}
@@ -915,9 +915,9 @@ export function InvoiceDetail() {
                   <button
                     onClick={handleTriggerFollowup}
                     disabled={agentMutation.isPending}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2 disabled:opacity-50"
+                    className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-3.5 py-1.5 disabled:opacity-40 shadow-none"
                   >
-                    {agentMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                    {agentMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-1.5 h-3.5 w-3.5" />}
                     Trigger Follow-up
                   </button>
                 </>
@@ -930,32 +930,32 @@ export function InvoiceDetail() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Info Grid */}
         <div className="md:col-span-1 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Client Details</CardTitle>
+          <Card className="border border-[#23252a] bg-[#0f1011]">
+            <CardHeader className="pb-2 border-b-0">
+              <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Client Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3.5">
               <div>
-                <p className="text-sm text-slate-500 mb-1">Company</p>
-                <p className="font-medium text-slate-900">{invoice.clientName}</p>
+                <p className="text-xs text-[#8a8f98] mb-0.5">Company</p>
+                <p className="font-medium text-xs text-[#f7f8f8]">{invoice.clientName}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-500 mb-1">Contact</p>
-                <div className="flex items-center text-slate-900">
-                  <Mail className="mr-2 h-4 w-4 text-slate-400" />
-                  <a href={`mailto:${invoice.contactEmail}`} className="hover:text-blue-600 hover:underline">{invoice.contactEmail}</a>
+                <p className="text-xs text-[#8a8f98] mb-0.5">Contact</p>
+                <div className="flex items-center text-xs text-[#f7f8f8]">
+                  <Mail className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
+                  <a href={`mailto:${invoice.contactEmail}`} className="hover:text-[#5e6ad2] hover:underline">{invoice.contactEmail}</a>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {invoice.subject && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Invoice Description</CardTitle>
+            <Card className="border border-[#23252a] bg-[#0f1011]">
+              <CardHeader className="pb-2 border-b-0">
+                <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Invoice Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-700 leading-relaxed">{invoice.subject}</p>
+                <p className="text-xs text-[#d0d6e0] leading-relaxed">{invoice.subject}</p>
               </CardContent>
             </Card>
           )}
@@ -985,55 +985,55 @@ export function InvoiceDetail() {
 
             return (
               <>
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Aging &amp; Status</CardTitle>
+                <Card className="border border-[#23252a] bg-[#0f1011]">
+                  <CardHeader className="pb-2 border-b-0">
+                    <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Aging &amp; Status</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3.5">
                     <div>
-                      <p className="text-sm text-slate-500 mb-1">
+                      <p className="text-xs text-[#8a8f98] mb-0.5">
                         {activeInstallment ? `Next Installment Due (#${activeInstallment.installmentNumber})` : 'Due Date'}
                       </p>
-                      <div className="flex items-center text-slate-900 font-medium">
-                        <Calendar className="mr-2 h-4 w-4 text-slate-400" />
+                      <div className="flex items-center text-xs text-[#f7f8f8] font-medium">
+                        <Calendar className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
                         {new Date(activeInstallment ? activeInstallment.dueDate : invoice.dueDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </div>
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                      <p className="text-sm text-slate-500">Days Overdue</p>
-                      <p className={`font-semibold ${activeDaysOverdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                    <div className="flex justify-between items-center pt-2 border-t border-[#23252a]">
+                      <p className="text-xs text-[#8a8f98]">Days Overdue</p>
+                      <p className={`font-semibold text-xs ${activeDaysOverdue > 0 ? 'text-red-400' : 'text-[#f7f8f8]'}`}>
                         {activeDaysOverdue}
                       </p>
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                      <p className="text-sm text-slate-500">Follow-ups Sent</p>
-                      <p className="font-semibold text-slate-900">{invoice.followupCount}</p>
+                    <div className="flex justify-between items-center pt-2 border-t border-[#23252a]">
+                      <p className="text-xs text-[#8a8f98]">Follow-ups Sent</p>
+                      <p className="font-semibold text-xs text-[#f7f8f8]">{invoice.followupCount}</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 {invoice.hasActivePaymentPlan && totalInst > 0 && (
-                  <Card className="border border-emerald-200 bg-emerald-50/20">
-                    <CardHeader className="pb-3">
+                  <Card className="border border-[#27a644]/30 bg-[#27a644]/5">
+                    <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-medium text-emerald-800 uppercase tracking-wider flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-emerald-600" />
+                        <CardTitle className="text-xs font-semibold text-[#27a644] uppercase tracking-wider flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 text-[#27a644]" />
                           Agreed Installment Schedule
                         </CardTitle>
-                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold text-[#27a644] bg-[#27a644]/10 border border-[#27a644]/20 px-2 py-0.5 rounded-full">
                           {paidInst} of {totalInst} Paid ({percentPaid}%)
                         </span>
                       </div>
 
                       {/* Visual Segmented Progress Bar */}
                       <div className="mt-3 space-y-1">
-                        <div className="flex gap-1.5 h-2.5 w-full rounded-full overflow-hidden bg-slate-200/80 p-0.5">
+                        <div className="flex gap-1.5 h-2 w-full rounded-full overflow-hidden bg-[#141516] p-0.5">
                           {instList.map((item, idx) => {
-                            let bgColor = 'bg-slate-300';
+                            let bgColor = 'bg-[#3e3e44]';
                             if (item.status === 'paid') {
-                              bgColor = 'bg-emerald-500';
+                              bgColor = 'bg-[#27a644]';
                             } else if (item.status === 'overdue') {
-                              bgColor = 'bg-rose-500 animate-pulse';
+                              bgColor = 'bg-red-500 animate-pulse';
                             } else if (item.status === 'pending' && idx === paidInst) {
                               bgColor = 'bg-amber-400';
                             }
@@ -1047,29 +1047,29 @@ export function InvoiceDetail() {
                             );
                           })}
                         </div>
-                        <div className="flex justify-between text-[10px] font-medium text-slate-500 pt-0.5">
+                        <div className="flex justify-between text-[10px] font-medium text-[#8a8f98] pt-0.5">
                           <span>Installment Progress</span>
                           <span>{paidInst === totalInst ? 'All Installments Paid' : `Active: Installment #${paidInst + 1}`}</span>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-2">
+                    <CardContent className="space-y-2">
+                      <div className="space-y-1.5">
                         {instList.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg text-xs hover:border-emerald-300 transition-colors">
-                            <div className="flex items-center gap-2.5">
-                              <div className={`w-2 h-2 rounded-full ${
-                                item.status === 'paid' ? 'bg-emerald-500' : item.status === 'overdue' ? 'bg-rose-500' : 'bg-amber-400'
+                          <div key={item.id} className="flex items-center justify-between p-2 bg-[#0f1011] border border-[#23252a] rounded-md text-xs">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-1.5 h-1.5 rounded-full ${
+                                item.status === 'paid' ? 'bg-[#27a644]' : item.status === 'overdue' ? 'bg-red-400' : 'bg-amber-400'
                               }`} />
                               <div>
-                                <span className="font-semibold text-slate-800">Installment #{item.installmentNumber}</span>
-                                <span className="block text-[11px] text-slate-500">Due {new Date(item.dueDate).toLocaleDateString()}</span>
+                                <span className="font-semibold text-xs text-[#f7f8f8]">Installment #{item.installmentNumber}</span>
+                                <span className="block text-[10px] text-[#8a8f98]">Due {new Date(item.dueDate).toLocaleDateString()}</span>
                               </div>
                             </div>
                             <div className="text-right">
-                              <span className="font-semibold text-slate-900">{formatCurrency(item.amount)}</span>
-                              <span className={`block text-[10px] font-bold uppercase ${
-                                item.status === 'paid' ? 'text-emerald-600' : item.status === 'overdue' ? 'text-rose-600' : 'text-amber-600'
+                              <span className="font-semibold text-xs text-[#f7f8f8]">{formatCurrency(item.amount)}</span>
+                              <span className={`block text-[9px] font-bold uppercase ${
+                                item.status === 'paid' ? 'text-[#27a644]' : item.status === 'overdue' ? 'text-red-400' : 'text-amber-400'
                               }`}>
                                 {item.status}
                               </span>
@@ -1084,21 +1084,20 @@ export function InvoiceDetail() {
             );
           })()}
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Payment Details</CardTitle>
+          <Card className="border border-[#23252a] bg-[#0f1011]">
+            <CardHeader className="pb-2 border-b-0">
+              <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Payment Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3.5">
               <div>
-                <p className="text-sm text-slate-500 mb-2">Payment Link</p>
+                <p className="text-xs text-[#8a8f98] mb-1.5">Payment Link</p>
                 {invoice.paymentLink ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-                        invoice.paymentLink.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                        invoice.paymentLink.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
-                        invoice.paymentLink.status === 'cancelled' ? 'bg-slate-100 text-slate-800' :
-                        'bg-red-100 text-red-800'
+                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium ${
+                        invoice.paymentLink.status === 'active' ? 'bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20' :
+                        invoice.paymentLink.status === 'paid' ? 'bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20' :
+                        'bg-[#141516] text-[#8a8f98] border border-[#23252a]'
                       }`}>
                         {invoice.paymentLink.status.charAt(0).toUpperCase() + invoice.paymentLink.status.slice(1)}
                       </span>
@@ -1108,13 +1107,13 @@ export function InvoiceDetail() {
                         type="text" 
                         readOnly 
                         value={invoice.paymentLink.url} 
-                        className="w-full text-xs p-1.5 border border-slate-200 rounded bg-slate-50 text-slate-600 truncate"
+                        className="w-full text-xs p-1.5 border border-[#23252a] rounded bg-[#010102] text-[#d0d6e0] truncate"
                         title={invoice.paymentLink.url}
                       />
                       {invoice.paymentLink.status === 'active' && invoice.paymentStatus !== 'Paid' && (
                         <button 
                           onClick={() => navigator.clipboard.writeText(invoice.paymentLink!.url)}
-                          className="px-2 py-1.5 bg-white border border-slate-300 rounded text-xs font-medium hover:bg-slate-50 transition-colors flex-shrink-0"
+                          className="px-2 py-1.5 bg-[#0f1011] border border-[#23252a] rounded text-xs font-medium text-[#f7f8f8] hover:bg-[#141516] transition-colors flex-shrink-0"
                         >
                           Copy
                         </button>
@@ -1122,18 +1121,18 @@ export function InvoiceDetail() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="text-sm text-slate-600 italic">
+                  <div className="space-y-2">
+                    <div className="text-xs text-[#8a8f98] italic">
                       No active payment link generated yet.
-                      {invoice.paymentStatus !== 'Paid' && <p className="text-xs text-slate-400 mt-1">A fallback link from settings may be used in emails.</p>}
+                      {invoice.paymentStatus !== 'Paid' && <p className="text-[11px] text-[#8a8f98] mt-0.5">A fallback link from settings may be used in emails.</p>}
                     </div>
                     {invoice.paymentStatus !== 'Paid' && user?.role !== 'viewer' && (
                       <button
                         onClick={() => generateLinkMutation.mutate()}
                         disabled={generateLinkMutation.isPending}
-                        className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 h-8 px-3 disabled:opacity-50"
+                        className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] h-8 px-3 disabled:opacity-40"
                       >
-                        {generateLinkMutation.isPending && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                        {generateLinkMutation.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
                         Generate Payment Link
                       </button>
                     )}
@@ -1144,44 +1143,44 @@ export function InvoiceDetail() {
           </Card>
 
           {(user?.role === 'admin' || user?.role === 'manager') && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Debtor Portal Link</CardTitle>
+            <Card className="border border-[#23252a] bg-[#0f1011]">
+              <CardHeader className="pb-2 border-b-0">
+                <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Debtor Portal Link</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3.5">
                 {portalLinkStatus ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-500">Status</span>
+                      <span className="text-xs text-[#8a8f98]">Status</span>
                       {!portalLinkStatus.exists ? (
-                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
+                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-[#141516] text-[#8a8f98]">
                           No link generated yet
                         </span>
                       ) : portalLinkStatus.revokedAt ? (
-                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-red-950/40 text-red-400 border border-red-900/50">
                           Revoked
                         </span>
                       ) : (
-                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
                           Active
                         </span>
                       )}
                     </div>
 
                     {portalLinkStatus.exists && (
-                      <div className="text-xs text-slate-600 space-y-1.5 pt-2 border-t border-slate-100">
+                      <div className="text-xs text-[#8a8f98] space-y-1.5 pt-2 border-t border-[#23252a]">
                         <div className="flex justify-between">
                           <span>Created At</span>
-                          <span className="font-medium">{new Date(portalLinkStatus.createdAt!).toLocaleString()}</span>
+                          <span className="font-medium text-[#f7f8f8]">{new Date(portalLinkStatus.createdAt!).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Last Viewed</span>
-                          <span className="font-medium">
+                          <span className="font-medium text-[#f7f8f8]">
                             {portalLinkStatus.viewedAt ? new Date(portalLinkStatus.viewedAt).toLocaleString() : 'Never'}
                           </span>
                         </div>
                         {portalLinkStatus.revokedAt && (
-                          <div className="flex justify-between text-red-600">
+                          <div className="flex justify-between text-red-400">
                             <span>Revoked At</span>
                             <span className="font-medium">{new Date(portalLinkStatus.revokedAt).toLocaleString()}</span>
                           </div>
@@ -1190,9 +1189,9 @@ export function InvoiceDetail() {
                     )}
 
                     {regeneratedLink ? (
-                      <div className="space-y-3 pt-3 border-t border-slate-100">
-                        <div className="rounded-md bg-amber-50 border border-amber-200 p-2.5 flex gap-2 text-xs text-amber-800">
-                          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-2 pt-2 border-t border-[#23252a]">
+                        <div className="rounded-md bg-amber-950/40 border border-amber-900/50 p-2 flex gap-2 text-xs text-amber-300">
+                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                           <span>Copy this URL now. For security, the full URL cannot be retrieved again.</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1200,7 +1199,7 @@ export function InvoiceDetail() {
                             type="text" 
                             readOnly 
                             value={regeneratedLink.url} 
-                            className="w-full text-xs p-1.5 border border-slate-200 rounded bg-slate-50 text-slate-600 truncate"
+                            className="w-full text-xs p-1.5 border border-[#23252a] rounded bg-[#010102] text-[#d0d6e0] truncate"
                             title={regeneratedLink.url}
                           />
                           <button 
@@ -1209,17 +1208,17 @@ export function InvoiceDetail() {
                               setIsCopied(true);
                               setTimeout(() => setIsCopied(false), 2000);
                             }}
-                            className="px-2 py-1.5 bg-white border border-slate-300 rounded text-xs font-medium hover:bg-slate-50 transition-colors flex-shrink-0 flex items-center justify-center"
+                            className="px-2 py-1.5 bg-[#0f1011] border border-[#23252a] rounded text-xs font-medium text-[#f7f8f8] hover:bg-[#141516] transition-colors flex-shrink-0 flex items-center justify-center"
                           >
-                            {isCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            {isCopied ? <Check className="w-3.5 h-3.5 text-[#27a644]" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <div className="pt-2">
+                      <div className="pt-1">
                         <button
                           onClick={() => setIsConfirmOpen(true)}
-                          className="w-full inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 h-8 px-3"
+                          className="w-full inline-flex items-center justify-center rounded-md text-xs font-medium border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] h-8 px-3"
                         >
                           Regenerate Portal Link
                         </button>
@@ -1228,7 +1227,7 @@ export function InvoiceDetail() {
                   </div>
                 ) : (
                   <div className="flex justify-center py-4">
-                    <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                    <Loader2 className="h-4 w-4 animate-spin text-[#5e6ad2]" />
                   </div>
                 )}
               </CardContent>
@@ -1238,23 +1237,24 @@ export function InvoiceDetail() {
 
         {/* Tabs Area */}
         <div className="md:col-span-2">
-          <Card id="history-tabs" className="h-full">
-            <div className="flex border-b border-slate-200">
+          <Card id="history-tabs" className="h-full border border-[#23252a] bg-[#0f1011]">
+            <div className="flex border-b border-[#23252a]">
               <button
-                className={`flex-1 py-4 text-sm font-medium border-b-2 transition-colors ${
+                className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${
                   activeTab === 'timeline' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    ? 'border-[#5e6ad2] text-[#5e6ad2]' 
+                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
                 }`}
                 onClick={() => setActiveTab('timeline')}
               >
+
                 Event Timeline
               </button>
               <button
                 className={`flex-1 py-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'emails' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    ? 'border-[#5e6ad2] text-[#5e6ad2]' 
+                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
                 }`}
                 onClick={() => setActiveTab('emails')}
               >
@@ -1269,21 +1269,21 @@ export function InvoiceDetail() {
 
 
                   <div className="flex justify-between items-center mb-6">
-                    <span className="text-xs text-slate-500 font-medium">
+                    <span className="text-xs text-[#8a8f98] font-medium">
                       Showing {accumulatedTimeline.length} of {totalTimelineCount} events
                     </span>
                   </div>
 
                   {isTimelineLoading && accumulatedTimeline.length === 0 ? (
                     <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                      <Loader2 className="h-6 w-6 animate-spin text-[#5e6ad2]" />
                     </div>
                   ) : accumulatedTimeline.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500 text-sm">
+                    <div className="text-center py-8 text-[#8a8f98] text-xs">
                       No events recorded matching the criteria.
                     </div>
                   ) : (
-                    <div className="relative border-l border-slate-200 ml-3.5 space-y-4 py-1">
+                    <div className="relative border-l border-[#23252a] ml-3.5 space-y-4 py-1">
                       {(() => {
                         const displayTimeline = groupTimelineEvents(accumulatedTimeline);
                         const toggleGroup = (id: string) => {
@@ -1298,23 +1298,23 @@ export function InvoiceDetail() {
                           
                           return (
                             <div key={event.id} className="relative pl-6 animate-timeline-fade-in">
-                              {/* Color-coded Circular Icon Marker */}
-                              <div className={`absolute -left-3 top-1 h-6 w-6 rounded-full bg-white border flex items-center justify-center shadow-sm ${getEventIconStyles(event)}`}>
+                              {/* Circular Icon Marker */}
+                              <div className={`absolute -left-3 top-1 h-6 w-6 rounded-full bg-[#0f1011] border border-[#23252a] flex items-center justify-center shadow-none ${getEventIconStyles(event)}`}>
                                 {renderEventIcon(event)}
                               </div>
                               
-                              {/* Card Content with reduced padding */}
-                              <div className="bg-slate-50/50 rounded-lg p-3 border border-slate-100 hover:bg-slate-50 hover:shadow-sm transition-all duration-150">
+                              {/* Card Content */}
+                              <div className="bg-[#0f1011] rounded-lg p-3 border border-[#23252a] hover:bg-[#141516]/60 transition-all duration-150">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
                                   {/* Primary Text */}
-                                  <div className="text-sm text-slate-800 leading-snug">
+                                  <div className="text-xs text-[#f7f8f8] leading-snug">
                                     {getEventHeading(event)}
                                     
                                     {/* Collapsible edit revisions trigger */}
                                     {event.isGrouped && (
                                       <button 
                                         onClick={() => toggleGroup(event.id)}
-                                        className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-full transition-all inline-flex items-center gap-0.5 active:scale-95 cursor-pointer shadow-xs"
+                                        className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-[#141516] hover:bg-[#18191a] text-[#8a8f98] border border-[#23252a] rounded-full transition-all inline-flex items-center gap-0.5 active:scale-95 cursor-pointer"
                                       >
                                         <span>{event.editsCount} edits</span>
                                         <span>{isExpanded ? '▲' : '▼'}</span>
@@ -1323,15 +1323,15 @@ export function InvoiceDetail() {
                                   </div>
                                   
                                   {/* Secondary metadata row */}
-                                  <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap self-start sm:self-center">
+                                  <div className="text-[10px] text-[#8a8f98] font-medium whitespace-nowrap self-start sm:self-center">
                                     {new Date(event.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}, {new Date(event.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                   </div>
                                 </div>
 
                                 {/* Collapsible edits expansion panel */}
                                 {event.isGrouped && isExpanded && (
-                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-[11px] text-slate-500">
-                                    <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider mb-1">Edit History ({event.editsCount} revisions)</p>
+                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-[11px] text-[#8a8f98]">
+                                    <p className="text-[9px] uppercase font-bold text-[#8a8f98] tracking-wider mb-1">Edit History ({event.editsCount} revisions)</p>
                                     {event.subEvents?.map((sub: InvoiceEvent) => {
                                       const subKeys = Object.keys({ ...sub.oldValues, ...sub.newValues }).filter(k => sub.oldValues?.[k] !== sub.newValues?.[k]);
                                       const subKey = subKeys[0];
@@ -1344,17 +1344,17 @@ export function InvoiceDetail() {
                                       const formattedNew = subKey === 'invoiceAmount' ? formatCurrency(newV) : subKey === 'dueDate' ? formatDateValue(newV) : String(newV || '—');
                                       
                                       return (
-                                        <div key={sub.id} className="flex justify-between items-center py-0.5 border-b border-slate-100 last:border-0 font-medium">
-                                          <span className="text-[10px] text-slate-400">
+                                        <div key={sub.id} className="flex justify-between items-center py-0.5 border-b border-[#23252a] last:border-0 font-medium">
+                                          <span className="text-[10px] text-[#8a8f98]">
                                             {new Date(sub.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                           </span>
                                           {isSubFirstTime ? (
                                             <span>
-                                              Set to <span className="font-semibold text-slate-800">{formattedNew}</span>
+                                              Set to <span className="font-semibold text-[#f7f8f8]">{formattedNew}</span>
                                             </span>
                                           ) : (
                                             <span>
-                                              Changed from <span className="line-through text-slate-400">{formattedOld}</span> to <span className="font-semibold text-slate-800">{formattedNew}</span>
+                                              Changed from <span className="line-through text-[#8a8f98]">{formattedOld}</span> to <span className="font-semibold text-[#f7f8f8]">{formattedNew}</span>
                                             </span>
                                           )}
                                         </div>
@@ -1365,7 +1365,7 @@ export function InvoiceDetail() {
 
                                 {/* Diff List for Multi-field changes */}
                                 {keys.length > 1 && !event.isGrouped && (
-                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-xs text-slate-500">
+                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-xs text-[#8a8f98]">
                                     {keys.map((key) => {
                                       const oldVal = event.oldValues?.[key];
                                       const newVal = event.newValues?.[key];
@@ -1378,17 +1378,17 @@ export function InvoiceDetail() {
                                       const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');
                                       return (
                                         <div key={key} className="flex justify-between items-center py-0.5 font-medium">
-                                          <span className="capitalize text-slate-500 font-semibold">{displayLabel}</span>
+                                          <span className="capitalize text-[#8a8f98] font-semibold">{displayLabel}</span>
                                           <span>
                                             {isDiffFirstTime ? (
                                               <span>
-                                                Set to <span className="font-semibold text-slate-800 ml-1">{formattedNew}</span>
+                                                Set to <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span>
                                               </span>
                                             ) : (
                                               <span>
-                                                <span className="line-through text-slate-400 mr-1">{formattedOld}</span>
+                                                <span className="line-through text-[#8a8f98] mr-1">{formattedOld}</span>
                                                 &rarr;
-                                                <span className="font-semibold text-slate-800 ml-1">{formattedNew}</span>
+                                                <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span>
                                               </span>
                                             )}
                                           </span>
@@ -1400,32 +1400,32 @@ export function InvoiceDetail() {
 
                                 {/* Payload descriptions if any */}
                                 {renderEventDescription(event) && (
-                                  <div className="text-xs text-slate-500 mt-2 pl-3 border-l-2 border-slate-200 py-0.5">
+                                  <div className="text-xs text-[#8a8f98] mt-2 pl-3 border-l-2 border-[#23252a] py-0.5">
                                     {renderEventDescription(event)}
                                   </div>
                                 )}
 
                                 {/* Customer Inbound Dispute Email details */}
                                 {type === 'dispute.received' && event.payload && (
-                                  <div className="mt-2 pl-3 border-l-2 border-blue-400 space-y-1 py-1 text-xs text-slate-700 bg-blue-50/50 rounded-r-md p-2">
+                                  <div className="mt-2 pl-3 border-l-2 border-[#5e6ad2] space-y-1 py-1 text-xs text-[#f7f8f8] bg-[#5e6ad2]/10 rounded-r-md p-2">
                                     {typeof event.payload.subject === 'string' && event.payload.subject && (
-                                      <div><span className="font-semibold text-slate-900">Subject:</span> {event.payload.subject}</div>
+                                      <div><span className="font-semibold text-[#f7f8f8]">Subject:</span> {event.payload.subject}</div>
                                     )}
                                     {typeof event.payload.body === 'string' && event.payload.body && (
-                                      <div className="text-slate-600 line-clamp-2"><span className="font-semibold text-slate-900">Message:</span> {stripHtml(event.payload.body)}</div>
+                                      <div className="text-[#8a8f98] line-clamp-2"><span className="font-semibold text-[#f7f8f8]">Message:</span> {stripHtml(event.payload.body)}</div>
                                     )}
                                   </div>
                                 )}
 
                                 {/* Legacy/Generic payloads */}
                                 {!event.oldValues && !event.newValues && event.payload && !type.startsWith('dispute.') && (
-                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-[11px] text-slate-500 font-mono">
+                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-[11px] text-[#8a8f98] font-mono">
                                     {Object.entries(event.payload).map(([k, v]) => {
                                       if (v === null || v === undefined || k === 'error' || k === 'reason') return null;
                                       return (
                                         <div key={k} className="flex gap-2">
-                                          <span className="font-semibold text-slate-400 capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
-                                          <span className="text-slate-600 select-all truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                          <span className="font-semibold text-[#8a8f98] capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
+                                          <span className="text-[#d0d6e0] select-all truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
                                         </div>
                                       );
                                     })}
@@ -1441,13 +1441,13 @@ export function InvoiceDetail() {
 
                   {/* Load More Button */}
                   {totalTimelineCount > accumulatedTimeline.length && (
-                    <div className="flex justify-center pt-6 border-t border-slate-100 mt-6">
+                    <div className="flex justify-center pt-6 border-t border-[#23252a] mt-6">
                       <button
                         onClick={() => setTimelinePage(prev => prev + 1)}
                         disabled={isTimelineLoading}
-                        className="px-4 py-2 border border-slate-200 hover:border-slate-300 text-sm font-semibold rounded-lg bg-white text-slate-700 shadow-sm hover:shadow transition-all disabled:opacity-50 inline-flex items-center gap-2"
+                        className="px-3.5 py-1.5 border border-[#23252a] hover:border-[#34343a] text-xs font-medium rounded-md bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] transition-all disabled:opacity-40 inline-flex items-center gap-2"
                       >
-                        {isTimelineLoading && <Loader2 className="h-4 w-4 animate-spin text-slate-500" />}
+                        {isTimelineLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#5e6ad2]" />}
                         Load More Events
                       </button>
                     </div>
@@ -1457,7 +1457,7 @@ export function InvoiceDetail() {
                 // EMAILS TAB
                 isCommsLoading ? (
                   <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                    <Loader2 className="h-6 w-6 animate-spin text-[#5e6ad2]" />
                   </div>
                 ) : (
                   <CommunicationList communications={communications || []} />
@@ -1500,13 +1500,13 @@ export function InvoiceDetail() {
         description="Are you sure you want to delete this invoice?"
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
-            This action cannot be undone. All event logs, metrics, and associated data for Invoice <strong>{invoice.invoiceNo}</strong> will be permanently soft-deleted.
+          <p className="text-xs text-[#8a8f98]">
+            This action cannot be undone. All event logs, metrics, and associated data for Invoice <strong className="text-[#f7f8f8]">{invoice.invoiceNo}</strong> will be permanently soft-deleted.
           </p>
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-[#23252a]">
             <button
               onClick={() => setIsDeleteModalOpen(false)}
-              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-sm font-semibold rounded-lg bg-white text-slate-700 shadow-sm transition-all"
+              className="px-3.5 py-1.5 border border-[#23252a] hover:bg-[#141516] text-xs font-medium rounded-md bg-[#0f1011] text-[#f7f8f8] transition-all"
             >
               Cancel
             </button>
@@ -1516,9 +1516,9 @@ export function InvoiceDetail() {
                 deleteMutation.mutate();
               }}
               disabled={deleteMutation.isPending}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-sm font-semibold text-white rounded-lg shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-xs font-semibold text-white rounded-md transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
             >
-              {deleteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {deleteMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Delete Invoice
             </button>
           </div>
@@ -1532,17 +1532,17 @@ export function InvoiceDetail() {
         description="Are you sure you want to regenerate the portal link?"
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-xs text-[#8a8f98]">
             This action will immediately revoke the existing portal link. Any debtor currently viewing or trying to access the old link will lose access and see an error.
           </p>
-          <div className="rounded-md bg-amber-50 border border-amber-200 p-3 flex gap-2 text-xs text-amber-800">
-            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <div className="rounded-md bg-amber-950/40 border border-amber-900/50 p-3 flex gap-2 text-xs text-amber-300">
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
             <span>Regenerating the link does NOT automatically send a new email. You will need to copy and share the new link manually.</span>
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-[#23252a]">
             <button
               onClick={() => setIsConfirmOpen(false)}
-              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-sm font-semibold rounded-lg bg-white text-slate-700 shadow-sm transition-all"
+              className="px-3.5 py-1.5 border border-[#23252a] hover:bg-[#141516] text-xs font-medium rounded-md bg-[#0f1011] text-[#f7f8f8] transition-all"
             >
               Cancel
             </button>
@@ -1552,12 +1552,13 @@ export function InvoiceDetail() {
                 regenerateLinkMutation.mutate();
               }}
               disabled={regenerateLinkMutation.isPending}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white rounded-lg shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-xs font-semibold text-white rounded-md transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
             >
-              {regenerateLinkMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {regenerateLinkMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Regenerate Link
             </button>
           </div>
+
         </div>
       </Modal>
     </div>
