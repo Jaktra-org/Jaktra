@@ -208,49 +208,49 @@ export function Disputes() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 bg-[#010102] text-[#f7f8f8]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <MessageSquare className="w-6 h-6 text-blue-600" />
+          <h1 className="text-xl font-bold text-[#f7f8f8] tracking-tight flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-[#5e6ad2]" />
             Disputes Review Queue
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-xs text-[#8a8f98] mt-0.5">
             Review inbound customer communications, generate AI draft replies, and manage dispute resolution lifecycle.
           </p>
         </div>
 
         <button
           onClick={() => refetchDisputes()}
-          className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors shadow-2xs self-start sm:self-auto"
+          className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] hover:bg-[#141516] hover:border-[#34343a] rounded-md transition-all shadow-none self-start sm:self-auto"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className="w-3.5 h-3.5 text-[#8a8f98]" />
           <span>Refresh</span>
         </button>
       </div>
 
       {disputesError && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-center space-x-2">
+        <div className="p-3.5 bg-red-950/40 border border-red-900/50 text-red-400 text-xs rounded-lg flex items-center space-x-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>Failed to load disputes: {getErrorMessage(disputesError)}</span>
         </div>
       )}
 
       {/* Primary Navigation Tabs (Status) */}
-      <div className="border-b border-slate-200">
+      <div className="border-b border-[#23252a]">
         <nav className="flex space-x-4">
           <button
             onClick={() => { setActiveStatus('pending'); setPage(1); }}
-            className={`pb-3 px-1 border-b-2 font-semibold text-sm flex items-center space-x-2 transition-colors ${
+            className={`pb-3 px-1 border-b-2 font-medium text-xs flex items-center space-x-2 transition-colors ${
               activeStatus === 'pending'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                ? 'border-[#5e6ad2] text-[#5e6ad2]'
+                : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
             }`}
           >
             <span>Pending</span>
-            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
-              activeStatus === 'pending' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${
+              activeStatus === 'pending' ? 'bg-[#5e6ad2]/10 text-[#5e6ad2] border border-[#5e6ad2]/20' : 'bg-[#141516] text-[#8a8f98] border border-[#23252a]'
             }`}>
               {statusCounts.pending}
             </span>
@@ -258,15 +258,15 @@ export function Disputes() {
 
           <button
             onClick={() => { setActiveStatus('resolved'); setPage(1); }}
-            className={`pb-3 px-1 border-b-2 font-semibold text-sm flex items-center space-x-2 transition-colors ${
+            className={`pb-3 px-1 border-b-2 font-medium text-xs flex items-center space-x-2 transition-colors ${
               activeStatus === 'resolved'
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                ? 'border-[#27a644] text-[#27a644]'
+                : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
             }`}
           >
             <span>Resolved</span>
-            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
-              activeStatus === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${
+              activeStatus === 'resolved' ? 'bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20' : 'bg-[#141516] text-[#8a8f98] border border-[#23252a]'
             }`}>
               {statusCounts.resolved}
             </span>
@@ -274,15 +274,15 @@ export function Disputes() {
 
           <button
             onClick={() => { setActiveStatus('archived'); setPage(1); }}
-            className={`pb-3 px-1 border-b-2 font-semibold text-sm flex items-center space-x-2 transition-colors ${
+            className={`pb-3 px-1 border-b-2 font-medium text-xs flex items-center space-x-2 transition-colors ${
               activeStatus === 'archived'
-                ? 'border-amber-600 text-amber-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                ? 'border-amber-500 text-amber-400'
+                : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
             }`}
           >
             <span>Archived</span>
-            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
-              activeStatus === 'archived' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${
+              activeStatus === 'archived' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-[#141516] text-[#8a8f98] border border-[#23252a]'
             }`}>
               {statusCounts.archived}
             </span>
@@ -298,18 +298,21 @@ export function Disputes() {
           { id: 'question', label: 'Questions', count: categoryCounts.question },
           { id: 'payment_promise', label: 'Payment Promises', count: categoryCounts.payment_promise },
           { id: 'unclear', label: 'Unclear', count: categoryCounts.unclear },
+
         ] as const).map((tab) => (
           <button
             key={tab.id}
             onClick={() => { setActiveCategory(tab.id as DisputeTab); setPage(1); }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors flex items-center space-x-1.5 border ${
               activeCategory === tab.id
-                ? 'bg-slate-800 text-white shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-[#5e6ad2]/20 text-[#5e6ad2] border-[#5e6ad2]/30 shadow-none'
+                : 'bg-[#141516] text-[#8a8f98] border-[#23252a] hover:bg-[#18191a] hover:text-[#f7f8f8]'
             }`}
           >
             <span>{tab.label}</span>
-            <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-200/70 text-slate-800 font-semibold">
+            <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-semibold ${
+              activeCategory === tab.id ? 'bg-[#5e6ad2]/30 text-[#f7f8f8]' : 'bg-[#23252a] text-[#8a8f98]'
+            }`}>
               {tab.count}
             </span>
           </button>
@@ -318,20 +321,20 @@ export function Disputes() {
 
       {/* Main Review Queue List */}
       {groupedList.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center space-y-3">
-          <CheckCircle className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-800">
+        <div className="bg-[#0f1011] border border-[#23252a] rounded-xl p-12 text-center space-y-3">
+          <CheckCircle className="w-10 h-10 text-[#5e6ad2] mx-auto opacity-80" />
+          <h3 className="text-sm font-semibold text-[#f7f8f8]">
             No {activeStatus} items found
           </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <p className="text-xs text-[#8a8f98] max-w-sm mx-auto">
             {activeStatus === 'pending'
               ? 'All customer replies have been processed and resolved.'
               : `There are currently no items marked as ${activeStatus}.`}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center text-xs text-slate-500 font-semibold uppercase tracking-wider px-1">
+        <div className="space-y-3">
+          <div className="flex justify-between items-center text-[10px] text-[#8a8f98] font-semibold uppercase tracking-wider px-1">
             <span className="capitalize">{activeStatus} Items ({groupedList.length})</span>
           </div>
 
@@ -345,17 +348,17 @@ export function Disputes() {
             return (
               <div
                 key={group.groupKey}
-                className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all overflow-hidden shadow-2xs"
+                className="bg-[#0f1011] border border-[#23252a] hover:border-[#34343a] rounded-xl transition-all overflow-hidden shadow-none"
               >
-                {/* Group Box Header (Formatted as per user wireframe) */}
+                {/* Group Box Header */}
                 <div
                   onClick={() => toggleExpandGroup(group.groupKey)}
-                  className="p-4 cursor-pointer hover:bg-slate-50/70 transition-colors space-y-2.5"
+                  className="p-4 cursor-pointer hover:bg-[#141516]/60 transition-colors space-y-2.5"
                 >
                   <div className="flex items-center justify-between gap-3 text-xs flex-wrap">
                     <div className="flex items-center gap-2 flex-wrap">
                       {group.clientName && (
-                        <span className="font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/90 shadow-2xs">
+                        <span className="font-bold text-[#f7f8f8] bg-[#141516] px-2.5 py-1 rounded-md border border-[#23252a] shadow-none">
                           {group.clientName}
                         </span>
                       )}
@@ -363,17 +366,17 @@ export function Disputes() {
                         <Link 
                           to={`/invoices/${group.invoiceId}`} 
                           onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                          className="inline-flex items-center font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md border border-blue-200/90 transition-colors shadow-2xs"
+                          className="inline-flex items-center font-bold text-[#5e6ad2] hover:text-[#828fff] bg-[#5e6ad2]/10 hover:bg-[#5e6ad2]/20 px-2.5 py-1 rounded-md border border-[#5e6ad2]/20 transition-colors shadow-none"
                         >
                           Invoice: #{group.invoiceNo || group.invoiceId}
                           <ExternalLink className="w-3 h-3 ml-1" />
                         </Link>
                       ) : group.invoiceNo ? (
-                        <span className="font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200/90 shadow-2xs">
+                        <span className="font-bold text-[#5e6ad2] bg-[#5e6ad2]/10 px-2.5 py-1 rounded-md border border-[#5e6ad2]/20 shadow-none">
                           Invoice: #{group.invoiceNo}
                         </span>
                       ) : null}
-                      <span className="font-medium text-slate-700 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200">
+                      <span className="font-medium text-[#8a8f98] bg-[#010102] px-2.5 py-1 rounded-md border border-[#23252a]">
                         {group.sender}
                       </span>
                     </div>
@@ -393,21 +396,21 @@ export function Disputes() {
                         ))}
                       </div>
 
-                      <span className="text-slate-500 text-xs font-medium flex items-center">
-                        <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                      <span className="text-[#8a8f98] text-xs font-medium flex items-center">
+                        <Clock className="w-3.5 h-3.5 mr-1 text-[#62666d]" />
                         {new Date(group.latestCreatedAt).toLocaleString()}
                       </span>
                       <button
                         type="button"
-                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors"
+                        className="p-1 hover:bg-[#141516] rounded text-[#8a8f98] hover:text-[#f7f8f8] transition-colors"
                       >
-                        {isGroupExpanded ? <ChevronUp className="w-5 h-5 text-slate-600" /> : <ChevronDown className="w-5 h-5 text-slate-600" />}
+                        {isGroupExpanded ? <ChevronUp className="w-4 h-4 text-[#8a8f98]" /> : <ChevronDown className="w-4 h-4 text-[#8a8f98]" />}
                       </button>
                     </div>
                   </div>
 
                   {/* One Line Summary of latest customer reply */}
-                  <div className="bg-slate-50 border border-slate-200/70 rounded-lg p-2.5 text-xs text-slate-700 font-medium truncate">
+                  <div className="bg-[#010102] border border-[#23252a] rounded-lg p-2.5 text-xs text-[#d0d6e0] font-medium truncate">
                     {getAiSummary(primaryItem) || '(No preview content)'}
                   </div>
                 </div>
@@ -456,7 +459,7 @@ export function Disputes() {
                   groupTimelineItems.sort((a, b) => a.timestamp - b.timestamp);
 
                   return (
-                    <div className="border-t border-slate-200 bg-slate-50/40 p-4 space-y-4">
+                    <div className="border-t border-[#23252a] bg-[#010102] p-4 space-y-4">
                       {/* Unified Conversation Timeline for all items of this invoice */}
                       <div className="space-y-3">
                         {groupTimelineItems.map((tItem) => {
@@ -487,16 +490,16 @@ export function Disputes() {
                     />
 
                     {/* Single Invoice Group Resolution Actions Bar (Once per Invoice Box) */}
-                    <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                    <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-[#23252a]">
                       {activeStatus === 'pending' && (
                         <>
                           <button
                             type="button"
                             disabled={statusMutation.isPending}
                             onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'resolved'))}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                            className="px-3.5 py-1.5 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
                           >
-                            <CheckCircle className="w-4 h-4" />
+                            <CheckCircle className="w-3.5 h-3.5" />
                             <span>Mark Resolved</span>
                           </button>
 
@@ -504,9 +507,9 @@ export function Disputes() {
                             type="button"
                             disabled={statusMutation.isPending}
                             onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'archived'))}
-                            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                            className="px-3.5 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors cursor-pointer"
                           >
-                            <Archive className="w-4 h-4" />
+                            <Archive className="w-3.5 h-3.5 text-[#8a8f98]" />
                             <span>Archive</span>
                           </button>
                         </>
@@ -518,9 +521,9 @@ export function Disputes() {
                             type="button"
                             disabled={statusMutation.isPending}
                             onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                            className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
                           >
-                            <RotateCcw className="w-4 h-4" />
+                            <RotateCcw className="w-3.5 h-3.5" />
                             <span>Reopen to Pending</span>
                           </button>
 
@@ -528,9 +531,9 @@ export function Disputes() {
                             type="button"
                             disabled={statusMutation.isPending}
                             onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'archived'))}
-                            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                            className="px-3.5 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors cursor-pointer"
                           >
-                            <Archive className="w-4 h-4" />
+                            <Archive className="w-3.5 h-3.5 text-[#8a8f98]" />
                             <span>Archive</span>
                           </button>
                         </>
@@ -542,9 +545,9 @@ export function Disputes() {
                             type="button"
                             disabled={statusMutation.isPending}
                             onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                            className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
                           >
-                            <RotateCcw className="w-4 h-4" />
+                            <RotateCcw className="w-3.5 h-3.5" />
                             <span>Reopen to Pending</span>
                           </button>
 
@@ -552,9 +555,9 @@ export function Disputes() {
                             type="button"
                             disabled={statusMutation.isPending}
                             onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'resolved'))}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                            className="px-3.5 py-1.5 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
                           >
-                            <CheckCircle className="w-4 h-4" />
+                            <CheckCircle className="w-3.5 h-3.5" />
                             <span>Mark Resolved</span>
                           </button>
                         </>
@@ -571,24 +574,24 @@ export function Disputes() {
 
       {/* Pagination Controls */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-          <p className="text-xs text-slate-500">
-            Page <span className="font-semibold text-slate-800">{pagination.page}</span> of{' '}
-            <span className="font-semibold text-slate-800">{pagination.totalPages}</span>
+        <div className="flex items-center justify-between pt-4 border-t border-[#23252a]">
+          <p className="text-xs text-[#8a8f98]">
+            Page <span className="font-semibold text-[#f7f8f8]">{pagination.page}</span> of{' '}
+            <span className="font-semibold text-[#f7f8f8]">{pagination.totalPages}</span>
           </p>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setPage(prev => Math.max(prev - 1, 1))}
               disabled={page === 1}
-              className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-1.5 text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] rounded-md border border-[#23252a] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => setPage(prev => Math.min(prev + 1, pagination.totalPages))}
               disabled={page === pagination.totalPages}
-              className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-1.5 text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] rounded-md border border-[#23252a] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -601,10 +604,10 @@ export function Disputes() {
 
 // Badge classification styling maps
 const classificationConfigs: Record<string, { bg: string, text: string, label: string }> = {
-  dispute: { bg: 'bg-rose-50 text-rose-700 border-rose-100', label: 'Dispute', text: 'text-rose-700' },
-  question: { bg: 'bg-blue-50 text-blue-700 border-blue-100', label: 'Question', text: 'text-blue-700' },
-  payment_promise: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-100', label: 'Payment Promise', text: 'text-emerald-700' },
-  unclear: { bg: 'bg-amber-50 text-amber-700 border-amber-100', label: 'Unclear', text: 'text-amber-700' },
+  dispute: { bg: 'bg-red-950/40 text-red-400 border-red-900/50', label: 'Dispute', text: 'text-red-400' },
+  question: { bg: 'bg-[#5e6ad2]/20 text-[#5e6ad2] border-[#5e6ad2]/30', label: 'Question', text: 'text-[#5e6ad2]' },
+  payment_promise: { bg: 'bg-[#27a644]/10 text-[#27a644] border-[#27a644]/20', label: 'Payment Promise', text: 'text-[#27a644]' },
+  unclear: { bg: 'bg-amber-950/40 text-amber-300 border-amber-900/50', label: 'Unclear', text: 'text-amber-300' },
 };
 
 function InboundChatBubble({ item }: { item: InboundEmailReview }) {
@@ -613,22 +616,22 @@ function InboundChatBubble({ item }: { item: InboundEmailReview }) {
   const summaryText = getAiSummary(item);
 
   return (
-    <div className="max-w-[85%] mr-auto bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3.5 space-y-2 shadow-2xs">
-      <div className="flex items-center justify-between text-xs text-slate-500 gap-3">
+    <div className="max-w-[85%] mr-auto bg-[#0f1011] border border-[#23252a] rounded-2xl rounded-tl-xs p-3.5 space-y-2 shadow-none">
+      <div className="flex items-center justify-between text-xs text-[#8a8f98] gap-3">
         <div className="flex items-center space-x-2">
-          <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Customer Reply</span>
+          <span className="font-bold text-[#f7f8f8] uppercase tracking-wider text-[10px]">Customer Reply</span>
           <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border capitalize ${
             classificationConfigs[item.classification]?.bg || classificationConfigs.unclear.bg
           }`}>
             {classificationConfigs[item.classification]?.label || 'Unclear'}
           </span>
         </div>
-        <div className="flex items-center space-x-2 text-slate-400">
+        <div className="flex items-center space-x-2 text-[#8a8f98]">
           <span className="text-[11px]">{new Date(item.createdAt).toLocaleString()}</span>
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+            className="p-0.5 text-[#8a8f98] hover:text-[#f7f8f8] rounded transition-colors"
             title={isExpanded ? "Collapse email" : "Expand full email"}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -639,14 +642,14 @@ function InboundChatBubble({ item }: { item: InboundEmailReview }) {
       {isExpanded ? (
         <div 
           onClick={() => setIsExpanded(false)}
-          className="bg-slate-50 border border-slate-200/70 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-slate-100/60 transition-colors"
+          className="bg-[#010102] border border-[#23252a] p-3 rounded-md text-xs text-[#f7f8f8] leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-[#141516]/60 transition-colors"
         >
           {cleanReplyText || '(No reply text)'}
         </div>
       ) : (
         <div 
           onClick={() => setIsExpanded(true)}
-          className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-slate-100/80 transition-colors"
+          className="bg-[#010102] border border-[#23252a] p-2.5 rounded-md text-xs text-[#d0d6e0] font-medium truncate cursor-pointer hover:bg-[#141516]/60 transition-colors"
         >
           {summaryText || cleanReplyText || '(No reply text)'}
         </div>
@@ -660,20 +663,20 @@ function OutboundChatBubble({ msg }: { msg: ThreadItem }) {
   const cleanText = stripHtml(msg.body || '');
 
   return (
-    <div className="max-w-[85%] ml-auto bg-blue-50/90 border border-blue-200 rounded-2xl rounded-tr-xs p-3.5 space-y-2 shadow-2xs">
-      <div className="flex items-center justify-between text-xs text-blue-900 gap-3">
+    <div className="max-w-[85%] ml-auto bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 rounded-2xl rounded-tr-xs p-3.5 space-y-2 shadow-none">
+      <div className="flex items-center justify-between text-xs text-[#5e6ad2] gap-3">
         <div className="flex items-center space-x-2">
           <span className="font-bold uppercase tracking-wider text-[10px]">Tenant Reply</span>
-          <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
+          <span className="px-2 py-0.5 text-[10px] font-bold bg-[#5e6ad2]/20 text-[#5e6ad2] rounded-full border border-[#5e6ad2]/30">
             💬 Dispute Agent
           </span>
         </div>
-        <div className="flex items-center space-x-2 text-slate-500">
+        <div className="flex items-center space-x-2 text-[#8a8f98]">
           <span className="text-[11px]">{new Date(msg.createdAt).toLocaleString()}</span>
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+            className="p-0.5 text-[#8a8f98] hover:text-[#f7f8f8] rounded transition-colors"
             title={isExpanded ? "Collapse reply" : "Expand full reply"}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -684,14 +687,14 @@ function OutboundChatBubble({ msg }: { msg: ThreadItem }) {
       {isExpanded ? (
         <div 
           onClick={() => setIsExpanded(false)}
-          className="bg-white border border-blue-100 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-slate-50 transition-colors"
+          className="bg-[#0f1011] border border-[#23252a] p-3 rounded-md text-xs text-[#f7f8f8] leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-[#141516] transition-colors"
         >
           {cleanText || '(No message content)'}
         </div>
       ) : (
         <div 
           onClick={() => setIsExpanded(true)}
-          className="bg-white/80 border border-blue-100 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-white transition-colors"
+          className="bg-[#0f1011] border border-[#23252a] p-2.5 rounded-md text-xs text-[#d0d6e0] font-medium truncate cursor-pointer hover:bg-[#141516] transition-colors"
         >
           {msg.aiSummary || cleanText || '(No message content)'}
         </div>
@@ -741,13 +744,13 @@ function ItemActionArea({
       {activeStatus === 'pending' && (
         <>
           {/* AI Reply Instruction Input Block */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+          <div className="bg-[#0f1011] border border-[#23252a] rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600 mr-1.5" />
+              <label className="text-xs font-bold text-[#f7f8f8] uppercase tracking-wider flex items-center">
+                <Sparkles className="w-3.5 h-3.5 text-[#5e6ad2] mr-1.5" />
                 AI Reply Instruction
               </label>
-              <span className="text-[11px] text-slate-400 font-normal">Select a quick instruction chip or type below</span>
+              <span className="text-[11px] text-[#8a8f98] font-normal">Select a quick instruction chip or type below</span>
             </div>
 
             {/* Category-aware Quick Instruction Chips */}
@@ -757,7 +760,7 @@ function ItemActionArea({
                   key={chipText}
                   type="button"
                   onClick={() => handleChipClick(chipText)}
-                  className="px-2.5 py-1 text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors flex items-center space-x-1 shadow-2xs"
+                  className="px-2.5 py-1 text-xs font-medium bg-[#141516] text-[#f7f8f8] border border-[#23252a] hover:border-[#5e6ad2] hover:text-[#5e6ad2] hover:bg-[#5e6ad2]/10 rounded-full transition-colors flex items-center space-x-1 shadow-none"
                 >
                   <span>+</span>
                   <span>{chipText}</span>
@@ -771,13 +774,13 @@ function ItemActionArea({
                 value={instruction}
                 onChange={(e) => setInstruction(e.target.value)}
                 placeholder={categoryConfig.placeholder}
-                className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-800"
+                className="flex-1 px-3 py-2 text-xs border border-[#23252a] rounded-md focus:ring-1 focus:ring-[#5e69d1] bg-[#010102] text-[#f7f8f8]"
               />
               <button
                 type="button"
                 disabled={!instruction.trim() || isGeneratingThisItem}
                 onClick={() => onGenerateDraft(item.id, instruction)}
-                className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-colors shadow-xs"
+                className="px-3.5 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-semibold disabled:opacity-40 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-colors shadow-none"
               >
                 {isGeneratingThisItem ? (
                   <>
@@ -795,9 +798,9 @@ function ItemActionArea({
 
             {/* AI Generation Error & Retry state */}
             {failedDraftId === item.id && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-center justify-between">
+              <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
                   <span>AI response generation timed out or failed. Please click retry.</span>
                 </div>
                 <button
@@ -815,12 +818,12 @@ function ItemActionArea({
           {(draftResponse || isEditingThisItem) && (
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suggested Draft Response</h5>
+                <h5 className="text-xs font-bold text-[#8a8f98] uppercase tracking-wider">Suggested Draft Response</h5>
                 {!isEditingThisItem && (
                   <button
                     type="button"
                     onClick={() => onStartEdit(item)}
-                    className="flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
+                    className="flex items-center text-xs font-medium text-[#5e6ad2] hover:text-[#828fff]"
                   >
                     <Edit3 className="w-3.5 h-3.5 mr-1" />
                     Edit Draft
@@ -834,20 +837,20 @@ function ItemActionArea({
                     rows={6}
                     value={draftResponse}
                     onChange={(e) => setDraftResponse(e.target.value)}
-                    className="w-full p-3 border border-slate-300 rounded-md text-xs font-sans focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full p-3 border border-[#23252a] rounded-md text-xs font-sans focus:ring-1 focus:ring-[#5e69d1] bg-[#010102] text-[#f7f8f8]"
                   />
                   <div className="flex justify-end space-x-2">
                     <button
                       type="button"
                       onClick={onCancelEdit}
-                      className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50"
+                      className="px-3 py-1.5 border border-[#23252a] rounded-md text-xs font-medium text-[#8a8f98] bg-[#0f1011] hover:bg-[#141516] hover:text-[#f7f8f8]"
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="bg-slate-50 border border-slate-200/70 p-3.5 rounded-md text-xs text-slate-800 font-sans whitespace-pre-wrap leading-relaxed">
+                <div className="bg-[#0f1011] border border-[#23252a] p-3.5 rounded-md text-xs text-[#f7f8f8] font-sans whitespace-pre-wrap leading-relaxed">
                   {draftResponse}
                 </div>
               )}
@@ -858,12 +861,12 @@ function ItemActionArea({
 
       {/* Send Reply Action for this sub-box */}
       {activeStatus === 'pending' && (
-        <div className="flex justify-end pt-2 border-t border-slate-100">
+        <div className="flex justify-end pt-2 border-t border-[#23252a]">
           <button
             type="button"
             disabled={sendReplyPending || !activeDraftContent}
             onClick={() => onSendReply(item)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+            className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-semibold disabled:opacity-40 flex items-center space-x-1.5 transition-colors shadow-none cursor-pointer"
           >
             {sendReplyPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             <span>Send Reply</span>
@@ -873,3 +876,4 @@ function ItemActionArea({
     </div>
   );
 }
+
