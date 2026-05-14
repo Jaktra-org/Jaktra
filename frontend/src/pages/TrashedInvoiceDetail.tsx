@@ -175,7 +175,7 @@ export function TrashedInvoiceDetail() {
     if (type.includes('halt') || type.includes('bounce') || type.includes('dlq') || type.includes('error')) {
       return <AlertTriangle className="w-4 h-4 text-rose-600" />;
     }
-    return <MessageSquare className="w-4 h-4 text-slate-500" />;
+    return <MessageSquare className="w-4 h-4 text-[#8a8f98]" />;
   };
 
   const formatDateValue = (val: unknown) => {
@@ -189,43 +189,7 @@ export function TrashedInvoiceDetail() {
     return String(val);
   };
 
-  const getEventIconStyles = (event: GroupedInvoiceEvent) => {
-    const type = (event.actionType || event.eventType || '').toLowerCase();
-    if (type.includes('received') || (event.newValues && event.newValues.paymentStatus === 'Paid')) {
-      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    }
-    if (type === 'invoice.updated' && (event.oldValues || event.newValues)) {
-      const changedKeys = Object.keys({ ...event.oldValues, ...event.newValues });
-      if (changedKeys.includes('invoiceAmount')) {
-        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      }
-      if (changedKeys.includes('dueDate')) {
-        return 'bg-amber-50 text-amber-600 border-amber-100';
-      }
-      if (changedKeys.includes('paymentStatus')) {
-        return 'bg-blue-50 text-blue-600 border-blue-100';
-      }
-    }
-    if (type === 'invoice.trashed') {
-      return 'bg-amber-50 text-amber-600 border-amber-100';
-    }
-    if (type === 'invoice.restored') {
-      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    }
-    if (type === 'invoice.permanently_deleted') {
-      return 'bg-red-50 text-red-600 border-red-100';
-    }
-    if (type.includes('create') || type.includes('import')) {
-      return 'bg-blue-50 text-blue-600 border-blue-100';
-    }
-    if (type.includes('sent') || type.includes('open') || type.includes('click')) {
-      return 'bg-purple-50 text-purple-600 border-purple-100';
-    }
-    if (type.includes('halt') || type.includes('bounce') || type.includes('dlq') || type.includes('error')) {
-      return 'bg-red-50 text-red-600 border-red-100';
-    }
-    return 'bg-slate-50 text-slate-500 border-slate-200';
-  };
+
 
   const getRecipientEmail = (event: GroupedInvoiceEvent) => {
     const explicit = event.payload?.recipient || 
@@ -275,7 +239,7 @@ export function TrashedInvoiceDetail() {
     const renderActor = () => {
       const displayName = event.actorName || (event.source === 'agent' ? 'AI Agent' : event.source === 'webhook' ? 'Webhook' : 'System');
       if (!event.actorName) {
-        return <span className="font-semibold text-slate-900">{displayName}</span>;
+        return <span className="font-semibold text-[#f7f8f8]">{displayName}</span>;
       }
       const isCardOpen = activeHoverCard?.eventId === event.id;
       const initials = (event.actorName || '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
@@ -290,28 +254,28 @@ export function TrashedInvoiceDetail() {
           })}
           onMouseLeave={() => setActiveHoverCard(null)}
         >
-          <span className="font-bold text-slate-955 border-b border-dotted border-slate-400 hover:text-blue-600 transition-colors cursor-pointer">
+          <span className="font-bold text-[#f7f8f8] border-b border-dotted border-[#8a8f98] hover:text-[#5e6ad2] transition-colors cursor-pointer">
             {event.actorName}
           </span>
           {isCardOpen && (
-            <span className="absolute z-50 bottom-full left-0 mb-2 w-60 bg-white border border-slate-200 rounded-xl p-3 shadow-lg text-left block pointer-events-none animate-timeline-fade-in font-sans leading-normal">
+            <span className="absolute z-50 bottom-full left-0 mb-2 w-60 bg-[#0f1011] border border-[#23252a] rounded-xl p-3 shadow-none text-left block pointer-events-none animate-timeline-fade-in font-sans leading-normal text-[#f7f8f8]">
               <span className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                <span className="w-8 h-8 rounded-full bg-[#5e6ad2]/20 border border-[#5e6ad2]/30 text-[#5e6ad2] text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                   {initials}
                 </span>
                 <span className="block min-w-0">
-                  <span className="block font-bold text-slate-900 text-xs truncate">{event.actorName}</span>
+                  <span className="block font-bold text-[#f7f8f8] text-xs truncate">{event.actorName}</span>
                   {event.actorRole && (
-                    <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                    <span className="block text-[9px] text-[#8a8f98] font-bold uppercase tracking-wider mt-0.5">
                       {event.actorRole}
                     </span>
                   )}
                 </span>
               </span>
               {event.actorEmail && (
-                <span className="block mt-2 pt-1.5 border-t border-slate-100">
-                  <span className="block text-[8px] uppercase font-bold text-slate-400 tracking-wider">Email</span>
-                  <span className="block text-[10px] text-slate-600 font-mono truncate select-all">{event.actorEmail}</span>
+                <span className="block mt-2 pt-1.5 border-t border-[#23252a]">
+                  <span className="block text-[8px] uppercase font-bold text-[#8a8f98] tracking-wider">Email</span>
+                  <span className="block text-[10px] text-[#d0d6e0] font-mono truncate select-all">{event.actorEmail}</span>
                 </span>
               )}
             </span>
@@ -332,37 +296,37 @@ export function TrashedInvoiceDetail() {
         
         if (key === 'invoiceAmount') {
           if (isFirstTime) {
-            return <span>{actor} set the invoice amount to <span className="font-bold text-slate-955 font-mono">{formatCurrency(newVal)}</span></span>;
+            return <span>{actor} set the invoice amount to <span className="font-bold text-[#f7f8f8] font-mono">{formatCurrency(newVal)}</span></span>;
           }
-          return <span>{actor} changed the invoice amount from <span className="line-through text-slate-400 font-mono">{formatCurrency(oldVal)}</span> to <span className="font-bold text-slate-955 font-mono">{formatCurrency(newVal)}</span></span>;
+          return <span>{actor} changed the invoice amount from <span className="line-through text-[#8a8f98] font-mono">{formatCurrency(oldVal)}</span> to <span className="font-bold text-[#f7f8f8] font-mono">{formatCurrency(newVal)}</span></span>;
         }
         if (key === 'dueDate') {
           if (isFirstTime) {
-            return <span>{actor} set the due date to <span className="font-bold text-slate-955">{formatDateValue(newVal)}</span></span>;
+            return <span>{actor} set the due date to <span className="font-bold text-[#f7f8f8]">{formatDateValue(newVal)}</span></span>;
           }
-          return <span>{actor} pushed the due date from <span className="line-through text-slate-400">{formatDateValue(oldVal)}</span> to <span className="font-bold text-slate-955">{formatDateValue(newVal)}</span></span>;
+          return <span>{actor} pushed the due date from <span className="line-through text-[#8a8f98]">{formatDateValue(oldVal)}</span> to <span className="font-bold text-[#f7f8f8]">{formatDateValue(newVal)}</span></span>;
         }
         if (key === 'paymentStatus') {
           if (newVal === 'Paid') {
-            return <span>{actor} marked this invoice as <span className="font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-xs border border-emerald-100">Paid</span></span>;
+            return <span>{actor} marked this invoice as <span className="font-bold text-[#27a644] bg-[#27a644]/10 px-1.5 py-0.5 rounded text-xs border border-[#27a644]/20">Paid</span></span>;
           }
           if (isFirstTime) {
-            return <span>{actor} set status to <span className="font-bold text-slate-955">{String(newVal)}</span></span>;
+            return <span>{actor} set status to <span className="font-bold text-[#f7f8f8]">{String(newVal)}</span></span>;
           }
-          return <span>{actor} changed status from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span></span>;
+          return <span>{actor} changed status from <span className="line-through text-[#8a8f98]">{String(oldVal)}</span> to <span className="font-bold text-[#f7f8f8]">{String(newVal)}</span></span>;
         }
         const displayLabel = key === 'subject' ? 'invoice description' : key.replace(/([A-Z])/g, ' $1').toLowerCase();
         if (isFirstTime) {
-          return <span>{actor} set the {displayLabel} to <span className="font-bold text-slate-955">{String(newVal ?? '—')}</span></span>;
+          return <span>{actor} set the {displayLabel} to <span className="font-bold text-[#f7f8f8]">{String(newVal ?? '—')}</span></span>;
         }
-        return <span>{actor} updated {displayLabel} from <span className="line-through text-slate-400">{String(oldVal ?? '—')}</span> to <span className="font-bold text-slate-955">{String(newVal ?? '—')}</span></span>;
+        return <span>{actor} updated {displayLabel} from <span className="line-through text-[#8a8f98]">{String(oldVal ?? '—')}</span> to <span className="font-bold text-[#f7f8f8]">{String(newVal ?? '—')}</span></span>;
       } else if (keys.length > 1) {
         return <span>{actor} updated {keys.length} fields on the invoice</span>;
       }
     }
 
     if (type === 'invoice.created') {
-      return <span>{actor} created this invoice for <span className="font-bold text-slate-955 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span></span>;
+      return <span>{actor} created this invoice for <span className="font-bold text-[#f7f8f8] font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span></span>;
     }
     if (type === 'invoice.trashed') {
       return <span>{actor} moved this invoice to Trash</span>;
@@ -377,18 +341,18 @@ export function TrashedInvoiceDetail() {
       return <span>{actor} imported this invoice</span>;
     }
     if (type === 'payment.received') {
-      return <span>Payment of <span className="font-bold text-emerald-600 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span> received successfully</span>;
+      return <span>Payment of <span className="font-bold text-[#27a644] font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span> received successfully</span>;
     }
     if (type === 'payment.link_generated') {
-      return <span>Payment link generated for <span className="font-semibold text-slate-900">{invoice?.clientName}</span></span>;
+      return <span>Payment link generated for <span className="font-semibold text-[#f7f8f8]">{invoice?.clientName}</span></span>;
     }
     if (type === 'followup.triggered') {
       const tone = String(event.payload?.tone || 'default');
-      return <span>{actor} triggered AI follow-up (tone: <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[11px] border border-slate-200">{tone}</span>)</span>;
+      return <span>{actor} triggered AI follow-up (tone: <span className="font-mono bg-[#141516] text-[#f7f8f8] px-1.5 py-0.5 rounded text-[11px] border border-[#23252a]">{tone}</span>)</span>;
     }
     if (type === 'followup.sent') {
       const recipient = getRecipientEmail(event);
-      return <span>AI agent sent follow-up email to <span className="font-semibold text-slate-900">{recipient}</span></span>;
+      return <span>AI agent sent follow-up email to <span className="font-semibold text-[#f7f8f8]">{recipient}</span></span>;
     }
     if (type === 'followup.skipped') {
       return <span>AI follow-up skipped (already contacted recently)</span>;
@@ -487,8 +451,8 @@ export function TrashedInvoiceDetail() {
       if (payload?.error) {
         return (
           <div>
-            <p className="font-semibold text-red-600">Follow-up failed with error</p>
-            <p className="text-xs text-slate-600 mt-1 bg-red-50 p-2 border border-red-100 rounded font-mono">
+            <p className="font-semibold text-red-400">Follow-up failed with error</p>
+            <p className="text-xs text-red-300 mt-1 bg-red-950/40 p-2 border border-red-900/50 rounded font-mono">
               {getErrorMessage(payload.error)}
             </p>
           </div>
@@ -498,15 +462,15 @@ export function TrashedInvoiceDetail() {
     if (type.includes('skipped')) {
       return (
         <div>
-          <p className="font-semibold text-slate-800">Follow-up skipped</p>
-          <p className="text-xs text-slate-600 mt-1">Skipped because a follow-up was recently sent.</p>
+          <p className="font-semibold text-[#f7f8f8]">Follow-up skipped</p>
+          <p className="text-xs text-[#8a8f98] mt-1">Skipped because a follow-up was recently sent.</p>
         </div>
       );
     }
     if (payload?.subject) {
       return (
         <div>
-          <p className="text-xs text-slate-500 font-mono bg-slate-50 p-1 rounded">Subject: {String(payload.subject)}</p>
+          <p className="text-xs text-[#8a8f98] font-mono bg-[#141516] p-1.5 rounded border border-[#23252a]">Subject: {String(payload.subject)}</p>
         </div>
       );
     }
@@ -515,22 +479,22 @@ export function TrashedInvoiceDetail() {
 
   if (isInvoiceLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-        <p className="text-slate-500 text-sm font-medium">Loading trashed invoice details...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-[#f7f8f8]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#5e6ad2] mb-3" />
+        <p className="text-[#8a8f98] text-xs font-medium">Loading trashed invoice details...</p>
       </div>
     );
   }
 
   if (isInvoiceError || !invoice) {
     return (
-      <div className="max-w-2xl mx-auto mt-12 p-6 bg-white rounded-xl border border-slate-200 text-center space-y-4">
-        <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
-        <h2 className="text-lg font-semibold text-slate-900">Trashed Invoice Not Found</h2>
-        <p className="text-slate-500 text-sm">
+      <div className="max-w-2xl mx-auto mt-12 p-6 bg-[#0f1011] rounded-xl border border-[#23252a] text-center space-y-4 text-[#f7f8f8]">
+        <AlertTriangle className="h-10 w-10 text-red-400 mx-auto" />
+        <h2 className="text-base font-semibold text-[#f7f8f8]">Trashed Invoice Not Found</h2>
+        <p className="text-[#8a8f98] text-xs">
           The trashed invoice you are looking for does not exist, belongs to another organization, or has been permanently deleted.
         </p>
-        <Link to="/invoices" className="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 text-sm font-medium">
+        <Link to="/invoices" className="inline-flex items-center justify-center rounded-md bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-4 text-xs font-medium">
           Back to Invoices
         </Link>
       </div>
@@ -538,25 +502,25 @@ export function TrashedInvoiceDetail() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12 text-[#f7f8f8]">
       {/* Back Link */}
       <div>
-        <Link to="/invoices" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Link to="/invoices" className="inline-flex items-center text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
           Back to Invoices (Trash)
         </Link>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start gap-3 relative shadow-sm">
-          <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="bg-red-950/40 border border-red-900/50 text-red-400 rounded-xl p-4 flex items-start gap-3 relative shadow-none">
+          <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-semibold text-sm">Action Failed</h3>
-            <p className="text-sm mt-1">{error}</p>
+            <h3 className="font-semibold text-xs text-red-300">Action Failed</h3>
+            <p className="text-xs mt-0.5 opacity-90">{error}</p>
           </div>
           <button 
             onClick={() => setError(null)}
-            className="absolute top-4 right-4 text-red-500 hover:text-red-700 transition-colors focus:outline-none"
+            className="absolute top-3.5 right-3.5 text-red-400 hover:text-red-300 transition-colors focus:outline-none"
           >
             <span className="sr-only">Close</span>
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -567,11 +531,11 @@ export function TrashedInvoiceDetail() {
       )}
 
       {/* Amber Trashed Warning Banner */}
-      <div className="flex items-start gap-3.5 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 shadow-sm">
-        <Trash2 className="h-5.5 w-5.5 text-amber-600 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 p-3.5 bg-amber-950/40 border border-amber-900/50 rounded-xl text-amber-300 shadow-none">
+        <Trash2 className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
         <div>
-          <p className="font-semibold text-amber-950">This invoice is currently in the Trash</p>
-          <p className="text-sm mt-0.5 text-amber-800">
+          <p className="font-semibold text-xs text-amber-200">This invoice is currently in the Trash</p>
+          <p className="text-xs mt-0.5 text-amber-200/80 leading-relaxed">
             Moved to Trash on {invoice.deletedAt ? new Date(invoice.deletedAt).toLocaleDateString(undefined, { dateStyle: 'long' }) : 'unknown date'}.
             It is read-only and excluded from active schedules and payments.
           </p>
@@ -579,15 +543,15 @@ export function TrashedInvoiceDetail() {
       </div>
 
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 bg-[#0f1011] p-5 rounded-xl border border-[#23252a] shadow-none">
         <div>
-          <div className="flex items-center space-x-3 mb-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{invoice.invoiceNo}</h1>
-            <Badge variant="warning">
+          <div className="flex items-center space-x-3 mb-1.5">
+            <h1 className="text-2xl font-bold tracking-tight text-[#f7f8f8]">{invoice.invoiceNo}</h1>
+            <Badge variant="warning" className="bg-amber-500/10 text-amber-400 border border-amber-500/20">
               Trashed ({invoice.paymentStatus})
             </Badge>
           </div>
-          <p className="text-3xl font-light text-slate-900 mt-4">
+          <p className="text-2xl font-light text-[#f7f8f8] mt-2">
             {formatCurrency(invoice.invoiceAmount)}
           </p>
         </div>
@@ -599,9 +563,9 @@ export function TrashedInvoiceDetail() {
                 <button
                   onClick={() => restoreMutation.mutate()}
                   disabled={restoreMutation.isPending}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 h-10 px-4 py-2 disabled:opacity-50 gap-1.5"
+                  className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] h-9 px-3.5 py-1.5 disabled:opacity-40 gap-1.5"
                 >
-                  {restoreMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                  {restoreMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[#5e6ad2]" /> : <RotateCcw className="h-3.5 w-3.5 text-[#5e6ad2]" />}
                   Restore Invoice
                 </button>
               )}
@@ -610,9 +574,9 @@ export function TrashedInvoiceDetail() {
                 <button
                   onClick={() => setIsConfirmDeleteModalOpen(true)}
                   disabled={hardDeleteMutation.isPending}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 h-10 px-4 py-2 disabled:opacity-50 gap-1.5"
+                  className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border border-red-900/50 bg-[#0f1011] text-red-400 hover:bg-red-950/40 h-9 px-3.5 py-1.5 disabled:opacity-40 gap-1.5"
                 >
-                  {hardDeleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  {hardDeleteMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                   Delete Permanently
                 </button>
               )}
@@ -624,57 +588,57 @@ export function TrashedInvoiceDetail() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Info Grid */}
         <div className="md:col-span-1 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Client Details</CardTitle>
+          <Card className="border border-[#23252a] bg-[#0f1011]">
+            <CardHeader className="pb-2 border-b-0">
+              <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Client Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3.5">
               <div>
-                <p className="text-sm text-slate-500 mb-1">Company</p>
-                <p className="font-medium text-slate-900">{invoice.clientName}</p>
+                <p className="text-xs text-[#8a8f98] mb-0.5">Company</p>
+                <p className="font-medium text-xs text-[#f7f8f8]">{invoice.clientName}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-500 mb-1">Contact</p>
-                <div className="flex items-center text-slate-900">
-                  <Mail className="mr-2 h-4 w-4 text-slate-400" />
-                  <a href={`mailto:${invoice.contactEmail}`} className="hover:text-blue-600 hover:underline">{invoice.contactEmail}</a>
+                <p className="text-xs text-[#8a8f98] mb-0.5">Contact</p>
+                <div className="flex items-center text-xs text-[#f7f8f8]">
+                  <Mail className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
+                  <a href={`mailto:${invoice.contactEmail}`} className="hover:text-[#5e6ad2] hover:underline">{invoice.contactEmail}</a>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {invoice.subject && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Invoice Description</CardTitle>
+            <Card className="border border-[#23252a] bg-[#0f1011]">
+              <CardHeader className="pb-2 border-b-0">
+                <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Invoice Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-700 leading-relaxed">{invoice.subject}</p>
+                <p className="text-xs text-[#d0d6e0] leading-relaxed">{invoice.subject}</p>
               </CardContent>
             </Card>
           )}
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Aging &amp; Status</CardTitle>
+          <Card className="border border-[#23252a] bg-[#0f1011]">
+            <CardHeader className="pb-2 border-b-0">
+              <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Aging &amp; Status</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3.5">
               <div>
-                <p className="text-sm text-slate-500 mb-1">Due Date</p>
-                <div className="flex items-center text-slate-900">
-                  <Calendar className="mr-2 h-4 w-4 text-slate-400" />
+                <p className="text-xs text-[#8a8f98] mb-0.5">Due Date</p>
+                <div className="flex items-center text-xs text-[#f7f8f8]">
+                  <Calendar className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
                   {new Date(invoice.dueDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <p className="text-sm text-slate-500">Days Overdue</p>
-                <p className="font-semibold text-slate-900">
+              <div className="flex justify-between items-center pt-2 border-t border-[#23252a]">
+                <p className="text-xs text-[#8a8f98]">Days Overdue</p>
+                <p className="font-semibold text-xs text-[#f7f8f8]">
                   {invoice.daysOverdue || 0}
                 </p>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <p className="text-sm text-slate-500">Follow-ups Sent</p>
-                <p className="font-semibold text-slate-900">{invoice.followupCount}</p>
+              <div className="flex justify-between items-center pt-2 border-t border-[#23252a]">
+                <p className="text-xs text-[#8a8f98]">Follow-ups Sent</p>
+                <p className="font-semibold text-xs text-[#f7f8f8]">{invoice.followupCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -682,23 +646,23 @@ export function TrashedInvoiceDetail() {
 
         {/* Tabs Area */}
         <div className="md:col-span-2">
-          <Card className="h-full">
-            <div className="flex border-b border-slate-200">
+          <Card className="h-full border border-[#23252a] bg-[#0f1011]">
+            <div className="flex border-b border-[#23252a]">
               <button
-                className={`flex-1 py-4 text-sm font-medium border-b-2 transition-colors ${
+                className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${
                   activeTab === 'timeline' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    ? 'border-[#5e6ad2] text-[#5e6ad2]' 
+                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
                 }`}
                 onClick={() => setActiveTab('timeline')}
               >
                 Event Timeline
               </button>
               <button
-                className={`flex-1 py-4 text-sm font-medium border-b-2 transition-colors ${
+                className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${
                   activeTab === 'emails' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    ? 'border-[#5e6ad2] text-[#5e6ad2]' 
+                    : 'border-transparent text-[#8a8f98] hover:text-[#f7f8f8] hover:border-[#34343a]'
                 }`}
                 onClick={() => setActiveTab('emails')}
               >
@@ -706,25 +670,25 @@ export function TrashedInvoiceDetail() {
               </button>
             </div>
             
-            <CardContent className="pt-6">
+            <CardContent className="pt-5">
               {activeTab === 'timeline' ? (
                 <div>
-                  <div className="flex justify-between items-center mb-6">
-                    <span className="text-xs text-slate-500 font-medium">
+                  <div className="flex justify-between items-center mb-5">
+                    <span className="text-xs text-[#8a8f98] font-medium">
                       Showing {accumulatedTimeline.length} of {totalTimelineCount} events
                     </span>
                   </div>
 
                   {isTimelineLoading && accumulatedTimeline.length === 0 ? (
                     <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                      <Loader2 className="h-5 w-5 animate-spin text-[#5e6ad2]" />
                     </div>
                   ) : accumulatedTimeline.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500 text-sm">
+                    <div className="text-center py-8 text-[#8a8f98] text-xs">
                       No events recorded matching the criteria.
                     </div>
                   ) : (
-                    <div className="relative border-l border-slate-200 ml-3.5 space-y-4 py-1">
+                    <div className="relative border-l border-[#23252a] ml-3.5 space-y-3.5 py-1">
                       {(() => {
                         const displayTimeline = groupTimelineEvents(accumulatedTimeline);
                         const toggleGroup = (id: string) => {
@@ -738,19 +702,20 @@ export function TrashedInvoiceDetail() {
                           const isExpanded = !!expandedGroups[event.id];
                           
                           return (
-                            <div key={event.id} className="relative pl-6">
-                              <div className={`absolute -left-3 top-1 h-6 w-6 rounded-full bg-white border flex items-center justify-center shadow-sm ${getEventIconStyles(event)}`}>
+                            <div key={event.id} className="relative pl-5">
+                              <div className={`absolute -left-2.5 top-0.5 h-5 w-5 rounded-full bg-[#0f1011] border border-[#23252a] flex items-center justify-center shadow-none`}>
                                 {renderEventIcon(event)}
                               </div>
                               
-                              <div className="bg-slate-50/50 rounded-lg p-3 border border-slate-100 hover:bg-slate-50 transition-all duration-150">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
-                                  <div className="text-sm text-slate-800 leading-snug">
+                              <div className="bg-[#010102] rounded-lg p-3 border border-[#23252a] hover:bg-[#141516]/60 transition-all duration-150">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                  <div className="text-xs text-[#f7f8f8] leading-snug">
                                     {getEventHeading(event)}
                                     {event.isGrouped && (
+
                                       <button 
                                         onClick={() => toggleGroup(event.id)}
-                                        className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-full transition-all inline-flex items-center gap-0.5 cursor-pointer shadow-xs"
+                                        className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-[#141516] hover:bg-[#18191a] text-[#8a8f98] border border-[#23252a] rounded-full transition-all inline-flex items-center gap-0.5 cursor-pointer"
                                       >
                                         <span>{event.editsCount} edits</span>
                                         <span>{isExpanded ? '▲' : '▼'}</span>
@@ -758,14 +723,14 @@ export function TrashedInvoiceDetail() {
                                     )}
                                   </div>
                                   
-                                  <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap self-start sm:self-center">
+                                  <div className="text-[10px] text-[#8a8f98] font-medium whitespace-nowrap self-start sm:self-center">
                                     {new Date(event.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}, {new Date(event.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                   </div>
                                 </div>
 
                                 {event.isGrouped && isExpanded && (
-                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-[11px] text-slate-500">
-                                    <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider mb-1">Edit History ({event.editsCount} revisions)</p>
+                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-[11px] text-[#8a8f98]">
+                                    <p className="text-[9px] uppercase font-bold text-[#8a8f98] tracking-wider mb-1">Edit History ({event.editsCount} revisions)</p>
                                     {event.subEvents?.map((sub: InvoiceEvent) => {
                                       const subKeys = Object.keys({ ...sub.oldValues, ...sub.newValues }).filter(k => sub.oldValues?.[k] !== sub.newValues?.[k]);
                                       const subKey = subKeys[0];
@@ -776,14 +741,14 @@ export function TrashedInvoiceDetail() {
                                       const formattedNew = subKey === 'invoiceAmount' ? formatCurrency(newV) : subKey === 'dueDate' ? formatDateValue(newV) : String(newV || '—');
                                       
                                       return (
-                                        <div key={sub.id} className="flex justify-between items-center py-0.5 border-b border-slate-100 last:border-0 font-medium">
-                                          <span className="text-[10px] text-slate-400">
+                                        <div key={sub.id} className="flex justify-between items-center py-0.5 border-b border-[#23252a] last:border-0 font-medium">
+                                          <span className="text-[10px] text-[#8a8f98]">
                                             {new Date(sub.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                           </span>
                                           {isSubFirstTime ? (
-                                            <span>Set to <span className="font-semibold text-slate-800">{formattedNew}</span></span>
+                                            <span>Set to <span className="font-semibold text-[#f7f8f8]">{formattedNew}</span></span>
                                           ) : (
-                                            <span>Changed from <span className="line-through text-slate-400">{formattedOld}</span> to <span className="font-semibold text-slate-800">{formattedNew}</span></span>
+                                            <span>Changed from <span className="line-through text-[#8a8f98]">{formattedOld}</span> to <span className="font-semibold text-[#f7f8f8]">{formattedNew}</span></span>
                                           )}
                                         </div>
                                       );
@@ -792,7 +757,7 @@ export function TrashedInvoiceDetail() {
                                 )}
 
                                 {keys.length > 1 && !event.isGrouped && (
-                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-xs text-slate-500">
+                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-xs text-[#8a8f98]">
                                     {keys.map((key) => {
                                       const oldVal = event.oldValues?.[key];
                                       const newVal = event.newValues?.[key];
@@ -803,15 +768,15 @@ export function TrashedInvoiceDetail() {
                                       const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');
                                       return (
                                         <div key={key} className="flex justify-between items-center py-0.5 font-medium">
-                                          <span className="capitalize text-slate-500 font-semibold">{displayLabel}</span>
+                                          <span className="capitalize text-[#8a8f98] font-semibold">{displayLabel}</span>
                                           <span>
                                             {isDiffFirstTime ? (
-                                              <span>Set to <span className="font-semibold text-slate-800 ml-1">{formattedNew}</span></span>
+                                              <span>Set to <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span></span>
                                             ) : (
                                               <span>
-                                                <span className="line-through text-slate-400 mr-1">{formattedOld}</span>
+                                                <span className="line-through text-[#8a8f98] mr-1">{formattedOld}</span>
                                                 &rarr;
-                                                <span className="font-semibold text-slate-800 ml-1">{formattedNew}</span>
+                                                <span className="font-semibold text-[#f7f8f8] ml-1">{formattedNew}</span>
                                               </span>
                                             )}
                                           </span>
@@ -822,19 +787,19 @@ export function TrashedInvoiceDetail() {
                                 )}
 
                                 {renderEventDescription(event) && (
-                                  <div className="text-xs text-slate-500 mt-2 pl-3 border-l-2 border-slate-200 py-0.5">
+                                  <div className="text-xs text-[#8a8f98] mt-2 pl-3 border-l-2 border-[#23252a] py-0.5">
                                     {renderEventDescription(event)}
                                   </div>
                                 )}
 
                                 {!event.oldValues && !event.newValues && event.payload && (
-                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-[11px] text-slate-500 font-mono">
+                                  <div className="mt-2 pl-3 border-l-2 border-[#23252a] space-y-1 py-0.5 text-[11px] text-[#8a8f98] font-mono">
                                     {Object.entries(event.payload).map(([k, v]) => {
                                       if (v === null || v === undefined || k === 'error' || k === 'reason') return null;
                                       return (
                                         <div key={k} className="flex gap-2">
-                                          <span className="font-semibold text-slate-400 capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
-                                          <span className="text-slate-600 select-all truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                          <span className="font-semibold text-[#8a8f98] capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
+                                          <span className="text-[#d0d6e0] select-all truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
                                         </div>
                                       );
                                     })}
@@ -853,9 +818,9 @@ export function TrashedInvoiceDetail() {
                       <button
                         onClick={() => setTimelinePage(prev => prev + 1)}
                         disabled={isTimelineLoading}
-                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 h-10 px-4 py-2 disabled:opacity-50 cursor-pointer shadow-xs"
+                        className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] h-9 px-4 py-2 disabled:opacity-40 cursor-pointer shadow-none"
                       >
-                        {isTimelineLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-500" />}
+                        {isTimelineLoading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin text-[#5e6ad2]" />}
                         Load More Events
                       </button>
                     </div>
