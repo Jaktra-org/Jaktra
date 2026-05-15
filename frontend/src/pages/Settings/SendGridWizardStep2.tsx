@@ -160,43 +160,43 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
   if (mode === 'view') {
     // VIEW MODE: static read-only summary from server data
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-          <h4 className="text-sm font-bold text-slate-900 flex items-center">
-            <Mail className="w-4 h-4 mr-2 text-blue-600" />
+      <div className="space-y-4 text-[#f7f8f8]">
+        <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
+          <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+            <Mail className="w-4 h-4 mr-2 text-[#5e6ad2]" />
             Step 2 of 3: Sender Identity & Optional Reply Forwarding
           </h4>
-          <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+          <span className="text-[10px] bg-[#27a644]/10 text-[#27a644] font-semibold px-2.5 py-0.5 rounded-full border border-[#27a644]/20 flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" /> Completed
           </span>
         </div>
 
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+        <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-lg space-y-3">
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
             <div>
-              <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Sender Name</p>
-              <p className="text-slate-900 font-medium mt-0.5">{s.senderName}</p>
+              <p className="font-semibold text-[#8a8f98] text-[10px] uppercase tracking-wider">Sender Name</p>
+              <p className="text-[#f7f8f8] font-medium mt-0.5">{s.senderName}</p>
             </div>
             <div>
-              <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Sender Email</p>
-              <p className="text-slate-900 font-medium mt-0.5 font-mono">{s.senderEmail}</p>
+              <p className="font-semibold text-[#8a8f98] text-[10px] uppercase tracking-wider">Sender Email</p>
+              <p className="text-[#f7f8f8] font-medium mt-0.5 font-mono">{s.senderEmail}</p>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+          <div className="pt-2 border-t border-[#23252a] flex items-center justify-between text-xs">
             <div>
-              <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Reply Copy Forwarding</p>
-              <p className="text-slate-900 font-medium mt-0.5">
+              <p className="font-semibold text-[#8a8f98] text-[10px] uppercase tracking-wider">Reply Copy Forwarding</p>
+              <p className="text-[#f7f8f8] font-medium mt-0.5">
                 {s.replyMode === 'real_mailbox' ? (
-                  <span className="font-mono font-bold text-blue-700">Enabled → {s.replyMailboxEmail}</span>
+                  <span className="font-mono font-bold text-[#5e6ad2]">Enabled → {s.replyMailboxEmail}</span>
                 ) : (
-                  <span className="text-slate-600">Disabled (Managed inside Jaktra AI & Timeline)</span>
+                  <span className="text-[#8a8f98]">Disabled (Managed inside Jaktra AI & Timeline)</span>
                 )}
               </p>
             </div>
             {s.replyMode === 'real_mailbox' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Verified
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
+                <CheckCircle2 className="w-3 h-3" /> Verified
               </span>
             )}
           </div>
@@ -215,14 +215,14 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
               setErrorMsg('');
               setMode('edit');
             }}
-            className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 text-xs font-medium transition-colors"
+            className="px-3.5 py-1.5 border border-[#23252a] rounded-md text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] text-xs font-medium transition-colors"
           >
             Edit
           </button>
           <button
             type="button"
             onClick={onNext}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-bold transition-all shadow-sm"
+            className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-medium transition-all shadow-none"
           >
             Continue to Step 3 →
           </button>
@@ -235,37 +235,37 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
   const targetMailbox = forwardingMailbox.trim() || senderEmail.trim();
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h4 className="text-sm font-bold text-slate-900 flex items-center">
-          <Mail className="w-4 h-4 mr-2 text-blue-600" />
+    <div className="space-y-4 text-[#f7f8f8]">
+      <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
+        <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+          <Mail className="w-4 h-4 mr-2 text-[#5e6ad2]" />
           Step 2 of 3: Sender Identity & Optional Reply Forwarding
         </h4>
-        <span className="text-xs bg-amber-100 text-amber-800 font-semibold px-2.5 py-0.5 rounded-full border border-amber-300">
+        <span className="text-[10px] bg-amber-950/40 text-amber-300 font-semibold px-2.5 py-0.5 rounded-full border border-amber-900/50">
           Step 2 Awaiting Action ⏳
         </span>
       </div>
 
       {errorMsg && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 font-medium">{errorMsg}</div>
+        <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 font-medium">{errorMsg}</div>
       )}
 
       {/* Outbound Sender Fields */}
       <div className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700">Outbound Sender Name</label>
+            <label className="text-xs font-semibold text-[#8a8f98]">Outbound Sender Name</label>
             <input
               type="text"
               autoComplete="off"
               value={senderName}
               onChange={(e) => { setSenderName(e.target.value); setErrorMsg(''); }}
-              className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
               placeholder="e.g. Acme Billing"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700">Outbound Sender Email</label>
+            <label className="text-xs font-semibold text-[#8a8f98]">Outbound Sender Email</label>
             <input
               type="text"
               inputMode="email"
@@ -280,18 +280,18 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
                   setForwardingMailbox(val);
                 }
               }}
-              className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
               placeholder="billing@acme.com"
             />
           </div>
         </div>
-        <p className="text-[11px] text-slate-500 italic">
+        <p className="text-[11px] text-[#8a8f98] italic">
           * Note: Outbound Sender Email is used for sending outgoing emails and does not require an active receiving inbox.
         </p>
       </div>
 
       {/* Reply Copy Forwarding Checkbox */}
-      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+      <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-lg space-y-3">
         <label className="flex items-start space-x-2.5 cursor-pointer">
           <input
             type="checkbox"
@@ -304,42 +304,42 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
                 setForwardingMailbox(senderEmail);
               }
             }}
-            className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 h-4 w-4 border-slate-300"
+            className="mt-0.5 rounded border-[#23252a] bg-[#010102] text-[#5e6ad2] focus:ring-[#5e69d1] h-4 w-4"
           />
           <div>
-            <span className="text-xs font-bold text-slate-900 block">
+            <span className="text-xs font-bold text-[#f7f8f8] block">
               Receive customer replies in your personal/company mailbox as well
             </span>
-            <span className="text-[11px] text-slate-600 block leading-normal mt-0.5">
+            <span className="text-[11px] text-[#8a8f98] block leading-normal mt-0.5">
               When checked, customer replies logged in Jaktra AI will also be forwarded to your specified receiving mailbox.
             </span>
           </div>
         </label>
 
         {enableForwarding && (
-          <div className="pt-3 border-t border-slate-200 space-y-3">
+          <div className="pt-3 border-t border-[#23252a] space-y-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Receiving Mailbox Email</label>
+              <label className="text-xs font-semibold text-[#8a8f98]">Receiving Mailbox Email</label>
               <input
                 type="text"
                 inputMode="email"
                 value={forwardingMailbox}
                 onChange={(e) => { setForwardingMailbox(e.target.value); setErrorMsg(''); }}
-                className="w-full p-2 border border-slate-300 rounded-md text-xs font-mono focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full p-2 border border-[#23252a] bg-[#0f1011] rounded-md text-xs font-mono text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                 placeholder="support@acme.com"
               />
             </div>
 
-            <div className="p-3 bg-white border border-amber-200 rounded-md space-y-2.5">
+            <div className="p-3 bg-[#0f1011] border border-amber-900/50 rounded-md space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-800 font-medium">
+                <span className="text-[11px] text-[#f7f8f8] font-medium">
                   Verify ownership of <strong className="font-mono">{targetMailbox || 'your receiving mailbox'}</strong>
                 </span>
                 <button
                   type="button"
                   onClick={() => sendOtpMutation.mutate()}
                   disabled={sendOtpMutation.isPending || !targetMailbox || otpCooldown > 0}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                  className="text-xs bg-[#5e6ad2] hover:bg-[#828fff] text-white px-3 py-1 rounded font-medium transition-colors disabled:opacity-40 shadow-none"
                 >
                   {sendOtpMutation.isPending ? 'Sending...' : otpCooldown > 0 ? `Resend OTP (${otpCooldown}s)` : 'Send 6-Digit OTP'}
                 </button>
@@ -352,26 +352,26 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
                   value={otpInput}
                   onChange={(e) => setOtpInput(e.target.value)}
                   placeholder="6-digit OTP"
-                  className="w-36 px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono text-center tracking-widest focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-36 px-3 py-1.5 border border-[#23252a] bg-[#010102] rounded-md text-xs font-mono text-center tracking-widest text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                 />
                 <button
                   type="button"
                   onClick={() => verifyOtpMutation.mutate(otpInput)}
                   disabled={verifyOtpMutation.isPending || otpInput.trim().length !== 6}
-                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
+                  className="px-3.5 py-1.5 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-md text-xs font-medium shrink-0 transition-colors disabled:opacity-40"
                 >
                   {verifyOtpMutation.isPending ? 'Verifying...' : 'Verify OTP'}
                 </button>
               </div>
             </div>
 
-            {infoMsg && <p className="text-[11px] text-emerald-600 font-medium bg-emerald-50 p-2 rounded border border-emerald-200">✅ {infoMsg}</p>}
+            {infoMsg && <p className="text-[11px] text-[#27a644] font-medium bg-[#27a644]/10 p-2 rounded border border-[#27a644]/20">✅ {infoMsg}</p>}
           </div>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="pt-4 flex justify-between items-center border-t border-slate-100">
+      <div className="pt-3 flex justify-between items-center border-t border-[#23252a]">
         <button
           type="button"
           onClick={() => {
@@ -388,7 +388,7 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
               onBack();
             }
           }}
-          className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 text-xs font-medium transition-colors"
+          className="px-3.5 py-1.5 border border-[#23252a] rounded-md text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] text-xs font-medium transition-colors"
         >
           {s.isDone ? '← Cancel Edit' : '← Back to Step 1'}
         </button>
@@ -396,12 +396,13 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
           type="button"
           onClick={handleSaveAndContinue}
           disabled={saveSenderMutation.isPending || verifyOtpMutation.isPending}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-bold transition-all shadow-sm flex items-center disabled:opacity-50"
+          className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-medium transition-all shadow-none flex items-center disabled:opacity-40"
         >
-          {saveSenderMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {saveSenderMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
           {saveSenderMutation.isPending ? 'Saving...' : 'Save & Continue to Step 3 →'}
         </button>
       </div>
     </div>
   );
 }
+

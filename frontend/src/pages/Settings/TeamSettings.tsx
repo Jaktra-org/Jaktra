@@ -29,41 +29,41 @@ export function TeamSettings() {
 
   if (!isManagerOrAdmin) {
     return (
-      <Card>
-        <CardContent className="py-12 flex flex-col items-center justify-center text-center">
-          <ShieldAlert className="w-12 h-12 text-slate-300 mb-4" />
-          <h3 className="text-lg font-medium text-slate-900">Access Denied</h3>
-          <p className="text-slate-500 mt-1">You need to be an admin or manager to view team settings.</p>
+      <Card className="border border-[#23252a] bg-[#0f1011]">
+        <CardContent className="py-12 flex flex-col items-center justify-center text-center text-[#f7f8f8]">
+          <ShieldAlert className="w-10 h-10 text-red-400 mb-3" />
+          <h3 className="text-base font-semibold text-[#f7f8f8]">Access Denied</h3>
+          <p className="text-[#8a8f98] text-xs mt-1">You need to be an admin or manager to view team settings.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+    <div className="space-y-6 text-[#f7f8f8]">
+      <Card className="border border-[#23252a] bg-[#0f1011]">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[#23252a] pb-4">
           <div>
-            <CardTitle>Active Members</CardTitle>
-            <CardDescription>Manage your team members and their roles.</CardDescription>
+            <CardTitle className="text-base text-[#f7f8f8]">Active Members</CardTitle>
+            <CardDescription className="text-xs text-[#8a8f98]">Manage your team members and their roles.</CardDescription>
           </div>
           {isAdmin && (
             <button
               onClick={() => setInviteModalOpen(true)}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 bg-blue-600 text-white shadow hover:bg-blue-700 h-9 px-4 py-2"
+              className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-8 px-3.5 shadow-none"
             >
-              <UserPlus className="w-4 h-4 mr-2" />
+              <UserPlus className="w-3.5 h-3.5 mr-1.5" />
               Invite Member
             </button>
           )}
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           {loadingMembers ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-[#5e6ad2]" /></div>
           ) : members?.length === 0 ? (
-            <p className="text-center text-slate-500 py-8">No active members found.</p>
+            <p className="text-center text-[#8a8f98] text-xs py-8">No active members found.</p>
           ) : (
-            <div className="divide-y divide-slate-100 border rounded-md">
+            <div className="divide-y divide-[#23252a] border border-[#23252a] rounded-md bg-[#010102]">
               {members?.map(member => (
                 <MemberRow key={member.id} member={member} isAdmin={isAdmin} currentUserId={user?.id} />
               ))}
@@ -73,13 +73,13 @@ export function TeamSettings() {
       </Card>
 
       {isManagerOrAdmin && invitations && invitations.length > 0 && (
-        <Card>
-          <CardHeader className="border-b pb-4">
-            <CardTitle>Pending Invitations</CardTitle>
-            <CardDescription>Invitations that haven't been accepted yet.</CardDescription>
+        <Card className="border border-[#23252a] bg-[#0f1011]">
+          <CardHeader className="border-b border-[#23252a] pb-4">
+            <CardTitle className="text-base text-[#f7f8f8]">Pending Invitations</CardTitle>
+            <CardDescription className="text-xs text-[#8a8f98]">Invitations that haven't been accepted yet.</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="divide-y divide-slate-100 border rounded-md">
+          <CardContent className="pt-4">
+            <div className="divide-y divide-[#23252a] border border-[#23252a] rounded-md bg-[#010102]">
               {invitations.map(invite => (
                 <InvitationRow key={invite.id} invite={invite} isAdmin={isAdmin} />
               ))}
@@ -117,39 +117,39 @@ function MemberRow({ member, isAdmin, currentUserId }: { member: TeamMember, isA
   });
 
   return (
-    <div className="flex items-center justify-between p-4 hover:bg-slate-50/50">
+    <div className="flex items-center justify-between p-3.5 hover:bg-[#141516]/60 transition-colors">
       <div className="flex flex-col">
-        <span className="font-medium text-slate-900">{member.name} {isSelf && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-2">You</span>}</span>
-        <span className="text-sm text-slate-500">{member.email}</span>
+        <span className="font-medium text-xs text-[#f7f8f8]">{member.name} {isSelf && <span className="text-[10px] bg-[#5e6ad2]/20 text-[#5e6ad2] border border-[#5e6ad2]/30 px-2 py-0.5 rounded-full ml-1.5 font-bold">You</span>}</span>
+        <span className="text-xs text-[#8a8f98]">{member.email}</span>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {isEditing ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as 'admin' | 'manager' | 'viewer')}
-              className="text-sm border rounded-md px-2 py-1"
+              className="text-xs bg-[#010102] text-[#f7f8f8] border border-[#23252a] rounded-md px-2 py-1 focus:ring-1 focus:ring-[#5e69d1]"
             >
               <option value="admin">Admin</option>
               <option value="manager">Manager</option>
               <option value="viewer">Viewer</option>
             </select>
-            <button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="text-emerald-600 hover:bg-emerald-50 p-1 rounded">
-              {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            <button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="text-[#27a644] hover:bg-[#27a644]/10 p-1 rounded transition-colors">
+              {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
             </button>
-            <button onClick={() => { setIsEditing(false); setRole(member.role); }} className="text-slate-500 hover:bg-slate-100 p-1 rounded">
-              <X className="w-4 h-4" />
+            <button onClick={() => { setIsEditing(false); setRole(member.role); }} className="text-[#8a8f98] hover:bg-[#141516] p-1 rounded transition-colors">
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
           <>
-            <span className="text-sm px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 capitalize">
+            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#141516] text-[#8a8f98] border border-[#23252a] capitalize font-medium">
               {member.role}
             </span>
             {isAdmin && !isSelf && (
               <div className="flex items-center gap-1">
-                <button onClick={() => setIsEditing(true)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Change Role">
-                  <Shield className="w-4 h-4" />
+                <button onClick={() => setIsEditing(true)} className="p-1 text-[#8a8f98] hover:text-[#5e6ad2] hover:bg-[#5e6ad2]/10 rounded transition-colors" title="Change Role">
+                  <Shield className="w-3.5 h-3.5" />
                 </button>
                 <button 
                   onClick={() => {
@@ -157,11 +157,11 @@ function MemberRow({ member, isAdmin, currentUserId }: { member: TeamMember, isA
                       removeMutation.mutate();
                     }
                   }} 
-                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded" 
+                  className="p-1 text-[#8a8f98] hover:text-red-400 hover:bg-red-950/40 rounded transition-colors" 
                   title="Remove Member"
                   disabled={removeMutation.isPending}
                 >
-                  {removeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {removeMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>
               </div>
             )}
@@ -192,17 +192,17 @@ function InvitationRow({ invite, isAdmin }: { invite: TeamInvitation, isAdmin: b
   });
 
   return (
-    <div className="flex items-center justify-between p-4 hover:bg-slate-50/50">
+    <div className="flex items-center justify-between p-3.5 hover:bg-[#141516]/60 transition-colors">
       <div className="flex flex-col">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-slate-900">{invite.email}</span>
-          <span className="text-xs bg-slate-100 text-slate-600 px-2 rounded-full border">Role: {invite.role}</span>
+          <span className="font-medium text-xs text-[#f7f8f8]">{invite.email}</span>
+          <span className="text-[10px] bg-[#141516] text-[#8a8f98] px-2 py-0.5 rounded-full border border-[#23252a]">Role: {invite.role}</span>
         </div>
-        <span className="text-sm text-slate-500 flex items-center mt-1">
+        <span className="text-[11px] text-[#8a8f98] flex items-center mt-1">
           Sent: {new Date(invite.createdAt).toLocaleDateString()}
-          <span className="mx-2">•</span>
-          Status: <span className={`ml-1 capitalize ${invite.deliveryStatus === 'failed' ? 'text-red-600' : 'text-slate-600'}`}>{invite.deliveryStatus}</span>
-          {isExpired && <span className="ml-2 text-orange-600 flex items-center text-xs"><ShieldAlert className="w-3 h-3 mr-1"/> Expired</span>}
+          <span className="mx-1.5">•</span>
+          Status: <span className={`ml-1 capitalize ${invite.deliveryStatus === 'failed' ? 'text-red-400' : 'text-[#8a8f98]'}`}>{invite.deliveryStatus}</span>
+          {isExpired && <span className="ml-2 text-amber-400 flex items-center text-[10px] font-bold"><ShieldAlert className="w-3 h-3 mr-1"/> Expired</span>}
         </span>
       </div>
       {isAdmin && (
@@ -210,10 +210,10 @@ function InvitationRow({ invite, isAdmin }: { invite: TeamInvitation, isAdmin: b
           <button 
             onClick={() => resendMutation.mutate()} 
             disabled={resendMutation.isPending}
-            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded" 
+            className="p-1 text-[#8a8f98] hover:text-[#5e6ad2] hover:bg-[#5e6ad2]/10 rounded transition-colors" 
             title="Resend Invitation"
           >
-            {resendMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {resendMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
           </button>
           <button 
             onClick={() => {
@@ -222,10 +222,10 @@ function InvitationRow({ invite, isAdmin }: { invite: TeamInvitation, isAdmin: b
               }
             }} 
             disabled={revokeMutation.isPending}
-            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded" 
+            className="p-1 text-[#8a8f98] hover:text-red-400 hover:bg-red-950/40 rounded transition-colors" 
             title="Revoke Invitation"
           >
-            {revokeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MailX className="w-4 h-4" />}
+            {revokeMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MailX className="w-3.5 h-3.5" />}
           </button>
         </div>
       )}
@@ -268,40 +268,40 @@ function InviteModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="px-6 py-4 border-b flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Invite Team Member</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-            <X className="w-5 h-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#010102]/80 backdrop-blur-sm">
+      <div className="bg-[#0f1011] rounded-xl shadow-none w-full max-w-md border border-[#23252a] overflow-hidden text-[#f7f8f8]">
+        <div className="px-6 py-4 border-b border-[#23252a] bg-[#010102] flex justify-between items-center">
+          <h2 className="text-sm font-semibold text-[#f7f8f8]">Invite Team Member</h2>
+          <button onClick={onClose} className="text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            <div className="p-3 bg-red-950/40 border border-red-900/50 text-red-400 rounded-md text-xs font-medium">
               {error}
             </div>
           )}
           
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Email Address</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#8a8f98]">Email Address</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
               placeholder="colleague@example.com"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Role</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[#8a8f98]">Role</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as 'admin' | 'manager' | 'viewer')}
-              className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
             >
               <option value="viewer">Viewer (Read-only)</option>
               <option value="manager">Manager (Can manage invoices and views team)</option>
@@ -309,20 +309,20 @@ function InviteModal({ onClose }: { onClose: () => void }) {
             </select>
           </div>
 
-          <div className="pt-4 flex justify-end gap-3">
+          <div className="pt-4 flex justify-end gap-3 border-t border-[#23252a]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-md"
+              className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] hover:bg-[#141516] rounded-md transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 flex items-center"
+              className="px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] hover:bg-[#828fff] rounded-md disabled:opacity-40 flex items-center transition-colors"
             >
-              {mutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {mutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
               Send Invitation
             </button>
           </div>
@@ -331,3 +331,4 @@ function InviteModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
