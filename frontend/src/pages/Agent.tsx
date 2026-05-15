@@ -66,35 +66,35 @@ export function Agent() {
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center">
-            <Bot className="w-8 h-8 text-blue-600 mr-3" />
+          <h1 className="text-xl font-bold tracking-tight text-[#f7f8f8] flex items-center">
+            <Bot className="w-6 h-6 text-[#5e6ad2] mr-2.5" />
             AI Agent Control
           </h1>
-          <p className="text-slate-500 mt-1">Manage and monitor automated invoice processing and follow-ups.</p>
+          <p className="text-xs text-[#8a8f98] mt-0.5">Manage and monitor automated invoice processing and follow-ups.</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           {user?.role !== 'viewer' && (
             <div className="flex items-center gap-2">
               <ToneSelector
                 value={selectedTone}
                 onChange={setSelectedTone}
                 disabled={isRunning || !emailReady}
-                className="h-10 border-slate-200"
+                className="h-9 border-[#23252a] bg-[#0f1011] text-[#f7f8f8] text-xs"
               />
               <button
                 onClick={handleRunAgent}
                 disabled={isRunning || !emailReady}
                 title={!emailReady ? 'Email is not configured. Set up an email provider in Settings first.' : undefined}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 bg-blue-600 text-white hover:bg-blue-700 h-10 px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               >
                 {isRunning ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
                     Agent Running...
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4 mr-2" />
+                    <Play className="w-3.5 h-3.5 mr-2" />
                     Run Agent Now
                   </>
                 )}
@@ -106,11 +106,11 @@ export function Agent() {
 
       {/* Email not configured warning */}
       {settings && !emailReady && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="bg-amber-950/40 border border-amber-900/50 rounded-lg p-4 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-amber-900 text-sm">Email not configured</h4>
-            <p className="text-amber-800 text-sm mt-1">
+            <h4 className="font-semibold text-amber-300 text-xs">Email not configured</h4>
+            <p className="text-amber-200/80 text-xs mt-1 leading-relaxed">
               The agent cannot run because no email provider is set up.
               Connect <strong>SendGrid</strong> or <strong>SMTP</strong> and set a sender email address —
               otherwise follow-up emails would be generated but never delivered.
@@ -118,7 +118,7 @@ export function Agent() {
           </div>
           <Link
             to="/settings"
-            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 hover:text-amber-900 border border-amber-300 bg-white hover:bg-amber-50 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-amber-300 hover:text-amber-100 border border-amber-800/60 bg-[#0f1011] rounded-md px-3 py-1.5 transition-colors whitespace-nowrap"
           >
             <Settings className="w-3.5 h-3.5" />
             Go to Settings
@@ -127,68 +127,68 @@ export function Agent() {
       )}
 
       {runMutation.isError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
-          <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+        <div className="bg-red-950/40 border border-red-900/50 text-red-400 px-4 py-3 rounded-lg flex items-start">
+          <AlertCircle className="w-4 h-4 mr-2.5 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-medium">Failed to start agent</h4>
-            <p className="text-sm mt-1">{getErrorMessage(runMutation.error)}</p>
+            <h4 className="font-medium text-xs">Failed to start agent</h4>
+            <p className="text-xs mt-0.5 opacity-90">{getErrorMessage(runMutation.error)}</p>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Agent Status</CardTitle>
+          <Card className="border border-[#23252a] bg-[#0f1011]">
+            <CardHeader className="pb-2 border-b-0">
+              <CardTitle className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Agent Status</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-4">
-                <div className="relative flex h-4 w-4">
+                <div className="relative flex h-3.5 w-3.5">
                   {isRunning ? (
                     <>
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-4 w-4 bg-blue-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5e6ad2] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#5e6ad2]"></span>
                     </>
                   ) : (
-                    <span className="relative inline-flex rounded-full h-4 w-4 bg-slate-300"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#3e3e44]"></span>
                   )}
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900 text-lg">
+                  <p className="font-semibold text-[#f7f8f8] text-base">
                     {isRunning ? 'Processing Batch...' : 'Idle / Ready'}
                   </p>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-xs text-[#8a8f98] mt-0.5">
                     {isRunning ? 'Analyzing invoices and dispatching emails.' : 'Waiting for next scheduled run or manual trigger.'}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-slate-100">
-                <p className="text-sm text-slate-500 mb-1">Total Invoices Processed (All Time)</p>
-                <p className="text-2xl font-bold text-slate-900">
+              <div className="mt-6 pt-5 border-t border-[#23252a]">
+                <p className="text-xs text-[#8a8f98] mb-1">Total Invoices Processed (All Time)</p>
+                <p className="text-2xl font-bold text-[#f7f8f8]">
                   {runsResponse?.runs.reduce((acc, run) => acc + run.invoicesProcessed, 0) || 0}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card className="border border-[#23252a] bg-[#0f1011]">
+            <CardHeader className="border-b border-[#23252a]">
               <CardTitle>Run History</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
                 <div className="flex justify-center items-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-slate-300" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
                 </div>
               ) : runsResponse && runsResponse.runs.length > 0 ? (
                 <RunList runs={runsResponse.runs} />
               ) : (
-                <div className="text-center py-12 text-slate-500">
-                  <Bot className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                  <p>No agent runs recorded yet.</p>
-                  <p className="text-sm mt-1">Click "Run Agent Now" to trigger the first batch.</p>
+                <div className="text-center py-12 text-[#8a8f98]">
+                  <Bot className="w-10 h-10 text-[#3e3e44] mx-auto mb-3" />
+                  <p className="text-sm font-medium text-[#f7f8f8]">No agent runs recorded yet.</p>
+                  <p className="text-xs mt-1">Click "Run Agent Now" to trigger the first batch.</p>
                 </div>
               )}
             </CardContent>
@@ -210,3 +210,4 @@ export function Agent() {
     </div>
   );
 }
+
