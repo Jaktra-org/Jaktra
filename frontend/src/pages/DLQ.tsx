@@ -72,20 +72,20 @@ export function DLQ() {
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center">
-            <MailX className="w-8 h-8 text-red-600 mr-3" />
+          <h1 className="text-xl font-bold tracking-tight text-[#f7f8f8] flex items-center">
+            <MailX className="w-6 h-6 text-red-400 mr-2.5" />
             Dead Letter Queue
           </h1>
-          <p className="text-slate-500 mt-1">Manage and resolve invoices that failed to process automatically.</p>
+          <p className="text-xs text-[#8a8f98] mt-0.5">Manage and resolve invoices that failed to process automatically.</p>
         </div>
       </div>
 
       {criticalCount > 0 && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl flex items-start shadow-sm">
-          <AlertTriangle className="w-6 h-6 mr-3 flex-shrink-0 mt-0.5" />
+        <div className="bg-red-950/40 border border-red-900/50 text-red-400 px-4 py-3.5 rounded-xl flex items-start shadow-none">
+          <AlertTriangle className="w-5 h-5 mr-2.5 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-red-900">Critical Delivery Failures</h4>
-            <p className="text-sm mt-1">
+            <h4 className="font-semibold text-xs text-red-300">Critical Delivery Failures</h4>
+            <p className="text-xs mt-0.5 opacity-90">
               You have {criticalCount} invoice(s) that have failed delivery 3 or more times. They require immediate manual intervention.
             </p>
           </div>
@@ -93,55 +93,55 @@ export function DLQ() {
       )}
 
       {mutationError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl flex items-start shadow-sm justify-between">
+        <div className="bg-red-950/40 border border-red-900/50 text-red-400 px-4 py-3.5 rounded-xl flex items-start shadow-none justify-between">
           <div className="flex items-start">
-            <AlertTriangle className="w-6 h-6 mr-3 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 mr-2.5 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-semibold text-red-900">Operation Failed</h4>
-              <p className="text-sm mt-1">{mutationError}</p>
+              <h4 className="font-semibold text-xs text-red-300">Operation Failed</h4>
+              <p className="text-xs mt-0.5 opacity-90">{mutationError}</p>
             </div>
           </div>
-          <button onClick={() => setMutationError(null)} className="text-red-500 hover:text-red-700">
+          <button onClick={() => setMutationError(null)} className="text-red-400 hover:text-red-300">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      <Card>
+      <Card className="border border-[#23252a] bg-[#0f1011]">
         <CardHeader>
           <CardTitle>Failed Invoices</CardTitle>
           <CardDescription>Invoices are removed from this list when a follow-up is successfully processed.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-500 font-medium border-y border-slate-200">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-[#0f1011] text-[#8a8f98] font-medium border-y border-[#23252a]">
                 <tr>
-                  <th className="px-6 py-4">Client & Invoice</th>
-                  <th className="px-6 py-4">Failures</th>
-                  <th className="px-6 py-4">Last Error</th>
-                  <th className="px-6 py-4 whitespace-nowrap">Last Attempt</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-5 py-3">Client & Invoice</th>
+                  <th className="px-5 py-3">Failures</th>
+                  <th className="px-5 py-3">Last Error</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Last Attempt</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-[#23252a]/50 bg-[#0f1011]">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-slate-300" />
+                    <td colSpan={5} className="px-5 py-12 text-center text-[#8a8f98]">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#5e6ad2]" />
                       Loading queue...
                     </td>
                   </tr>
                 ) : isError ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-red-500">Failed to load Dead Letter Queue.</td>
+                    <td colSpan={5} className="px-5 py-12 text-center text-red-400">Failed to load Dead Letter Queue.</td>
                   </tr>
                 ) : sortedEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-16 text-center text-slate-500">
-                      <MailX className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                      <p className="text-lg font-medium text-slate-700">Queue is empty</p>
-                      <p className="text-sm mt-1">No failed invoices found. Everything is healthy!</p>
+                    <td colSpan={5} className="px-5 py-16 text-center text-[#8a8f98]">
+                      <MailX className="w-10 h-10 text-[#3e3e44] mx-auto mb-3" />
+                      <p className="text-sm font-medium text-[#f7f8f8]">Queue is empty</p>
+                      <p className="text-xs mt-0.5">No failed invoices found. Everything is healthy!</p>
                     </td>
                   </tr>
                 ) : (
@@ -149,36 +149,36 @@ export function DLQ() {
                     const isRetrying = retryingId === entry.invoiceId;
                     
                     return (
-                      <tr key={entry.invoiceId} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <Link to={`/invoices/${entry.invoiceId}`} className="font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center group truncate max-w-[250px]">
+                      <tr key={entry.invoiceId} className="hover:bg-[#141516]/60 transition-colors">
+                        <td className="px-5 py-3.5">
+                          <Link to={`/invoices/${entry.invoiceId}`} className="font-medium text-[#5e6ad2] hover:text-[#828fff] flex items-center group truncate max-w-[250px]">
                             {entry.clientName || 'Unknown Client'}
                             <ArrowRight className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </Link>
-                          <div className="text-xs text-slate-500 font-normal mt-0.5">
+                          <div className="text-[11px] text-[#8a8f98] font-normal mt-0.5">
                             {entry.invoiceNo || entry.invoiceId.substring(0, 8)}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${entry.consecutiveFailures >= 3 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${entry.consecutiveFailures >= 3 ? 'bg-red-950/50 text-red-400 border border-red-900/50' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'}`}>
                             {entry.consecutiveFailures} {entry.consecutiveFailures === 1 ? 'time' : 'times'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-600">
+                        <td className="px-5 py-3.5 text-[#d0d6e0]">
                           <div className="truncate max-w-[300px]" title={entry.lastErrorDisplay || entry.lastError || 'Unknown Error'}>
                             {entry.lastErrorDisplay || entry.lastError || 'Unknown Error'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                        <td className="px-5 py-3.5 text-[#8a8f98] whitespace-nowrap">
                           {new Date(entry.lastFailure).toLocaleString(undefined, {
                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                           })}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-5 py-3.5 text-right">
                           <div className="flex justify-end items-center space-x-2">
                             {isRetrying ? (
-                              <button disabled className="inline-flex items-center justify-center rounded-md text-xs font-medium bg-slate-100 text-slate-500 px-3 py-1.5 opacity-70 cursor-not-allowed">
-                                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                              <button disabled className="inline-flex items-center justify-center rounded-md text-xs font-medium bg-[#141516] text-[#8a8f98] px-3 py-1.5 opacity-70 cursor-not-allowed border border-[#23252a]">
+                                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#5e6ad2]" />
                                 Retrying...
                               </button>
                             ) : (
@@ -187,7 +187,7 @@ export function DLQ() {
                                   <button
                                     onClick={() => handleRetry(entry.invoiceId)}
                                     disabled={retryingId !== null || dismissingId !== null}
-                                    className="inline-flex items-center justify-center rounded-md text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                                    className="inline-flex items-center justify-center rounded-md text-xs font-medium bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 text-[#5e6ad2] hover:bg-[#5e6ad2]/20 px-3 py-1.5 transition-colors disabled:opacity-40"
                                   >
                                     <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                                     Retry Processing
@@ -195,7 +195,7 @@ export function DLQ() {
                                   <button
                                     onClick={() => setDismissingId(entry.invoiceId)}
                                     disabled={retryingId !== null || dismissingId !== null}
-                                    className="inline-flex items-center justify-center rounded-md text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 px-3 py-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:opacity-50"
+                                    className="inline-flex items-center justify-center rounded-md text-xs font-medium bg-[#0f1011] border border-[#23252a] text-[#8a8f98] hover:bg-[#141516] hover:text-[#f7f8f8] px-3 py-1.5 transition-colors disabled:opacity-40"
                                   >
                                     <X className="w-3.5 h-3.5 mr-1" />
                                     Dismiss
@@ -217,26 +217,26 @@ export function DLQ() {
 
       {/* Dismiss Confirmation Dialog */}
       {dismissingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Dismiss DLQ Entry?</h3>
-            <p className="text-sm text-slate-500 mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0f1011] border border-[#23252a] text-[#f7f8f8] rounded-xl shadow-2xl max-w-sm w-full p-5 animate-in fade-in zoom-in-95 duration-150">
+            <h3 className="text-base font-semibold text-[#f7f8f8] mb-1.5 tracking-tight">Dismiss DLQ Entry?</h3>
+            <p className="text-xs text-[#8a8f98] mb-5 leading-relaxed">
               Invoice <strong>{entries.find(e => e.invoiceId === dismissingId)?.invoiceNo || dismissingId.substring(0, 8)}</strong> will be removed from the queue. This does not fix the underlying issue.
             </p>
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setDismissingId(null)}
                 disabled={dismissMutation.isPending}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] rounded-md hover:bg-[#141516]"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDismiss(dismissingId)}
                 disabled={dismissMutation.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 inline-flex items-center"
+                className="px-3.5 py-1.5 text-xs font-medium text-red-400 bg-red-950/40 border border-red-900/50 rounded-md hover:bg-red-900/50 inline-flex items-center"
               >
-                {dismissMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {dismissMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
                 Dismiss
               </button>
             </div>
@@ -246,3 +246,4 @@ export function DLQ() {
     </div>
   );
 }
+
