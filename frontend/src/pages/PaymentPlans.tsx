@@ -82,13 +82,13 @@ export function PaymentPlans() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-200">Approved</Badge>;
+        return <Badge variant="success" className="bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">Approved</Badge>;
       case 'denied':
-        return <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-200">Denied</Badge>;
+        return <Badge variant="danger" className="bg-red-950/40 text-red-400 border border-red-900/50">Denied</Badge>;
       case 'cancelled':
-        return <Badge variant="warning" className="bg-slate-100 text-slate-800 border-slate-200">Cancelled</Badge>;
+        return <Badge variant="warning" className="bg-[#141516] text-[#8a8f98] border border-[#23252a]">Cancelled</Badge>;
       default:
-        return <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200">Pending Review</Badge>;
+        return <Badge variant="warning" className="bg-amber-950/40 text-amber-300 border border-amber-900/50">Pending Review</Badge>;
     }
   };
 
@@ -96,22 +96,22 @@ export function PaymentPlans() {
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Payment Plan Management</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-xl font-bold tracking-tight text-[#f7f8f8]">Payment Plan Management</h1>
+          <p className="text-xs text-[#8a8f98] mt-0.5">
             Review and manage installment plan proposals submitted by debtors.
           </p>
         </div>
         <button
           onClick={() => refetch()}
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-slate-200 bg-white hover:bg-slate-100 h-9 px-3 self-start sm:self-auto"
+          className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-8 px-3 self-start sm:self-auto"
         >
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-1.5 h-3.5 w-3.5 text-[#8a8f98]" />
           Refresh
         </button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <div className="flex flex-wrap gap-2 border-b border-[#23252a] pb-3">
         {(['pending', 'approved', 'denied', 'cancelled', 'all'] as const).map((tab) => (
           <button
             key={tab}
@@ -119,10 +119,10 @@ export function PaymentPlans() {
               setStatusFilter(tab);
               setPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
               statusFilter === tab
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'bg-[#5e6ad2] text-white shadow-none'
+                : 'bg-[#0f1011] border border-[#23252a] text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
             }`}
           >
             {tab === 'pending' ? 'Pending Review' : tab}
@@ -131,15 +131,15 @@ export function PaymentPlans() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start gap-3 relative shadow-sm">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="bg-red-950/40 border border-red-900/50 text-red-400 rounded-xl p-4 flex items-start gap-3 relative shadow-none">
+          <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-semibold text-sm font-medium">Action Failed</h3>
-            <p className="text-sm mt-1">{error}</p>
+            <h3 className="font-semibold text-xs text-red-300">Action Failed</h3>
+            <p className="text-xs mt-0.5 opacity-90">{error}</p>
           </div>
           <button
             onClick={() => setError(null)}
-            className="absolute top-4 right-4 text-red-500 hover:text-red-700 focus:outline-none"
+            className="absolute top-3.5 right-3.5 text-red-400 hover:text-red-300 focus:outline-none"
           >
             <span className="sr-only">Close</span>
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -151,72 +151,72 @@ export function PaymentPlans() {
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-          <p className="text-slate-500">Loading plan requests...</p>
+          <Loader2 className="h-7 w-7 animate-spin text-[#5e6ad2] mb-3" />
+          <p className="text-xs text-[#8a8f98]">Loading plan requests...</p>
         </div>
       ) : plansList.length === 0 ? (
-        <Card className="border-dashed border-slate-200">
+        <Card className="border-dashed border border-[#23252a] bg-[#0f1011]">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <CheckCircle className="h-10 w-10 text-slate-300 mb-3" />
-            <h3 className="font-semibold text-slate-800 text-base">No proposals found</h3>
-            <p className="text-sm text-slate-500 mt-1 max-w-sm">
+            <CheckCircle className="h-9 w-9 text-[#3e3e44] mb-2.5" />
+            <h3 className="font-semibold text-[#f7f8f8] text-sm">No proposals found</h3>
+            <p className="text-xs text-[#8a8f98] mt-1 max-w-sm">
               There are no payment plan proposals matching the selected filter.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6">
+        <div className="grid gap-4">
           {plansList.map((plan) => (
-            <Card key={plan.id} className="border border-slate-200 shadow-sm overflow-hidden">
-              <CardHeader className="bg-slate-50 border-b border-slate-200 py-4 px-6 flex flex-row items-center justify-between">
+            <Card key={plan.id} className="border border-[#23252a] bg-[#0f1011] overflow-hidden">
+              <CardHeader className="bg-[#010102]/60 border-b border-[#23252a] py-3 px-5 flex flex-row items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Link
                     to={`/invoices/${plan.invoiceId}`}
-                    className="font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                    className="font-semibold text-xs text-[#5e6ad2] hover:text-[#828fff] transition-colors"
                   >
                     {plan.invoiceNo}
                   </Link>
                   {getStatusBadge(plan.status)}
                 </div>
-                <div className="text-xs text-slate-400 flex items-center">
-                  <Calendar className="h-3.5 w-3.5 mr-1" />
+                <div className="text-[11px] text-[#8a8f98] flex items-center">
+                  <Calendar className="h-3 w-3 mr-1" />
                   Submitted {formatDate(plan.createdAt)}
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <CardContent className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   {/* Proposal details */}
                   <div className="space-y-4 md:col-span-2">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Client Name</p>
-                        <p className="text-sm font-medium text-slate-900 mt-1">{plan.clientName}</p>
+                        <p className="text-[10px] text-[#8a8f98] uppercase tracking-wider font-semibold">Client Name</p>
+                        <p className="text-xs font-medium text-[#f7f8f8] mt-1">{plan.clientName}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Invoice Balance</p>
-                        <p className="text-sm font-semibold text-slate-900 mt-1">
+                        <p className="text-[10px] text-[#8a8f98] uppercase tracking-wider font-semibold">Invoice Balance</p>
+                        <p className="text-xs font-semibold text-[#f7f8f8] mt-1">
                           {formatCurrency(plan.invoiceAmount, plan.currency)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#23252a]">
                       <div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Plan Terms</p>
-                        <p className="text-sm font-medium text-slate-950 mt-1">{plan.installments} Months</p>
+                        <p className="text-[10px] text-[#8a8f98] uppercase tracking-wider font-semibold">Plan Terms</p>
+                        <p className="text-xs font-medium text-[#f7f8f8] mt-1">{plan.installments} Months</p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Monthly Payment</p>
-                        <p className="text-sm font-semibold text-indigo-600 mt-1">
+                        <p className="text-[10px] text-[#8a8f98] uppercase tracking-wider font-semibold">Monthly Payment</p>
+                        <p className="text-xs font-semibold text-[#5e6ad2] mt-1">
                           {formatCurrency(plan.proposedAmountPerMonth, plan.currency)} / mo
                         </p>
                       </div>
                     </div>
 
                     {plan.reason && (
-                      <div className="pt-3 border-t border-slate-100">
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Reason Submitted</p>
-                        <p className="text-sm text-slate-700 mt-1 leading-relaxed italic bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
+                      <div className="pt-3 border-t border-[#23252a]">
+                        <p className="text-[10px] text-[#8a8f98] uppercase tracking-wider font-semibold">Reason Submitted</p>
+                        <p className="text-xs text-[#d0d6e0] mt-1 leading-relaxed italic bg-[#010102] p-2.5 rounded-lg border border-[#23252a]">
                           &ldquo;{plan.reason}&rdquo;
                         </p>
                       </div>
@@ -224,18 +224,18 @@ export function PaymentPlans() {
                   </div>
 
                   {/* Actions pane */}
-                  <div className="flex flex-col justify-center space-y-2 md:border-l md:border-slate-100 md:pl-6">
+                  <div className="flex flex-col justify-center space-y-2 md:border-l md:border-[#23252a] md:pl-5">
                     {plan.status === 'pending' ? (
                       <>
                         <button
                           onClick={() => approveMutation.mutate(plan.id)}
                           disabled={approveMutation.isPending || denyMutation.isPending}
-                          className="w-full inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white h-10 transition disabled:opacity-50"
+                          className="w-full inline-flex items-center justify-center rounded-md text-xs font-medium bg-[#27a644] hover:bg-[#27a644]/90 text-white h-9 transition disabled:opacity-40"
                         >
                           {approveMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
                           ) : (
-                            <CheckCircle className="h-4 w-4 mr-2" />
+                            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                           )}
                           Approve Proposal
                         </button>
@@ -246,19 +246,19 @@ export function PaymentPlans() {
                             }
                           }}
                           disabled={approveMutation.isPending || denyMutation.isPending}
-                          className="w-full inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-white border border-red-200 hover:bg-red-50 text-red-700 h-10 transition disabled:opacity-50"
+                          className="w-full inline-flex items-center justify-center rounded-md text-xs font-medium bg-[#0f1011] border border-red-900/50 hover:bg-red-950/40 text-red-400 h-9 transition disabled:opacity-40"
                         >
                           {denyMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
                           ) : (
-                            <XCircle className="h-4 w-4 mr-2" />
+                            <XCircle className="h-3.5 w-3.5 mr-1.5" />
                           )}
                           Deny Proposal
                         </button>
                       </>
                     ) : (
-                      <div className="text-center p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-500">
-                        Status: <span className="font-semibold capitalize text-slate-700">{plan.status}</span>
+                      <div className="text-center p-2.5 bg-[#010102] rounded-lg border border-[#23252a] text-xs text-[#8a8f98]">
+                        Status: <span className="font-semibold capitalize text-[#f7f8f8]">{plan.status}</span>
                       </div>
                     )}
                   </div>
@@ -269,26 +269,26 @@ export function PaymentPlans() {
 
           {/* Pagination Controls */}
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-              <span className="text-xs text-slate-500">
+            <div className="flex items-center justify-between pt-4 border-t border-[#23252a]">
+              <span className="text-xs text-[#8a8f98]">
                 Page {page} of {pagination.totalPages} ({pagination.total} total items)
               </span>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 h-8 px-3 disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-7 px-3 disabled:opacity-40"
                 >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  <ChevronLeft className="h-3.5 w-3.5 mr-1" />
                   Previous
                 </button>
                 <button
                   onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                   disabled={page >= pagination.totalPages}
-                  className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 h-8 px-3 disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-7 px-3 disabled:opacity-40"
                 >
                   Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </button>
               </div>
             </div>
@@ -298,3 +298,4 @@ export function PaymentPlans() {
     </div>
   );
 }
+
