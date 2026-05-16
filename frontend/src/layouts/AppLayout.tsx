@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { LayoutDashboard, FileText, Bot, BarChart3, AlertTriangle, Settings, LogOut, History, MessageSquare } from "lucide-react";
+import jaktraLogo from "../assets/jaktra_svg.svg";
 import { useAuth } from "../contexts/AuthContext";
 
 export function AppLayout() {
@@ -99,8 +100,8 @@ export function AppLayout() {
         )}
         
         <div className="flex h-14 items-center justify-center md:justify-start md:px-5 border-b border-[#23252a]/70">
-          <div className="h-7 w-7 rounded-md bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center flex-shrink-0">
-            <Bot className="h-4 w-4 text-[#5e6ad2]" />
+          <div className="h-7 w-7 rounded-md bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center flex-shrink-0 p-1 overflow-hidden">
+            <img src={jaktraLogo} alt="Jaktra Logo" className="h-full w-full object-contain" />
           </div>
           <span className="text-sm font-semibold text-[#f7f8f8] tracking-tight hidden md:block ml-2.5 whitespace-nowrap overflow-hidden">Jaktra</span>
         </div>

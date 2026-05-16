@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Bot, ShieldCheck, ArrowLeft } from "lucide-react";
+import { ShieldCheck, ArrowLeft } from "lucide-react";
+import jaktraLogo from "../assets/jaktra_svg.svg";
 import { authService } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
@@ -82,7 +83,7 @@ export function Login() {
             {step === "mfa" ? (
               <ShieldCheck className="h-6 w-6 text-[#5e6ad2]" />
             ) : (
-              <Bot className="h-6 w-6 text-[#5e6ad2]" />
+              <img src={jaktraLogo} alt="Jaktra Logo" className="h-7 w-7 object-contain" />
             )}
           </div>
           <div>

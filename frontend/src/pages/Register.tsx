@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bot, Mail, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft } from "lucide-react";
+import jaktraLogo from "../assets/jaktra_svg.svg";
 import { authService } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
@@ -100,7 +101,7 @@ export function Register() {
           <>
             <CardHeader className="space-y-4 text-center pb-6 border-b border-[#23252a]/60">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#5e6ad2]/10 border border-[#5e6ad2]/20">
-                <Bot className="h-6 w-6 text-[#5e6ad2]" />
+                <img src={jaktraLogo} alt="Jaktra Logo" className="h-7 w-7 object-contain" />
               </div>
               <div>
                 <CardTitle className="text-xl font-bold tracking-tight text-[#f7f8f8]">Create an account</CardTitle>
