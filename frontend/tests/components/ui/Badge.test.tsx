@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Badge } from '../../../src/components/ui/Badge';
 
@@ -11,35 +11,35 @@ describe('Badge component', () => {
   it('applies default styling classes', () => {
     render(<Badge>Default</Badge>);
     const element = screen.getByText('Default');
-    expect(element).toHaveClass('bg-slate-100');
-    expect(element).toHaveClass('text-slate-900');
+    expect(element).toHaveClass('bg-[#141516]');
+    expect(element).toHaveClass('text-[#d0d6e0]');
   });
 
   it('applies success variant classes', () => {
     render(<Badge variant="success">Success</Badge>);
     const element = screen.getByText('Success');
-    expect(element).toHaveClass('bg-green-100');
-    expect(element).toHaveClass('text-green-800');
+    expect(element).toHaveClass('bg-[#27a644]/10');
+    expect(element).toHaveClass('text-[#27a644]');
   });
 
   it('applies warning variant classes', () => {
     render(<Badge variant="warning">Warning</Badge>);
     const element = screen.getByText('Warning');
-    expect(element).toHaveClass('bg-yellow-100');
-    expect(element).toHaveClass('text-yellow-800');
+    expect(element).toHaveClass('bg-amber-500/10');
+    expect(element).toHaveClass('text-amber-400');
   });
 
   it('applies danger variant classes', () => {
     render(<Badge variant="danger">Danger</Badge>);
     const element = screen.getByText('Danger');
-    expect(element).toHaveClass('bg-red-100');
-    expect(element).toHaveClass('text-red-800');
+    expect(element).toHaveClass('bg-red-500/10');
+    expect(element).toHaveClass('text-red-400');
   });
 
   it('applies outline variant classes', () => {
     render(<Badge variant="outline">Outline</Badge>);
     const element = screen.getByText('Outline');
     expect(element).toHaveClass('border');
-    expect(element).toHaveClass('border-slate-200');
+    expect(element).toHaveClass('border-[#23252a]');
   });
 });

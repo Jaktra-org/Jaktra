@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Button } from '../../../src/components/ui/Button';
 
@@ -30,9 +30,9 @@ describe('Button component', () => {
 
   it('applies variant classes', () => {
     const { rerender } = render(<Button variant="danger">Danger</Button>);
-    expect(screen.getByRole('button')).toHaveClass('bg-red-600');
+    expect(screen.getByRole('button')).toHaveClass('bg-red-950/40');
 
     rerender(<Button variant="secondary">Secondary</Button>);
-    expect(screen.getByRole('button')).toHaveClass('bg-slate-100');
+    expect(screen.getByRole('button')).toHaveClass('bg-[#0f1011]');
   });
 });

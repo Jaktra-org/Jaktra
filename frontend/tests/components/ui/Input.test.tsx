@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Input } from '../../../src/components/ui/Input';
 
@@ -14,7 +14,7 @@ describe('Input component', () => {
     render(<Input error="This field is required" />);
 
     expect(screen.getByText('This field is required')).toBeInTheDocument();
-    expect(screen.getByRole('textbox')).toHaveClass('border-red-500');
+    expect(screen.getByRole('textbox')).toHaveClass('border-red-500/80');
   });
 
   it('forwards ref to native input element', () => {
