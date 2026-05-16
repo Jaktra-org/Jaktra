@@ -22,13 +22,13 @@ export function Settings() {
   );
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12 text-[#f7f8f8]">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center">
-          <SettingsIcon className="w-8 h-8 text-blue-600 mr-3" />
+        <h1 className="text-xl font-bold tracking-tight text-[#f7f8f8] flex items-center">
+          <SettingsIcon className="w-6 h-6 text-[#5e6ad2] mr-2.5" />
           Settings
         </h1>
-        <p className="text-slate-500 mt-1">Manage your tenant configuration and preferences.</p>
+        <p className="text-[#8a8f98] text-xs mt-1">Manage your tenant configuration and preferences.</p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
@@ -37,7 +37,7 @@ export function Settings() {
           <TabButton 
             active={activeTab === 'profile'} 
             onClick={() => setActiveTab('profile')} 
-            icon={<UserIcon className="w-4 h-4 mr-3" />} 
+            icon={<UserIcon className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
             label="Profile" 
           />
           {user?.role === 'admin' && (
@@ -45,19 +45,19 @@ export function Settings() {
               <TabButton 
                 active={activeTab === 'general'} 
                 onClick={() => setActiveTab('general')} 
-                icon={<Building className="w-4 h-4 mr-3" />} 
+                icon={<Building className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
                 label="General" 
               />
               <TabButton 
                 active={activeTab === 'email'} 
                 onClick={() => setActiveTab('email')} 
-                icon={<Mail className="w-4 h-4 mr-3" />} 
+                icon={<Mail className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
                 label="Email Config" 
               />
               <TabButton 
                 active={activeTab === 'integrations'} 
                 onClick={() => setActiveTab('integrations')} 
-                icon={<LinkIcon className="w-4 h-4 mr-3" />} 
+                icon={<LinkIcon className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
                 label="Integrations" 
               />
             </>
@@ -65,14 +65,14 @@ export function Settings() {
           <TabButton 
             active={activeTab === 'team'} 
             onClick={() => setActiveTab('team')} 
-            icon={<Users className="w-4 h-4 mr-3" />} 
+            icon={<Users className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
             label="Team" 
           />
           {user?.role === 'admin' && (
             <TabButton 
               active={activeTab === 'billing'} 
               onClick={() => setActiveTab('billing')} 
-              icon={<CreditCard className="w-4 h-4 mr-3" />} 
+              icon={<CreditCard className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
               label="Billing" 
             />
           )}
@@ -103,10 +103,10 @@ function TabButton({ active, onClick, icon, label }: TabButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+      className={`w-full flex items-center px-3 py-2 text-xs font-medium rounded-md transition-all ${
         active 
-          ? 'bg-blue-50 text-blue-700' 
-          : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+          ? 'bg-[#141516] text-[#f7f8f8] border border-[#23252a]' 
+          : 'text-[#8a8f98] hover:bg-[#0f1011] hover:text-[#f7f8f8]'
       }`}
     >
       {icon}
@@ -172,49 +172,49 @@ function GeneralSettings() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
       </div>
     );
   }
 
   return (
-    <Card>
+    <Card className="border border-[#23252a] bg-[#0f1011]">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>General Settings</CardTitle>
-            <CardDescription>Manage your company profile and localization.</CardDescription>
+            <CardTitle className="text-base text-[#f7f8f8]">General Settings</CardTitle>
+            <CardDescription className="text-xs text-[#8a8f98]">Manage your company profile and localization.</CardDescription>
           </div>
           <div className="flex items-center h-8">
-            {saveStatus === 'saving' && <span className="text-sm text-slate-500 flex items-center"><Loader2 className="w-3 h-3 animate-spin mr-2" /> Saving...</span>}
-            {saveStatus === 'saved' && <span className="text-sm text-emerald-600 flex items-center"><Save className="w-3 h-3 mr-2" /> Saved</span>}
+            {saveStatus === 'saving' && <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3 h-3 animate-spin mr-1.5" /> Saving...</span>}
+            {saveStatus === 'saved' && <span className="text-xs text-[#27a644] flex items-center"><Save className="w-3 h-3 mr-1.5" /> Saved</span>}
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 flex items-center">
-            <Building className="w-4 h-4 mr-2 text-slate-400" />
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-[#8a8f98] flex items-center">
+            <Building className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
             Company Name
           </label>
           <input
             type="text"
             value={formData.companyName || ''}
             onChange={(e) => handleChange('companyName', e.target.value)}
-            className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1] focus:outline-none"
             placeholder="e.g. Acme Corp"
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 flex items-center">
-            <Clock className="w-4 h-4 mr-2 text-slate-400" />
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-[#8a8f98] flex items-center">
+            <Clock className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
             Timezone
           </label>
           <select
             value={formData.timezone || 'UTC'}
             onChange={(e) => handleChange('timezone', e.target.value)}
-            className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1] focus:outline-none"
           >
             <option value="UTC">UTC</option>
             <option value="America/New_York">Eastern Time (ET)</option>
@@ -228,41 +228,41 @@ function GeneralSettings() {
             <option value="Asia/Singapore">Singapore (SGT)</option>
             <option value="Australia/Sydney">Sydney (AEST)</option>
           </select>
-          <p className="text-xs text-slate-500">This timezone is used for agent scheduling and dashboard reporting.</p>
+          <p className="text-[11px] text-[#8a8f98]">This timezone is used for agent scheduling and dashboard reporting.</p>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 flex items-center">
-            <DollarSign className="w-4 h-4 mr-2 text-slate-400" />
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-[#8a8f98] flex items-center">
+            <DollarSign className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
             Default Currency
           </label>
           <select
             value="USD"
             disabled
-            className="w-full p-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed"
+            className="w-full p-2 border border-[#23252a] bg-[#141516] text-[#8a8f98] rounded-md text-xs cursor-not-allowed"
           >
             <option value="USD">USD ($)</option>
-            <option value="EUR">EUR (â‚¬)</option>
-            <option value="GBP">GBP (Â£)</option>
-            <option value="INR">INR (â‚¹)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="INR">INR (₹)</option>
           </select>
-          <p className="text-xs text-slate-500">Multi-currency support is planned for a future update.</p>
+          <p className="text-[11px] text-[#8a8f98]">Multi-currency support is planned for a future update.</p>
         </div>
 
         {/* Invoice Trash Retention (Auto-Purge) */}
-        <div className="pt-6 border-t border-slate-200 space-y-4">
+        <div className="pt-5 border-t border-[#23252a] space-y-4">
           <div>
-            <h4 className="text-sm font-semibold text-slate-900 flex items-center">
-              <Trash2 className="w-4 h-4 mr-2 text-slate-400" />
+            <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
+              <Trash2 className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
               Invoice Trash Retention
             </h4>
-            <p className="text-xs text-slate-500 mt-1">Configure automatic permanent deletion of trashed invoices.</p>
+            <p className="text-[11px] text-[#8a8f98] mt-0.5">Configure automatic permanent deletion of trashed invoices.</p>
           </div>
           
-          <div className="flex items-start justify-between gap-6 pt-2">
+          <div className="flex items-start justify-between gap-6 pt-1">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800">Automatic invoice purge</p>
-              <p className="text-xs text-slate-500 mt-0.5 leading-normal">
+              <p className="text-xs font-medium text-[#f7f8f8]">Automatic invoice purge</p>
+              <p className="text-[11px] text-[#8a8f98] mt-0.5 leading-relaxed">
                 When enabled, Jaktra will automatically and permanently delete invoices that have been in the Trash for more than the specified number of days.
               </p>
             </div>
@@ -273,19 +273,19 @@ function GeneralSettings() {
                   autoPurgeEnabled: !prev.autoPurgeEnabled 
                 }));
               }}
-              className={`flex-shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all duration-200 cursor-pointer shadow-sm ${
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-all cursor-pointer shadow-none ${
                 formData.autoPurgeEnabled
-                  ? 'bg-amber-50 text-amber-700 border-amber-250 hover:bg-amber-100'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  : 'bg-[#0f1011] text-[#8a8f98] border-[#23252a] hover:bg-[#141516]'
               }`}
             >
-              {formData.autoPurgeEnabled ? 'âœ“ Auto-Purge Enabled' : 'Auto-Purge Disabled'}
+              {formData.autoPurgeEnabled ? '✓ Auto-Purge Enabled' : 'Auto-Purge Disabled'}
             </button>
           </div>
 
           {formData.autoPurgeEnabled && (
-            <div className="space-y-2 max-w-xs animate-timeline-fade-in pt-2">
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+            <div className="space-y-1.5 max-w-xs pt-1">
+              <label className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider">
                 Retention Period (Days)
               </label>
               <input
@@ -299,20 +299,20 @@ function GeneralSettings() {
                     autoPurgeDays: isNaN(val) ? 7 : val 
                   }));
                 }}
-                className={`w-full p-2 border rounded-md text-sm font-medium transition-colors ${
-                  localError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500'
+                className={`w-full p-2 border rounded-md text-xs font-medium transition-colors bg-[#010102] text-[#f7f8f8] ${
+                  localError ? 'border-red-900/50 text-red-400' : 'border-[#23252a] focus:ring-1 focus:ring-[#5e69d1]'
                 }`}
               />
               {localError ? (
-                <p className="text-xs text-red-650 font-semibold">{localError}</p>
+                <p className="text-[11px] text-red-400 font-medium">{localError}</p>
               ) : (
-                <p className="text-[10px] text-slate-400 font-medium">Minimum retention is 7 days. Changes are saved automatically.</p>
+                <p className="text-[10px] text-[#8a8f98]">Minimum retention is 7 days. Changes are saved automatically.</p>
               )}
             </div>
           )}
 
-          <div className="pt-4 border-t border-slate-200/80 space-y-2 max-w-xs">
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+          <div className="pt-4 border-t border-[#23252a] space-y-1.5 max-w-xs">
+            <label className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider">
               Auto-delete Archived Disputes (Days)
             </label>
             <input
@@ -326,9 +326,9 @@ function GeneralSettings() {
                   autoPurgeArchivedDisputesDays: isNaN(val) ? 30 : val 
                 }));
               }}
-              className="w-full p-2 border border-slate-300 rounded-md text-sm font-medium focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-2 border border-[#23252a] bg-[#010102] text-[#f7f8f8] rounded-md text-xs font-medium focus:ring-1 focus:ring-[#5e69d1]"
             />
-            <p className="text-[10px] text-slate-400 font-medium">Archived disputes older than this number of days will be automatically deleted.</p>
+            <p className="text-[10px] text-[#8a8f98]">Archived disputes older than this number of days will be automatically deleted.</p>
           </div>
         </div>
       </CardContent>
@@ -338,11 +338,11 @@ function GeneralSettings() {
 
 function PlaceholderTab({ title, description }: { title: string; description: string }) {
   return (
-    <Card className="border-dashed border-2 bg-slate-50">
+    <Card className="border-dashed border border-[#23252a] bg-[#0f1011]">
       <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-        <SettingsIcon className="w-12 h-12 text-slate-300 mb-4" />
-        <h3 className="text-xl font-medium text-slate-700">{title}</h3>
-        <p className="text-slate-500 mt-2 max-w-sm">{description}</p>
+        <SettingsIcon className="w-10 h-10 text-[#3e3e44] mb-3" />
+        <h3 className="text-base font-medium text-[#f7f8f8]">{title}</h3>
+        <p className="text-[#8a8f98] text-xs mt-1 max-w-sm">{description}</p>
       </CardContent>
     </Card>
   );
@@ -393,7 +393,7 @@ function EmailSettings() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
       </div>
     );
   }
@@ -405,16 +405,16 @@ function EmailSettings() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border border-[#23252a] bg-[#0f1011]">
         <CardHeader>
-          <CardTitle>Email Configuration</CardTitle>
-          <CardDescription>Configure your email delivery providers and sender settings.</CardDescription>
+          <CardTitle className="text-base text-[#f7f8f8]">Email Configuration</CardTitle>
+          <CardDescription className="text-xs text-[#8a8f98]">Configure your email delivery providers and sender settings.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-5">
           {/* Line 1: Default Provider Selector */}
-          <div className="space-y-2 pb-4 border-b border-slate-100">
-            <label className="text-sm font-semibold text-slate-800">Default Email Provider</label>
-            <p className="text-xs text-slate-500">Select which provider should be used to send outgoing collection emails.</p>
+          <div className="space-y-2 pb-4 border-b border-[#23252a]">
+            <label className="text-xs font-semibold text-[#f7f8f8]">Default Email Provider</label>
+            <p className="text-[11px] text-[#8a8f98]">Select which provider should be used to send outgoing collection emails.</p>
             <div className="flex items-center space-x-6 pt-1">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
@@ -424,9 +424,9 @@ function EmailSettings() {
                   checked={sendgridProgress?.isActive || settings?.defaultEmailProvider === 'sendgrid'}
                   onChange={() => activateProviderMutation.mutate('sendgrid')}
                   disabled={sendgridProgress?.overallStatus !== 'active' && (!sendgrid?.isConfigured || sendgrid?.lastValidationResult !== 'valid')}
-                  className="text-blue-600 focus:ring-blue-500"
+                  className="text-[#5e6ad2] focus:ring-[#5e69d1]"
                 />
-                <span className="text-sm font-medium text-slate-700">SendGrid API</span>
+                <span className="text-xs font-medium text-[#f7f8f8]">SendGrid API</span>
               </label>
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
@@ -436,40 +436,40 @@ function EmailSettings() {
                   checked={smtpProgress?.isActive || settings?.defaultEmailProvider === 'smtp'}
                   onChange={() => activateProviderMutation.mutate('smtp')}
                   disabled={smtpProgress?.overallStatus !== 'active' && (!smtp?.isConfigured || smtp?.lastValidationResult !== 'valid')}
-                  className="text-blue-600 focus:ring-blue-500"
+                  className="text-[#5e6ad2] focus:ring-[#5e69d1]"
                 />
-                <span className="text-sm font-medium text-slate-700">Custom SMTP</span>
+                <span className="text-xs font-medium text-[#f7f8f8]">Custom SMTP</span>
               </label>
             </div>
             {!sendgridProgress?.isActive && !smtpProgress?.isActive && !settings?.defaultEmailProvider && (
-              <p className="text-xs text-red-500 font-medium mt-1">No default provider selected. Please configure a provider below.</p>
+              <p className="text-xs text-red-400 font-medium mt-1">No default provider selected. Please configure a provider below.</p>
             )}
           </div>
 
           {/* Line 2: Custom SMTP Row */}
-          <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="p-3.5 border border-[#23252a] rounded-lg bg-[#010102] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <span className={`w-3 h-3 rounded-full flex-shrink-0 ${smtpProgress?.isActive ? 'bg-emerald-500' : smtpProgress?.overallStatus === 'partially_configured' ? 'bg-amber-500' : smtp?.isConfigured ? (smtp.lastValidationResult === 'valid' ? 'bg-emerald-500' : 'bg-red-500') : 'bg-slate-300'}`} />
+              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${smtpProgress?.isActive ? 'bg-[#27a644]' : smtpProgress?.overallStatus === 'partially_configured' ? 'bg-amber-400' : smtp?.isConfigured ? (smtp.lastValidationResult === 'valid' ? 'bg-[#27a644]' : 'bg-red-400') : 'bg-[#3e3e44]'}`} />
               <div>
-                <h4 className="text-sm font-semibold text-slate-900 flex items-center">
+                <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
                   Custom SMTP
                   {smtpProgress?.isActive && (
-                    <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">Active âœ“</span>
+                    <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">Active ✓</span>
                   )}
                   {!smtpProgress?.isActive && smtpProgress?.overallStatus === 'active' && (
-                    <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">Ready to Activate</span>
+                    <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#5e6ad2] bg-[#5e6ad2]/10 px-2 py-0.5 rounded-full border border-[#5e6ad2]/20">Ready to Activate</span>
                   )}
                   {smtpProgress?.overallStatus === 'partially_configured' && (
-                    <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">Incomplete Setup</span>
+                    <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Incomplete Setup</span>
                   )}
                   {smtp?.isConfigured && smtp.lastValidationResult !== 'valid' && !smtpProgress && (
-                    <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">Invalid</span>
+                    <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-red-400 bg-red-950/40 px-2 py-0.5 rounded-full border border-red-900/50">Invalid</span>
                   )}
                 </h4>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-[11px] text-[#8a8f98] mt-0.5">
                   {smtpProgress?.overallStatus === 'active' || smtp?.isConfigured
                     ? `${smtpProgress?.step1ConnectionDetails.host || smtp?.displayHost}:${smtpProgress?.step1ConnectionDetails.port || smtp?.port} (${smtpProgress?.step1ConnectionDetails.username || smtp?.maskedUsername})`
-                    : 'Not configured â€” connect your SMTP server credentials.'}
+                    : 'Not configured — connect your SMTP server credentials.'}
                 </p>
               </div>
             </div>
@@ -477,21 +477,21 @@ function EmailSettings() {
               {smtpProgress?.overallStatus === 'active' && !smtpProgress?.isActive && (
                 <button
                   onClick={() => activateProviderMutation.mutate('smtp')}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 border border-blue-600 rounded-md shadow-sm transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] hover:bg-[#828fff] rounded-md transition-colors"
                 >
                   Activate
                 </button>
               )}
               <button
                 onClick={() => setSmtpModalOpen(true)}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md shadow-sm transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] hover:bg-[#141516] rounded-md transition-colors"
               >
                 {smtpProgress?.overallStatus === 'active' || smtp?.isConfigured ? 'Configure Settings' : 'Set Up SMTP'}
               </button>
               {(smtpProgress?.overallStatus !== 'not_configured' || smtp?.isConfigured) && (
                 <button
                   onClick={() => disconnectSmtpMutation.mutate()}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-red-600 bg-white border border-slate-300 hover:bg-red-50 rounded-md shadow-sm transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-red-400 bg-[#0f1011] border border-red-900/50 hover:bg-red-950/40 rounded-md transition-colors"
                 >
                   Remove
                 </button>
@@ -513,56 +513,56 @@ function EmailSettings() {
             const nextStep = !sendgrid?.isSenderConfigured ? 2 : 3;
 
             return (
-              <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="p-[#010102] p-3.5 border border-[#23252a] rounded-lg bg-[#010102] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center space-x-3">
                   <span
-                    className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                    className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                       isSendgridFullyActive
-                        ? 'bg-emerald-500'
+                        ? 'bg-[#27a644]'
                         : sendgrid?.isConfigured && sendgrid.lastValidationResult !== 'valid'
-                        ? 'bg-red-500'
+                        ? 'bg-red-400'
                         : isSendgridPartial
-                        ? 'bg-amber-500'
-                        : 'bg-slate-300'
+                        ? 'bg-amber-400'
+                        : 'bg-[#3e3e44]'
                     }`}
                   />
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-900 flex items-center">
+                    <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
                       SendGrid API
                       {isSendgridFullyActive && (
-                        <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                          Active âœ“
+                        <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">
+                          Active ✓
                         </span>
                       )}
                       {isSendgridPartial && (
-                        <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                        <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                           Incomplete Setup (Step {nextStep} of 3)
                         </span>
                       )}
                       {sendgrid?.isConfigured && sendgrid.lastValidationResult !== 'valid' && (
-                        <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">
+                        <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-red-400 bg-red-950/40 px-2 py-0.5 rounded-full border border-red-900/50">
                           Invalid Key
                         </span>
                       )}
                     </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-[11px] text-[#8a8f98] mt-0.5">
                       {isSendgridFullyActive
                         ? `Connected (${sendgrid?.senderEmail || settings?.senderEmail || 'Sender set'})`
                         : isSendgridPartial
-                        ? `API Key validated â€” Complete Step ${nextStep} to activate email sending.`
-                        : 'Not configured â€” connect your SendGrid API key and sender identity.'}
+                        ? `API Key validated — Complete Step ${nextStep} to activate email sending.`
+                        : 'Not configured — connect your SendGrid API key and sender identity.'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <button
                     onClick={() => setSendgridModalOpen(true)}
-                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-md shadow-sm transition-colors ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                       isSendgridFullyActive
-                        ? 'text-slate-700 bg-white border border-slate-300 hover:bg-slate-50'
+                        ? 'text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] hover:bg-[#141516]'
                         : isSendgridPartial
-                        ? 'text-white bg-blue-600 hover:bg-blue-700 border border-blue-600'
-                        : 'text-slate-700 bg-white border border-slate-300 hover:bg-slate-50'
+                        ? 'text-white bg-[#5e6ad2] hover:bg-[#828fff]'
+                        : 'text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] hover:bg-[#141516]'
                     }`}
                   >
                     {isSendgridFullyActive
@@ -574,7 +574,7 @@ function EmailSettings() {
                   {sendgrid?.isConfigured && (
                     <button
                       onClick={() => disconnectSendgridMutation.mutate()}
-                      className="px-3.5 py-1.5 text-xs font-semibold text-red-600 bg-white border border-slate-300 hover:bg-red-50 rounded-md shadow-sm transition-colors"
+                      className="px-3 py-1.5 text-xs font-medium text-red-400 bg-[#0f1011] border border-red-900/50 hover:bg-red-950/40 rounded-md transition-colors"
                     >
                       Remove
                     </button>
@@ -587,16 +587,16 @@ function EmailSettings() {
       </Card>
 
       {/* Agent Preferences */}
-      <Card>
+      <Card className="border border-[#23252a] bg-[#0f1011]">
         <CardHeader>
-          <CardTitle>Agent Preferences</CardTitle>
-          <CardDescription>Control how the AI agent behaves when sending follow-up emails.</CardDescription>
+          <CardTitle className="text-base text-[#f7f8f8]">Agent Preferences</CardTitle>
+          <CardDescription className="text-xs text-[#8a8f98]">Control how the AI agent behaves when sending follow-up emails.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-start justify-between gap-6">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900">Payment link warning</p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs font-medium text-[#f7f8f8]">Payment link warning</p>
+              <p className="text-[11px] text-[#8a8f98] mt-0.5">
                 When enabled, the agent will warn you before sending emails without a payment link.
               </p>
             </div>
@@ -607,13 +607,13 @@ function EmailSettings() {
                 }
               }}
               disabled={!settings?.skipPaymentWarning}
-              className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
                 settings?.skipPaymentWarning
-                  ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default'
+                  ? 'bg-[#0f1011] text-[#f7f8f8] border-[#23252a] hover:bg-[#141516]'
+                  : 'bg-[#27a644]/10 text-[#27a644] border-[#27a644]/20 cursor-default'
               }`}
             >
-              {settings?.skipPaymentWarning ? 'Re-enable Warning' : 'âœ“ Warning Active'}
+              {settings?.skipPaymentWarning ? 'Re-enable Warning' : '✓ Warning Active'}
             </button>
           </div>
         </CardContent>
@@ -712,55 +712,55 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#010102]/80 backdrop-blur-sm p-4">
+      <div className="bg-[#0f1011] rounded-xl shadow-none max-w-xl w-full border border-[#23252a] overflow-hidden flex flex-col max-h-[90vh] text-[#f7f8f8]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#23252a] bg-[#010102]">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Custom SMTP Configuration</h3>
-            <p className="text-xs text-slate-500">Configure your outbound email server credentials.</p>
+            <h3 className="text-sm font-bold text-[#f7f8f8]">Custom SMTP Configuration</h3>
+            <p className="text-[11px] text-[#8a8f98]">Configure your outbound email server credentials.</p>
           </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-md transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1 text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-6 space-y-4 overflow-y-auto">
           {errorMsg && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 font-medium">
+            <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 font-medium">
               {errorMsg}
             </div>
           )}
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700">Sender Name</label>
+            <label className="text-xs font-semibold text-[#8a8f98]">Sender Name</label>
             <input
               type="text"
               value={formData.senderName}
               onChange={(e) => setFormData({ ...formData, senderName: e.target.value })}
-              className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
               placeholder="e.g. Acme Billing"
             />
-            <p className="text-[11px] text-slate-500">The display name that customers will see on emails.</p>
+            <p className="text-[10px] text-[#8a8f98]">The display name that customers will see on emails.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">SMTP Host</label>
+              <label className="text-xs font-semibold text-[#8a8f98]">SMTP Host</label>
               <input
                 type="text"
                 value={formData.host}
                 onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                 placeholder="smtp.example.com"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Port</label>
+                <label className="text-xs font-semibold text-[#8a8f98]">Port</label>
                 <select
                   value={formData.port}
                   onChange={(e) => setFormData({ ...formData, port: Number(e.target.value) })}
-                  className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                 >
                   <option value="587">587 (STARTTLS)</option>
                   <option value="465">465 (Implicit TLS)</option>
@@ -768,11 +768,11 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Security</label>
+                <label className="text-xs font-semibold text-[#8a8f98]">Security</label>
                 <select
                   value={formData.securityMode}
                   onChange={(e) => setFormData({ ...formData, securityMode: e.target.value })}
-                  className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                 >
                   <option value="starttls">STARTTLS</option>
                   <option value="implicit_tls">Implicit TLS</option>
@@ -783,52 +783,52 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Username (Sender Email)</label>
+              <label className="text-xs font-semibold text-[#8a8f98]">Username (Sender Email)</label>
               <input
                 type="email"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                 placeholder="admin@example.com"
               />
-              <p className="text-[11px] text-slate-500">Emails will be sent from this authenticated account.</p>
+              <p className="text-[10px] text-[#8a8f98]">Emails will be sent from this authenticated account.</p>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">
+              <label className="text-xs font-semibold text-[#8a8f98]">
                 Password {integration?.isConfigured && '(Leave blank to keep)'}
               </label>
               <input
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                 placeholder={integration?.isConfigured ? '********' : 'Your SMTP password'}
               />
             </div>
           </div>
 
           {integration?.isConfigured && (
-            <div className="pt-4 border-t border-slate-100">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Send Test Email</h4>
+            <div className="pt-4 border-t border-[#23252a]">
+              <h4 className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider mb-2">Send Test Email</h4>
               <div className="flex gap-2">
                 <input
                   type="email"
                   value={testEmailInput}
                   onChange={(e) => setTestEmailInput(e.target.value)}
-                  className="flex-1 p-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500"
+                  className="flex-1 p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                   placeholder="recipient@example.com"
                 />
                 <button
                   onClick={() => testEmailInput && testEmailMutation.mutate(testEmailInput)}
                   disabled={testEmailStatus === 'sending' || !testEmailInput}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-semibold transition-colors flex items-center disabled:opacity-50"
+                  className="px-3.5 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-medium transition-colors flex items-center disabled:opacity-40"
                 >
                   {testEmailStatus === 'sending' ? (
                     <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Sending...</>
                   ) : testEmailStatus === 'success' ? (
-                    <><span className="text-emerald-400 font-bold mr-1.5">âœ“</span> Sent</>
+                    <><span className="text-[#27a644] font-bold mr-1.5">✓</span> Sent</>
                   ) : testEmailStatus === 'error' ? (
-                    <><span className="text-red-400 font-bold mr-1.5">âœ•</span> Failed</>
+                    <><span className="text-red-400 font-bold mr-1.5">✕</span> Failed</>
                   ) : (
                     <><Mail className="w-3.5 h-3.5 mr-1.5" /> Send Test</>
                   )}
@@ -838,17 +838,17 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#23252a] bg-[#010102]">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] hover:bg-[#141516] rounded-md transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saveMutation.isPending}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold transition-colors disabled:opacity-50 flex items-center"
+            className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-medium transition-colors disabled:opacity-40 flex items-center"
           >
             {saveMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
             {saveMutation.isPending ? 'Verifying & Saving...' : 'Verify & Save'}
@@ -866,31 +866,10 @@ interface SendGridSetupModalProps {
   refetch: () => Promise<unknown>;
 }
 
-/**
- * SendGrid Setup Wizard Modal
- *
- * ARCHITECTURE INVARIANTS (do not violate):
- *
- * 1. LOADING GATE: Modal body does NOT render until `sendgridProgress` has resolved.
- *    A loading skeleton is shown until then. This is the load-bearing guarantee that
- *    allows child step components to safely seed `mode` via `useState` initializer.
- *
- * 2. SINGLE SOURCE OF STEP NAVIGATION: `wizardStep` is set ONCE on first load via a
- *    `useRef` guard. After that, ONLY explicit `goToStep()` calls move `wizardStep`.
- *    Background refetches do NOT re-trigger the init effect and do NOT re-navigate.
- *
- * 3. FULL UNMOUNT ON CLOSE: `if (!isOpen) return null` guarantees step components
- *    fully unmount. Their `mode` state cannot persist across a close/reopen cycle.
- *
- * 4. NO VERIFICATION LOGIC IN PARENT: Step completion status (`isStep1Done` etc.) is
- *    read directly from `sendgridProgress.stepX.isDone` â€” never derived or compared.
- */
 function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: SendGridSetupModalProps) {
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  // One-time initialization guard: set step ONCE when progress first resolves.
-  // After the ref is set, background refetches will NOT re-trigger navigation.
   const hasInitializedStep = useRef(false);
   useEffect(() => {
     if (isOpen && sendgridProgress && !hasInitializedStep.current) {
@@ -902,13 +881,11 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
       setWizardStep(step);
       hasInitializedStep.current = true;
     }
-    // Reset ref on close so next open re-initializes correctly
     if (!isOpen) {
       hasInitializedStep.current = false;
     }
   }, [isOpen, sendgridProgress]);
 
-  // Full unmount on close â€” prevents stale state in child components
   if (!isOpen) return null;
 
   const goToStep = (step: 1 | 2 | 3) => {
@@ -925,99 +902,95 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
     }
   };
 
-  // Read step completion purely from server data â€” no derived comparisons
   const isStep1Done = sendgridProgress?.step1ApiKey.isDone ?? false;
   const isStep2Done = sendgridProgress?.step2SenderAndMode.isDone ?? false;
   const isStep3Done = sendgridProgress?.step3InboundWebhook.isDone ?? false;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#010102]/80 backdrop-blur-sm p-4">
+      <div className="bg-[#0f1011] rounded-xl shadow-none max-w-2xl w-full border border-[#23252a] overflow-hidden flex flex-col max-h-[90vh] text-[#f7f8f8]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#23252a] bg-[#010102]">
           <div>
-            <h3 className="text-base font-bold text-slate-900">SendGrid Integration Setup</h3>
-            <p className="text-xs text-slate-500">
+            <h3 className="text-sm font-bold text-[#f7f8f8]">SendGrid Integration Setup</h3>
+            <p className="text-[11px] text-[#8a8f98]">
               Step {wizardStep} of 3 - Complete all 3 steps to activate outbound email &amp; inbound webhook.
             </p>
           </div>
-          <button onClick={handleAttemptClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-md transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={handleAttemptClose} className="p-1 text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Step navigation bar */}
-        <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-xs font-semibold">
+        <div className="px-6 py-3 bg-[#010102] border-b border-[#23252a] flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-xs font-medium">
             <button type="button" onClick={() => goToStep(1)}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
-                wizardStep === 1 ? 'bg-blue-600 text-white font-bold'
-                  : isStep1Done ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                  : 'bg-slate-200 text-slate-600'
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full transition-colors ${
+                wizardStep === 1 ? 'bg-[#5e6ad2] text-white font-bold'
+                  : isStep1Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20'
+                  : 'bg-[#141516] text-[#8a8f98]'
               }`}>
               <span>1. API Key</span>
-              {isStep1Done && <Check className="w-3 h-3" />}
+              {isStep1Done && <Check className="w-3 h-3 text-[#27a644]" />}
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <ChevronRight className="w-3.5 h-3.5 text-[#3e3e44]" />
 
             <button type="button" disabled={!isStep1Done} onClick={() => isStep1Done && goToStep(2)}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
-                wizardStep === 2 ? 'bg-blue-600 text-white font-bold'
-                  : isStep2Done ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                  : !isStep1Done ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full transition-colors ${
+                wizardStep === 2 ? 'bg-[#5e6ad2] text-white font-bold'
+                  : isStep2Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20'
+                  : !isStep1Done ? 'bg-[#141516] text-[#8a8f98]/40 cursor-not-allowed'
+                  : 'bg-[#141516] text-[#8a8f98] hover:bg-[#18191a]'
               }`}>
               <span>2. Sender &amp; Mode</span>
-              {isStep2Done && <Check className="w-3 h-3" />}
+              {isStep2Done && <Check className="w-3 h-3 text-[#27a644]" />}
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <ChevronRight className="w-3.5 h-3.5 text-[#3e3e44]" />
 
             <button type="button" disabled={!isStep2Done} onClick={() => isStep2Done && goToStep(3)}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
-                wizardStep === 3 ? 'bg-blue-600 text-white font-bold'
-                  : isStep3Done ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                  : !isStep2Done ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full transition-colors ${
+                wizardStep === 3 ? 'bg-[#5e6ad2] text-white font-bold'
+                  : isStep3Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20'
+                  : !isStep2Done ? 'bg-[#141516] text-[#8a8f98]/40 cursor-not-allowed'
+                  : 'bg-[#141516] text-[#8a8f98] hover:bg-[#18191a]'
               }`}>
               <span>3. Webhook</span>
-              {isStep3Done && <Check className="w-3 h-3" />}
+              {isStep3Done && <Check className="w-3 h-3 text-[#27a644]" />}
             </button>
           </div>
-          <span className="text-xs font-bold text-slate-500">Step {wizardStep} of 3</span>
+          <span className="text-[11px] font-bold text-[#8a8f98]">Step {wizardStep} of 3</span>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-6 overflow-y-auto">
           {showExitConfirm && (
-            <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg space-y-2">
-              <p className="text-xs text-amber-900 font-semibold">
+            <div className="p-3.5 bg-amber-950/40 border border-amber-900/50 rounded-lg space-y-2">
+              <p className="text-xs text-amber-300 font-semibold">
                 SendGrid setup is incomplete. Exit before completing all 3 steps?
               </p>
               <div className="flex space-x-2">
                 <button type="button" onClick={() => setShowExitConfirm(false)}
-                  className="px-3 py-1.5 bg-amber-600 text-white text-xs font-semibold rounded hover:bg-amber-700 transition-colors">
+                  className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-medium rounded hover:bg-amber-500/30 transition-colors">
                   Continue Setup
                 </button>
                 <button type="button" onClick={() => { setShowExitConfirm(false); onClose(); }}
-                  className="px-3 py-1.5 bg-slate-200 text-slate-800 text-xs font-semibold rounded hover:bg-slate-300 transition-colors">
+                  className="px-3 py-1 bg-[#141516] text-[#8a8f98] border border-[#23252a] text-xs font-medium rounded hover:bg-[#18191a] transition-colors">
                   Exit Anyway
                 </button>
               </div>
             </div>
           )}
 
-          {/* LOADING GATE: block all step rendering until progress is resolved.
-              This is load-bearing â€” child components rely on progress being non-null
-              to safely seed their `mode` via useState initializer. */}
           {!sendgridProgress ? (
             <div className="space-y-4 animate-pulse">
-              <div className="h-6 bg-slate-100 rounded w-1/2" />
-              <div className="h-4 bg-slate-100 rounded w-full" />
-              <div className="h-4 bg-slate-100 rounded w-3/4" />
-              <div className="h-20 bg-slate-100 rounded w-full" />
-              <div className="h-10 bg-slate-100 rounded w-1/3 ml-auto" />
+              <div className="h-6 bg-[#141516] rounded w-1/2" />
+              <div className="h-4 bg-[#141516] rounded w-full" />
+              <div className="h-4 bg-[#141516] rounded w-3/4" />
+              <div className="h-20 bg-[#141516] rounded w-full" />
+              <div className="h-10 bg-[#141516] rounded w-1/3 ml-auto" />
             </div>
           ) : (
             <>
@@ -1049,23 +1022,23 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-xs font-medium text-slate-600">
+        <div className="px-6 py-4 border-t border-[#23252a] bg-[#010102] flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-[11px] font-medium text-[#8a8f98]">
             <span>Overall Progress:</span>
-            <span className={isStep1Done ? 'text-emerald-700 font-bold' : 'text-amber-700 font-semibold'}>
+            <span className={isStep1Done ? 'text-[#27a644] font-bold' : 'text-amber-400 font-semibold'}>
               Step 1 {isStep1Done ? '(done)' : '(pending)'}
             </span>
             <span>|</span>
-            <span className={isStep2Done ? 'text-emerald-700 font-bold' : 'text-amber-700 font-semibold'}>
+            <span className={isStep2Done ? 'text-[#27a644] font-bold' : 'text-amber-400 font-semibold'}>
               Step 2 {isStep2Done ? '(done)' : '(pending)'}
             </span>
             <span>|</span>
-            <span className={isStep3Done ? 'text-emerald-700 font-bold' : 'text-amber-700 font-semibold'}>
+            <span className={isStep3Done ? 'text-[#27a644] font-bold' : 'text-amber-400 font-semibold'}>
               Step 3 {isStep3Done ? '(done)' : '(pending)'}
             </span>
           </div>
           <button type="button" onClick={handleAttemptClose}
-            className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 text-xs font-medium transition-colors">
+            className="px-3.5 py-1.5 border border-[#23252a] rounded-md text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] text-xs font-medium transition-colors">
             Cancel
           </button>
         </div>
@@ -1073,7 +1046,6 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
     </div>
   );
 }
-
 
 function ProfileSettings() {
   const { user, updateUser } = useAuth();
@@ -1109,55 +1081,55 @@ function ProfileSettings() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border border-[#23252a] bg-[#0f1011]">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Profile Settings</CardTitle>
-              <CardDescription>Manage your personal profile and display settings.</CardDescription>
+              <CardTitle className="text-base text-[#f7f8f8]">Profile Settings</CardTitle>
+              <CardDescription className="text-xs text-[#8a8f98]">Manage your personal profile and display settings.</CardDescription>
             </div>
             <div className="flex items-center h-8">
-              {saveStatus === 'saving' && <span className="text-sm text-slate-500 flex items-center"><Loader2 className="w-3 h-3 animate-spin mr-2" /> Saving...</span>}
-              {saveStatus === 'saved' && <span className="text-sm text-emerald-600 flex items-center"><Save className="w-3 h-3 mr-2" /> Saved</span>}
+              {saveStatus === 'saving' && <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3 h-3 animate-spin mr-1.5" /> Saving...</span>}
+              {saveStatus === 'saved' && <span className="text-xs text-[#27a644] flex items-center"><Save className="w-3 h-3 mr-1.5" /> Saved</span>}
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Email Address</label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-[#8a8f98]">Email Address</label>
               <input
                 type="email"
                 value={user?.email || ''}
                 disabled
-                className="w-full p-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed"
+                className="w-full p-2 border border-[#23252a] rounded-md bg-[#141516] text-[#8a8f98] text-xs cursor-not-allowed"
               />
-              <p className="text-xs text-slate-500">Your email address is managed by your administrator and cannot be changed.</p>
+              <p className="text-[10px] text-[#8a8f98]">Your email address is managed by your administrator and cannot be changed.</p>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Display Name</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-[#8a8f98]">Display Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-[#23252a] bg-[#010102] rounded-md text-xs text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
                 placeholder="e.g. John Doe"
                 required
               />
             </div>
 
             {errorMessage && (
-              <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
+              <p className="text-xs text-red-400 font-medium">{errorMessage}</p>
             )}
 
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
                 disabled={saveStatus === 'saving' || name.trim() === user?.name}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+                className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-medium transition-colors disabled:opacity-40 flex items-center justify-center"
               >
-                {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
                 Save Changes
               </button>
             </div>
@@ -1176,3 +1148,4 @@ function ProfileSettings() {
     </div>
   );
 }
+
