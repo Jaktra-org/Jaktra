@@ -69,9 +69,9 @@ export function DebtorPortal() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-500 mb-4" />
-        <p className="text-slate-400 text-sm font-medium">Retrieving invoice details...</p>
+      <div className="min-h-screen bg-[#010102] flex flex-col items-center justify-center text-[#f7f8f8]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#5e6ad2] mb-3" />
+        <p className="text-[#8a8f98] text-xs font-medium">Retrieving invoice details...</p>
       </div>
     );
   }
@@ -79,13 +79,13 @@ export function DebtorPortal() {
   // Handle all validation failures (404, 410, or other connection errors) with the identical message
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-4">
-        <div className="max-w-md w-full bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-8 text-center shadow-xl">
-          <div className="h-14 w-14 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <AlertCircle className="h-8 w-8" />
+      <div className="min-h-screen bg-[#010102] flex flex-col items-center justify-center px-4">
+        <div className="max-w-md w-full bg-[#0f1011] border border-[#23252a] rounded-2xl p-8 text-center shadow-none">
+          <div className="h-12 w-12 bg-red-950/40 border border-red-900/50 text-red-400 rounded-full flex items-center justify-center mx-auto mb-5">
+            <AlertCircle className="h-6 w-6" />
           </div>
-          <h2 className="text-xl font-semibold text-slate-100 mb-2">Access Denied</h2>
-          <p className="text-slate-400 text-sm leading-relaxed">
+          <h2 className="text-lg font-semibold text-[#f7f8f8] mb-1.5">Access Denied</h2>
+          <p className="text-[#8a8f98] text-xs leading-relaxed">
             This link is no longer valid or does not exist.
           </p>
         </div>
@@ -99,25 +99,25 @@ export function DebtorPortal() {
     switch (status) {
       case 'Paid':
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
             Paid
           </span>
         );
       case 'Written Off':
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#141516] text-[#8a8f98] border border-[#23252a]">
             No payment due
           </span>
         );
       case 'Overdue':
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 animate-pulse">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-950/40 text-red-400 border border-red-900/50 animate-pulse">
             Overdue
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
             Pending
           </span>
         );
@@ -151,96 +151,91 @@ export function DebtorPortal() {
   const isResolved = invoice.paymentStatus === 'Paid' || invoice.paymentStatus === 'Written Off';
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8 text-slate-100 font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-indigo-500/5 blur-[120px]" />
-        <div className="absolute top-[40%] -right-40 h-[600px] w-[600px] rounded-full bg-purple-500/5 blur-[120px]" />
-      </div>
-
+    <div className="min-h-screen bg-[#010102] flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8 text-[#f7f8f8] font-sans selection:bg-[#5e6ad2]/30 selection:text-white">
       <div className="sm:mx-auto sm:w-full sm:max-w-xl relative">
         {/* Brand Header */}
-        <div className="flex items-center justify-center space-x-3 mb-8">
-          <div className="h-10 w-10 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <FileText className="h-5 w-5 text-white" />
+        <div className="flex items-center justify-center space-x-2.5 mb-8">
+          <div className="h-9 w-9 bg-[#5e6ad2] rounded-lg flex items-center justify-center shadow-none">
+            <FileText className="h-4 h-4 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="text-lg font-bold tracking-tight text-[#f7f8f8]">
             {tenant.companyName}
           </span>
         </div>
 
         {/* Invoice Main Dashboard */}
-        <div className="bg-slate-900/40 backdrop-blur-lg border border-slate-800 rounded-3xl shadow-2xl shadow-indigo-950/10 overflow-hidden">
+        <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl shadow-none overflow-hidden">
           {/* Hero Header Area */}
-          <div className="p-8 text-center border-b border-slate-800 bg-slate-900/20">
+          <div className="p-8 text-center border-b border-[#23252a] bg-[#010102]/40">
             <div className="mb-3">{getStatusBadge(invoice.paymentStatus)}</div>
-            <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-1">
+            <p className="text-[11px] text-[#8a8f98] uppercase tracking-wider font-semibold mb-1">
               Outstanding Amount
             </p>
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-b from-white to-slate-200 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-extrabold tracking-tight text-[#f7f8f8]">
               {formatCurrency(invoice.invoiceAmount, invoice.currency)}
             </h1>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-[#8a8f98] mt-2 font-mono">
               Invoice #{invoice.invoiceNo}
             </p>
           </div>
 
           {/* Details Section */}
-          <div className="p-8 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Client Info */}
-              <div className="flex items-start space-x-3">
-                <div className="h-9 w-9 bg-slate-800/80 rounded-lg flex items-center justify-center text-indigo-400 shrink-0">
-                  <CreditCard className="h-5 w-5" />
+              <div className="flex items-start space-x-3 p-3 bg-[#010102]/60 rounded-xl border border-[#23252a]">
+                <div className="h-8 w-8 bg-[#141516] rounded-lg flex items-center justify-center text-[#5e6ad2] shrink-0 mt-0.5">
+                  <CreditCard className="h-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 font-medium">Billed To</p>
-                  <p className="text-sm font-semibold text-slate-200 mt-1">{invoice.clientName}</p>
+                  <p className="text-[10px] text-[#8a8f98] font-medium uppercase tracking-wider">Billed To</p>
+                  <p className="text-xs font-semibold text-[#f7f8f8] mt-0.5">{invoice.clientName}</p>
                 </div>
               </div>
 
               {/* Due Date */}
-              <div className="flex items-start space-x-3">
-                <div className="h-9 w-9 bg-slate-800/80 rounded-lg flex items-center justify-center text-indigo-400 shrink-0">
-                  <Calendar className="h-5 w-5" />
+              <div className="flex items-start space-x-3 p-3 bg-[#010102]/60 rounded-xl border border-[#23252a]">
+                <div className="h-8 w-8 bg-[#141516] rounded-lg flex items-center justify-center text-[#5e6ad2] shrink-0 mt-0.5">
+                  <Calendar className="h-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 font-medium">Due Date</p>
-                  <p className="text-sm font-semibold text-slate-200 mt-1">{formatDate(invoice.dueDate)}</p>
+                  <p className="text-[10px] text-[#8a8f98] font-medium uppercase tracking-wider">Due Date</p>
+                  <p className="text-xs font-semibold text-[#f7f8f8] mt-0.5">{formatDate(invoice.dueDate)}</p>
                 </div>
               </div>
             </div>
 
             {/* Pay Now or Plan Section */}
             {!isResolved && (
-              <div className="pt-6 border-t border-slate-800 space-y-6">
+              <div className="pt-5 border-t border-[#23252a] space-y-5">
                 {/* Tab Headers */}
-                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800/80">
+                <div className="flex bg-[#010102] p-1 rounded-xl border border-[#23252a]">
                   <button
                     onClick={() => setActiveTab('pay')}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition ${
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
                       activeTab === 'pay'
-                        ? 'bg-slate-900 text-slate-100 shadow'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#141516] text-[#f7f8f8] border border-[#23252a]'
+                        : 'text-[#8a8f98] hover:text-[#f7f8f8]'
                     }`}
                   >
                     Pay Invoice
                   </button>
                   <button
                     onClick={() => setActiveTab('plan')}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition ${
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
                       activeTab === 'plan'
-                        ? 'bg-slate-900 text-slate-100 shadow'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#141516] text-[#f7f8f8] border border-[#23252a]'
+                        : 'text-[#8a8f98] hover:text-[#f7f8f8]'
                     }`}
                   >
                     Payment Plan
                   </button>
                   <button
                     onClick={() => setActiveTab('dispute')}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition ${
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
                       activeTab === 'dispute'
-                        ? 'bg-slate-900 text-slate-100 shadow'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#141516] text-[#f7f8f8] border border-[#23252a]'
+                        : 'text-[#8a8f98] hover:text-[#f7f8f8]'
                     }`}
                   >
                     Raise Dispute
@@ -251,17 +246,17 @@ export function DebtorPortal() {
                 {activeTab === 'pay' && (
                   <div className="space-y-4">
                     {payError && (
-                      <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start space-x-3 text-red-400">
-                        <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3.5 flex items-start space-x-3 text-red-400">
+                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                         <p className="text-xs">{payError}</p>
                       </div>
                     )}
                     {invoice.hasActivePaymentPlan ? (
-                      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-start space-x-3 text-emerald-400">
-                        <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3 text-[#27a644]">
+                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-xs font-semibold">Payment Plan Active</h4>
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
                             This invoice is currently under an active payment plan. Automated collection reminders are paused.
                           </p>
                         </div>
@@ -273,11 +268,11 @@ export function DebtorPortal() {
                           payMutation.mutate();
                         }}
                         disabled={payMutation.isPending}
-                        className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 flex items-center justify-center space-x-2"
+                        className="w-full py-3 px-5 rounded-md bg-[#5e6ad2] hover:bg-[#828fff] text-white font-medium text-xs shadow-none disabled:opacity-40 transition duration-150 flex items-center justify-center space-x-2"
                       >
                         {payMutation.isPending ? (
                           <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             <span>Generating payment checkout...</span>
                           </>
                         ) : (
@@ -293,30 +288,30 @@ export function DebtorPortal() {
                   <div className="space-y-4">
                     {invoice.hasActivePaymentPlan ? (
                       <div className="space-y-4">
-                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-start space-x-3 text-emerald-400">
-                          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                        <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3 text-[#27a644]">
+                          <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                           <div>
                             <h4 className="text-xs font-semibold">Payment Plan Active</h4>
-                            <p className="text-[11px] text-slate-400 mt-1">
+                            <p className="text-[11px] text-[#8a8f98] mt-0.5">
                               This invoice is currently under an active payment plan. Automated collection reminders are paused.
                             </p>
                           </div>
                         </div>
 
                         {installmentsData?.data && installmentsData.data.length > 0 && (
-                          <div className="space-y-2 pt-2">
-                            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Agreed Installment Schedule</h4>
-                            <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800 text-xs">
+                          <div className="space-y-2 pt-1">
+                            <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider">Agreed Installment Schedule</h4>
+                            <div className="bg-[#010102] border border-[#23252a] rounded-xl overflow-hidden divide-y divide-[#23252a] text-xs">
                               {installmentsData.data.map((item) => (
                                 <div key={item.id} className="p-3 flex justify-between items-center">
                                   <div>
-                                    <span className="font-semibold text-slate-200">Installment #{item.installmentNumber}</span>
-                                    <span className="block text-[11px] text-slate-500">Due {formatDate(item.dueDate)}</span>
+                                    <span className="font-semibold text-[#f7f8f8]">Installment #{item.installmentNumber}</span>
+                                    <span className="block text-[11px] text-[#8a8f98]">Due {formatDate(item.dueDate)}</span>
                                   </div>
                                   <div className="text-right">
-                                    <span className="font-semibold text-indigo-400">{formatCurrency(item.amount, item.currency)}</span>
+                                    <span className="font-semibold text-[#5e6ad2]">{formatCurrency(item.amount, item.currency)}</span>
                                     <span className={`block text-[10px] font-semibold uppercase ${
-                                      item.status === 'paid' ? 'text-emerald-400' : item.status === 'overdue' ? 'text-rose-400' : 'text-amber-400'
+                                      item.status === 'paid' ? 'text-[#27a644]' : item.status === 'overdue' ? 'text-red-400' : 'text-amber-400'
                                     }`}>
                                       {item.status}
                                     </span>
@@ -328,33 +323,33 @@ export function DebtorPortal() {
                         )}
                       </div>
                     ) : invoice.hasPendingPaymentPlan ? (
-                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex items-start space-x-3 text-amber-400">
-                        <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start space-x-3 text-amber-400">
+                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-xs font-semibold">Request Pending Review</h4>
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
                             Your request for a payment plan is pending review by our management team. We will notify you once a decision is made.
                           </p>
                         </div>
                       </div>
                     ) : planSuccess ? (
-                      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-start space-x-3 text-emerald-400">
-                        <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3 text-[#27a644]">
+                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-xs font-semibold">Request Submitted</h4>
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
                             Your request for a payment plan has been submitted successfully.
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3.5">
                         <div>
-                          <label className="block text-xs font-medium text-slate-400 mb-1">Installment Count</label>
+                          <label className="block text-xs font-medium text-[#8a8f98] mb-1">Installment Count</label>
                           <select
                             value={installments}
                             onChange={(e) => setInstallments(parseInt(e.target.value))}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="w-full bg-[#010102] border border-[#23252a] rounded-md px-3 py-2 text-xs text-[#f7f8f8] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
                           >
                             <option value={3}>3 Months</option>
                             <option value={6}>6 Months</option>
@@ -365,27 +360,27 @@ export function DebtorPortal() {
                           </select>
                         </div>
 
-                        <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs">
-                          <span className="text-slate-400">Monthly Amount:</span>
-                          <span className="font-semibold text-slate-200">
+                        <div className="bg-[#010102] p-2.5 rounded-lg border border-[#23252a] flex justify-between items-center text-xs">
+                          <span className="text-[#8a8f98]">Monthly Amount:</span>
+                          <span className="font-semibold text-[#f7f8f8]">
                             {formatCurrency((parseFloat(invoice.invoiceAmount) / installments).toString(), invoice.currency)} / month
                           </span>
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-slate-400 mb-1">Reason for request</label>
+                          <label className="block text-xs font-medium text-[#8a8f98] mb-1">Reason for request</label>
                           <textarea
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             rows={3}
                             placeholder="Please provide a brief reason..."
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="w-full bg-[#010102] border border-[#23252a] rounded-md px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
                           />
                         </div>
 
                         {planError && (
-                          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start space-x-3 text-red-400">
-                            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                          <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex items-start space-x-2.5 text-red-400">
+                            <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                             <p className="text-xs">{planError}</p>
                           </div>
                         )}
@@ -396,11 +391,11 @@ export function DebtorPortal() {
                             planMutation.mutate();
                           }}
                           disabled={planMutation.isPending}
-                          className="w-full py-3 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition duration-200 flex items-center justify-center space-x-2"
+                          className="w-full py-2.5 px-4 rounded-md bg-[#5e6ad2] hover:bg-[#828fff] text-white font-medium text-xs transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-40"
                         >
                           {planMutation.isPending ? (
                             <>
-                              <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               <span>Submitting Plan...</span>
                             </>
                           ) : (
@@ -416,31 +411,31 @@ export function DebtorPortal() {
                 {activeTab === 'dispute' && (
                   <div className="space-y-4">
                     {disputeSuccess ? (
-                      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-start space-x-3 text-emerald-400">
-                        <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3 text-[#27a644]">
+                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-xs font-semibold">Dispute Submitted</h4>
-                          <p className="text-[11px] text-slate-400 mt-1">
+                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
                             Your dispute has been submitted and will be reviewed by our team.
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3.5">
                         <div>
-                          <label className="block text-xs font-medium text-slate-400 mb-1">Reason for dispute</label>
+                          <label className="block text-xs font-medium text-[#8a8f98] mb-1">Reason for dispute</label>
                           <textarea
                             value={disputeReason}
                             onChange={(e) => setDisputeReason(e.target.value)}
                             rows={4}
                             placeholder="Please explain the reason for raising a dispute..."
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="w-full bg-[#010102] border border-[#23252a] rounded-md px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
                           />
                         </div>
 
                         {disputeError && (
-                          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start space-x-3 text-red-400">
-                            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                          <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex items-start space-x-2.5 text-red-400">
+                            <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                             <p className="text-xs">{disputeError}</p>
                           </div>
                         )}
@@ -451,11 +446,11 @@ export function DebtorPortal() {
                             disputeMutation.mutate();
                           }}
                           disabled={disputeMutation.isPending}
-                          className="w-full py-3 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition duration-200 flex items-center justify-center space-x-2"
+                          className="w-full py-2.5 px-4 rounded-md bg-[#5e6ad2] hover:bg-[#828fff] text-white font-medium text-xs transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-40"
                         >
                           {disputeMutation.isPending ? (
                             <>
-                              <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               <span>Submitting Dispute...</span>
                             </>
                           ) : (
@@ -471,16 +466,16 @@ export function DebtorPortal() {
 
             {/* Success Banner if Resolved */}
             {invoice.paymentStatus === 'Paid' && (
-              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-start space-x-3">
-                <div className="h-6 w-6 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-sm font-bold">✓</span>
+              <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3">
+                <div className="h-5 w-5 bg-[#27a644]/20 text-[#27a644] rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-xs font-bold">✓</span>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-emerald-400">Payment Resolved</h4>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <h4 className="text-xs font-semibold text-[#27a644]">Payment Resolved</h4>
+                  <p className="text-xs text-[#8a8f98] mt-0.5">
                     Thank you. This invoice is settled and requires no further action.
                     {invoice.paymentStatusChangedAt && (
-                      <span className="block mt-1 text-[11px] text-slate-500">
+                      <span className="block mt-1 text-[11px] text-[#8a8f98]">
                         Resolved on {formatDate(invoice.paymentStatusChangedAt)}
                       </span>
                     )}
@@ -490,13 +485,13 @@ export function DebtorPortal() {
             )}
 
             {invoice.paymentStatus === 'Written Off' && (
-              <div className="bg-slate-500/5 border border-slate-500/20 rounded-2xl p-4 flex items-start space-x-3">
-                <div className="h-6 w-6 bg-slate-500/10 text-slate-400 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-sm font-bold">✓</span>
+              <div className="bg-[#141516] border border-[#23252a] rounded-xl p-4 flex items-start space-x-3">
+                <div className="h-5 w-5 bg-[#23252a] text-[#8a8f98] rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-xs font-bold">✓</span>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-300">Invoice Inactive</h4>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <h4 className="text-xs font-semibold text-[#f7f8f8]">Invoice Inactive</h4>
+                  <p className="text-xs text-[#8a8f98] mt-0.5">
                     No payment is currently due on this invoice.
                   </p>
                 </div>
@@ -508,10 +503,11 @@ export function DebtorPortal() {
 
       {/* Brand Footer */}
       <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center mt-12 relative z-10">
-        <p className="text-xs text-slate-500">
+        <p className="text-[11px] text-[#8a8f98]">
           Secured by Jaktra Payment Infrastructure.
         </p>
       </div>
     </div>
   );
 }
+

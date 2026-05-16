@@ -1,61 +1,91 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
+  /* Linear Surface Ladder */
+  --color-canvas: #010102;
+  --color-surface-1: #0f1011;
+  --color-surface-2: #141516;
+  --color-surface-3: #18191a;
+  --color-surface-4: #191a1b;
 
-  --color-success-50: #f0fdf4;
-  --color-success-500: #22c55e;
-  --color-success-600: #16a34a;
+  /* Linear Hairline Borders */
+  --color-hairline: #23252a;
+  --color-hairline-strong: #34343a;
+  --color-hairline-tertiary: #3e3e44;
 
-  --color-warning-50: #fffbeb;
+  /* Linear Signature Lavender-Blue Accent */
+  --color-primary-50: #eeeffb;
+  --color-primary-100: #d6d9f7;
+  --color-primary-500: #5e6ad2;
+  --color-primary-600: #5e69d1;
+  --color-primary-700: #4a54b3;
+  --color-primary-hover: #828fff;
+
+  /* Linear Ink / Typography */
+  --color-ink: #f7f8f8;
+  --color-ink-muted: #d0d6e0;
+  --color-ink-subtle: #8a8f98;
+  --color-ink-tertiary: #62666d;
+
+  /* Semantics */
+  --color-success-500: #27a644;
+  --color-success-600: #1e8735;
   --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
+  --color-danger-500: #eb5757;
 
-  --color-danger-50: #fef2f2;
-  --color-danger-500: #ef4444;
-  --color-danger-600: #dc2626;
-
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
-  --color-muted: #f8fafc;
-  --color-muted-foreground: #64748b;
-  --color-border: #e2e8f0;
+  /* Generic Mappings for Tailwind compatibility */
+  --color-background: #010102;
+  --color-foreground: #f7f8f8;
+  --color-muted: #0f1011;
+  --color-muted-foreground: #8a8f98;
+  --color-border: #23252a;
 }
 
 @layer base {
   :root {
-    --background: var(--color-background);
-    --foreground: var(--color-foreground);
-    --muted: var(--color-muted);
-    --muted-foreground: var(--color-muted-foreground);
-    --border: var(--color-border);
+    --background: #010102;
+    --foreground: #f7f8f8;
+    --surface-1: #0f1011;
+    --surface-2: #141516;
+    --surface-3: #18191a;
+    --muted: #0f1011;
+    --muted-foreground: #8a8f98;
+    --border: #23252a;
+    --hairline: #23252a;
+    --primary: #5e6ad2;
+    --primary-hover: #828fff;
   }
 
-  .dark {
-    --background: #0f172a; /* Slate 900 */
-    --foreground: #f8fafc; /* Slate 50 */
-    --muted: #1e293b; /* Slate 800 */
-    --muted-foreground: #94a3b8; /* Slate 400 */
-    --border: #334155; /* Slate 700 */
-  }
-}
-
-@layer base {
   * {
     border-color: var(--border);
   }
-  body {
+  
+  html, body {
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    color-scheme: dark;
   }
+}
+
+/* Custom Scrollbar for Linear Aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #010102;
+}
+::-webkit-scrollbar-thumb {
+  background: #23252a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #34343a;
 }
 
 @keyframes timelineFadeIn {
@@ -72,3 +102,4 @@
 .animate-timeline-fade-in {
   animation: timelineFadeIn 0.25s ease-out forwards;
 }
+
