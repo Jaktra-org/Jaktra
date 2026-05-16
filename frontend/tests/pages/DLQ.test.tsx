@@ -96,8 +96,8 @@ describe('DLQ page', () => {
     // Confirm dialog is open
     expect(screen.getByText('Dismiss DLQ Entry?')).toBeInTheDocument();
 
-    // Click confirm dismiss (the bg-red-600 button inside the confirmation overlay)
-    const confirmBtn = screen.getAllByRole('button', { name: /^Dismiss$/i }).find(btn => btn.classList.contains('bg-red-600'))!;
+    // Click confirm dismiss (the bg-red-950/40 button inside the confirmation overlay)
+    const confirmBtn = screen.getAllByRole('button', { name: /^Dismiss$/i }).find(btn => btn.classList.contains('bg-red-950/40'))!;
     await act(async () => {
       confirmBtn.click();
     });
