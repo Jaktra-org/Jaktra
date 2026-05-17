@@ -7,7 +7,7 @@ import { eventService } from "../services/event";
 import { formatCurrencyUSD } from "../utils/format";
 import { 
   FileText, TrendingUp, DollarSign, Loader2, Clock, Zap, AlertCircle, 
-  ChevronRight, Plus, Bot, MessageSquare, AlertTriangle, History
+  ChevronRight, Plus, Bot, MessageSquare, AlertTriangle, History, Search
 } from "lucide-react";
 import { getErrorMessage } from "../utils/error-utils";
 
@@ -62,29 +62,43 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 text-[#f7f8f8]">
-      {/* Top Action Bar */}
-      <div className="flex items-center justify-end space-x-2.5">
-        <Link
-          to="/invoices"
-          className="px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-medium transition-colors flex items-center shadow-sm"
-        >
-          <Plus className="w-3.5 h-3.5 mr-1.5" />
-          Invoices
-        </Link>
-        <Link
-          to="/agent"
-          className="px-3 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] hover:border-[#34343a] rounded-md text-xs font-medium transition-colors flex items-center"
-        >
-          <Bot className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-          Run Agent
-        </Link>
-        <Link
-          to="/disputes"
-          className="px-3 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] hover:border-[#34343a] rounded-md text-xs font-medium transition-colors flex items-center"
-        >
-          <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
-          Disputes
-        </Link>
+      {/* Top Bar with Search & Quick Action Buttons */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Sleek Non-Functional Global Search Bar */}
+        <div className="relative flex items-center w-full sm:w-80">
+          <Search className="absolute left-3 w-3.5 h-3.5 text-[#8a8f98] pointer-events-none" />
+          <input
+            type="text"
+            readOnly
+            placeholder="Search invoices, customers..."
+            className="w-full pl-9 pr-3 py-1.5 border border-[#23252a] bg-[#0f1011] rounded-md text-xs text-[#8a8f98] placeholder-[#62666d] focus:outline-none cursor-default select-none shadow-sm"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center space-x-2.5 flex-shrink-0">
+          <Link
+            to="/invoices"
+            className="px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-medium transition-colors flex items-center shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            Invoices
+          </Link>
+          <Link
+            to="/agent"
+            className="px-3 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] hover:border-[#34343a] rounded-md text-xs font-medium transition-colors flex items-center"
+          >
+            <Bot className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
+            Run Agent
+          </Link>
+          <Link
+            to="/disputes"
+            className="px-3 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] hover:border-[#34343a] rounded-md text-xs font-medium transition-colors flex items-center"
+          >
+            <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+            Disputes
+          </Link>
+        </div>
       </div>
 
       {isSummaryError && (
