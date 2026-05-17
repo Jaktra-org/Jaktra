@@ -8,7 +8,8 @@ import { eventService } from "../services/event";
 import { formatCurrencyUSD } from "../utils/format";
 import { 
   FileText, DollarSign, Loader2, Clock, Zap, AlertCircle, 
-  ChevronRight, Plus, AlertTriangle, History, Search
+  ChevronRight, Plus, AlertTriangle, History, Search, MessageSquare,
+  Bot, TrendingUp
 } from "lucide-react";
 import { getErrorMessage } from "../utils/error-utils";
 import { CreateInvoiceModal } from "../components/invoices/CreateInvoiceModal";
