@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Bot, BarChart3, AlertTriangle, Settings, History, MessageSquare } from "lucide-react";
+import { Home, FileText, Bot, BarChart3, AlertTriangle, Settings, History, MessageSquare } from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -13,7 +13,7 @@ export function AppLayout() {
   const location = useLocation();
 
   const navItems = [
-    { label: "Dashboard", path: "/", icon: LayoutDashboard },
+    { label: "Home", path: "/", icon: Home },
     { label: "Invoices", path: "/invoices", icon: FileText },
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Payment Plans", path: "/payment-plans", icon: FileText }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Disputes", path: "/disputes", icon: MessageSquare }] : []),
@@ -70,7 +70,7 @@ export function AppLayout() {
   const currentNavItem = allNavItems.find(item => 
     item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path)
   );
-  const breadcrumb = currentNavItem ? currentNavItem.label : "Dashboard";
+  const breadcrumb = currentNavItem ? currentNavItem.label : "Home";
 
   return (
     <div className="flex h-screen w-full bg-[#010102] text-[#f7f8f8] overflow-hidden">

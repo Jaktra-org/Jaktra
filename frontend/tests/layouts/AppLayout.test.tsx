@@ -14,7 +14,7 @@ describe('AppLayout layout component', () => {
     });
 
     // Check all admin sidebar link items exist
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Invoices' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Agent' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'DLQ' })).toBeInTheDocument();
@@ -32,7 +32,7 @@ describe('AppLayout layout component', () => {
       },
     });
 
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Invoices' })).toBeInTheDocument();
     
     // Restricted links should NOT render
@@ -51,6 +51,6 @@ describe('AppLayout layout component', () => {
       },
     });
 
-    expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Home').length).toBeGreaterThan(0);
   });
 });

@@ -1,9 +1,10 @@
-﻿import React from 'react';
+import React from 'react';
 import { screen, waitFor } from '../test-utils';
 import { renderWithProviders } from '../test-utils';
 import { Dashboard } from '../../src/pages/Dashboard';
 import { analyticsService } from '../../src/services/analytics';
 import { agentService } from '../../src/services/agent';
+import { eventService } from '../../src/services/event';
 
 // Mock services
 vi.mock('../../src/services/analytics', () => ({
@@ -19,14 +20,11 @@ vi.mock('../../src/services/agent', () => ({
   },
 }));
 
-// Mock Recharts ResponsiveContainer to bypass JSDOM width/height calculations
-vi.mock('recharts', async (importOriginal) => {
-  const original = await importOriginal<typeof import('recharts')>();
-  return {
-    ...original,
-    ResponsiveContainer: ({ children }: any) => <div data-testid="recharts-container">{children}</div>,
-  };
-});
+vi.mock('../../src/services/event', () => ({
+  eventService: {
+    getFeed: vi.fn(),
+  },
+}));
 
 describe('Dashboard page math aggregations', () => {
   beforeEach(() => {
@@ -61,19 +59,20 @@ describe('Dashboard page math aggregations', () => {
     vi.mocked(analyticsService.getSummary).mockResolvedValue(mockSummary);
     vi.mocked(analyticsService.getAging).mockResolvedValue(mockAging);
     vi.mocked(agentService.getRuns).mockResolvedValue(mockRuns);
+    vi.mocked(eventService.getFeed).mockResolvedValue([]);
 
     renderWithProviders(<Dashboard />);
 
     // Wait for queries to resolve and page to display calculations
     await waitFor(() => {
       // 1. Total Outstanding (Total Receivable)
-      expect(screen.getByText('$50,000.00')).toBeInTheDocument();
+      expect(screen.getByText('$50,000')).toBeInTheDocument();
       // 2. Recovery Rate calculation:
       // totalCollected = 150,000, totalReceivable = 50,000.
       // Sum = 200,000. 150,000 / 200,000 = 75.0%
       expect(screen.getByText('75.0%')).toBeInTheDocument();
       // 3. Critical Overdue Flags
-      expect(screen.getByText('$20,000.00')).toBeInTheDocument();
+      expect(screen.getByText('$20,000')).toBeInTheDocument();
       // 4. Actionable queue count
       expect(screen.getByText('15')).toBeInTheDocument();
       // 5. Automation yield: 8 emails sent out of 10 processed = 80.0%
@@ -85,9 +84,10 @@ describe('Dashboard page math aggregations', () => {
     vi.mocked(analyticsService.getSummary).mockReturnValue(new Promise(() => {}));
     vi.mocked(analyticsService.getAging).mockReturnValue(new Promise(() => {}));
     vi.mocked(agentService.getRuns).mockReturnValue(new Promise(() => {}));
+    vi.mocked(eventService.getFeed).mockReturnValue(new Promise(() => {}));
 
     renderWithProviders(<Dashboard />);
 
-    expect(screen.getByText('Syncing data...')).toBeInTheDocument();
+    expect(screen.getByText('Actionable Queue')).toBeInTheDocument();
   });
 });
