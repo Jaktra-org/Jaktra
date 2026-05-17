@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/Card";
@@ -6,12 +7,15 @@ import { agentService } from "../services/agent";
 import { eventService } from "../services/event";
 import { formatCurrencyUSD } from "../utils/format";
 import { 
-  FileText, TrendingUp, DollarSign, Loader2, Clock, Zap, AlertCircle, 
-  ChevronRight, Plus, Bot, MessageSquare, AlertTriangle, History, Search
+  FileText, DollarSign, Loader2, Clock, Zap, AlertCircle, 
+  ChevronRight, Plus, AlertTriangle, History, Search
 } from "lucide-react";
 import { getErrorMessage } from "../utils/error-utils";
+import { CreateInvoiceModal } from "../components/invoices/CreateInvoiceModal";
 
 export function Dashboard() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   const { data: summaryData, isLoading: isSummaryLoading, isError: isSummaryError, error: summaryError } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: () => analyticsService.getSummary(),
@@ -38,15 +42,9 @@ export function Dashboard() {
 
   const isLoading = isSummaryLoading || isRunsLoading;
 
-  const formatPercent = (val: number) => `${val.toFixed(1)}%`;
-
   // Calculations
   const actionableQueue = summaryData?.invoiceCount || 0;
   const totalExposure = summaryData?.totalReceivable || 0;
-  const totalCollected = summaryData?.totalCollected || 0;
-  const recoveryRate = (totalCollected + totalExposure) > 0 
-    ? (totalCollected / (totalCollected + totalExposure)) * 100 
-    : 0;
   const criticalFlags = summaryData?.totalOverdue || 0;
 
   // Dispatch Performance Calculations
@@ -62,7 +60,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 text-[#f7f8f8]">
-      {/* Top Bar with Search & Quick Action Buttons */}
+      {/* Top Bar with Search & Quick Action Button */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Sleek Non-Functional Global Search Bar */}
         <div className="relative flex items-center w-full sm:w-80">
@@ -75,29 +73,15 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Button */}
         <div className="flex items-center space-x-2.5 flex-shrink-0">
-          <Link
-            to="/invoices"
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
             className="px-3 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-md text-xs font-medium transition-colors flex items-center shadow-sm"
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
             Invoices
-          </Link>
-          <Link
-            to="/agent"
-            className="px-3 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] hover:border-[#34343a] rounded-md text-xs font-medium transition-colors flex items-center"
-          >
-            <Bot className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-            Run Agent
-          </Link>
-          <Link
-            to="/disputes"
-            className="px-3 py-1.5 bg-[#141516] hover:bg-[#18191a] text-[#f7f8f8] border border-[#23252a] hover:border-[#34343a] rounded-md text-xs font-medium transition-colors flex items-center"
-          >
-            <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
-            Disputes
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -109,7 +93,7 @@ export function Dashboard() {
       )}
 
       {/* Top Metric KPI Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3">
         {/* Actionable Queue */}
         <Card className="border border-[#23252a] bg-[#0f1011] hover:border-[#34343a] transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
@@ -149,20 +133,6 @@ export function Dashboard() {
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-red-400" /> : formatCurrencyUSD(criticalFlags)}
             </div>
             <p className="text-[11px] text-red-400/80 font-medium mt-1">Overdue Balance</p>
-          </CardContent>
-        </Card>
-
-        {/* Recovery Rate */}
-        <Card className="border border-[#23252a] bg-[#0f1011] hover:border-[#34343a] transition-all">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-xs font-medium text-[#8a8f98]">Recovery Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-[#27a644]" />
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-bold text-[#27a644]">
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#27a644]" /> : formatPercent(recoveryRate)}
-            </div>
-            <p className="text-[11px] text-[#8a8f98] mt-1">Collected vs Total Billed</p>
           </CardContent>
         </Card>
       </div>
@@ -306,6 +276,11 @@ export function Dashboard() {
           </Card>
         </div>
       </div>
+
+      <CreateInvoiceModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { invoiceService } from "../services/invoice";
 import type { ListInvoicesParams, Invoice } from "../types/api";
 import { Card } from "../components/ui/Card";
@@ -29,6 +29,7 @@ import { getErrorMessage } from "../utils/error-utils";
 export function Invoices() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [params, setParams] = useState<ListInvoicesParams>({
     page: 1,
     limit: 50,
@@ -38,12 +39,23 @@ export function Invoices() {
   const [isTrashView, setIsTrashView] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    return Boolean(window.history.state?.usr?.openCreateModal || searchParams.get('action') === 'create');
+  });
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const queryClient = useQueryClient();
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (location.state?.openCreateModal || searchParams.get('action') === 'create') {
+      setIsCreateModalOpen(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const hardDeleteMutation = useMutation({
     mutationFn: (id: string) => invoiceService.hardDeleteInvoice(id),
