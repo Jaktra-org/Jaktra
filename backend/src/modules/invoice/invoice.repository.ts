@@ -164,6 +164,11 @@ export class InvoiceRepository {
     clientName?: string;
     daysOverdueMin?: number;
     daysOverdueMax?: number;
+    urgencyTier?: string;
+    hasPaymentPlan?: boolean;
+    followupStatus?: 'none' | 'has_followups';
+    minAmount?: number;
+    maxAmount?: number;
   }): Promise<{ data: Invoice[]; total: number }> {
     const conditions = [
       eq(invoices.tenantId, params.tenantId),
@@ -176,17 +181,18 @@ export class InvoiceRepository {
     if (params.clientName) {
       conditions.push(ilike(invoices.clientName, `%${params.clientName}%`));
     }
-    
-    if (params.daysOverdueMin !== undefined) {
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() - params.daysOverdueMin);
-      conditions.push(lte(invoices.dueDate, targetDate.toISOString().split('T')[0] as string));
+
+    if (params.hasPaymentPlan !== undefined) {
+      conditions.push(eq(invoices.hasActivePaymentPlan, params.hasPaymentPlan));
     }
-    if (params.daysOverdueMax !== undefined) {
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() - params.daysOverdueMax);
-      conditions.push(gte(invoices.dueDate, targetDate.toISOString().split('T')[0] as string));
+
+    if (params.followupStatus === 'none') {
+      conditions.push(eq(invoices.followupCount, 0));
+    } else if (params.followupStatus === 'has_followups') {
+      conditions.push(gte(invoices.followupCount, 1));
     }
+
+
 
     const whereClause = and(...conditions);
 

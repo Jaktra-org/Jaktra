@@ -3,12 +3,18 @@ import type { Invoice, ListInvoicesParams, PaginatedResponse } from '../types/ap
 
 export const invoiceService = {
   getInvoices: async (params: ListInvoicesParams = {}): Promise<PaginatedResponse<Invoice>> => {
-    // Convert arrays to comma-separated strings for the backend
-    const queryParams: Record<string, string | number | string[] | undefined> = { ...params };
-    if (params.status && params.status.length > 0) {
-      queryParams.status = params.status.join(',');
-    }
-
+    // Convert arrays and booleans for the backend
+    const queryParams: Record<string, string | number | undefined> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (Array.isArray(value)) {
+        queryParams[key] = value.join(',');
+      } else if (typeof value === 'boolean') {
+        queryParams[key] = value ? 'true' : 'false';
+      } else {
+        queryParams[key] = value as string | number;
+      }
+    });
 
     const response = await api.get('/invoices', { params: queryParams });
     return response.data;
@@ -56,7 +62,17 @@ export const invoiceService = {
   },
 
   getTrashedInvoices: async (params: Omit<ListInvoicesParams, 'status'> = {}): Promise<PaginatedResponse<Invoice>> => {
-    const queryParams: Record<string, string | number | string[] | undefined> = { ...params };
+    const queryParams: Record<string, string | number | undefined> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (Array.isArray(value)) {
+        queryParams[key] = value.join(',');
+      } else if (typeof value === 'boolean') {
+        queryParams[key] = value ? 'true' : 'false';
+      } else {
+        queryParams[key] = value as string | number;
+      }
+    });
     const response = await api.get('/invoices/trash', { params: queryParams });
     return response.data;
   },

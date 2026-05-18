@@ -230,6 +230,11 @@ export class InvoiceController {
         clientName: params.client_name,
         daysOverdueMin: params.days_overdue_min,
         daysOverdueMax: params.days_overdue_max,
+        urgencyTier: params.urgency_tier,
+        hasPaymentPlan: params.has_payment_plan,
+        followupStatus: params.followup_status,
+        minAmount: params.min_amount,
+        maxAmount: params.max_amount,
       });
 
       const triageService = new TriageService();
@@ -285,13 +290,33 @@ export class InvoiceController {
         };
       });
 
+      let finalData = dataWithDaysOverdue.map(inv => inv);
+      if (params.days_overdue_min !== undefined) {
+        finalData = finalData.filter(inv => inv.daysOverdue >= params.days_overdue_min!);
+      }
+      if (params.days_overdue_max !== undefined) {
+        finalData = finalData.filter(inv => inv.daysOverdue <= params.days_overdue_max!);
+      }
+
+      if (params.needs_review !== undefined) {
+        finalData = finalData.filter(inv => inv.needsManualReview === params.needs_review);
+      }
+      if (params.min_amount !== undefined) {
+        finalData = finalData.filter(inv => Number(inv.invoiceAmount) >= params.min_amount!);
+      }
+      if (params.max_amount !== undefined) {
+        finalData = finalData.filter(inv => Number(inv.invoiceAmount) <= params.max_amount!);
+      }
+
+      const hasCustomFilter = params.days_overdue_min !== undefined || params.days_overdue_max !== undefined || params.needs_review !== undefined || params.min_amount !== undefined || params.max_amount !== undefined;
+
       res.status(200).json({
-        data: dataWithDaysOverdue,
+        data: finalData,
         pagination: {
-          total: result.total,
+          total: hasCustomFilter ? finalData.length : result.total,
           page: params.page,
           limit: params.limit,
-          totalPages: Math.ceil(result.total / params.limit),
+          totalPages: Math.ceil((hasCustomFilter ? finalData.length : result.total) / params.limit),
         }
       });
     } catch (error: unknown) {

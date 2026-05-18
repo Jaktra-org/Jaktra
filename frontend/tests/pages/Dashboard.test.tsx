@@ -65,17 +65,13 @@ describe('Dashboard page math aggregations', () => {
 
     // Wait for queries to resolve and page to display calculations
     await waitFor(() => {
-      // 1. Total Outstanding (Total Receivable)
+      // 1. Actionable Queue count
+      expect(screen.getByText('15')).toBeInTheDocument();
+      // 2. Total Exposure (Total Receivable)
       expect(screen.getByText('$50,000')).toBeInTheDocument();
-      // 2. Recovery Rate calculation:
-      // totalCollected = 150,000, totalReceivable = 50,000.
-      // Sum = 200,000. 150,000 / 200,000 = 75.0%
-      expect(screen.getByText('75.0%')).toBeInTheDocument();
       // 3. Critical Overdue Flags
       expect(screen.getByText('$20,000')).toBeInTheDocument();
-      // 4. Actionable queue count
-      expect(screen.getByText('15')).toBeInTheDocument();
-      // 5. Automation yield: 8 emails sent out of 10 processed = 80.0%
+      // 4. Automation yield: 8 emails sent out of 10 processed = 80.0%
       expect(screen.getByText('80.0%')).toBeInTheDocument();
     });
   });

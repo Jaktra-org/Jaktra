@@ -23,9 +23,13 @@ import {
   FileText,
   AlertCircle,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  X,
+  Scale,
+  SlidersHorizontal
 } from "lucide-react";
 import { getErrorMessage } from "../utils/error-utils";
+
 export function Invoices() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -38,6 +42,7 @@ export function Invoices() {
   });
   const [isTrashView, setIsTrashView] = useState(false);
   const [searchInput, setSearchInput] = useState('');
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -49,11 +54,62 @@ export function Invoices() {
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
 
+  const activeFilterCount = [
+    params.urgency_tier,
+    params.has_payment_plan !== undefined,
+    params.needs_review !== undefined,
+    params.followup_status,
+    params.min_amount !== undefined,
+    params.max_amount !== undefined,
+    params.aging_bucket || (params.days_overdue_min !== undefined || params.days_overdue_max !== undefined),
+  ].filter(Boolean).length;
+
+  const handleClearFilters = () => {
+    setParams(prev => ({
+      page: 1,
+      limit: prev.limit,
+      sort_by: prev.sort_by,
+      order: prev.order,
+      status: prev.status,
+      client_name: prev.client_name
+    }));
+  };
+
+  const handleAgingBucket = (bucket: string) => {
+    setParams(prev => {
+      const next = { ...prev, page: 1 };
+      if (bucket === '0_7') {
+        next.days_overdue_min = 0;
+        next.days_overdue_max = 7;
+        next.aging_bucket = '0_7';
+      } else if (bucket === '8_14') {
+        next.days_overdue_min = 8;
+        next.days_overdue_max = 14;
+        next.aging_bucket = '8_14';
+      } else if (bucket === '15_30') {
+        next.days_overdue_min = 15;
+        next.days_overdue_max = 30;
+        next.aging_bucket = '15_30';
+      } else if (bucket === '30_plus') {
+        next.days_overdue_min = 31;
+        next.days_overdue_max = undefined;
+        next.aging_bucket = '30_plus';
+      } else {
+        next.days_overdue_min = undefined;
+        next.days_overdue_max = undefined;
+        next.aging_bucket = undefined;
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     if (location.state?.openCreateModal || searchParams.get('action') === 'create') {
-      setIsCreateModalOpen(true);
-      navigate(location.pathname, { replace: true, state: {} });
+      setTimeout(() => {
+        setIsCreateModalOpen(true);
+        navigate(location.pathname, { replace: true, state: {} });
+      }, 0);
     }
   }, [location, navigate]);
 
@@ -220,9 +276,10 @@ export function Invoices() {
       )}
 
       <Card className="flex flex-col border border-[#23252a] bg-[#0f1011]">
-        {/* Filters */}
-        <div className="p-3.5 border-b border-[#23252a] flex flex-col sm:flex-row gap-3 justify-between items-center bg-[#010102]/60">
-          <div className="flex items-center space-x-1 bg-[#141516] p-1 rounded-md border border-[#23252a]">
+        {/* Filters Top Header */}
+        <div className="p-3.5 border-b border-[#23252a] flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-[#010102]/60">
+          {/* Main Status Tabs */}
+          <div className="flex items-center space-x-1 bg-[#141516] p-1 rounded-md border border-[#23252a] flex-wrap gap-y-1">
             {['All', 'Pending', 'Overdue', 'Paid'].map((status) => (
               <button
                 key={status}
@@ -249,17 +306,178 @@ export function Invoices() {
             </button>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#62666d]" />
-            <input
-              type="text"
-              placeholder="Search clients..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="flex h-8.5 w-full rounded-md border border-[#23252a] bg-[#0f1011] px-3 py-1.5 pl-8.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e69d1] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
-            />
+          {/* Search & Filter Drawer Toggle */}
+          <div className="flex items-center space-x-2">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#62666d]" />
+              <input
+                type="text"
+                placeholder="Search clients or invoice #..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="flex h-8.5 w-full rounded-md border border-[#23252a] bg-[#0f1011] px-3 py-1.5 pl-8.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e69d1] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
+              />
+            </div>
+
+            <button
+              onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+              className={`inline-flex items-center justify-center rounded-md text-xs font-medium transition-all border h-8.5 px-3 gap-1.5 ${
+                isFilterPanelOpen || activeFilterCount > 0
+                  ? 'bg-[#5e6ad2]/10 border-[#5e6ad2]/40 text-[#5e6ad2]'
+                  : 'bg-[#0f1011] border-[#23252a] text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#141516]'
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 bg-[#5e6ad2] text-white text-[10px] rounded-full font-bold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
+
+
+
+        {/* Expandable Advanced Multi-Filter Drawer Panel */}
+        {isFilterPanelOpen && !isTrashView && (
+          <div className="p-4 border-b border-[#23252a] bg-[#141516]/80 space-y-3 transition-all animate-in fade-in duration-150">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-[#f7f8f8] flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#5e6ad2]" /> Advanced Filter Controls
+              </h3>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={handleClearFilters}
+                  className="text-[11px] text-[#5e6ad2] hover:text-[#828fff] transition-colors underline"
+                >
+                  Reset all filters
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {/* Aging Bucket */}
+              <div>
+                <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Aging Bucket</label>
+                <select
+                  value={params.aging_bucket || ''}
+                  onChange={(e) => handleAgingBucket(e.target.value)}
+                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                >
+                  <option value="">All Aging Buckets</option>
+                  <option value="0_7">0 - 7 Days Overdue</option>
+                  <option value="8_14">8 - 14 Days Overdue</option>
+                  <option value="15_30">15 - 30 Days Overdue</option>
+                  <option value="30_plus">30+ Days Overdue</option>
+                </select>
+              </div>
+
+              {/* Payment Plan */}
+              <div>
+                <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Payment Plan Status</label>
+                <select
+                  value={params.has_payment_plan === undefined ? '' : params.has_payment_plan ? 'true' : 'false'}
+                  onChange={(e) => setParams(prev => ({
+                    ...prev,
+                    page: 1,
+                    has_payment_plan: e.target.value === 'true' ? true : e.target.value === 'false' ? false : undefined
+                  }))}
+                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                >
+                  <option value="">All</option>
+                  <option value="true">Active Payment Plan</option>
+                  <option value="false">No Payment Plan</option>
+                </select>
+              </div>
+
+              {/* Follow-up Status */}
+              <div>
+                <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Follow-up History</label>
+                <select
+                  value={params.followup_status || ''}
+                  onChange={(e) => setParams(prev => ({ ...prev, page: 1, followup_status: (e.target.value as ListInvoicesParams['followup_status']) || undefined }))}
+                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                >
+                  <option value="">All History</option>
+                  <option value="none">No Follow-ups (0)</option>
+                  <option value="has_followups">1+ Follow-ups Sent</option>
+                </select>
+              </div>
+
+              {/* Min Amount */}
+              <div>
+                <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Min Amount ($)</label>
+                <input
+                  type="number"
+                  placeholder="Min $"
+                  value={params.min_amount || ''}
+                  onChange={(e) => setParams(prev => ({ ...prev, page: 1, min_amount: e.target.value ? Number(e.target.value) : undefined }))}
+                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Active Filter Pills Strip */}
+        {activeFilterCount > 0 && !isTrashView && (
+          <div className="px-3.5 py-2 border-b border-[#23252a]/60 bg-[#08080a] flex items-center justify-between gap-2 flex-wrap text-xs">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-[#8a8f98]">Active Filters:</span>
+
+              {params.urgency_tier && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#5e6ad2]/20 border border-[#5e6ad2]/40 text-[#828fff] text-[11px]">
+                  Stage: {params.urgency_tier.replace(/_/g, ' ')}
+                  <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, urgency_tier: undefined }))} />
+                </span>
+              )}
+
+              {params.has_payment_plan !== undefined && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[11px]">
+                  Plan: {params.has_payment_plan ? 'Active' : 'None'}
+                  <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, has_payment_plan: undefined }))} />
+                </span>
+              )}
+
+              {params.needs_review !== undefined && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px]">
+                  Needs Review
+                  <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, needs_review: undefined }))} />
+                </span>
+              )}
+
+              {params.followup_status && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px]">
+                  Follow-ups: {params.followup_status === 'none' ? '0' : '1+'}
+                  <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, followup_status: undefined }))} />
+                </span>
+              )}
+
+              {params.aging_bucket && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[11px]">
+                  Aging: {params.aging_bucket.replace('_', '-')}d
+                  <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => handleAgingBucket('')} />
+                </span>
+              )}
+
+              {params.min_amount !== undefined && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[11px]">
+                  Min: ${params.min_amount}
+                  <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, min_amount: undefined }))} />
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={handleClearFilters}
+              className="text-[11px] text-[#8a8f98] hover:text-[#f7f8f8] transition-colors flex items-center gap-1"
+            >
+              <X className="w-3 h-3" /> Clear All
+            </button>
+          </div>
+        )}
 
         {/* Table */}
         <div className="relative w-full overflow-auto">
@@ -334,7 +552,7 @@ export function Invoices() {
                         <>
                           <FileText className="h-10 w-10 text-[#3e3e44] mb-3" />
                           <p className="text-sm font-medium text-[#f7f8f8]">No invoices found</p>
-                          <p className="text-xs mt-0.5">Adjust your filters or add a new invoice to get started.</p>
+                          <p className="text-xs mt-0.5">Adjust your filter options to see matching invoices.</p>
                         </>
                       )}
                     </div>
@@ -361,7 +579,7 @@ export function Invoices() {
                       {new Date(invoice.dueDate).toLocaleDateString()}
                     </td>
                     <td className="p-3.5 px-4 align-middle">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <Badge variant={
                           invoice.paymentStatus === 'Paid' ? 'success' :
                           invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
@@ -416,59 +634,89 @@ export function Invoices() {
                   </tr>
                 ))
               ) : (
-                activeData!.data.map((invoice) => (
-                  <tr 
-                    key={invoice.id} 
-                    onClick={() => navigate(`/invoices/${invoice.id}`)}
-                    className="transition-colors hover:bg-[#141516]/60 cursor-pointer"
-                  >
-                    <td className="p-3.5 px-4 align-middle font-medium text-[#f7f8f8]">
-                      {invoice.invoiceNo}
-                    </td>
-                    <td className="p-3.5 px-4 align-middle">
-                      <div className="font-medium text-[#f7f8f8]">{invoice.clientName}</div>
-                      <div className="text-[11px] text-[#8a8f98]">{invoice.contactEmail}</div>
-                    </td>
-                    <td className="p-3.5 px-4 align-middle text-[#f7f8f8]">
-                      {formatCurrency(invoice.invoiceAmount)}
-                    </td>
-                    <td className="p-3.5 px-4 align-middle text-[#d0d6e0]">
-                      <div>
-                        {new Date(invoice.dueDate).toLocaleDateString()}
-                        {invoice.hasActivePaymentPlan && (
-                          <span className="block text-[10px] text-[#5e6ad2] font-medium">
-                            {invoice.activeInstallmentNumber ? `Inst #${invoice.activeInstallmentNumber} Due` : 'Payment Plan'}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-3.5 px-4 align-middle">
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant={
-                          invoice.paymentStatus === 'Paid' ? 'success' : 
-                          invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
-                        }>
-                          {invoice.paymentStatus}
-                        </Badge>
-                        {invoice.needsManualReview && (
-                          <Badge variant="warning" className="bg-amber-500/10 text-amber-400 border-amber-500/30" title="Blocked due to DLQ failures">
-                            Manual Review
+                activeData!.data.map((invoice) => {
+                  const isLegalEscalation = invoice.urgencyTier === 'legal_escalation' || (invoice.daysOverdue !== undefined && invoice.daysOverdue > 30);
+
+                  return (
+                    <tr 
+                      key={invoice.id} 
+                      onClick={() => navigate(`/invoices/${invoice.id}`)}
+                      className={`transition-colors hover:bg-[#141516]/60 cursor-pointer ${
+                        isLegalEscalation ? 'bg-red-950/10 hover:bg-red-950/20' : ''
+                      }`}
+                    >
+                      <td className="p-3.5 px-4 align-middle font-medium text-[#f7f8f8]">
+                        <div className="flex items-center gap-1.5">
+                          {invoice.invoiceNo}
+                          {isLegalEscalation && (
+                            <span title="Legal Escalation (>30d Overdue)">
+                              <Scale className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3.5 px-4 align-middle">
+                        <div className="font-medium text-[#f7f8f8]">{invoice.clientName}</div>
+                        <div className="text-[11px] text-[#8a8f98]">{invoice.contactEmail}</div>
+                      </td>
+                      <td className="p-3.5 px-4 align-middle font-semibold text-[#f7f8f8]">
+                        {formatCurrency(invoice.invoiceAmount)}
+                      </td>
+                      <td className="p-3.5 px-4 align-middle text-[#d0d6e0]">
+                        <div>
+                          {new Date(invoice.dueDate).toLocaleDateString()}
+                          {invoice.hasActivePaymentPlan && (
+                            <span className="block text-[10px] text-purple-400 font-medium">
+                              {invoice.activeInstallmentNumber ? `Inst #${invoice.activeInstallmentNumber} Due` : 'Payment Plan'}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3.5 px-4 align-middle">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant={
+                            invoice.paymentStatus === 'Paid' ? 'success' : 
+                            invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
+                          }>
+                            {invoice.paymentStatus}
                           </Badge>
+
+                          {isLegalEscalation && (
+                            <Badge variant="danger" className="bg-red-500/10 text-red-400 border-red-500/30 font-medium">
+                              Legal Escalation
+                            </Badge>
+                          )}
+
+                          {invoice.hasActivePaymentPlan && (
+                            <Badge variant="success" className="bg-purple-500/10 text-purple-300 border-purple-500/30">
+                              Payment Plan
+                            </Badge>
+                          )}
+
+                          {invoice.needsManualReview && (
+                            <Badge variant="warning" className="bg-amber-500/10 text-amber-400 border-amber-500/30" title="Blocked due to DLQ failures">
+                              Manual Review
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3.5 px-4 align-middle">
+                        {invoice.daysOverdue && invoice.daysOverdue > 0 ? (
+                          <span className={`font-medium ${isLegalEscalation ? 'text-red-400 font-semibold' : 'text-amber-400'}`}>
+                            {invoice.daysOverdue} days
+                          </span>
+                        ) : (
+                          <span className="text-[#62666d]">0 days</span>
                         )}
-                      </div>
-                    </td>
-                    <td className="p-3.5 px-4 align-middle">
-                      {invoice.daysOverdue && invoice.daysOverdue > 0 ? (
-                        <span className="font-medium text-red-400">{invoice.daysOverdue} days</span>
-                      ) : (
-                        <span className="text-[#62666d]">0 days</span>
-                      )}
-                    </td>
-                    <td className="p-3.5 px-4 align-middle text-[#d0d6e0]">
-                      {invoice.followupCount}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="p-3.5 px-4 align-middle text-[#d0d6e0]">
+                        <span className="px-2 py-0.5 rounded bg-[#141516] border border-[#23252a] text-[11px]">
+                          {invoice.followupCount} sent
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -113,6 +113,13 @@ export interface ListInvoicesParams {
   client_name?: string;
   days_overdue_min?: number;
   days_overdue_max?: number;
+  urgency_tier?: 'stage_1_warm' | 'stage_2_firm' | 'stage_3_serious' | 'stage_4_stern' | 'legal_escalation';
+  has_payment_plan?: boolean;
+  needs_review?: boolean;
+  followup_status?: 'none' | 'has_followups';
+  min_amount?: number;
+  max_amount?: number;
+  aging_bucket?: '0_7' | '8_14' | '15_30' | '30_plus';
 }
 
 export interface AnalyticsSummary {
