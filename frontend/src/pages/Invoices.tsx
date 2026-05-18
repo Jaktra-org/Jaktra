@@ -34,15 +34,54 @@ export function Invoices() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [params, setParams] = useState<ListInvoicesParams>({
-    page: 1,
-    limit: 50,
-    sort_by: 'createdAt',
-    order: 'desc'
+  const [params, setParams] = useState<ListInvoicesParams>(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const initial: ListInvoicesParams = {
+      page: 1,
+      limit: 50,
+      sort_by: 'createdAt',
+      order: 'desc'
+    };
+
+    const aging = searchParams.get('aging_bucket');
+    if (aging === '30_plus') {
+      initial.aging_bucket = '30_plus';
+      initial.days_overdue_min = 31;
+    } else if (aging === '0_7') {
+      initial.aging_bucket = '0_7';
+      initial.days_overdue_min = 0;
+      initial.days_overdue_max = 7;
+    } else if (aging === '8_14') {
+      initial.aging_bucket = '8_14';
+      initial.days_overdue_min = 8;
+      initial.days_overdue_max = 14;
+    } else if (aging === '15_30') {
+      initial.aging_bucket = '15_30';
+      initial.days_overdue_min = 15;
+      initial.days_overdue_max = 30;
+    }
+
+    if (searchParams.get('has_payment_plan') === 'true') {
+      initial.has_payment_plan = true;
+    }
+
+    if (searchParams.get('urgency_tier')) {
+      initial.urgency_tier = searchParams.get('urgency_tier') as ListInvoicesParams['urgency_tier'];
+    }
+
+    return initial;
   });
+
   const [isTrashView, setIsTrashView] = useState(false);
   const [searchInput, setSearchInput] = useState('');
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    return Boolean(
+      searchParams.get('aging_bucket') || 
+      searchParams.get('has_payment_plan') || 
+      searchParams.get('urgency_tier')
+    );
+  });
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -102,6 +141,42 @@ export function Invoices() {
       return next;
     });
   };
+  const [prevSearch, setPrevSearch] = useState(location.search);
+
+  if (prevSearch !== location.search) {
+    setPrevSearch(location.search);
+    const searchParams = new URLSearchParams(location.search);
+    const hasAging = searchParams.get('aging_bucket');
+    const hasPlan = searchParams.get('has_payment_plan');
+    const hasTier = searchParams.get('urgency_tier');
+    const hasMinAmt = searchParams.get('min_amount');
+
+    if (hasAging || hasPlan || hasTier || hasMinAmt) {
+      setIsFilterPanelOpen(true);
+      setParams(prev => {
+        const next = { ...prev, page: 1 };
+        if (hasAging === '30_plus') {
+          next.aging_bucket = '30_plus';
+          next.days_overdue_min = 31;
+          next.days_overdue_max = undefined;
+        } else if (hasAging === '15_30') {
+          next.aging_bucket = '15_30';
+          next.days_overdue_min = 15;
+          next.days_overdue_max = 30;
+        }
+        if (hasPlan === 'true') {
+          next.has_payment_plan = true;
+        }
+        if (hasTier) {
+          next.urgency_tier = hasTier as ListInvoicesParams['urgency_tier'];
+        }
+        if (hasMinAmt) {
+          next.min_amount = Number(hasMinAmt);
+        }
+        return next;
+      });
+    }
+  }
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);

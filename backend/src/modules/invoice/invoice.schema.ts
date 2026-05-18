@@ -37,10 +37,11 @@ export const listInvoicesSchema = z.object({
   days_overdue_min: z.coerce.number().optional(),
   days_overdue_max: z.coerce.number().optional(),
   urgency_tier: z.enum(['stage_1_warm', 'stage_2_firm', 'stage_3_serious', 'stage_4_stern', 'legal_escalation']).optional(),
+  aging_bucket: z.enum(['0_7', '8_14', '15_30', '30_plus']).optional(),
   has_payment_plan: z.preprocess((val) => val === 'true' || val === true ? true : (val === 'false' || val === false ? false : undefined), z.boolean().optional()),
   needs_review: z.preprocess((val) => val === 'true' || val === true ? true : (val === 'false' || val === false ? false : undefined), z.boolean().optional()),
   followup_status: z.enum(['none', 'has_followups']).optional(),
   min_amount: z.coerce.number().optional(),
   max_amount: z.coerce.number().optional(),
-});
+}).passthrough();
 

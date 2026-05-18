@@ -1,4 +1,4 @@
-import { eq, and, isNull, isNotNull, desc, asc, ilike, inArray, count, lte, gte } from 'drizzle-orm';
+import { eq, and, isNull, isNotNull, desc, asc, ilike, inArray, count, lte, gte, sql } from 'drizzle-orm';
 import { invoices, paymentPlanRequests } from '../../db/index.js';
 import type { DatabaseClient, DatabaseOrTransaction } from '../../db/index.js';
 import type { Invoice, NewInvoice } from '../../db/index.js';
@@ -193,6 +193,30 @@ export class InvoiceRepository {
     }
 
 
+
+    if (params.daysOverdueMin !== undefined) {
+      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) >= ${params.daysOverdueMin}`);
+    }
+    if (params.daysOverdueMax !== undefined) {
+      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) <= ${params.daysOverdueMax}`);
+    }
+    if (params.urgencyTier === 'legal_escalation') {
+      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) >= 31`);
+    } else if (params.urgencyTier === 'stage_4_stern') {
+      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 22 AND 30`);
+    } else if (params.urgencyTier === 'stage_3_serious') {
+      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 15 AND 21`);
+    } else if (params.urgencyTier === 'stage_2_firm') {
+      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 8 AND 14`);
+    } else if (params.urgencyTier === 'stage_1_warm') {
+      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 1 AND 7`);
+    }
+    if (params.minAmount !== undefined) {
+      conditions.push(gte(invoices.invoiceAmount, String(params.minAmount)));
+    }
+    if (params.maxAmount !== undefined) {
+      conditions.push(lte(invoices.invoiceAmount, String(params.maxAmount)));
+    }
 
     const whereClause = and(...conditions);
 

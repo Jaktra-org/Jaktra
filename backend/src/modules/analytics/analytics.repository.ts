@@ -47,7 +47,7 @@ export class AnalyticsRepository {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt),
-      eq(invoices.paymentStatus, 'Overdue')
+      sql`${invoices.paymentStatus} != 'Paid' AND ${invoices.dueDate} < CURRENT_DATE()`
     );
 
     if (fromDate) {

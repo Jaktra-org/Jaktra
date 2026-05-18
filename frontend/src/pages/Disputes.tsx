@@ -64,16 +64,45 @@ const CATEGORY_QUICK_INSTRUCTIONS: Record<string, { chips: string[]; placeholder
   },
 };
 
+import { useLocation } from 'react-router-dom';
+
 export function Disputes() {
   const queryClient = useQueryClient();
-  const [activeStatus, setActiveStatus] = useState<DisputeStatus>('pending');
-  const [activeCategory, setActiveCategory] = useState<DisputeTab>('all');
+  const location = useLocation();
+  const [activeStatus, setActiveStatus] = useState<DisputeStatus>(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const s = searchParams.get('status');
+    if (s === 'pending' || s === 'resolved' || s === 'all') return s as DisputeStatus;
+    return 'pending';
+  });
+  const [activeCategory, setActiveCategory] = useState<DisputeTab>(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const cat = searchParams.get('category') || searchParams.get('classification');
+    if (cat === 'dispute' || cat === 'question' || cat === 'payment_promise' || cat === 'unclear' || cat === 'all') {
+      return cat as DisputeTab;
+    }
+    return 'all';
+  });
   const [page, setPage] = useState(1);
   const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftResponse, setDraftResponse] = useState<string>('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [failedDraftId, setFailedDraftId] = useState<string | null>(null);
+  const [prevSearch, setPrevSearch] = useState(location.search);
+
+  if (prevSearch !== location.search) {
+    setPrevSearch(location.search);
+    const searchParams = new URLSearchParams(location.search);
+    const s = searchParams.get('status');
+    const cat = searchParams.get('category') || searchParams.get('classification');
+    if (s === 'pending' || s === 'resolved' || s === 'all') {
+      setActiveStatus(s as DisputeStatus);
+    }
+    if (cat === 'dispute' || cat === 'question' || cat === 'payment_promise' || cat === 'unclear' || cat === 'all') {
+      setActiveCategory(cat as DisputeTab);
+    }
+  }
 
   // 1. Fetch disputes with status and classification parameters
   const { data: disputesData, isLoading: isDisputesLoading, error: disputesError, refetch: refetchDisputes } = useQuery({

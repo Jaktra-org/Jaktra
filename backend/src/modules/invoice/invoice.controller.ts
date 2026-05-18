@@ -308,15 +308,13 @@ export class InvoiceController {
         finalData = finalData.filter(inv => Number(inv.invoiceAmount) <= params.max_amount!);
       }
 
-      const hasCustomFilter = params.days_overdue_min !== undefined || params.days_overdue_max !== undefined || params.needs_review !== undefined || params.min_amount !== undefined || params.max_amount !== undefined;
-
       res.status(200).json({
         data: finalData,
         pagination: {
-          total: hasCustomFilter ? finalData.length : result.total,
+          total: result.total,
           page: params.page,
           limit: params.limit,
-          totalPages: Math.ceil((hasCustomFilter ? finalData.length : result.total) / params.limit),
+          totalPages: Math.ceil(result.total / params.limit),
         }
       });
     } catch (error: unknown) {
