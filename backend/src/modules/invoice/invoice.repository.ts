@@ -194,22 +194,33 @@ export class InvoiceRepository {
 
 
 
+    const effectiveDueDateSql = sql`COALESCE((
+      SELECT MIN(ppi.due_date)
+      FROM payment_plan_installments ppi
+      JOIN payment_plan_requests ppr ON ppi.plan_request_id = ppr.id
+      WHERE ppi.invoice_id = ${invoices.id}
+        AND ppr.status = 'approved'
+        AND ppi.status IN ('pending', 'overdue')
+    ), ${invoices.dueDate})`;
+
+    const effectiveDaysOverdueSql = sql`GREATEST(0, DATEDIFF(CURRENT_DATE(), ${effectiveDueDateSql}))`;
+
     if (params.daysOverdueMin !== undefined) {
-      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) >= ${params.daysOverdueMin}`);
+      conditions.push(sql`${effectiveDaysOverdueSql} >= ${params.daysOverdueMin}`);
     }
     if (params.daysOverdueMax !== undefined) {
-      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) <= ${params.daysOverdueMax}`);
+      conditions.push(sql`${effectiveDaysOverdueSql} <= ${params.daysOverdueMax}`);
     }
     if (params.urgencyTier === 'legal_escalation') {
-      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) >= 31`);
+      conditions.push(sql`${effectiveDaysOverdueSql} >= 31`);
     } else if (params.urgencyTier === 'stage_4_stern') {
-      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 22 AND 30`);
+      conditions.push(sql`${effectiveDaysOverdueSql} BETWEEN 22 AND 30`);
     } else if (params.urgencyTier === 'stage_3_serious') {
-      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 15 AND 21`);
+      conditions.push(sql`${effectiveDaysOverdueSql} BETWEEN 15 AND 21`);
     } else if (params.urgencyTier === 'stage_2_firm') {
-      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 8 AND 14`);
+      conditions.push(sql`${effectiveDaysOverdueSql} BETWEEN 8 AND 14`);
     } else if (params.urgencyTier === 'stage_1_warm') {
-      conditions.push(sql`DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 1 AND 7`);
+      conditions.push(sql`${effectiveDaysOverdueSql} BETWEEN 1 AND 7`);
     }
     if (params.minAmount !== undefined) {
       conditions.push(gte(invoices.invoiceAmount, String(params.minAmount)));

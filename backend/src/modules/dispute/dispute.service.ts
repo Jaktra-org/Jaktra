@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { eq, and, isNull } from 'drizzle-orm';
-import { invoices, tenantSettings, replyTokens, emailIntegrations, emailIntegrationSendgrid } from '../../db/index.js';
+import { eq, and, isNull, inArray, asc } from 'drizzle-orm';
+import { invoices, tenantSettings, replyTokens, emailIntegrations, emailIntegrationSendgrid, paymentPlanInstallments, paymentPlanRequests } from '../../db/index.js';
 import type { DatabaseClient, Invoice } from '../../db/index.js';
 import type { DisputeRepository } from './dispute.repository.js';
 import type { AimlService } from '../agent/aiml.service.js';
@@ -317,6 +317,24 @@ export class DisputeService {
     let reasoning = 'AI classification failed';
     let aiSummary = '';
 
+    let effectiveDueDate = invoice.dueDate;
+    if (invoice.hasActivePaymentPlan) {
+      const [nextInst] = await this.db
+        .select({ dueDate: paymentPlanInstallments.dueDate })
+        .from(paymentPlanInstallments)
+        .innerJoin(paymentPlanRequests, eq(paymentPlanInstallments.planRequestId, paymentPlanRequests.id))
+        .where(and(
+          eq(paymentPlanInstallments.invoiceId, invoice.id),
+          eq(paymentPlanRequests.status, 'approved'),
+          inArray(paymentPlanInstallments.status, ['pending', 'overdue'])
+        ))
+        .orderBy(asc(paymentPlanInstallments.dueDate))
+        .limit(1);
+      if (nextInst) {
+        effectiveDueDate = nextInst.dueDate;
+      }
+    }
+
     try {
       const aiResult = await this.aimlService.analyzeDispute({
         inboundText: params.body,
@@ -324,7 +342,7 @@ export class DisputeService {
         invoiceNo: invoice.invoiceNo,
         clientName: invoice.clientName,
         invoiceAmount: String(invoice.invoiceAmount),
-        dueDate: invoice.dueDate,
+        dueDate: effectiveDueDate,
         priorCommunications: priorHistory,
       });
 

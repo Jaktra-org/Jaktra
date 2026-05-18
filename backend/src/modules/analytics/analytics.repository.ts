@@ -44,10 +44,21 @@ export class AnalyticsRepository {
   }
 
   async getAgingBreakdown(tenantId: string, fromDate?: Date, toDate?: Date): Promise<Array<{ tier: string; totalAmount: number; count: number }>> {
+    const effectiveDueDateSql = sql`COALESCE((
+      SELECT MIN(ppi.due_date)
+      FROM payment_plan_installments ppi
+      JOIN payment_plan_requests ppr ON ppi.plan_request_id = ppr.id
+      WHERE ppi.invoice_id = ${invoices.id}
+        AND ppr.status = 'approved'
+        AND ppi.status IN ('pending', 'overdue')
+    ), ${invoices.dueDate})`;
+
+    const effectiveDaysOverdueSql = sql`GREATEST(0, DATEDIFF(CURRENT_DATE(), ${effectiveDueDateSql}))`;
+
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt),
-      sql`${invoices.paymentStatus} != 'Paid' AND ${invoices.dueDate} < CURRENT_DATE()`
+      sql`${invoices.paymentStatus} != 'Paid' AND ${effectiveDueDateSql} < CURRENT_DATE()`
     );
 
     if (fromDate) {
@@ -59,10 +70,10 @@ export class AnalyticsRepository {
 
     const computedTierSql = sql<string>`
       CASE 
-        WHEN DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) >= 31 THEN 'legal_escalation'
-        WHEN DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 22 AND 30 THEN 'stage_4_stern'
-        WHEN DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 15 AND 21 THEN 'stage_3_serious'
-        WHEN DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 8 AND 14 THEN 'stage_2_firm'
+        WHEN ${effectiveDaysOverdueSql} >= 31 THEN 'legal_escalation'
+        WHEN ${effectiveDaysOverdueSql} BETWEEN 22 AND 30 THEN 'stage_4_stern'
+        WHEN ${effectiveDaysOverdueSql} BETWEEN 15 AND 21 THEN 'stage_3_serious'
+        WHEN ${effectiveDaysOverdueSql} BETWEEN 8 AND 14 THEN 'stage_2_firm'
         ELSE 'stage_1_warm'
       END
     `;
