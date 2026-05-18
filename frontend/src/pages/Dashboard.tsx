@@ -80,7 +80,7 @@ export function Dashboard() {
 
   const { data: paymentPlanInvoicesData } = useQuery({
     queryKey: ['payment-plan-invoices-home'],
-    queryFn: () => invoiceService.getInvoices({ has_payment_plan: true, limit: 1 }),
+    queryFn: () => invoiceService.getInvoices({ has_payment_plan: true, days_overdue_min: 1, limit: 1 }),
     refetchInterval: 30000,
   });
 
@@ -224,7 +224,7 @@ export function Dashboard() {
                 {/* 2. Broken Workout Schedule */}
                 {brokenWorkoutCount > 0 && (
                   <Link 
-                    to="/invoices?has_payment_plan=true" 
+                    to="/invoices?has_payment_plan=true&status=Overdue&days_overdue_min=1" 
                     className="flex items-center justify-between py-2.5 px-3 hover:bg-[#141516] transition-colors group"
                   >
                     <div className="flex items-center space-x-2.5 min-w-0">

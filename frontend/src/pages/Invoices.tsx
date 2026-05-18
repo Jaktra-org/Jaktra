@@ -150,11 +150,19 @@ export function Invoices() {
     const hasPlan = searchParams.get('has_payment_plan');
     const hasTier = searchParams.get('urgency_tier');
     const hasMinAmt = searchParams.get('min_amount');
+    const statusParam = searchParams.get('status') || searchParams.get('payment_status');
+    const daysOverdueMinParam = searchParams.get('days_overdue_min');
 
-    if (hasAging || hasPlan || hasTier || hasMinAmt) {
+    if (hasAging || hasPlan || hasTier || hasMinAmt || statusParam || daysOverdueMinParam) {
       setIsFilterPanelOpen(true);
       setParams(prev => {
         const next = { ...prev, page: 1 };
+        if (statusParam === 'overdue' || statusParam === 'Overdue') {
+          next.status = ['Overdue'];
+        }
+        if (daysOverdueMinParam) {
+          next.days_overdue_min = Number(daysOverdueMinParam);
+        }
         if (hasAging === '30_plus') {
           next.aging_bucket = '30_plus';
           next.days_overdue_min = 31;
