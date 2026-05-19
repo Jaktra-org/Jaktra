@@ -88,6 +88,22 @@
   background: #34343a;
 }
 
+/* Ultra-thin scrollbar */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #23252a;
+  border-radius: 2px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #5e6ad2;
+}
+
 @keyframes timelineFadeIn {
   from {
     opacity: 0;

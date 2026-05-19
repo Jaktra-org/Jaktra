@@ -9,7 +9,7 @@ import { formatCurrencyUSD } from "../utils/format";
 import { 
   FileText, DollarSign, Loader2, Clock, Zap, AlertCircle, 
   ChevronRight, Plus, AlertTriangle, History, Search, MessageSquare,
-  Bot, TrendingUp, CheckCircle2
+  Bot, TrendingUp
 } from "lucide-react";
 import { getErrorMessage } from "../utils/error-utils";
 import { CreateInvoiceModal } from "../components/invoices/CreateInvoiceModal";
@@ -40,7 +40,7 @@ export function Dashboard() {
 
   const { data: eventsFeed, isLoading: isEventsLoading } = useQuery({
     queryKey: ['events-feed-home'],
-    queryFn: () => eventService.getFeed(5),
+    queryFn: () => eventService.getFeed(10),
     refetchInterval: 30000,
   });
 
@@ -178,206 +178,14 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* 2-Column Operational Main Section */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 items-start">
-        {/* Left Column: Compact Operational Warnings Box */}
-        <Card className="border border-[#23252a] bg-[#0f1011] h-fit">
-          <CardContent className="p-0 divide-y divide-[#23252a]/50">
-            {totalActiveWarnings === 0 ? (
-              <div className="py-4 px-3 text-center flex items-center justify-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span className="text-xs text-[#8a8f98]">All dunning workflows and communications running cleanly.</span>
-              </div>
-            ) : (
-              <>
-                {/* 1. Legal Escalations */}
-                {legalEscalationsCount > 0 && (
-                  <Link 
-                    to="/invoices?aging_bucket=30_plus" 
-                    className="flex items-center justify-between py-2.5 px-3 hover:bg-[#141516] transition-colors group"
-                  >
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="h-6 w-6 rounded bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 flex-shrink-0">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
-                            Legal Escalations
-                          </p>
-                          <span className="px-1.5 py-0.2 bg-red-500/20 text-red-400 border border-red-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
-                            Action Required
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">Overdue invoices requiring manual review</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
-                      <span className="text-xs font-semibold text-[#8a8f98] group-hover:text-[#f7f8f8] transition-colors">
-                        {legalEscalationsCount}
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
-                    </div>
-                  </Link>
-                )}
+      {/* 2-Row Operational Main Section */}
+      <div className="space-y-6">
+        {/* Row 1: Top Row */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 items-stretch">
+          {/* Top Left: Empty Space Placeholder for future component */}
+          <div className="hidden lg:block" />
 
-                {/* 2. Broken Workout Schedule */}
-                {brokenWorkoutCount > 0 && (
-                  <Link 
-                    to="/invoices?has_payment_plan=true&status=Overdue&days_overdue_min=1" 
-                    className="flex items-center justify-between py-2.5 px-3 hover:bg-[#141516] transition-colors group"
-                  >
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="h-6 w-6 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
-                        <Clock className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
-                            Broken Workout Schedule
-                          </p>
-                          <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
-                            Action Required
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">Customer missed scheduled payment plan installment</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
-                      <span className="text-xs font-semibold text-[#8a8f98] group-hover:text-[#f7f8f8] transition-colors">
-                        {brokenWorkoutCount}
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
-                    </div>
-                  </Link>
-                )}
-
-                {/* 3. High Exposure Risk Alert */}
-                {highExposureCount > 0 && (
-                  <Link 
-                    to="/invoices?min_amount=10000&aging_bucket=15_30" 
-                    className="flex items-center justify-between py-2.5 px-3 hover:bg-[#141516] transition-colors group"
-                  >
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="h-6 w-6 rounded bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 flex-shrink-0">
-                        <DollarSign className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
-                            High Exposure Risk Alert
-                          </p>
-                          <span className="px-1.5 py-0.2 bg-red-500/20 text-red-400 border border-red-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
-                            High Risk
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">Single account exposure exceeds $10k threshold and 15+ days overdue</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
-                      <span className="text-xs font-semibold text-[#8a8f98] group-hover:text-[#f7f8f8] transition-colors">
-                        {highExposureCount}
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
-                    </div>
-                  </Link>
-                )}
-
-                {/* 4. Missing Contact Information */}
-                {missingEmailCount > 0 && (
-                  <Link 
-                    to="/invoices" 
-                    className="flex items-center justify-between py-2.5 px-3 hover:bg-[#141516] transition-colors group"
-                  >
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="h-6 w-6 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
-                            Missing Contact Information
-                          </p>
-                          <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
-                            Fix Needed
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">Invoices missing contact email for automated outreach</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
-                      <span className="text-xs font-semibold text-[#8a8f98] group-hover:text-[#f7f8f8] transition-colors">
-                        {missingEmailCount}
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
-                    </div>
-                  </Link>
-                )}
-
-                {/* 5. Pending Disputes / Objections */}
-                {pendingDisputesCount > 0 && (
-                  <Link 
-                    to="/disputes?status=pending&category=dispute" 
-                    className="flex items-center justify-between py-2.5 px-3 hover:bg-[#141516] transition-colors group"
-                  >
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="h-6 w-6 rounded bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center text-[#5e6ad2] flex-shrink-0">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
-                            Pending Objections
-                          </p>
-                          <span className="px-1.5 py-0.2 bg-[#5e6ad2]/20 text-[#828fff] border border-[#5e6ad2]/30 text-[9px] font-bold rounded-full flex-shrink-0">
-                            Pending Approval
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">Customer dispute inquiries awaiting approval</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
-                      <span className="text-xs font-semibold text-[#8a8f98] group-hover:text-[#f7f8f8] transition-colors">
-                        {pendingDisputesCount}
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
-                    </div>
-                  </Link>
-                )}
-
-                {/* 6. Agent Execution Error */}
-                {agentHasError && (
-                  <Link 
-                    to="/agent" 
-                    className="flex items-center justify-between py-2.5 px-3 hover:bg-[#141516] transition-colors group"
-                  >
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="h-6 w-6 rounded bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 flex-shrink-0">
-                        <Bot className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
-                            Agent Execution Error
-                          </p>
-                          <span className="px-1.5 py-0.2 bg-red-500/20 text-red-400 border border-red-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
-                            System Alert
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">AI Agent dispatch cycle experienced errors</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0 ml-2" />
-                  </Link>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Right Column: AI Agent Status & Live Activity */}
-        <div className="space-y-6">
-          {/* Agent Run Status Card */}
+          {/* Top Right: AI Dunning Agent Status */}
           <Card className="border border-[#23252a] bg-[#0f1011]">
             <CardHeader className="pb-3 border-b border-[#23252a]/70">
               <div className="flex items-center justify-between">
@@ -407,10 +215,280 @@ export function Dashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Recent Live Activity Stream Preview */}
-          <Card className="border border-[#23252a] bg-[#0f1011]">
-            <CardHeader className="pb-3 border-b border-[#23252a]/70">
+        {/* Row 2: Bottom Row (Actionable Queue & Recent System Events - Equal Height stretch) */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 items-stretch">
+          {/* Bottom Left: Operational Warnings Box (Actionable Queue with all available chips) */}
+          <Card className="border border-[#23252a] bg-[#0f1011] flex flex-col h-full overflow-hidden">
+            <CardHeader className="pb-3 border-b border-[#23252a]/70 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-[#f7f8f8] flex items-center">
+                  <AlertCircle className="w-4 h-4 text-amber-400 mr-2" />
+                  Actionable Queue
+                </CardTitle>
+                <span className="text-xs font-semibold text-[#8a8f98]">
+                  {totalActiveWarnings} Active {totalActiveWarnings === 1 ? 'Action' : 'Actions'}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 flex flex-col justify-start max-h-[300px] overflow-y-auto thin-scrollbar">
+              <div className="divide-y divide-[#23252a]/40 flex-shrink-0">
+                {/* 1. Legal Escalations */}
+                <Link 
+                  to="/invoices?aging_bucket=30_plus" 
+                  className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
+                >
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className={`h-6 w-6 rounded border flex items-center justify-center flex-shrink-0 ${
+                      legalEscalationsCount > 0 
+                        ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+                        : 'bg-[#141516] border-[#23252a] text-[#62666d]'
+                    }`}>
+                      <AlertCircle className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-semibold transition-colors truncate ${
+                          legalEscalationsCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#8a8f98]'
+                        }`}>
+                          Legal Escalations
+                        </p>
+                        {legalEscalationsCount > 0 ? (
+                          <span className="px-1.5 py-0.2 bg-red-500/20 text-red-400 border border-red-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
+                            Action Required
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 text-[9px] font-medium rounded-full flex-shrink-0">
+                            0 Pending
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#62666d] truncate mt-0.5">Overdue invoices requiring manual review</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
+                    <span className={`text-xs font-semibold transition-colors ${
+                      legalEscalationsCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#62666d]'
+                    }`}>
+                      {legalEscalationsCount}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
+                  </div>
+                </Link>
+
+                {/* 2. Broken Workout Schedule */}
+                <Link 
+                  to="/invoices?has_payment_plan=true&status=Overdue&days_overdue_min=1" 
+                  className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
+                >
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className={`h-6 w-6 rounded border flex items-center justify-center flex-shrink-0 ${
+                      brokenWorkoutCount > 0 
+                        ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' 
+                        : 'bg-[#141516] border-[#23252a] text-[#62666d]'
+                    }`}>
+                      <Clock className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-semibold transition-colors truncate ${
+                          brokenWorkoutCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#8a8f98]'
+                        }`}>
+                          Broken Workout Schedule
+                        </p>
+                        {brokenWorkoutCount > 0 ? (
+                          <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
+                            Action Required
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 text-[9px] font-medium rounded-full flex-shrink-0">
+                            0 Pending
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#62666d] truncate mt-0.5">Customer missed scheduled payment plan installment</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
+                    <span className={`text-xs font-semibold transition-colors ${
+                      brokenWorkoutCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#62666d]'
+                    }`}>
+                      {brokenWorkoutCount}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
+                  </div>
+                </Link>
+
+                {/* 3. High Exposure Risk Alert */}
+                <Link 
+                  to="/invoices?min_amount=10000&aging_bucket=15_30" 
+                  className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
+                >
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className={`h-6 w-6 rounded border flex items-center justify-center flex-shrink-0 ${
+                      highExposureCount > 0 
+                        ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+                        : 'bg-[#141516] border-[#23252a] text-[#62666d]'
+                    }`}>
+                      <DollarSign className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-semibold transition-colors truncate ${
+                          highExposureCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#8a8f98]'
+                        }`}>
+                          High Exposure Risk Alert
+                        </p>
+                        {highExposureCount > 0 ? (
+                          <span className="px-1.5 py-0.2 bg-red-500/20 text-red-400 border border-red-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
+                            High Risk
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 text-[9px] font-medium rounded-full flex-shrink-0">
+                            0 Pending
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#62666d] truncate mt-0.5">Single account exposure exceeds $10k threshold and 15+ days overdue</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
+                    <span className={`text-xs font-semibold transition-colors ${
+                      highExposureCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#62666d]'
+                    }`}>
+                      {highExposureCount}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
+                  </div>
+                </Link>
+
+                {/* 4. Missing Contact Information */}
+                <Link 
+                  to="/invoices" 
+                  className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
+                >
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className={`h-6 w-6 rounded border flex items-center justify-center flex-shrink-0 ${
+                      missingEmailCount > 0 
+                        ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' 
+                        : 'bg-[#141516] border-[#23252a] text-[#62666d]'
+                    }`}>
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-semibold transition-colors truncate ${
+                          missingEmailCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#8a8f98]'
+                        }`}>
+                          Missing Contact Information
+                        </p>
+                        {missingEmailCount > 0 ? (
+                          <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
+                            Fix Needed
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 text-[9px] font-medium rounded-full flex-shrink-0">
+                            0 Pending
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#62666d] truncate mt-0.5">Invoices missing contact email for automated outreach</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
+                    <span className={`text-xs font-semibold transition-colors ${
+                      missingEmailCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#62666d]'
+                    }`}>
+                      {missingEmailCount}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
+                  </div>
+                </Link>
+
+                {/* 5. Pending Disputes / Objections */}
+                <Link 
+                  to="/disputes?status=pending&category=dispute" 
+                  className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
+                >
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className={`h-6 w-6 rounded border flex items-center justify-center flex-shrink-0 ${
+                      pendingDisputesCount > 0 
+                        ? 'bg-[#5e6ad2]/10 border-[#5e6ad2]/20 text-[#5e6ad2]' 
+                        : 'bg-[#141516] border-[#23252a] text-[#62666d]'
+                    }`}>
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-semibold transition-colors truncate ${
+                          pendingDisputesCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#8a8f98]'
+                        }`}>
+                          Pending Objections
+                        </p>
+                        {pendingDisputesCount > 0 ? (
+                          <span className="px-1.5 py-0.2 bg-[#5e6ad2]/20 text-[#828fff] border border-[#5e6ad2]/30 text-[9px] font-bold rounded-full flex-shrink-0">
+                            Pending Approval
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 text-[9px] font-medium rounded-full flex-shrink-0">
+                            0 Pending
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#62666d] truncate mt-0.5">Customer dispute inquiries awaiting approval</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
+                    <span className={`text-xs font-semibold transition-colors ${
+                      pendingDisputesCount > 0 ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#62666d]'
+                    }`}>
+                      {pendingDisputesCount}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
+                  </div>
+                </Link>
+
+                {/* 6. Agent Execution Error (Only shown if active error exists) */}
+                {agentHasError && (
+                  <Link 
+                    to="/agent" 
+                    className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
+                  >
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <div className="h-6 w-6 rounded border bg-red-500/10 border-red-500/20 text-red-400 flex items-center justify-center flex-shrink-0">
+                        <Bot className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
+                            Agent Execution Error
+                          </p>
+                          <span className="px-1.5 py-0.2 bg-red-500/20 text-red-400 border border-red-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
+                            System Alert
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#62666d] truncate mt-0.5">AI Agent dispatch cycle experienced errors</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
+                      <span className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors">
+                        1
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0 ml-2" />
+                    </div>
+                  </Link>
+                )}
+              </div>
+
+              {/* Flex spacer leaving any remaining card height empty at bottom */}
+              <div className="flex-1" />
+            </CardContent>
+          </Card>
+
+          {/* Bottom Right: Recent Live Activity Stream Preview */}
+          <Card className="border border-[#23252a] bg-[#0f1011] flex flex-col h-full overflow-hidden">
+            <CardHeader className="pb-3 border-b border-[#23252a]/70 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-[#f7f8f8] flex items-center">
                   <History className="w-4 h-4 text-[#8a8f98] mr-2" />
@@ -421,7 +499,7 @@ export function Dashboard() {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="p-0 divide-y divide-[#23252a]/40">
+            <CardContent className="p-0 divide-y divide-[#23252a]/40 flex-1 max-h-[210px] overflow-y-auto thin-scrollbar">
               {isEventsLoading ? (
                 <div className="p-6 text-center text-xs text-[#8a8f98] flex items-center justify-center">
                   <Loader2 className="w-4 h-4 animate-spin text-[#5e6ad2] mr-2" /> Loading activity stream...
@@ -429,8 +507,8 @@ export function Dashboard() {
               ) : !eventsFeed || eventsFeed.length === 0 ? (
                 <div className="p-6 text-center text-xs text-[#8a8f98]">No recent system activity.</div>
               ) : (
-                eventsFeed.slice(0, 4).map((evt) => (
-                  <div key={evt.id} className="px-4 py-3 flex items-center justify-between text-xs hover:bg-[#141516]/50 transition-colors">
+                eventsFeed.slice(0, 10).map((evt) => (
+                  <div key={evt.id} className="px-4 py-2.5 flex items-center justify-between text-xs hover:bg-[#141516]/50 transition-colors">
                     <div className="min-w-0 flex-1 pr-3">
                       <p className="font-medium text-[#f7f8f8] truncate">{evt.description || evt.actionType}</p>
                       <p className="text-[11px] text-[#8a8f98] mt-0.5">{new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Source: {evt.source}</p>

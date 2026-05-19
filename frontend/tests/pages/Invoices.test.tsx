@@ -22,7 +22,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 describe('Invoices list page', () => {
   const mockInvoicesRes = {
-    invoices: [
+    data: [
       {
         id: 'inv-1',
         invoiceNo: 'INV-101',
@@ -89,7 +89,7 @@ describe('Invoices list page', () => {
 
   it('updates query params when page buttons or sort headers are clicked', async () => {
     vi.mocked(invoiceService.getInvoices).mockResolvedValue({
-      invoices: [],
+      data: [],
       pagination: {
         total: 100,
         page: 1,
@@ -100,14 +100,10 @@ describe('Invoices list page', () => {
 
     renderWithProviders(<Invoices />);
 
-    // Click next page
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Next page/i })).toBeEnabled();
-    });
-
-    const nextPageBtn = screen.getByRole('button', { name: /Next page/i });
+    const nextPageBtn = await screen.findByRole('button', { name: /Next page/i });
+    expect(nextPageBtn).toBeEnabled();
     await act(async () => {
-      nextPageBtn.click();
+      fireEvent.click(nextPageBtn);
     });
 
     // Verifies requested page updates to 2

@@ -84,6 +84,6 @@ describe('Dashboard page math aggregations', () => {
 
     renderWithProviders(<Dashboard />);
 
-    expect(screen.getByText('Actionable Queue')).toBeInTheDocument();
+    expect(screen.getAllByText('Actionable Queue')[0]).toBeInTheDocument();
   });
 });
