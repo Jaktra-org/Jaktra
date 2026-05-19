@@ -563,7 +563,7 @@ export function Invoices() {
                 </span>
               )}
 
-              {params.days_overdue_min !== undefined && (
+              {params.days_overdue_min !== undefined && !params.aging_bucket && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px]">
                   Overdue ≥ {params.days_overdue_min} {params.days_overdue_min === 1 ? 'day' : 'days'}
                   <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, days_overdue_min: undefined }))} />

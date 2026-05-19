@@ -322,7 +322,7 @@ export function Dashboard() {
 
                 {/* 3. High Exposure Risk Alert */}
                 <Link 
-                  to="/invoices?min_amount=10000&aging_bucket=15_30" 
+                  to="/invoices?min_amount=10000&days_overdue_min=15" 
                   className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
                 >
                   <div className="flex items-center space-x-2.5 min-w-0">
