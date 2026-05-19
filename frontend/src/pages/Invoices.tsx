@@ -63,10 +63,33 @@ export function Invoices() {
 
     if (searchParams.get('has_payment_plan') === 'true') {
       initial.has_payment_plan = true;
+    } else if (searchParams.get('has_payment_plan') === 'false') {
+      initial.has_payment_plan = false;
+    }
+
+    const statusParam = searchParams.get('status') || searchParams.get('payment_status');
+    if (statusParam === 'overdue' || statusParam === 'Overdue') {
+      initial.status = ['Overdue'];
+    } else if (statusParam === 'pending' || statusParam === 'Pending') {
+      initial.status = ['Pending'];
+    } else if (statusParam === 'paid' || statusParam === 'Paid') {
+      initial.status = ['Paid'];
+    }
+
+    if (searchParams.get('days_overdue_min')) {
+      initial.days_overdue_min = Number(searchParams.get('days_overdue_min'));
+    }
+
+    if (searchParams.get('days_overdue_max')) {
+      initial.days_overdue_max = Number(searchParams.get('days_overdue_max'));
     }
 
     if (searchParams.get('urgency_tier')) {
       initial.urgency_tier = searchParams.get('urgency_tier') as ListInvoicesParams['urgency_tier'];
+    }
+
+    if (searchParams.get('min_amount')) {
+      initial.min_amount = Number(searchParams.get('min_amount'));
     }
 
     return initial;
@@ -79,7 +102,11 @@ export function Invoices() {
     return Boolean(
       searchParams.get('aging_bucket') || 
       searchParams.get('has_payment_plan') || 
-      searchParams.get('urgency_tier')
+      searchParams.get('urgency_tier') ||
+      searchParams.get('min_amount') ||
+      searchParams.get('days_overdue_min') ||
+      searchParams.get('status') ||
+      searchParams.get('payment_status')
     );
   });
   
@@ -500,6 +527,18 @@ export function Invoices() {
                   className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
                 />
               </div>
+
+              {/* Min Overdue Days */}
+              <div>
+                <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Min Overdue Days</label>
+                <input
+                  type="number"
+                  placeholder="Min Days"
+                  value={params.days_overdue_min !== undefined ? params.days_overdue_min : ''}
+                  onChange={(e) => setParams(prev => ({ ...prev, page: 1, days_overdue_min: e.target.value !== '' ? Number(e.target.value) : undefined }))}
+                  className="w-full h-8 bg-[#0f1011] border border-[#23252a] rounded-md px-2.5 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#5e6ad2]"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -521,6 +560,13 @@ export function Invoices() {
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[11px]">
                   Plan: {params.has_payment_plan ? 'Active' : 'None'}
                   <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, has_payment_plan: undefined }))} />
+                </span>
+              )}
+
+              {params.days_overdue_min !== undefined && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px]">
+                  Overdue ≥ {params.days_overdue_min} {params.days_overdue_min === 1 ? 'day' : 'days'}
+                  <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, days_overdue_min: undefined }))} />
                 </span>
               )}
 
