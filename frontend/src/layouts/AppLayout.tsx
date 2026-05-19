@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Outlet, NavLink, useLocation } from "react-router-dom";
+import { Outlet, NavLink } from "react-router-dom";
 import { Home, FileText, Bot, BarChart3, AlertTriangle, Settings, History, MessageSquare } from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,7 +10,6 @@ export function AppLayout() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const { user } = useAuth();
-  const location = useLocation();
 
   const navItems = [
     { label: "Home", path: "/", icon: Home },
@@ -61,16 +60,6 @@ export function AppLayout() {
       document.body.style.userSelect = '';
     };
   }, [isResizing]);
-
-  const allNavItems = [
-    ...navItems,
-    ...(user?.role !== 'viewer' ? [{ label: "Settings", path: "/settings", icon: Settings }] : []),
-  ];
-
-  const currentNavItem = allNavItems.find(item => 
-    item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path)
-  );
-  const breadcrumb = currentNavItem ? currentNavItem.label : "Home";
 
   return (
     <div className="flex h-screen w-full bg-[#010102] text-[#f7f8f8] overflow-hidden">
@@ -137,12 +126,6 @@ export function AppLayout() {
       </aside>
 
       <main className="flex-1 min-h-0 overflow-hidden flex flex-col bg-[#010102] w-full">
-        <header className="flex h-14 items-center justify-between border-b border-[#23252a] bg-[#010102] px-4 md:px-6 flex-shrink-0">
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#8a8f98]">
-            {breadcrumb}
-          </div>
-        </header>
-        
         <div className="flex-1 min-h-0 p-4 md:p-6 overflow-auto bg-[#010102]">
           <Outlet />
         </div>

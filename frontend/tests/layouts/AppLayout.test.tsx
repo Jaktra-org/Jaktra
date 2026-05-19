@@ -42,15 +42,15 @@ describe('AppLayout layout component', () => {
     expect(screen.queryByRole('link', { name: 'Settings' })).not.toBeInTheDocument();
   });
 
-  it('renders breadcrumb header for active navigation route', () => {
+  it('renders layout container for active navigation route', () => {
     renderWithProviders(<AppLayout />, {
       authState: {
-        user: { id: 'u1', name: 'Admin Jane', email: 'j@a.com', role: 'admin', tenantId: 't1', mfaEnabled: false },
+        user: { id: 'u1', name: 'Admin Jane', email: 'j@a.com', role: 'admin', tenantId: 't1', mfaEnabled: false, created_at: '' },
         isLoading: false,
         isAuthenticated: true,
       },
     });
 
-    expect(screen.getAllByText('Home').length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
   });
 });
