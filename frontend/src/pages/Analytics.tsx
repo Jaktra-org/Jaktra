@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '../services/analytics';
+import { invoiceService } from '../services/invoice';
 import { formatCurrencyUSD } from '../utils/format';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
-import { TrendingUp, DollarSign, Clock, AlertCircle, Loader2, Construction, Send, Zap, LayoutDashboard } from 'lucide-react';
+import { TrendingUp, DollarSign, Clock, AlertCircle, Loader2, Construction, Send, Zap, LayoutDashboard, BarChart3 } from 'lucide-react';
 
 export function Analytics() {
   const [activeTab, setActiveTab] = useState<'financial' | 'agent'>('agent');
@@ -64,6 +65,35 @@ function FinancialMetricsTab() {
     queryFn: () => analyticsService.getAging(),
   });
 
+  const { data: allInvoicesSample } = useQuery({
+    queryKey: ['all-invoices-analytics'],
+    queryFn: () => invoiceService.getInvoices({ limit: 100 }),
+  });
+
+  const sampleOverdueInvoices = allInvoicesSample?.data?.filter(inv => inv.paymentStatus === 'Overdue' || (inv.daysOverdue !== undefined && inv.daysOverdue > 0)) || [];
+  const sample31Plus = sampleOverdueInvoices.filter(i => (i.daysOverdue || 0) > 30).reduce((acc, curr) => acc + Number(curr.invoiceAmount || 0), 0);
+  const sample15_30 = sampleOverdueInvoices.filter(i => (i.daysOverdue || 0) >= 15 && (i.daysOverdue || 0) <= 30).reduce((acc, curr) => acc + Number(curr.invoiceAmount || 0), 0);
+  const sample8_14 = sampleOverdueInvoices.filter(i => (i.daysOverdue || 0) >= 8 && (i.daysOverdue || 0) <= 14).reduce((acc, curr) => acc + Number(curr.invoiceAmount || 0), 0);
+  const sample0_7 = sampleOverdueInvoices.filter(i => (i.daysOverdue || 0) >= 0 && (i.daysOverdue || 0) <= 7).reduce((acc, curr) => acc + Number(curr.invoiceAmount || 0), 0);
+
+  const api31Plus = agingData?.find(a => a.tier === 'legal_escalation' || a.tier === 'stage_4_stern' || a.tier === '30_plus')?.totalAmount || 0;
+  const api15_30 = agingData?.find(a => a.tier === 'stage_3_serious' || a.tier === '15_30')?.totalAmount || 0;
+  const api8_14 = agingData?.find(a => a.tier === 'stage_2_firm' || a.tier === '8_14')?.totalAmount || 0;
+  const api0_7 = agingData?.find(a => a.tier === 'stage_1_warm' || a.tier === '0_7')?.totalAmount || 0;
+
+  const aging31Plus = api31Plus || sample31Plus;
+  const aging15_30 = api15_30 || sample15_30;
+  const aging8_14 = api8_14 || sample8_14;
+  const aging0_7 = api0_7 || sample0_7;
+
+  const agingTiersAnalytics = [
+    { label: '31+ Days', color: 'bg-red-500', amount: aging31Plus },
+    { label: '15 - 30 Days', color: 'bg-amber-500', amount: aging15_30 },
+    { label: '8 - 14 Days', color: 'bg-[#5e6ad2]', amount: aging8_14 },
+    { label: '0 - 7 Days', color: 'bg-emerald-500', amount: aging0_7 },
+  ];
+  const totalAgingSumAnalytics = agingTiersAnalytics.reduce((acc, curr) => acc + curr.amount, 0) || 1;
+
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
@@ -92,6 +122,42 @@ function FinancialMetricsTab() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Aging Risk Breakdown Card */}
+        <Card className="h-full border border-[#23252a] bg-[#0f1011] flex flex-col justify-between">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center text-sm font-semibold text-[#f7f8f8]">
+                <BarChart3 className="w-4 h-4 text-[#5e6ad2] mr-2" />
+                Aging Risk Breakdown
+              </CardTitle>
+              <span className="text-xs text-[#8a8f98]">By Overdue Days</span>
+            </div>
+            <CardDescription>Capital risk concentration grouped by overdue duration</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-2">
+            {isAgingLoading ? (
+              <div className="h-[240px] flex items-center justify-center text-xs text-[#8a8f98]">
+                <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
+              </div>
+            ) : (
+              agingTiersAnalytics.map((tier) => {
+                const pct = Math.round((tier.amount / totalAgingSumAnalytics) * 100);
+                return (
+                  <div key={tier.label} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[#8a8f98] font-medium">{tier.label}</span>
+                      <span className="text-[#f7f8f8] font-semibold">{formatCurrencyUSD(tier.amount)} <span className="text-xs text-[#62666d]">({pct}%)</span></span>
+                    </div>
+                    <div className="h-2 w-full bg-[#141516] rounded-full overflow-hidden border border-[#23252a]/50">
+                      <div className={`h-full ${tier.color} transition-all duration-500 rounded-full`} style={{ width: `${Math.max(pct, tier.amount > 0 ? 4 : 0)}%` }} />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="h-full border border-[#23252a] bg-[#0f1011]">
           <CardHeader>
             <CardTitle>Aging Pyramid</CardTitle>
@@ -123,7 +189,6 @@ function FinancialMetricsTab() {
         </Card>
         <ComingSoonCard title="Receivable vs Collected" description="Historical gap analysis between billed and collected capital" />
         <ComingSoonCard title="Days Sales Outstanding (DSO) Trend" description="Average time taken to collect revenue over the last 12 months" />
-        <ComingSoonCard title="Collection Rate Trend" description="Monthly percentage of successfully collected capital" />
       </div>
     </div>
   );
