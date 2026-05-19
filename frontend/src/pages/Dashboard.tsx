@@ -100,9 +100,9 @@ export function Dashboard() {
   const totalActiveWarnings = legalEscalationsCount + brokenWorkoutCount + highExposureCount + missingEmailCount + pendingDisputesCount + (agentHasError ? 1 : 0);
 
   return (
-    <div className="space-y-6 text-[#f7f8f8]">
+    <div className="flex-1 min-h-0 flex flex-col space-y-5 text-[#f7f8f8]">
       {/* Top Bar with Search & Quick Action Button */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 flex-shrink-0">
         {/* Sleek Non-Functional Global Search Bar */}
         <div className="relative flex items-center w-full sm:w-80">
           <Search className="absolute left-3 w-3.5 h-3.5 text-[#8a8f98] pointer-events-none" />
@@ -127,14 +127,14 @@ export function Dashboard() {
       </div>
 
       {isSummaryError && (
-        <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 flex items-center">
+        <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 flex items-center flex-shrink-0">
           <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
           Failed to load summary metrics: {getErrorMessage(summaryError)}
         </div>
       )}
 
       {/* Top Metric KPI Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3 flex-shrink-0">
         {/* Actionable Queue */}
         <Card className="border border-[#23252a] bg-[#0f1011] hover:border-[#34343a] transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
@@ -179,9 +179,9 @@ export function Dashboard() {
       </div>
 
       {/* 2-Row Operational Main Section */}
-      <div className="space-y-6">
+      <div className="flex-1 min-h-0 flex flex-col space-y-5">
         {/* Row 1: Top Row */}
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 items-stretch">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 items-stretch flex-shrink-0">
           {/* Top Left: Empty Space Placeholder for future component */}
           <div className="hidden lg:block" />
 
@@ -217,8 +217,8 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* Row 2: Bottom Row (Actionable Queue & Recent System Events - Equal Height stretch) */}
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 items-stretch">
+        {/* Row 2: Bottom Row (Actionable Queue & Recent System Events - Responsive Flex Fill) */}
+        <div className="flex-1 min-h-0 grid gap-6 grid-cols-1 lg:grid-cols-2 items-stretch">
           {/* Bottom Left: Operational Warnings Box (Actionable Queue with all available chips) */}
           <Card className="border border-[#23252a] bg-[#0f1011] flex flex-col h-full overflow-hidden">
             <CardHeader className="pb-3 border-b border-[#23252a]/70 flex-shrink-0">
@@ -232,7 +232,7 @@ export function Dashboard() {
                 </span>
               </div>
             </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col justify-start max-h-[300px] overflow-y-auto thin-scrollbar">
+            <CardContent className="p-0 flex-1 flex flex-col justify-start min-h-0 overflow-y-auto thin-scrollbar">
               <div className="divide-y divide-[#23252a]/40 flex-shrink-0">
                 {/* 1. Legal Escalations */}
                 <Link 
@@ -449,36 +449,48 @@ export function Dashboard() {
                   </div>
                 </Link>
 
-                {/* 6. Agent Execution Error (Only shown if active error exists) */}
-                {agentHasError && (
-                  <Link 
-                    to="/agent" 
-                    className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
-                  >
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="h-6 w-6 rounded border bg-red-500/10 border-red-500/20 text-red-400 flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
-                            Agent Execution Error
-                          </p>
+                {/* 6. Agent Execution Error */}
+                <Link 
+                  to="/agent" 
+                  className="flex items-center justify-between py-2 px-3 hover:bg-[#141516] transition-colors group"
+                >
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className={`h-6 w-6 rounded border flex items-center justify-center flex-shrink-0 ${
+                      agentHasError 
+                        ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+                        : 'bg-[#141516] border-[#23252a] text-[#62666d]'
+                    }`}>
+                      <Bot className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs font-semibold transition-colors truncate ${
+                          agentHasError ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#8a8f98]'
+                        }`}>
+                          Agent Execution Error
+                        </p>
+                        {agentHasError ? (
                           <span className="px-1.5 py-0.2 bg-red-500/20 text-red-400 border border-red-500/30 text-[9px] font-bold rounded-full flex-shrink-0">
                             System Alert
                           </span>
-                        </div>
-                        <p className="text-[11px] text-[#62666d] truncate mt-0.5">AI Agent dispatch cycle experienced errors</p>
+                        ) : (
+                          <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 text-[9px] font-medium rounded-full flex-shrink-0">
+                            0 Errors
+                          </span>
+                        )}
                       </div>
+                      <p className="text-[11px] text-[#62666d] truncate mt-0.5">AI Agent dispatch cycle experienced errors</p>
                     </div>
-                    <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
-                      <span className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors">
-                        1
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0 ml-2" />
-                    </div>
-                  </Link>
-                )}
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
+                    <span className={`text-xs font-semibold transition-colors ${
+                      agentHasError ? 'text-[#f7f8f8] group-hover:text-[#5e6ad2]' : 'text-[#62666d]'
+                    }`}>
+                      {agentHasError ? 1 : 0}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#62666d] group-hover:text-[#f7f8f8] transition-colors flex-shrink-0" />
+                  </div>
+                </Link>
               </div>
 
               {/* Flex spacer leaving any remaining card height empty at bottom */}
@@ -499,7 +511,7 @@ export function Dashboard() {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="p-0 divide-y divide-[#23252a]/40 flex-1 max-h-[210px] overflow-y-auto thin-scrollbar">
+            <CardContent className="p-0 divide-y divide-[#23252a]/40 flex-1 min-h-0 overflow-y-auto thin-scrollbar">
               {isEventsLoading ? (
                 <div className="p-6 text-center text-xs text-[#8a8f98] flex items-center justify-center">
                   <Loader2 className="w-4 h-4 animate-spin text-[#5e6ad2] mr-2" /> Loading activity stream...

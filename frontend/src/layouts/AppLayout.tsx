@@ -126,7 +126,7 @@ export function AppLayout() {
       </aside>
 
       <main className="flex-1 min-h-0 overflow-hidden flex flex-col bg-[#010102] w-full">
-        <div className="flex-1 min-h-0 p-4 md:p-6 overflow-auto bg-[#010102]">
+        <div className="flex-1 min-h-0 p-4 md:p-6 overflow-auto bg-[#010102] flex flex-col">
           <Outlet />
         </div>
       </main>
