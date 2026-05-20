@@ -22,7 +22,7 @@ export class AnalyticsRepository {
       .select({
         totalReceivable: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} IN ('Pending', 'Overdue') THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
         totalCollected: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
-        totalOverdue: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Overdue' THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
+        totalOverdue: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Overdue' OR (${invoices.paymentStatus} != 'Paid' AND ${invoices.dueDate} < NOW()) THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
         totalPaymentPlan: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.hasActivePaymentPlan} = true THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
         paymentPlanCount: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.hasActivePaymentPlan} = true THEN 1 ELSE 0 END), 0)`,
         invoiceCount: sql<number>`COUNT(*)`,
