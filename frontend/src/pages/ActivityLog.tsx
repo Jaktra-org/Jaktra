@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { 
   History, Search, Filter, RefreshCw, ArrowRight,
@@ -213,8 +213,8 @@ export function ActivityLog() {
 
   const getEventIcon = (actionType: string) => {
     const config = getEventConfig(actionType);
-    const IconComponent = config.icon;
-    return <IconComponent className={`h-5 w-5 ${config.colorClass}`} />;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return React.createElement(config.icon as any, { className: `h-5 w-5 ${config.colorClass}` });
   };
 
 
