@@ -4,6 +4,7 @@ import { renderWithProviders } from '../test-utils';
 import { Analytics } from '../../src/pages/Analytics';
 import { analyticsService } from '../../src/services/analytics';
 import { settingsService } from '../../src/services/settings';
+import { invoiceService } from '../../src/services/invoice';
 
 // Mock services
 vi.mock('../../src/services/analytics', () => ({
@@ -20,6 +21,12 @@ vi.mock('../../src/services/analytics', () => ({
 vi.mock('../../src/services/settings', () => ({
   settingsService: {
     getSettings: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/services/invoice', () => ({
+  invoiceService: {
+    getInvoices: vi.fn(),
   },
 }));
 
@@ -46,6 +53,7 @@ describe('Analytics page tabs and metric queries', () => {
 
   it('toggles tabs and renders metric aggregations', async () => {
     vi.mocked(settingsService.getSettings).mockResolvedValue({} as any);
+    vi.mocked(invoiceService.getInvoices).mockResolvedValue({ data: [], pagination: { total: 0, page: 1, limit: 100, totalPages: 1 } });
     vi.mocked(analyticsService.getSummary).mockResolvedValue(mockSummary);
     vi.mocked(analyticsService.getAging).mockResolvedValue([]);
     vi.mocked(analyticsService.getAgentPerformance).mockResolvedValue({
@@ -77,7 +85,7 @@ describe('Analytics page tabs and metric queries', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Aging Pyramid')).toBeInTheDocument();
-      expect(screen.getByText('$60,000')).toBeInTheDocument(); // totalReceivable
+      expect(screen.getAllByText('$60,000')[0]).toBeInTheDocument(); // totalReceivable
     });
   });
 });
