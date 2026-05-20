@@ -1,4 +1,4 @@
-import { screen, act, waitFor, fireEvent } from '../test-utils';
+import { screen, act, fireEvent } from '../test-utils';
 import { renderWithProviders } from '../test-utils';
 import { Invoices } from '../../src/pages/Invoices';
 import { invoiceService } from '../../src/services/invoice';

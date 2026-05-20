@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import { invoiceService } from "../services/invoice";
@@ -70,8 +70,8 @@ export function Invoices() {
     const statusParam = searchParams.get('status') || searchParams.get('payment_status');
     if (statusParam === 'overdue' || statusParam === 'Overdue') {
       initial.status = ['Overdue'];
-    } else if (statusParam === 'pending' || statusParam === 'Pending') {
-      initial.status = ['Pending'];
+    } else if (statusParam === 'unpaid' || statusParam === 'Unpaid' || statusParam === 'pending' || statusParam === 'Pending') {
+      initial.status = ['Pending', 'Overdue'];
     } else if (statusParam === 'paid' || statusParam === 'Paid') {
       initial.status = ['Paid'];
     }
@@ -242,8 +242,13 @@ export function Invoices() {
     }
   });
 
+  const isInitialSearchMount = useRef(true);
   // Debounce search input
   useEffect(() => {
+    if (isInitialSearchMount.current) {
+      isInitialSearchMount.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
       setParams(prev => ({
         ...prev,
@@ -286,7 +291,7 @@ export function Invoices() {
     setParams(prev => ({
       ...prev,
       page: 1,
-      status: status === 'All' ? undefined : [status]
+      status: status === 'All' ? undefined : status === 'Unpaid' ? ['Pending', 'Overdue'] : [status]
     }));
   };
 
@@ -324,7 +329,11 @@ export function Invoices() {
     document.body.removeChild(link);
   };
 
-  const currentStatus = isTrashView ? 'Trash' : (params.status?.[0] || 'All');
+  const currentStatus = isTrashView ? 'Trash' : (
+    params.status?.includes('Pending') && params.status?.includes('Overdue')
+      ? 'Unpaid'
+      : (params.status?.[0] || 'All')
+  );
 
   const formatCurrency = (val: string | number) => {
     return Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(val));
@@ -390,7 +399,7 @@ export function Invoices() {
         <div className="p-3.5 border-b border-[#23252a] flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-[#010102]/60">
           {/* Main Status Tabs */}
           <div className="flex items-center space-x-1 bg-[#141516] p-1 rounded-md border border-[#23252a] flex-wrap gap-y-1">
-            {['All', 'Pending', 'Overdue', 'Paid'].map((status) => (
+            {['All', 'Unpaid', 'Paid', 'Overdue'].map((status) => (
               <button
                 key={status}
                 onClick={() => handleStatusFilter(status)}
@@ -852,24 +861,26 @@ export function Invoices() {
         </div>
 
         {/* Pagination */}
-        {activeData && activeData.pagination.totalPages > 0 && (
+        {activeData && activeData.pagination && activeData.pagination.totalPages > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-[#23252a] bg-[#010102]/60 text-xs">
             <div className="text-[#8a8f98]">
-              Showing <span className="font-medium text-[#f7f8f8]">{(params.page! - 1) * params.limit! + 1}</span> to <span className="font-medium text-[#f7f8f8]">{Math.min(params.page! * params.limit!, activeData.pagination.total)}</span> of <span className="font-medium text-[#f7f8f8]">{activeData.pagination.total}</span> results
+              Showing <span className="font-medium text-[#f7f8f8]">{((params.page || 1) - 1) * (params.limit || 50) + (activeData.pagination.total > 0 ? 1 : 0)}</span> to <span className="font-medium text-[#f7f8f8]">{Math.min((params.page || 1) * (params.limit || 50), activeData.pagination.total)}</span> of <span className="font-medium text-[#f7f8f8]">{activeData.pagination.total}</span> results
             </div>
             <div className="flex space-x-1.5">
               <button
                 onClick={() => setParams(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
-                disabled={params.page === 1}
+                disabled={(params.page || 1) <= 1}
                 className="inline-flex items-center justify-center rounded-md transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-7 w-7 p-0 disabled:opacity-40"
+                aria-label="Previous page"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 <span className="sr-only">Previous page</span>
               </button>
               <button
-                onClick={() => setParams(prev => ({ ...prev, page: Math.min(activeData!.pagination.totalPages, (prev.page || 1) + 1) }))}
-                disabled={params.page === activeData!.pagination.totalPages}
+                onClick={() => setParams(prev => ({ ...prev, page: Math.min(activeData.pagination.totalPages, (prev.page || 1) + 1) }))}
+                disabled={(params.page || 1) >= activeData.pagination.totalPages}
                 className="inline-flex items-center justify-center rounded-md transition-all border border-[#23252a] bg-[#0f1011] text-[#f7f8f8] hover:bg-[#141516] h-7 w-7 p-0 disabled:opacity-40"
+                aria-label="Next page"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
                 <span className="sr-only">Next page</span>
