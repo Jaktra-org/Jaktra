@@ -176,7 +176,17 @@ export class InvoiceRepository {
     ];
 
     if (params.status && params.status.length > 0) {
-      conditions.push(inArray(invoices.paymentStatus, params.status as ('Pending' | 'Paid' | 'Overdue' | 'Written Off')[]));
+      const hasOverdue = params.status.includes('Overdue');
+      const hasPending = params.status.includes('Pending') || params.status.includes('Unpaid');
+      const hasPaid = params.status.includes('Paid');
+
+      if (hasPending && hasOverdue && !hasPaid) {
+        conditions.push(sql`${invoices.paymentStatus} != 'Paid'`);
+      } else if (hasOverdue && !hasPending && !hasPaid) {
+        conditions.push(sql`(${invoices.paymentStatus} = 'Overdue' OR (${invoices.paymentStatus} != 'Paid' AND ${invoices.dueDate} < NOW()))`);
+      } else {
+        conditions.push(inArray(invoices.paymentStatus, params.status as ('Pending' | 'Paid' | 'Overdue' | 'Written Off')[]));
+      }
     }
     if (params.clientName) {
       conditions.push(ilike(invoices.clientName, `%${params.clientName}%`));
