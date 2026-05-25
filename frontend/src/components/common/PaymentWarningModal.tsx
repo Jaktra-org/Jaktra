@@ -55,7 +55,7 @@ export function PaymentWarningModal({ onConfirm, onCancel }: PaymentWarningModal
               id="dont-ask-payment-warning"
               checked={dontAskAgain}
               onChange={(e) => setDontAskAgain(e.target.checked)}
-              className="w-4 h-4 rounded border-[#23252a] bg-[#010102] text-[#5e6ad2] focus:ring-[#5e69d1] cursor-pointer"
+              className="w-4 h-4 rounded border-[#23252a] bg-[#010102] accent-[#f7f8f8] cursor-pointer"
             />
             <span className="text-xs text-[#8a8f98] group-hover:text-[#f7f8f8] transition-colors">
               Don't ask me again
@@ -67,13 +67,13 @@ export function PaymentWarningModal({ onConfirm, onCancel }: PaymentWarningModal
         <div className="flex items-center justify-end gap-3 px-5 py-3.5 bg-[#010102] rounded-b-xl border-t border-[#23252a]">
           <button
             onClick={onCancel}
-            className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] rounded-md hover:bg-[#141516] transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] bg-transparent border border-[#23252a] rounded-xl hover:bg-[#18191c] transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={() => onConfirm(dontAskAgain)}
-            className="px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-md hover:bg-[#828fff] transition-colors"
+            className="px-3.5 py-1.5 text-xs font-semibold text-[#010102] bg-[#f7f8f8] rounded-xl hover:bg-[#e1e4e8] active:bg-[#d0d6e0] transition-colors cursor-pointer shadow-xs"
           >
             Continue Anyway
           </button>
