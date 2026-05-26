@@ -98,7 +98,7 @@ export function TriggerFollowupModal({
                     Based on current payment status and invoice age, the AI suggests the following tone:
                   </p>
                   <div className="mt-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#5e6ad2]/20 text-[#5e6ad2] border border-[#5e6ad2]/30">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#18191c] text-[#f7f8f8] border border-[#23252a]">
                       {toneLabels[recommendedTone!]}
                     </span>
                   </div>
@@ -129,7 +129,7 @@ export function TriggerFollowupModal({
             onChange={setSelectedTone}
             includeAuto={false}
             placeholder="Select Tone"
-            className="w-full h-9 border-[#23252a] bg-[#010102] text-[#f7f8f8] focus:ring-1 focus:ring-[#5e69d1]"
+            className="w-full h-9 border-[#23252a] bg-[#010102] text-[#f7f8f8] focus:ring-1 focus:ring-[#555761]"
           />
           {!isRecommendedValid && !selectedTone && (
             <p className="text-xs text-red-400 font-medium mt-1">
@@ -143,14 +143,14 @@ export function TriggerFollowupModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#0f1011] border border-[#23252a] rounded-md hover:bg-[#141516] transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] bg-transparent border border-[#23252a] rounded-xl hover:bg-[#18191c] transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isPending || !selectedTone}
-            className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-md hover:bg-[#828fff] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold text-[#010102] bg-[#f7f8f8] rounded-xl hover:bg-[#e1e4e8] active:bg-[#d0d6e0] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
           >
             {isPending ? (
               <>
