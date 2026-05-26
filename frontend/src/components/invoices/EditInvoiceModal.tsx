@@ -97,7 +97,7 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
             value={formData.clientName}
             onChange={handleChange}
             placeholder="Client or Company Name"
-            className="flex h-9 w-full rounded-xl border border-[#1e2025] bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
+            className="flex h-9 w-full rounded-xl border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] transition-colors"
           />
         </div>
 
@@ -111,7 +111,7 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
             value={formData.contactEmail}
             onChange={handleChange}
             placeholder="billing@example.com"
-            className="flex h-9 w-full rounded-xl border border-[#1e2025] bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
+            className="flex h-9 w-full rounded-xl border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] transition-colors"
           />
         </div>
 
@@ -125,7 +125,7 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
               required
               value={formData.dueDate}
               onChange={handleChange}
-              className="flex h-9 w-full rounded-xl border border-[#1e2025] bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
+              className="flex h-9 w-full rounded-xl border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] transition-colors"
             />
           </div>
           <div className="space-y-1.5">
@@ -140,14 +140,14 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
               value={formData.invoiceAmount}
               onChange={handleChange}
               placeholder="0.00"
-              className="flex h-9 w-full rounded-xl border border-[#1e2025] bg-[#0e1013]/60 px-3 py-1.5 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] transition-colors"
+              className="flex h-9 w-full rounded-xl border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] transition-colors"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
           <label htmlFor="subject" className="text-xs font-medium text-[#8a8f98]">
-            Invoice Description <span className="text-[#8a8f98]/60 font-normal">(optional)</span>
+            Invoice Description <span className="text-[#62666d] font-normal">(optional)</span>
           </label>
           <textarea
             id="subject"
@@ -157,23 +157,23 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
             onChange={handleChange}
             placeholder="e.g. Web Development Services – Q1 2026"
             maxLength={500}
-            className="flex w-full rounded-xl border border-[#1e2025] bg-[#0e1013]/60 px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#5e6ad2] focus:ring-1 focus:ring-[#5e6ad2] resize-none transition-colors"
+            className="flex w-full rounded-xl border border-[#23252a] bg-[#010102] px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] resize-none transition-colors"
           />
-          <p className="text-[11px] text-[#8a8f98]/80">What this invoice is for — used to personalise follow-up emails.</p>
+          <p className="text-[11px] text-[#62666d]">What this invoice is for — used to personalise follow-up emails.</p>
         </div>
 
-        <div className="pt-4 flex justify-end space-x-3 border-t border-[#1e2025]">
+        <div className="pt-4 flex justify-end space-x-3 border-t border-[#23252a]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-[#f7f8f8] bg-[#13161c] border border-[#1e2025] rounded-xl hover:bg-[#1d212a] transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] bg-transparent border border-[#23252a] rounded-xl hover:bg-[#18191c] transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-white bg-[#5e6ad2] hover:bg-[#4b55c4] rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.98] cursor-pointer"
+            className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold text-[#010102] bg-[#f7f8f8] rounded-xl hover:bg-[#e1e4e8] active:bg-[#d0d6e0] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-xs cursor-pointer"
           >
             {mutation.isPending ? (
               <>
