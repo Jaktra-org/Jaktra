@@ -140,15 +140,15 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-[#0e1013]/60 p-4 rounded-xl border border-[#1e2025] text-center">
+            <div className="bg-[#010102] p-4 rounded-xl border border-[#23252a] text-center">
               <div className="text-xl font-bold text-[#f7f8f8]">{importResult.imported}</div>
               <div className="text-xs text-[#8a8f98] font-medium">Imported</div>
             </div>
-            <div className="bg-[#0e1013]/60 p-4 rounded-xl border border-[#1e2025] text-center">
-              <div className="text-xl font-bold text-[#5e6ad2]">{importResult.updated}</div>
-              <div className="text-xs text-[#5e6ad2] font-medium">Updated</div>
+            <div className="bg-[#010102] p-4 rounded-xl border border-[#23252a] text-center">
+              <div className="text-xl font-bold text-[#f7f8f8]">{importResult.updated}</div>
+              <div className="text-xs text-[#8a8f98] font-medium">Updated</div>
             </div>
-            <div className="bg-[#0e1013]/60 p-4 rounded-xl border border-[#1e2025] text-center">
+            <div className="bg-[#010102] p-4 rounded-xl border border-[#23252a] text-center">
               <div className="text-xl font-bold text-amber-400">{importResult.skipped}</div>
               <div className="text-xs text-amber-400 font-medium">Skipped</div>
             </div>
@@ -175,7 +175,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
           <div className="pt-4 flex justify-end">
             <button
               onClick={handleClose}
-              className="px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-xl hover:bg-[#828fff] transition-colors shadow-lg shadow-[#5e6ad2]/20"
+              className="px-3.5 py-1.5 text-xs font-semibold text-[#010102] bg-[#f7f8f8] rounded-xl hover:bg-[#e1e4e8] active:bg-[#d0d6e0] transition-colors cursor-pointer"
             >
               Done
             </button>
@@ -196,7 +196,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               className={`border border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
-                isDragging ? "border-[#5e6ad2] bg-[#5e6ad2]/10" : "border-[#1e2025]/80 hover:border-[#34343a] bg-[#0e1013]/40 hover:bg-[#0e1013]/60"
+                isDragging ? "border-[#f7f8f8] bg-[#18191c]" : "border-[#23252a] hover:border-[#40434d] bg-[#010102] hover:bg-[#141516]/60"
               }`}
               onClick={() => document.getElementById("csv-upload")?.click()}
             >
@@ -207,7 +207,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
                 className="hidden"
                 onChange={handleFileChange}
               />
-              <div className="p-2.5 bg-[#5e6ad2]/20 text-[#5e6ad2] rounded-full mb-3">
+              <div className="p-2.5 bg-[#18191c] text-[#f7f8f8] border border-[#23252a] rounded-full mb-3">
                 <Upload className="w-5 h-5" />
               </div>
               <p className="text-xs font-medium text-[#f7f8f8] mb-1">Click to upload or drag and drop</p>
@@ -215,9 +215,9 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border border-[#1e2025]/80 rounded-xl bg-[#0e1013]/40">
+              <div className="flex items-center justify-between p-3 border border-[#23252a] rounded-xl bg-[#010102]">
                 <div className="flex items-center overflow-hidden">
-                  <FileUp className="w-4 h-4 text-[#5e6ad2] mr-2.5 flex-shrink-0" />
+                  <FileUp className="w-4 h-4 text-[#8a8f98] mr-2.5 flex-shrink-0" />
                   <span className="text-xs font-medium text-[#f7f8f8] truncate" title={file.name}>
                     {file.name}
                   </span>
@@ -228,33 +228,33 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
                 <button
                   type="button"
                   onClick={resetState}
-                  className="p-1 text-[#8a8f98] hover:text-[#f7f8f8] rounded-full hover:bg-[#1d212a] transition-colors"
+                  className="p-1 text-[#8a8f98] hover:text-[#f7f8f8] rounded-full hover:bg-[#18191c] transition-colors cursor-pointer"
                 >
                   <XCircle className="w-4 h-4" />
                 </button>
               </div>
 
               {preview.length === 0 && file && (
-                <div className="p-3 bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/20 rounded-xl text-xs">
+                <div className="p-3 bg-[#18191c] text-[#8a8f98] border border-[#23252a] rounded-xl text-xs">
                   <strong>Note:</strong> Client-side preview is not available for Excel spreadsheets, but the file is loaded and ready to upload and process.
                 </div>
               )}
 
               {preview.length > 0 && (
-                <div className="border border-[#1e2025]/80 rounded-xl overflow-hidden bg-[#0e1013]/40">
-                  <div className="bg-[#13161c]/80 px-3 py-1.5 text-[10px] font-semibold text-[#8a8f98] border-b border-[#1e2025] uppercase tracking-wider">
+                <div className="border border-[#23252a] rounded-xl overflow-hidden bg-[#010102]">
+                  <div className="bg-[#141516] px-3 py-1.5 text-[10px] font-semibold text-[#8a8f98] border-b border-[#23252a] uppercase tracking-wider">
                     Data Preview (First 5 Rows)
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
-                      <thead className="bg-[#13161c]/60 border-b border-[#1e2025]">
+                      <thead className="bg-[#141516]/60 border-b border-[#23252a]">
                         <tr>
                           {previewHeaders.map((header, i) => (
                             <th key={i} className="px-3 py-1.5 font-medium text-[#8a8f98] whitespace-nowrap text-[11px]">{header}</th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#1e2025]/50 bg-transparent">
+                      <tbody className="divide-y divide-[#23252a] bg-transparent">
                         {preview.map((row, i) => (
                           <tr key={i}>
                             {previewHeaders.map((header, j) => (
@@ -273,36 +273,36 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
               <div className="space-y-2 pt-2">
                 <label className="text-xs font-medium text-[#8a8f98]">Duplicate Handling Strategy</label>
                 <div className="flex gap-4">
-                  <label className="flex items-center text-xs text-[#f7f8f8]">
+                  <label className="flex items-center text-xs text-[#f7f8f8] cursor-pointer">
                     <input
                       type="radio"
                       name="strategy"
                       value="skip"
                       checked={strategy === 'skip'}
                       onChange={() => setStrategy('skip')}
-                      className="mr-2 text-[#5e6ad2] focus:ring-[#5e69d1]"
+                      className="mr-2 accent-[#f7f8f8] cursor-pointer"
                     />
                     Skip existing (ignore)
                   </label>
-                  <label className="flex items-center text-xs text-[#f7f8f8]">
+                  <label className="flex items-center text-xs text-[#f7f8f8] cursor-pointer">
                     <input
                       type="radio"
                       name="strategy"
                       value="update"
                       checked={strategy === 'update'}
                       onChange={() => setStrategy('update')}
-                      className="mr-2 text-[#5e6ad2] focus:ring-[#5e69d1]"
+                      className="mr-2 accent-[#f7f8f8] cursor-pointer"
                     />
                     Update existing records
                   </label>
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end space-x-3 border-t border-[#1e2025]">
+              <div className="pt-4 flex justify-end space-x-3 border-t border-[#23252a]">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#13161c]/80 border border-[#1e2025] rounded-xl hover:bg-[#1d212a] transition-colors"
+                  className="px-3.5 py-1.5 text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] bg-transparent border border-[#23252a] rounded-xl hover:bg-[#18191c] transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -310,7 +310,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
                   type="button"
                   onClick={handleImport}
                   disabled={mutation.isPending}
-                  className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium text-white bg-[#5e6ad2] rounded-xl hover:bg-[#828fff] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-[#5e6ad2]/20"
+                  className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold text-[#010102] bg-[#f7f8f8] rounded-xl hover:bg-[#e1e4e8] active:bg-[#d0d6e0] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-xs cursor-pointer"
                 >
                   {mutation.isPending ? (
                     <>
