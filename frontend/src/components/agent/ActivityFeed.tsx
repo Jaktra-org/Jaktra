@@ -85,7 +85,7 @@ export function ActivityFeed({ isRunning }: ActivityFeedProps) {
           <button 
             onClick={() => refetch()}
             disabled={isFetching || isRunning}
-            className="inline-flex items-center justify-center rounded-md border border-[#23252a] bg-[#0f1011] p-1.5 text-[#8a8f98] hover:bg-[#141516] hover:text-[#f7f8f8] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#5e69d1] disabled:opacity-40"
+            className="inline-flex items-center justify-center rounded-md border border-[#23252a] bg-[#0f1011] p-1.5 text-[#8a8f98] hover:bg-[#141516] hover:text-[#f7f8f8] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#555761] disabled:opacity-40"
             title="Manual Refresh"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
