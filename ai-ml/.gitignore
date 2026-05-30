@@ -1,0 +1,28 @@
+# ─── Secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Python ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# ─── Agent Run Outputs (generated at runtime) ───────────────────
+outputs/
+
+# ─── Database files ──────────────────────────────────────────────
+*.sqlite
+*.db
+
+# ─── IDE ─────────────────────────────────────────────────────────
+.vscode/
+.idea/

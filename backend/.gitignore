@@ -1,0 +1,28 @@
+# Secrets
+.env
+.env.local
+.env.*.local
+
+# Node / TypeScript 
+node_modules/
+dist/
+*.tsbuildinfo
+.cache/
+
+# Logs 
+logs/
+*.log
+npm-debug.log*
+
+# Test & Coverage
+coverage/
+.nyc_output/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# IDE
+.vscode/
+.idea/
