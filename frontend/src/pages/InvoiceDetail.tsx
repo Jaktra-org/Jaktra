@@ -865,7 +865,7 @@ export function InvoiceDetail() {
             <div className="relative">
               <button
                 onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
-                className="inline-flex items-center justify-center rounded-xl border border-[#1e2025] bg-[#13161c]/80 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#1d212a] h-9 w-9 p-0 transition-all active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-xl border border-[#23252a] bg-[#0f1011] text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#18191c] h-9 w-9 p-0 transition-all active:scale-[0.98] cursor-pointer"
                 aria-label="More options"
               >
                 <MoreVertical className="h-5 w-5" />
@@ -874,13 +874,13 @@ export function InvoiceDetail() {
               {isActionsMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setIsActionsMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-52 rounded-xl border border-[#1e2025] bg-[#13161c]/95 backdrop-blur-xl shadow-2xl z-30 py-1.5 text-xs text-[#f7f8f8] animate-in zoom-in-95 duration-100">
+                  <div className="absolute right-0 mt-2 w-52 rounded-xl border border-[#23252a] bg-[#0f1011] shadow-2xl z-30 py-1.5 text-xs text-[#f7f8f8] animate-in zoom-in-95 duration-100">
                     <button
                       onClick={() => {
                         setIsActionsMenuOpen(false);
                         setIsEditModalOpen(true);
                       }}
-                      className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#1d212a] transition-colors"
+                      className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#18191c] text-[#f7f8f8] transition-colors cursor-pointer"
                     >
                       <Edit className="mr-2.5 h-4 w-4 text-[#8a8f98]" />
                       Edit
@@ -893,7 +893,7 @@ export function InvoiceDetail() {
                           statusMutation.mutate('Paid');
                         }}
                         disabled={statusMutation.isPending}
-                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#1d212a] text-[#27a644] transition-colors disabled:opacity-40"
+                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#18191c] text-[#27a644] transition-colors disabled:opacity-40 cursor-pointer"
                       >
                         <CheckCircle2 className="mr-2.5 h-4 w-4 text-[#27a644]" />
                         Mark as Paid
@@ -907,7 +907,7 @@ export function InvoiceDetail() {
                           cancelPlanMutation.mutate();
                         }}
                         disabled={cancelPlanMutation.isPending}
-                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#1d212a] text-amber-400 transition-colors disabled:opacity-40"
+                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#18191c] text-amber-400 transition-colors disabled:opacity-40 cursor-pointer"
                       >
                         <XCircle className="mr-2.5 h-4 w-4 text-amber-400" />
                         Cancel Payment Plan
@@ -920,7 +920,7 @@ export function InvoiceDetail() {
                           setIsActionsMenuOpen(false);
                           handleDelete();
                         }}
-                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-red-950/40 text-red-400 transition-colors border-t border-[#1e2025]/80 mt-1 pt-2.5"
+                        className="w-full flex items-center px-3.5 py-2.5 hover:bg-[#18191c] text-red-400 transition-colors border-t border-[#23252a] mt-1 pt-2.5 cursor-pointer"
                       >
                         <Trash2 className="mr-2.5 h-4 w-4 text-red-400" />
                         Delete Invoice
@@ -1400,14 +1400,14 @@ export function InvoiceDetail() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleOpenPortal}
-                    className="flex-1 inline-flex items-center justify-center rounded-xl text-xs font-semibold border border-[#1e2025] bg-[#13161c] hover:bg-[#1d212a] text-[#f7f8f8] h-9 px-3 transition-colors active:scale-[0.98]"
+                    className="flex-1 inline-flex items-center justify-center rounded-xl text-xs font-semibold border border-[#23252a] bg-[#0f1011] hover:bg-[#18191c] text-[#f7f8f8] h-9 px-3 transition-colors active:scale-[0.98] cursor-pointer"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
+                    <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
                     Open Portal
                   </button>
                   <button
                     onClick={handleCopyPortalLink}
-                    className="flex-1 inline-flex items-center justify-center rounded-xl text-xs font-semibold border border-[#1e2025] bg-[#13161c] hover:bg-[#1d212a] text-[#f7f8f8] h-9 px-3 transition-colors active:scale-[0.98]"
+                    className="flex-1 inline-flex items-center justify-center rounded-xl text-xs font-semibold border border-[#23252a] bg-[#0f1011] hover:bg-[#18191c] text-[#f7f8f8] h-9 px-3 transition-colors active:scale-[0.98] cursor-pointer"
                   >
                     {isCopied ? (
                       <>
