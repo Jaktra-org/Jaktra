@@ -12,13 +12,119 @@ import { getErrorMessage } from "../utils/error-utils";
 import { CreateInvoiceModal } from "../components/invoices/CreateInvoiceModal";
 import {
   Search, Bell, Plus, ChevronRight, TrendingUp, AlertCircle,
-  AlertTriangle, Scale, ShieldAlert, Activity, Loader2,
-  FileText, Calendar, CheckCircle2, Clock, Bot
+  AlertTriangle, Scale, ShieldAlert, Loader2,
+  FileText, Calendar, CheckCircle2, Clock, Bot, XCircle,
+  Shield, Zap, CreditCard, RotateCcw, Trash2, Settings as SettingsIcon, Play, History
 } from "lucide-react";
 import { IconStack } from "../components/ui/reui-icon-stack";
 import { DarkGradientBg } from "../components/ui/DarkGradientBg";
 import botSendingMailsSvg from "../assets/bot_sending_mails.svg";
 
+const getDashboardEventIcon = (actionType: string, description?: string | null) => {
+  const desc = (description || '').toLowerCase();
+  const action = (actionType || '').toLowerCase();
+
+  if (action.includes('payment_plan') || desc.includes('payment plan')) {
+    if (desc.includes('approved') || desc.includes('proposed') || action.includes('approved')) {
+      return {
+        icon: <CreditCard className="w-3.5 h-3.5 text-emerald-400" />,
+        containerClass: "bg-emerald-500/10 border border-emerald-500/20",
+      };
+    }
+    if (desc.includes('denied') || desc.includes('cancelled') || action.includes('denied')) {
+      return {
+        icon: <XCircle className="w-3.5 h-3.5 text-red-400" />,
+        containerClass: "bg-red-500/10 border border-red-500/20",
+      };
+    }
+    return {
+      icon: <CreditCard className="w-3.5 h-3.5 text-emerald-400" />,
+      containerClass: "bg-emerald-500/10 border border-emerald-500/20",
+    };
+  }
+
+  if (action.startsWith('user.') || action.startsWith('auth.')) {
+    return {
+      icon: <Shield className="w-3.5 h-3.5 text-violet-400" />,
+      containerClass: "bg-violet-500/10 border border-violet-500/20",
+    };
+  }
+
+  if (action.startsWith('settings.')) {
+    return {
+      icon: <SettingsIcon className="w-3.5 h-3.5 text-amber-400" />,
+      containerClass: "bg-amber-500/10 border border-amber-500/20",
+    };
+  }
+
+  if (action.startsWith('integration.')) {
+    return {
+      icon: <Zap className="w-3.5 h-3.5 text-emerald-400" />,
+      containerClass: "bg-emerald-500/10 border border-emerald-500/20",
+    };
+  }
+
+  if (action.startsWith('payment.received')) {
+    return {
+      icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />,
+      containerClass: "bg-emerald-500/10 border border-emerald-500/20",
+    };
+  }
+
+  if (action.startsWith('payment.')) {
+    return {
+      icon: <CreditCard className="w-3.5 h-3.5 text-cyan-400" />,
+      containerClass: "bg-cyan-500/10 border border-cyan-500/20",
+    };
+  }
+
+  if (action === 'invoice.trashed') {
+    return {
+      icon: <Trash2 className="w-3.5 h-3.5 text-amber-400" />,
+      containerClass: "bg-amber-500/10 border border-amber-500/20",
+    };
+  }
+
+  if (action === 'invoice.restored') {
+    return {
+      icon: <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />,
+      containerClass: "bg-emerald-500/10 border border-emerald-500/20",
+    };
+  }
+
+  if (action === 'invoice.permanently_deleted') {
+    return {
+      icon: <XCircle className="w-3.5 h-3.5 text-red-400" />,
+      containerClass: "bg-red-500/10 border border-red-500/20",
+    };
+  }
+
+  if (action.startsWith('invoice.')) {
+    return {
+      icon: <FileText className="w-3.5 h-3.5 text-[#8a8f98]" />,
+      containerClass: "bg-[#13161c] border border-[#1e2025]",
+    };
+  }
+
+  if (action.startsWith('dlq.')) {
+    return {
+      icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />,
+      containerClass: "bg-amber-500/10 border border-amber-500/20",
+    };
+  }
+
+  if (action.startsWith('agent.') || action.startsWith('reconciler.')) {
+    return {
+      icon: <Play className="w-3.5 h-3.5 text-indigo-400" />,
+      containerClass: "bg-indigo-500/10 border border-indigo-500/20",
+    };
+  }
+
+  return {
+    icon: <History className="w-3.5 h-3.5 text-[#8a8f98]" />,
+    containerClass: "bg-[#13161c] border border-[#1e2025]",
+  };
+};
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -222,7 +328,7 @@ export function Dashboard() {
             type="text"
             readOnly
             placeholder="Search invoices, customers, disputes..."
-            className="w-full pl-10 pr-4 py-2 border border-[#1e2025]/80 bg-[#13161c]/50 backdrop-blur-md rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none cursor-default select-none transition-all hover:bg-[#13161c]/70 hover:border-[#2e3444]"
+            className="w-full pl-10 pr-4 py-2 border border-[#23252a] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none cursor-default select-none transition-all hover:bg-[#141516] hover:border-[#34343a]"
           />
         </div>
 
@@ -231,17 +337,17 @@ export function Dashboard() {
           {/* Notification Bell */}
           <button
             onClick={() => navigate('/activity-log')}
-            className="relative p-2 border border-[#1e2025]/80 bg-[#13161c]/50 backdrop-blur-md hover:bg-[#1d212a] hover:border-[#2e3444] rounded-xl text-[#8a8f98] hover:text-[#f7f8f8] transition-all"
+            className="relative p-2 border border-[#23252a] bg-[#0f1011] hover:bg-[#141516] hover:border-[#34343a] rounded-xl text-[#8a8f98] hover:text-[#f7f8f8] transition-all cursor-pointer"
             aria-label="Notifications"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-[#13161c]" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-[#0f1011]" />
           </button>
 
           {/* New Invoice Action Button */}
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2 bg-gradient-to-r from-[#5e6ad2] to-[#717ce8] hover:from-[#6e7bd9] hover:to-[#828fff] text-white rounded-xl text-xs font-semibold transition-all flex items-center shadow-lg shadow-[#5e6ad2]/20 active:scale-[0.98]"
+            className="px-4 py-2 bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] rounded-xl text-xs font-semibold transition-all flex items-center shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4 mr-1.5 stroke-[2.5]" />
             New Invoice
@@ -262,32 +368,32 @@ export function Dashboard() {
         {/* Left 2-Column Panel: Hero & Portfolio Summary */}
         <div className="lg:col-span-2 p-2 flex flex-col justify-start gap-6 relative">
 
-          {/* Subtle Ambient Background Glow */}
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#5e6ad2]/5 rounded-full blur-3xl pointer-events-none" />
+              {/* Subtle Ambient Background Glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-white/[0.015] rounded-full blur-3xl pointer-events-none" />
 
-          {/* Top Hero Greeting & Outstanding Total */}
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#f7f8f8] font-sans leading-tight">
-                Coffee's warm.<br />
-                Late payments <span className="relative">aren't<span className="text-[#5e6ad2] font-black">.</span></span>
-              </h1>
-              <p className="text-xs text-[#8a8f98] font-medium mt-2">
-                Good afternoon, {firstName}! Here's who owes you today
-              </p>
-            </div>
-
-            {/* Total Portfolio Metric Block (Clean, Borderless) */}
-            <div className="px-2 py-0 -mt-1 flex flex-col justify-between min-w-[260px] relative">
-              <div className="pl-4">
-                <span className="text-[10px] font-bold text-[#8a8f98] tracking-widest uppercase">
-                  TOTAL PORTFOLIO
-                </span>
-                <div className="mt-1">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-[#f7f8f8]">
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#5e6ad2]" /> : formatCurrencyUSD(totalPortfolio)}
-                  </span>
+              {/* Top Hero Greeting & Outstanding Total */}
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#f7f8f8] font-sans leading-tight">
+                    Coffee's warm.<br />
+                    Late payments <span className="relative">aren't<span className="text-[#f7f8f8] font-black">.</span></span>
+                  </h1>
+                  <p className="text-xs text-[#8a8f98] font-medium mt-2">
+                    Good afternoon, {firstName}! Here's who owes you today
+                  </p>
                 </div>
+
+                {/* Total Portfolio Metric Block (Clean, Borderless) */}
+                <div className="px-2 py-0 -mt-1 flex flex-col justify-between min-w-[260px] relative">
+                  <div className="pl-4">
+                    <span className="text-[10px] font-bold text-[#8a8f98] tracking-widest uppercase">
+                      TOTAL PORTFOLIO
+                    </span>
+                    <div className="mt-1">
+                      <span className="text-2xl sm:text-3xl font-extrabold text-[#f7f8f8]">
+                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#8a8f98]" /> : formatCurrencyUSD(totalPortfolio)}
+                      </span>
+                    </div>
 
                 <div className="flex items-center text-xs mt-2 font-medium">
                   {monthlyData.hasData && (
@@ -424,7 +530,7 @@ export function Dashboard() {
                       <IconComponent />
                     </IconStack>
                     <div className="flex flex-col items-center text-center">
-                      <span className="font-bold text-[#f7f8f8] text-xs sm:text-sm tracking-tight group-hover:text-[#5e6ad2] transition-colors">
+                      <span className="font-bold text-[#f7f8f8] text-xs sm:text-sm tracking-tight group-hover:text-[#ffffff] transition-colors">
                         {item.amount}
                       </span>
                       <span className="text-[#8a8f98] text-[11px] font-medium mt-0.5 group-hover:text-[#f7f8f8] transition-colors">{item.label}</span>
@@ -443,7 +549,7 @@ export function Dashboard() {
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-400" />
               <CardTitle className="text-sm font-semibold text-[#f7f8f8]">
-                Actionable Queue<span className="text-[#5e6ad2] font-bold ml-0.5">:</span>
+                Actionable Queue
               </CardTitle>
             </div>
             <span className="text-[11px] text-[#8a8f98] font-medium">
@@ -455,14 +561,14 @@ export function Dashboard() {
             {/* Action Item 1: Legal Escalations */}
             <Link
               to="/invoices?status=unpaid&days_overdue_min=31"
-              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] transition-all group"
+              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] hover:bg-[#18191a] transition-all group"
             >
               <div className="flex items-center space-x-3 min-w-0 pr-2">
                 <div className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 flex-shrink-0">
                   <ShieldAlert className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
+                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#ffffff] transition-colors truncate">
                     Legal Escalations
                   </h4>
                   <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">
@@ -479,14 +585,14 @@ export function Dashboard() {
             {/* Action Item 2: Broken Workout Schedule */}
             <Link
               to="/invoices?has_payment_plan=true&days_overdue_min=1"
-              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] transition-all group"
+              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] hover:bg-[#18191a] transition-all group"
             >
               <div className="flex items-center space-x-3 min-w-0 pr-2">
                 <div className="p-2 rounded-lg bg-[#1c2029] text-[#62666d] border border-[#252a36] flex-shrink-0">
                   <Clock className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
+                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#ffffff] transition-colors truncate">
                     Broken Workout Schedule
                   </h4>
                   <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">
@@ -503,14 +609,14 @@ export function Dashboard() {
             {/* Action Item 3: High Exposure Risk Alert */}
             <Link
               to="/invoices?min_amount=10000&days_overdue_min=15"
-              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] transition-all group"
+              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] hover:bg-[#18191a] transition-all group"
             >
               <div className="flex items-center space-x-3 min-w-0 pr-2">
                 <div className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 flex-shrink-0">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
+                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#ffffff] transition-colors truncate">
                     High Exposure Risk Alert
                   </h4>
                   <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">
@@ -527,14 +633,14 @@ export function Dashboard() {
             {/* Action Item 4: Pending Objections */}
             <Link
               to="/disputes?status=pending&category=dispute"
-              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] transition-all group"
+              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] hover:bg-[#18191a] transition-all group"
             >
               <div className="flex items-center space-x-3 min-w-0 pr-2">
                 <div className="p-2 rounded-lg bg-[#1c2029] text-[#62666d] border border-[#252a36] flex-shrink-0">
                   <Scale className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
+                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#ffffff] transition-colors truncate">
                     Pending Objections
                   </h4>
                   <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">
@@ -551,14 +657,14 @@ export function Dashboard() {
             {/* Action Item 5: Agent Execution Error */}
             <Link
               to="/activity-log"
-              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] transition-all group"
+              className="flex items-center justify-between p-2 rounded-xl bg-[#13161c]/80 border border-[#1d212a] hover:border-[#34343a] hover:bg-[#18191a] transition-all group"
             >
               <div className="flex items-center space-x-3 min-w-0 pr-2">
                 <div className="p-2 rounded-lg bg-[#1c2029] text-[#62666d] border border-[#252a36] flex-shrink-0">
                   <Bot className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#5e6ad2] transition-colors truncate">
+                  <h4 className="text-xs font-semibold text-[#f7f8f8] group-hover:text-[#ffffff] transition-colors truncate">
                     Autopilot Execution Error
                   </h4>
                   <p className="text-[11px] text-[#8a8f98] truncate mt-0.5">
@@ -586,7 +692,7 @@ export function Dashboard() {
               <CardTitle className="text-sm font-semibold text-[#f7f8f8]">
                 Recent activity
               </CardTitle>
-              <Link to="/activity-log" className="text-xs font-medium text-[#5e6ad2] hover:text-[#828fff] transition-colors">
+              <Link to="/activity-log" className="text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
                 View all
               </Link>
             </CardHeader>
@@ -595,25 +701,25 @@ export function Dashboard() {
               <div className="space-y-3">
                 {isEventsLoading ? (
                   <div className="flex items-center justify-center py-6 text-xs text-[#8a8f98]">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#5e6ad2] mr-2" /> Loading feed...
+                    <Loader2 className="w-4 h-4 animate-spin text-[#8a8f98] mr-2" /> Loading feed...
                   </div>
                 ) : eventsFeed && eventsFeed.length > 0 ? (
-                  eventsFeed.slice(0, 6).map((evt) => (
-                    <div key={evt.id} className="flex items-start justify-between text-xs">
-                      <div className="flex items-start space-x-2.5">
-                        <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 mt-0.5">
-                          <Activity className="w-3.5 h-3.5" />
+                  eventsFeed.slice(0, 6).map((evt) => {
+                    const { icon, containerClass } = getDashboardEventIcon(evt.actionType, evt.description);
+                    return (
+                      <div key={evt.id} className="flex items-center justify-between text-xs py-0.5">
+                        <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                          <div className={`p-1.5 rounded-lg flex items-center justify-center flex-shrink-0 ${containerClass}`}>
+                            {icon}
+                          </div>
+                          <h5 className="font-semibold text-[#f7f8f8] truncate">{evt.description || evt.actionType}</h5>
                         </div>
-                        <div>
-                          <h5 className="font-semibold text-[#f7f8f8]">{evt.description || evt.actionType}</h5>
-                          <p className="text-[11px] text-[#8a8f98]">Source: {evt.source}</p>
-                        </div>
+                        <span className="text-[10px] text-[#62666d] flex-shrink-0">
+                          {new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-[#62666d]">
-                        {new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="p-6 text-center text-xs text-[#8a8f98]">
                     No recent system activity recorded.
@@ -648,8 +754,8 @@ export function Dashboard() {
               </p>
             </div>
 
-            {/* Large SVG Graphic positioned so robot head & neck align just before Active badge */}
-            <div className="absolute right-0 -top-7 pointer-events-none z-0">
+            {/* Large SVG Graphic positioned so robot wheels touch the stats container line */}
+            <div className="absolute right-0 -top-5.5 pointer-events-none z-0">
               <img 
                 src={botSendingMailsSvg} 
                 alt="Autopilot Sending Mails"  
