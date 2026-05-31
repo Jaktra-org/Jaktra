@@ -38,7 +38,7 @@ export function Invoices() {
     const searchParams = new URLSearchParams(window.location.search);
     const initial: ListInvoicesParams = {
       page: 1,
-      limit: 50,
+      limit: 15,
       sort_by: 'createdAt',
       order: 'desc'
     };
@@ -345,7 +345,7 @@ export function Invoices() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col flex-1 min-h-full h-full gap-3 md:gap-4">
       {/* Header & Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -374,7 +374,7 @@ export function Invoices() {
               </button>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-xl text-xs font-medium transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-3.5 shadow-lg shadow-[#5e6ad2]/20"
+                className="inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] h-9 px-3.5 shadow-xs cursor-pointer"
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add Invoice
@@ -397,14 +397,14 @@ export function Invoices() {
       {/* Filters Top Header */}
       <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
         {/* Main Status Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-wrap">
+        <div className="inline-flex items-center gap-1.5 p-1 bg-[#0f1011] border border-[#23252a] rounded-xl flex-wrap w-fit max-w-full">
           {['All', 'Unpaid', 'Paid', 'Overdue'].map((status) => (
             <button
               key={status}
               onClick={() => handleStatusFilter(status)}
               className={`px-3.5 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
                 !isTrashView && currentStatus === status
-                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                  ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
                   : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
@@ -415,7 +415,7 @@ export function Invoices() {
             onClick={handleTrashTab}
             className={`px-3.5 py-1.5 text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               isTrashView
-                ? 'bg-[#1a1e2e] text-amber-400 border border-[#282f45] font-semibold shadow-sm'
+                ? 'bg-[#18191c] text-amber-400 border border-[#34343a] font-semibold shadow-xs'
                 : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
@@ -430,10 +430,10 @@ export function Invoices() {
             <Search className="absolute left-2.5 top-2.5 z-10 h-3.5 w-3.5 text-[#62666d] pointer-events-none" />
             <input
               type="text"
-              placeholder="Search clients or invoice #..."
+              placeholder="Search clients..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="flex h-8.5 w-full rounded-xl border border-[#1e2025]/80 bg-[#13161c]/50 px-3 py-1.5 pl-8.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#5e69d1] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
+              className="flex h-8.5 w-full rounded-xl border border-[#1e2025]/80 bg-[#13161c]/50 px-3 py-1.5 pl-8.5 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#555761] focus:outline-none focus:ring-1 focus:ring-white/20 transition-colors"
             />
           </div>
 
@@ -441,14 +441,14 @@ export function Invoices() {
             onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
             className={`inline-flex items-center justify-center text-xs font-medium transition-all border h-8.5 px-3 gap-1.5 rounded-xl ${
               isFilterPanelOpen || activeFilterCount > 0
-                ? 'bg-[#5e6ad2]/15 border-[#5e6ad2]/40 text-[#5e6ad2]'
+                ? 'bg-[#18191a] border-[#34343a] text-[#f7f8f8]'
                 : 'bg-[#13161c]/50 border-[#1e2025]/80 text-[#8a8f98] hover:text-[#f7f8f8] hover:bg-[#181a22]'
             }`}
           >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               <span>Filters</span>
               {activeFilterCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.2 bg-[#5e6ad2] text-white text-[10px] rounded-full font-bold">
+                <span className="ml-1 px-1.5 py-0.2 bg-[#23252a] text-[#f7f8f8] text-[10px] rounded-full font-bold">
                   {activeFilterCount}
                 </span>
               )}
@@ -463,12 +463,12 @@ export function Invoices() {
           <div className="p-3.5 rounded-xl border border-[#1e2025]/60 bg-[#13161c]/30 space-y-3 transition-all animate-in fade-in duration-150">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-semibold text-[#f7f8f8] flex items-center gap-1.5">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-[#5e6ad2]" /> Advanced Filter Controls
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#8a8f98]" /> Advanced Filter Controls
               </h3>
               {activeFilterCount > 0 && (
                 <button
                   onClick={handleClearFilters}
-                  className="text-[11px] text-[#5e6ad2] hover:text-[#828fff] transition-colors underline"
+                  className="text-[11px] text-[#8a8f98] hover:text-[#f7f8f8] transition-colors underline"
                 >
                   Reset all filters
                 </button>
@@ -532,7 +532,7 @@ export function Invoices() {
                   placeholder="Min $"
                   value={params.min_amount || ''}
                   onChange={(e) => setParams(prev => ({ ...prev, page: 1, min_amount: e.target.value ? Number(e.target.value) : undefined }))}
-                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-3 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2]"
+                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-3 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#555761] focus:ring-1 focus:ring-white/20 transition-colors"
                 />
               </div>
 
@@ -544,7 +544,7 @@ export function Invoices() {
                   placeholder="Min Days"
                   value={params.days_overdue_min !== undefined ? params.days_overdue_min : ''}
                   onChange={(e) => setParams(prev => ({ ...prev, page: 1, days_overdue_min: e.target.value !== '' ? Number(e.target.value) : undefined }))}
-                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-3 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#5e6ad2]"
+                  className="w-full h-8.5 bg-[#13161c]/60 border border-[#1e2025]/80 rounded-xl px-3 text-xs text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#555761] focus:ring-1 focus:ring-white/20 transition-colors"
                 />
               </div>
             </div>
@@ -558,7 +558,7 @@ export function Invoices() {
               <span className="text-[11px] text-[#8a8f98]">Active Filters:</span>
 
               {params.urgency_tier && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#5e6ad2]/20 border border-[#5e6ad2]/40 text-[#828fff] text-[11px]">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#23252a] border border-[#34343a] text-[#f7f8f8] text-[11px]">
                   Stage: {params.urgency_tier.replace(/_/g, ' ')}
                   <X className="w-3 h-3 cursor-pointer hover:text-white" onClick={() => setParams(p => ({ ...p, urgency_tier: undefined }))} />
                 </span>
@@ -616,11 +616,12 @@ export function Invoices() {
           </div>
         )}
 
-        {/* Table */}
-        <div className="relative w-full overflow-auto">
-          <table className="w-full caption-bottom text-xs">
-            <thead>
-              <tr className="border-b border-[#23252a]/70">
+        {/* Table Container with Sticky Header and Scrollable Body */}
+        <div className="relative w-full flex-1 min-h-0 border border-[#23252a] rounded-2xl overflow-hidden bg-[#0f1011] shadow-xl flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-[#23252a] scrollbar-track-transparent">
+            <table className="w-full caption-bottom text-xs">
+              <thead className="sticky top-0 bg-[#0f1011] z-10 border-b border-[#23252a]">
+                <tr className="border-b border-[#23252a]">
                 <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('invoiceNo')}>
                   <div className="flex items-center">Invoice No {renderSortIcon('invoiceNo')}</div>
                 </th>
@@ -664,7 +665,7 @@ export function Invoices() {
                 <tr>
                   <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-8 text-center text-[#8a8f98]">
                     <div className="flex flex-col items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-[#5e6ad2] mb-3" />
+                      <Loader2 className="h-6 w-6 animate-spin text-[#8a8f98] mb-3" />
                       <p>{isTrashView ? 'Loading trash...' : 'Loading invoices...'}</p>
                     </div>
                   </td>
@@ -859,34 +860,56 @@ export function Invoices() {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Integrated Thin Pagination Footer inside Table Card */}
         {activeData && activeData.pagination && activeData.pagination.totalPages > 0 && (
-          <div className="flex items-center justify-between pt-3 text-xs">
-            <div className="text-[#8a8f98]">
-              Showing <span className="font-medium text-[#f7f8f8]">{((params.page || 1) - 1) * (params.limit || 50) + (activeData.pagination.total > 0 ? 1 : 0)}</span> to <span className="font-medium text-[#f7f8f8]">{Math.min((params.page || 1) * (params.limit || 50), activeData.pagination.total)}</span> of <span className="font-medium text-[#f7f8f8]">{activeData.pagination.total}</span> results
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2 px-4 text-[11px] text-[#8a8f98] border-t border-[#23252a]/70 bg-[#0d0e10] flex-shrink-0">
+            <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+              <span>
+                Showing <span className="font-medium text-[#f7f8f8]">{((params.page || 1) - 1) * (params.limit || 15) + (activeData.pagination.total > 0 ? 1 : 0)}</span> to <span className="font-medium text-[#f7f8f8]">{Math.min((params.page || 1) * (params.limit || 15), activeData.pagination.total)}</span> of <span className="font-medium text-[#f7f8f8]">{activeData.pagination.total}</span> results
+              </span>
+              <span className="text-[#34343a] hidden sm:inline">|</span>
+              <div className="flex items-center space-x-1">
+                <span>Show</span>
+                <div className="w-[72px]">
+                  <CustomSelect
+                    value={String(params.limit || 15)}
+                    onChange={(val) => setParams(prev => ({ ...prev, page: 1, limit: Number(val) }))}
+                    placement="top"
+                    size="sm"
+                    options={[
+                      { label: "15", value: "15" },
+                      { label: "25", value: "25" },
+                      { label: "50", value: "50" },
+                      { label: "100", value: "100" },
+                    ]}
+                  />
+                </div>
+                <span>per page</span>
+              </div>
             </div>
-            <div className="flex space-x-1.5">
+            <div className="flex items-center space-x-1">
               <button
                 onClick={() => setParams(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
                 disabled={(params.page || 1) <= 1}
-                className="inline-flex items-center justify-center rounded-lg transition-all border border-[#1e2025] bg-[#13161c]/80 text-[#f7f8f8] hover:bg-[#1d212a] h-7 w-7 p-0 disabled:opacity-40"
+                className="inline-flex items-center justify-center rounded-md transition-all border border-[#23252a] bg-[#13161c]/80 text-[#f7f8f8] hover:bg-[#1d212a] h-6.5 px-2 text-[11px] disabled:opacity-40 cursor-pointer"
                 aria-label="Previous page"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
-                <span className="sr-only">Previous page</span>
+                <ChevronLeft className="h-3 w-3 mr-0.5" />
+                <span>Previous</span>
               </button>
               <button
                 onClick={() => setParams(prev => ({ ...prev, page: Math.min(activeData.pagination.totalPages, (prev.page || 1) + 1) }))}
                 disabled={(params.page || 1) >= activeData.pagination.totalPages}
-                className="inline-flex items-center justify-center rounded-lg transition-all border border-[#1e2025] bg-[#13161c]/80 text-[#f7f8f8] hover:bg-[#1d212a] h-7 w-7 p-0 disabled:opacity-40"
+                className="inline-flex items-center justify-center rounded-md transition-all border border-[#23252a] bg-[#13161c]/80 text-[#f7f8f8] hover:bg-[#1d212a] h-6.5 px-2 text-[11px] disabled:opacity-40 cursor-pointer"
                 aria-label="Next page"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
-                <span className="sr-only">Next page</span>
+                <span>Next</span>
+                <ChevronRight className="h-3 w-3 ml-0.5" />
               </button>
             </div>
           </div>
         )}
+      </div>
 
       <CreateInvoiceModal 
         isOpen={isCreateModalOpen} 
