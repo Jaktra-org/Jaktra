@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { 
+import {
   History, Search, Filter, RefreshCw, ArrowRight,
   Settings as SettingsIcon, Shield, Zap, FileText, CreditCard,
   AlertTriangle, Play, CheckCircle2, XCircle, ShieldAlert, Calendar,
@@ -67,20 +67,20 @@ const eventCategoryMap: {
   colorClass: string;
   badgeStyle: string;
 }[] = [
-  { prefix: 'user.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
-  { prefix: 'auth.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
-  { prefix: 'settings.', icon: SettingsIcon, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
-  { prefix: 'integration.', icon: Zap, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-  { prefix: 'payment.received', icon: CheckCircle2, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-  { prefix: 'payment.', icon: CreditCard, colorClass: 'text-cyan-600', badgeStyle: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
-  { prefix: 'invoice.trashed', icon: Trash2, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
-  { prefix: 'invoice.restored', icon: RotateCcw, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-  { prefix: 'invoice.permanently_deleted', icon: XCircle, colorClass: 'text-rose-600', badgeStyle: 'bg-rose-50 text-rose-700 border-rose-100' },
-  { prefix: 'invoice.', icon: FileText, colorClass: 'text-blue-600', badgeStyle: 'bg-blue-50 text-blue-700 border-blue-100' },
-  { prefix: 'dlq.', icon: AlertTriangle, colorClass: 'text-amber-500', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
-  { prefix: 'agent.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
-  { prefix: 'reconciler.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
-];
+    { prefix: 'user.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
+    { prefix: 'auth.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
+    { prefix: 'settings.', icon: SettingsIcon, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { prefix: 'integration.', icon: Zap, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { prefix: 'payment.received', icon: CheckCircle2, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { prefix: 'payment.', icon: CreditCard, colorClass: 'text-cyan-600', badgeStyle: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
+    { prefix: 'invoice.trashed', icon: Trash2, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { prefix: 'invoice.restored', icon: RotateCcw, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { prefix: 'invoice.permanently_deleted', icon: XCircle, colorClass: 'text-rose-600', badgeStyle: 'bg-rose-50 text-rose-700 border-rose-100' },
+    { prefix: 'invoice.', icon: FileText, colorClass: 'text-blue-600', badgeStyle: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { prefix: 'dlq.', icon: AlertTriangle, colorClass: 'text-amber-500', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { prefix: 'agent.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+    { prefix: 'reconciler.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+  ];
 
 const getEventConfig = (actionType: string) => {
   const cfg = eventCategoryMap.find(m => actionType.startsWith(m.prefix));
@@ -200,7 +200,7 @@ export function ActivityLog() {
   const filteredEvents = events.filter(evt => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
-    
+
     return (
       evt.actionType.toLowerCase().includes(term) ||
       (evt.description && evt.description.toLowerCase().includes(term)) ||
@@ -299,8 +299,8 @@ export function ActivityLog() {
       return String(v);
     };
 
-    const hasChanges = (event.oldValues && Object.keys(event.oldValues).length > 0) || 
-                       (event.newValues && Object.keys(event.newValues).length > 0);
+    const hasChanges = (event.oldValues && Object.keys(event.oldValues).length > 0) ||
+      (event.newValues && Object.keys(event.newValues).length > 0);
 
     // Keep detail box for invoice.trashed and invoice.permanently_deleted as they display snapshot details not in the title
     if ((event.actionType === 'invoice.trashed' || event.actionType === 'invoice.permanently_deleted') && event.oldValues) {
@@ -336,7 +336,7 @@ export function ActivityLog() {
       const oldVals = event.oldValues || {};
       const newVals = event.newValues || {};
       const keys = Object.keys({ ...oldVals, ...newVals }).filter(key => key !== 'updatedAt' && key !== 'tenantId');
-      
+
       // Hide the details box for single-field settings updates as the sentence already conveys everything
       if (keys.length <= 1) {
         return null;
@@ -380,7 +380,7 @@ export function ActivityLog() {
 
   const renderActorSection = (evt: InvoiceEvent) => {
     const displayName = evt.actorName || (evt.source === 'agent' ? 'AI Agent' : evt.source === 'webhook' ? 'Webhook' : 'System');
-    
+
     if (!evt.actorName) {
       return <span className="font-semibold text-[#f7f8f8]">{displayName}</span>;
     }
@@ -389,7 +389,7 @@ export function ActivityLog() {
     const initials = evt.actorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
     return (
-      <span 
+      <span
         className="relative inline-block mr-1"
         onMouseEnter={() => setActiveHoverCard({
           eventId: evt.id,
@@ -402,7 +402,7 @@ export function ActivityLog() {
         <span className="font-bold text-[#f7f8f8] border-b border-dotted border-[#8a8f98] hover:text-[#5e6ad2] transition-colors cursor-pointer">
           {evt.actorName}
         </span>
-        
+
         {/* Hover card */}
         {isCardOpen && (
           <span className="absolute z-50 bottom-full left-0 mb-2 w-60 bg-[#0f1011] border border-[#23252a] rounded-xl p-3 shadow-none text-left block pointer-events-none animate-timeline-fade-in font-sans leading-normal text-[#f7f8f8]">
@@ -439,18 +439,18 @@ export function ActivityLog() {
       if (!invoiceNo || invoiceNo === 'unknown') {
         return <span className="font-bold text-[#f7f8f8]">#unknown</span>;
       }
-      
+
       // If permanently deleted, do not make it clickable (no details page exists)
       if (evt.actionType === 'invoice.permanently_deleted') {
         return <span className="font-bold text-[#f7f8f8]">#{invoiceNo}</span>;
       }
 
-      const path = evt.invoiceDeletedAt 
-        ? `/invoices/${evt.invoiceId}/trashed` 
+      const path = evt.invoiceDeletedAt
+        ? `/invoices/${evt.invoiceId}/trashed`
         : `/invoices/${evt.invoiceId}`;
 
       return (
-        <Link 
+        <Link
           to={path}
           className="font-bold text-[#5e6ad2] hover:text-[#828fff] hover:underline transition-colors"
         >
@@ -852,12 +852,12 @@ export function ActivityLog() {
             Track administrative, user, settings, integration, and agent operations across your entire organization.
           </p>
         </div>
-        <button 
+        <button
           onClick={() => fetchEvents(true)}
           disabled={loading || refreshing}
-          className="flex items-center justify-center space-x-2 bg-[#13161c] hover:bg-[#1e2025] transition-all text-[#f7f8f8] font-medium text-xs px-3.5 py-2 rounded-xl border border-[#1e2025] disabled:opacity-40 self-start sm:self-center cursor-pointer"
+          className="flex items-center justify-center space-x-2 bg-[#0f1011] hover:bg-[#18191c] transition-all text-[#f7f8f8] font-medium text-xs px-3.5 py-2 rounded-xl border border-[#23252a] disabled:opacity-40 self-start sm:self-center cursor-pointer"
         >
-          <RefreshCw className={`h-3.5 w-3.5 text-[#5e6ad2] ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 text-[#8a8f98] ${refreshing ? 'animate-spin' : ''}`} />
           <span>{refreshing ? 'Refreshing...' : 'Refresh Feed'}</span>
         </button>
       </div>
@@ -875,7 +875,7 @@ export function ActivityLog() {
               setSearchTerm(e.target.value);
               setPage(1); // Reset page to 1 when searching
             }}
-            className="w-full pl-9 pr-4 py-2.5 bg-[#13161c]/60 border border-[#1e2025] rounded-xl text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#5e6ad2] transition-all text-xs"
+            className="w-full pl-9 pr-4 py-2.5 bg-[#010102] border border-[#23252a] rounded-xl text-[#f7f8f8] placeholder-[#62666d] focus:outline-none focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] transition-all text-xs"
           />
         </div>
 
@@ -915,23 +915,24 @@ export function ActivityLog() {
       </div>
 
       {/* Category Pills */}
-      <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl overflow-x-auto scrollbar-thin scrollbar-thumb-[#1e2025] scrollbar-track-transparent">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => {
-              setSelectedCategory(cat.id);
-              setPage(1);
-            }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all duration-150 cursor-pointer ${
-              selectedCategory === cat.id
-                ? "bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm"
-                : "bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium"
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
+      <div>
+        <div className="inline-flex items-center gap-1.5 p-1 bg-[#0f1011] border border-[#23252a] rounded-xl overflow-x-auto scrollbar-thin scrollbar-thumb-[#23252a] scrollbar-track-transparent w-fit max-w-full">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setSelectedCategory(cat.id);
+                setPage(1);
+              }}
+              className={`px-3.5 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all duration-150 cursor-pointer ${selectedCategory === cat.id
+                  ? "bg-[#18191c] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs"
+                  : "bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium"
+                }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Error state */}
@@ -1001,18 +1002,18 @@ export function ActivityLog() {
                       {renderActivitySentence(evt)}
                     </div>
                     <div className="text-[11px] text-[#8a8f98] whitespace-nowrap self-start sm:self-center font-medium">
-                      {new Date(evt.createdAt).toLocaleString(undefined, { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
+                      {new Date(evt.createdAt).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
                       })}
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2 items-center text-xs">
                     {/* Source badge */}
-                    <span 
+                    <span
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium border border-[#1e2025] bg-[#13161c] text-[#8a8f98] cursor-default"
                       title={getSourceTooltip(evt.source)}
                     >
@@ -1027,7 +1028,7 @@ export function ActivityLog() {
                 {/* Arrow link icon */}
                 {evt.entityType === 'invoice' && evt.actionType !== 'invoice.permanently_deleted' && evt.invoiceNo ? (
                   evt.invoiceDeletedAt ? (
-                    <Link 
+                    <Link
                       to={`/invoices/${evt.invoiceId}/trashed`}
                       className="p-1.5 hover:bg-[#1e2025] rounded-lg transition-colors self-center flex-shrink-0 hidden sm:block"
                       title="View Trashed Invoice Detail"
@@ -1035,7 +1036,7 @@ export function ActivityLog() {
                       <ArrowRight className="h-3.5 w-3.5 text-amber-400 group-hover:translate-x-0.5 transition-all" />
                     </Link>
                   ) : (
-                    <Link 
+                    <Link
                       to={`/invoices/${evt.invoiceId}`}
                       className="p-1.5 hover:bg-[#1e2025] rounded-lg transition-colors self-center flex-shrink-0 hidden sm:block"
                       title="View Invoice Detail"
@@ -1058,14 +1059,14 @@ export function ActivityLog() {
               Page <span className="font-semibold text-[#f7f8f8]">{page}</span> of <span className="font-semibold text-[#f7f8f8]">{totalPages}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <button 
+              <button
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}
                 className="px-3 py-1 border border-[#1e2025] rounded-lg bg-[#13161c] hover:bg-[#1e2025] text-[#f7f8f8] disabled:opacity-40 text-xs font-medium transition-colors cursor-pointer"
               >
                 Previous
               </button>
-              <button 
+              <button
                 onClick={() => handlePageChange(page + 1)}
                 disabled={page === totalPages}
                 className="px-3 py-1 border border-[#1e2025] rounded-lg bg-[#13161c] hover:bg-[#1e2025] text-[#f7f8f8] disabled:opacity-40 text-xs font-medium transition-colors cursor-pointer"
