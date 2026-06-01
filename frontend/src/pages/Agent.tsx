@@ -110,7 +110,7 @@ export function Agent() {
                   onClick={handleRunAgent}
                   disabled={isRunning || !emailReady}
                   title={!emailReady ? 'Email is not configured. Set up an email provider in Settings first.' : undefined}
-                  className="inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all bg-[#5e6ad2] text-white hover:bg-[#4b55c4] h-9 px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-none cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] h-9 px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer"
                 >
                   {isRunning ? (
                     <>
@@ -135,7 +135,7 @@ export function Agent() {
             onClick={() => setActiveTab('overview')}
             className={`px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
               activeTab === 'overview'
-                ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                ? 'bg-[#18191a] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
                 : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
@@ -145,14 +145,14 @@ export function Agent() {
             onClick={() => setActiveTab('dlq')}
             className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
               activeTab === 'dlq'
-                ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                ? 'bg-[#18191a] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
                 : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
             }`}
           >
             <span>Failed Invoices (DLQ)</span>
             {dlqCount > 0 && (
               <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
-                dlqCriticalCount > 0 ? 'bg-red-950/60 text-red-400 border border-red-900/50' : 'bg-[#5e6ad2]/20 text-[#5e6ad2]'
+                dlqCriticalCount > 0 ? 'bg-red-950/60 text-red-400 border border-red-900/50' : 'bg-[#23252a] text-[#f7f8f8]'
               }`}>
                 {dlqCount}
               </span>
