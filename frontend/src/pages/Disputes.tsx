@@ -266,83 +266,87 @@ export function Disputes() {
           </div>
         )}
 
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-wrap">
-          <button
-            onClick={() => { setActiveStatus('pending'); setPage(1); }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
-              activeStatus === 'pending'
-                ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
-                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
-            }`}
-          >
-            <span>Pending</span>
-            <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
-              activeStatus === 'pending' ? 'bg-[#5e6ad2]/20 text-[#5e6ad2]' : 'bg-[#141516] text-[#8a8f98]'
-            }`}>
-              {statusCounts.pending}
-            </span>
-          </button>
-
-          <button
-            onClick={() => { setActiveStatus('resolved'); setPage(1); }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
-              activeStatus === 'resolved'
-                ? 'bg-[#1a1e2e] text-[#27a644] border border-[#282f45] font-semibold shadow-sm'
-                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
-            }`}
-          >
-            <span>Resolved</span>
-            <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
-              activeStatus === 'resolved' ? 'bg-[#27a644]/20 text-[#27a644]' : 'bg-[#141516] text-[#8a8f98]'
-            }`}>
-              {statusCounts.resolved}
-            </span>
-          </button>
-
-          <button
-            onClick={() => { setActiveStatus('archived'); setPage(1); }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
-              activeStatus === 'archived'
-                ? 'bg-[#1a1e2e] text-amber-400 border border-[#282f45] font-semibold shadow-sm'
-                : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
-            }`}
-          >
-            <span>Archived</span>
-            <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
-              activeStatus === 'archived' ? 'bg-amber-500/20 text-amber-400' : 'bg-[#141516] text-[#8a8f98]'
-            }`}>
-              {statusCounts.archived}
-            </span>
-          </button>
-        </div>
-
-        {/* Secondary Sub-Category Filters */}
-        <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-wrap">
-          {([
-            { id: 'all', label: 'All', count: categoryCounts.all },
-            { id: 'dispute', label: 'Disputes', count: categoryCounts.dispute },
-            { id: 'question', label: 'Questions', count: categoryCounts.question },
-            { id: 'payment_promise', label: 'Payment Promises', count: categoryCounts.payment_promise },
-            { id: 'unclear', label: 'Unclear', count: categoryCounts.unclear },
-          ] as const).map((tab) => (
+        {/* Status Filter Tabs (Above) */}
+        <div>
+          <div className="inline-flex items-center gap-1.5 p-1 bg-[#0f1011] border border-[#23252a] rounded-xl flex-wrap w-fit max-w-full">
             <button
-              key={tab.id}
-              onClick={() => { setActiveCategory(tab.id as DisputeTab); setPage(1); }}
-              className={`px-3 py-1 text-xs rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
-                activeCategory === tab.id
-                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+              onClick={() => { setActiveStatus('pending'); setPage(1); }}
+              className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
+                activeStatus === 'pending'
+                  ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
                   : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
-              <span>{tab.label}</span>
-              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
-                activeCategory === tab.id ? 'bg-[#5e6ad2]/30 text-[#f7f8f8]' : 'bg-[#1e2025] text-[#8a8f98]'
+              <span>Pending</span>
+              <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
+                activeStatus === 'pending' ? 'bg-[#23252a] text-[#f7f8f8]' : 'bg-[#141516] text-[#8a8f98]'
               }`}>
-                {tab.count}
+                {statusCounts.pending}
               </span>
             </button>
-          ))}
+
+            <button
+              onClick={() => { setActiveStatus('resolved'); setPage(1); }}
+              className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
+                activeStatus === 'resolved'
+                  ? 'bg-[#18191c] text-[#27a644] border border-[#23252a] font-semibold shadow-sm'
+                  : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
+              }`}
+            >
+              <span>Resolved</span>
+              <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
+                activeStatus === 'resolved' ? 'bg-[#27a644]/20 text-[#27a644]' : 'bg-[#141516] text-[#8a8f98]'
+              }`}>
+                {statusCounts.resolved}
+              </span>
+            </button>
+
+            <button
+              onClick={() => { setActiveStatus('archived'); setPage(1); }}
+              className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
+                activeStatus === 'archived'
+                  ? 'bg-[#18191c] text-amber-400 border border-[#23252a] font-semibold shadow-sm'
+                  : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
+              }`}
+            >
+              <span>Archived</span>
+              <span className={`px-2 py-0.2 text-[10px] font-bold rounded-full ${
+                activeStatus === 'archived' ? 'bg-amber-500/20 text-amber-400' : 'bg-[#141516] text-[#8a8f98]'
+              }`}>
+                {statusCounts.archived}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Secondary Sub-Category Filters (Below) */}
+        <div>
+          <div className="inline-flex items-center gap-1.5 p-1 bg-[#0f1011] border border-[#23252a] rounded-xl flex-wrap w-fit max-w-full">
+            {([
+              { id: 'all', label: 'All', count: categoryCounts.all },
+              { id: 'dispute', label: 'Disputes', count: categoryCounts.dispute },
+              { id: 'question', label: 'Questions', count: categoryCounts.question },
+              { id: 'payment_promise', label: 'Payment Promises', count: categoryCounts.payment_promise },
+              { id: 'unclear', label: 'Unclear', count: categoryCounts.unclear },
+            ] as const).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => { setActiveCategory(tab.id as DisputeTab); setPage(1); }}
+                className={`px-3 py-1 text-xs rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
+                  activeCategory === tab.id
+                    ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
+                    : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
+                  activeCategory === tab.id ? 'bg-[#23252a] text-[#f7f8f8]' : 'bg-[#1e2025] text-[#8a8f98]'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -548,7 +552,7 @@ export function Disputes() {
                               type="button"
                               disabled={statusMutation.isPending}
                               onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
-                              className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#4b55c4] text-white rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all shadow-none cursor-pointer"
+                              className="px-3.5 py-1.5 bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
                               <span>Reopen to Pending</span>
@@ -572,7 +576,7 @@ export function Disputes() {
                               type="button"
                               disabled={statusMutation.isPending}
                               onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
-                              className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#4b55c4] text-white rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all shadow-none cursor-pointer"
+                              className="px-3.5 py-1.5 bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
                               <span>Reopen to Pending</span>
@@ -802,13 +806,13 @@ function ItemActionArea({
                 value={instruction}
                 onChange={(e) => setInstruction(e.target.value)}
                 placeholder={categoryConfig.placeholder}
-                className="flex-1 px-3.5 py-2 text-xs border border-[#1e2025] rounded-xl focus:border-[#5e6ad2] focus:outline-none focus:ring-1 focus:ring-[#5e6ad2] bg-[#0e1013]/60 text-[#f7f8f8] placeholder-[#62666d]"
+                className="flex-1 px-3.5 py-2 text-xs border border-[#1e2025] rounded-xl focus:border-[#555761] focus:outline-none focus:ring-1 focus:ring-white/20 bg-[#0e1013]/60 text-[#f7f8f8] placeholder-[#62666d] transition-colors"
               />
               <button
                 type="button"
                 disabled={!instruction.trim() || isGeneratingThisItem}
                 onClick={() => onGenerateDraft(item.id, instruction)}
-                className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#4b55c4] text-white rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-all shadow-none cursor-pointer"
+                className="px-4 py-2 bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-all shadow-xs cursor-pointer"
               >
                 {isGeneratingThisItem ? (
                   <>
@@ -865,7 +869,7 @@ function ItemActionArea({
                     rows={6}
                     value={draftResponse}
                     onChange={(e) => setDraftResponse(e.target.value)}
-                    className="w-full p-3.5 border border-[#1e2025] rounded-xl text-xs font-sans focus:border-[#5e6ad2] focus:outline-none focus:ring-1 focus:ring-[#5e6ad2] bg-[#0e1013]/60 text-[#f7f8f8]"
+                    className="w-full p-3.5 border border-[#23252a] rounded-xl text-xs font-sans focus:border-[#40434d] focus:outline-none focus:ring-1 focus:ring-[#555761] bg-[#010102] text-[#f7f8f8]"
                   />
                   <div className="flex justify-end space-x-2">
                     <button
