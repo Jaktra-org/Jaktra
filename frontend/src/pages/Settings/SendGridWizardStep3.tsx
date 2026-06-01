@@ -96,7 +96,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
       <div className="space-y-4 text-[#f7f8f8]">
         <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
           <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-            <RefreshCw className="w-4 h-4 mr-2 text-[#5e6ad2]" />
+            <RefreshCw className="w-4 h-4 mr-2 text-[#8a8f98]" />
             Step 3 of 3: Inbound Reply Webhook
           </h4>
           <span className="text-[10px] bg-[#27a644]/10 text-[#27a644] font-semibold px-2.5 py-0.5 rounded-full border border-[#27a644]/20 flex items-center gap-1">
@@ -104,7 +104,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
           </span>
         </div>
 
-        <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-lg space-y-3">
+        <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-3">
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
             <div>
               <p className="font-semibold text-[#8a8f98] text-[10px] uppercase tracking-wider">Inbound Reply Domain</p>
@@ -119,7 +119,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
             <p className="font-semibold text-[#8a8f98] text-[10px] uppercase tracking-wider mb-1">Webhook URL</p>
             <p className="text-[#d0d6e0] font-mono text-[10px] break-all">{w.webhookUrl}</p>
           </div>
-          <p className="text-[11px] text-[#27a644] font-semibold bg-[#27a644]/10 border border-[#27a644]/20 rounded px-2.5 py-1.5">
+          <p className="text-[11px] text-[#27a644] font-semibold bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl px-2.5 py-1.5">
             ✅ DNS MX record verified and inbound webhook active.
           </p>
         </div>
@@ -134,14 +134,14 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
               setErrorMsg('');
               setMode('edit');
             }}
-            className="px-3.5 py-1.5 border border-[#23252a] rounded-md text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] text-xs font-medium transition-colors"
+            className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all cursor-pointer"
           >
             Edit / Re-verify
           </button>
           <button
             type="button"
             onClick={onComplete}
-            className="px-4 py-2 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-md text-xs font-medium transition-all shadow-none"
+            className="px-4 py-2 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-xl text-xs font-medium transition-all shadow-xs cursor-pointer"
           >
             Setup Complete & Connected ✓
           </button>
@@ -157,7 +157,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
     <div className="space-y-4 text-[#f7f8f8]">
       <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
         <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-          <RefreshCw className="w-4 h-4 mr-2 text-[#5e6ad2]" />
+          <RefreshCw className="w-4 h-4 mr-2 text-[#8a8f98]" />
           Step 3 of 3: Inbound Reply Domain & Webhook Setup
         </h4>
         <span className="text-[10px] bg-amber-950/40 text-amber-300 font-semibold px-2.5 py-0.5 rounded-full border border-amber-900/50">
@@ -166,7 +166,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
       </div>
 
       {errorMsg && (
-        <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-md text-xs text-red-400 font-medium space-y-1">
+        <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 font-medium space-y-1">
           <p className="font-bold">❌ Verification Failed:</p>
           <p>{errorMsg}</p>
           <p className="text-[11px] text-red-300 font-normal">
@@ -176,10 +176,10 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
       )}
 
       {/* 1. Domain input */}
-      <div className="space-y-1.5 p-3 bg-[#010102] border border-[#23252a] rounded-lg">
+      <div className="space-y-1.5 p-3 bg-[#010102] border border-[#23252a] rounded-xl">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-[#f7f8f8]">1. Full Inbound Reply Domain Name</label>
-          <span className="text-[10px] font-semibold text-[#5e6ad2] bg-[#5e6ad2]/10 px-2 py-0.5 rounded border border-[#5e6ad2]/20">
+          <span className="text-[10px] font-semibold text-[#f7f8f8] bg-[#18191c] px-2 py-0.5 rounded border border-[#34343a]">
             DNS Host: <code className="font-mono">{hostPrefix}</code>
           </span>
         </div>
@@ -199,19 +199,19 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
             }
           }}
           placeholder="invoicereply.jaktra.site"
-          className="w-full p-2 border border-[#23252a] rounded-md text-xs font-mono focus:ring-1 focus:ring-[#5e69d1] bg-[#0f1011] text-[#f7f8f8]"
+          className="w-full p-2.5 border border-[#23252a] rounded-xl text-xs font-mono bg-[#0f1011] text-[#f7f8f8] placeholder-[#62666d] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none"
         />
         {domainErr && <p className="text-[11px] text-red-400 font-medium">{domainErr}</p>}
       </div>
 
       {/* 2. DNS MX record table */}
-      <div className="p-3 bg-[#010102] border border-[#23252a] rounded-lg space-y-2.5">
+      <div className="p-3 bg-[#010102] border border-[#23252a] rounded-xl space-y-2.5">
         <div>
           <h5 className="text-xs font-bold text-[#f7f8f8]">2. Add MX Record to your DNS Provider</h5>
           <p className="text-[11px] text-[#8a8f98]">Add this record in Cloudflare, Namecheap, GoDaddy, or Route53:</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border border-[#23252a] bg-[#0f1011] rounded-md">
+          <table className="w-full text-left text-xs border border-[#23252a] bg-[#0f1011] rounded-xl">
             <thead className="bg-[#141516] text-[#8a8f98] font-semibold border-b border-[#23252a] text-[10px]">
               <tr>
                 <th className="px-3 py-1.5">DNS Field</th>
@@ -222,7 +222,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
             <tbody className="divide-y divide-[#23252a] font-mono text-[11px]">
               <tr>
                 <td className="px-3 py-1.5 text-[#8a8f98] font-sans font-bold">Type</td>
-                <td className="px-3 py-1.5 font-bold text-[#5e6ad2]">MX</td>
+                <td className="px-3 py-1.5 font-bold text-[#f7f8f8]">MX</td>
                 <td className="px-3 py-1.5 text-[#62666d] font-sans text-[10px]">Select MX</td>
               </tr>
               <tr>
@@ -230,7 +230,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
                 <td className="px-3 py-1.5 font-bold text-[#f7f8f8]">{hostPrefix}</td>
                 <td className="px-3 py-1.5 font-sans">
                   <button type="button" onClick={() => copy(hostPrefix, setCopiedDnsHost)}
-                    className="px-2 py-0.5 bg-[#141516] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] font-medium border border-[#23252a] transition-colors">
+                    className="px-2 py-0.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] font-medium border border-[#34343a] transition-all cursor-pointer">
                     {copiedDnsHost ? 'Copied!' : 'Copy Host'}
                   </button>
                 </td>
@@ -240,7 +240,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
                 <td className="px-3 py-1.5 text-[#d0d6e0]">mx.sendgrid.net</td>
                 <td className="px-3 py-1.5 font-sans">
                   <button type="button" onClick={() => copy('mx.sendgrid.net', setCopiedMxTarget)}
-                    className="px-2 py-0.5 bg-[#141516] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] font-medium border border-[#23252a] transition-colors">
+                    className="px-2 py-0.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] font-medium border border-[#34343a] transition-all cursor-pointer">
                     {copiedMxTarget ? 'Copied!' : 'Copy Target'}
                   </button>
                 </td>
@@ -253,26 +253,26 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
             </tbody>
           </table>
         </div>
-        <div className="p-2.5 bg-amber-950/30 border border-amber-900/40 rounded text-[11px] text-amber-300">
+        <div className="p-2.5 bg-amber-950/30 border border-amber-900/40 rounded-xl text-[11px] text-amber-300">
           <p className="font-bold">💡 DNS Tip:</p>
           <p>Enter only <strong><code className="font-mono text-amber-200">{hostPrefix}</code></strong> in the Host box — not the full domain <code className="font-mono text-amber-200">{domainInput || 'reply.acme.com'}</code>.</p>
         </div>
       </div>
 
       {/* 3. SendGrid Parse settings */}
-      <div className="p-3 bg-[#010102] border border-[#23252a] rounded-lg space-y-2.5">
+      <div className="p-3 bg-[#010102] border border-[#23252a] rounded-xl space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
             <h5 className="text-xs font-bold text-[#f7f8f8]">3. Configure SendGrid Inbound Parse</h5>
             <p className="text-[11px] text-[#8a8f98]">Open SendGrid → Inbound Parse → Add Host & URL:</p>
           </div>
           <a href={w.sendgridSettingsUrl} target="_blank" rel="noopener noreferrer"
-            className="px-2.5 py-1 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded text-xs font-medium shrink-0 transition-colors inline-flex items-center shadow-none">
+            className="px-2.5 py-1 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] border border-[#34343a] rounded-xl text-xs font-medium shrink-0 transition-all inline-flex items-center shadow-xs">
             Open SendGrid Parse Settings <ExternalLink className="w-3 h-3 ml-1.5" />
           </a>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border border-[#23252a] bg-[#0f1011] rounded-md">
+          <table className="w-full text-left text-xs border border-[#23252a] bg-[#0f1011] rounded-xl">
             <thead className="bg-[#141516] text-[#8a8f98] font-semibold border-b border-[#23252a] text-[10px]">
               <tr>
                 <th className="px-3 py-1.5">SendGrid Field</th>
@@ -286,7 +286,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
                 <td className="px-3 py-1.5 text-[#f7f8f8] font-bold">{domainInput.trim() || 'reply.acme.com'}</td>
                 <td className="px-3 py-1.5 font-sans">
                   <button type="button" onClick={() => copy(domainInput.trim(), setCopiedDomain)}
-                    className="px-2 py-0.5 bg-[#141516] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] font-medium border border-[#23252a] transition-colors">
+                    className="px-2 py-0.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] font-medium border border-[#34343a] transition-all cursor-pointer">
                     {copiedDomain ? 'Copied!' : 'Copy Domain'}
                   </button>
                 </td>
@@ -296,7 +296,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
                 <td className="px-3 py-1.5 text-[#d0d6e0] break-all max-w-[280px] text-[10px]">{w.webhookUrl}</td>
                 <td className="px-3 py-1.5 font-sans">
                   <button type="button" onClick={() => copy(w.webhookUrl, setCopiedWebhook)}
-                    className="px-2 py-0.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded text-[10px] font-medium transition-colors">
+                    className="px-2 py-0.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] font-medium border border-[#34343a] transition-all cursor-pointer">
                     {copiedWebhook ? 'Copied!' : 'Copy URL'}
                   </button>
                 </td>
@@ -317,7 +317,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
             type="button"
             onClick={() => verifyWebhookMutation.mutate()}
             disabled={verifyWebhookMutation.isPending || !!domainErr}
-            className="flex-1 py-2 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-md text-xs font-medium transition-all shadow-none disabled:opacity-40 flex items-center justify-center"
+            className="flex-1 py-2 bg-[#27a644] hover:bg-[#27a644]/80 text-white rounded-xl text-xs font-medium transition-all shadow-xs disabled:opacity-40 flex items-center justify-center cursor-pointer"
           >
             {verifyWebhookMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
             {verifyWebhookMutation.isPending ? 'Checking DNS MX & Webhook...' : 'Re-check DNS & Webhook'}
@@ -326,14 +326,14 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
             type="button"
             onClick={() => rotateTokenMutation.mutate()}
             disabled={rotateTokenMutation.isPending}
-            className="px-3 py-2 bg-[#0f1011] hover:bg-[#141516] text-[#f7f8f8] border border-[#23252a] rounded-md text-xs font-medium shrink-0 transition-colors disabled:opacity-40"
+            className="px-3 py-2 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] border border-[#34343a] rounded-xl text-xs font-medium shrink-0 transition-all disabled:opacity-40 cursor-pointer"
           >
             Rotate Token
           </button>
         </div>
 
         {infoMsg && (
-          <div className="p-3 bg-[#27a644]/10 border border-[#27a644]/20 rounded-md text-xs text-[#27a644] font-medium">
+          <div className="p-3 bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl text-xs text-[#27a644] font-medium">
             ✅ {infoMsg}
           </div>
         )}
@@ -354,7 +354,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
               onBack();
             }
           }}
-          className="px-3.5 py-1.5 border border-[#23252a] rounded-md text-[#f7f8f8] bg-[#0f1011] hover:bg-[#141516] text-xs font-medium transition-colors"
+          className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all cursor-pointer"
         >
           {w.isDone ? '← Cancel Edit' : '← Back to Step 2'}
         </button>
