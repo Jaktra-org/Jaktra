@@ -116,7 +116,7 @@ export function PaymentPlans() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-wrap">
+        <div className="inline-flex items-center gap-1.5 p-1 bg-[#0f1011] border border-[#23252a] rounded-xl flex-wrap w-fit max-w-full">
           {(['pending', 'approved', 'denied', 'cancelled', 'all'] as const).map((tab) => (
             <button
               key={tab}
@@ -126,7 +126,7 @@ export function PaymentPlans() {
               }}
               className={`px-3.5 py-1.5 rounded-lg text-xs capitalize transition-all cursor-pointer ${
                 statusFilter === tab
-                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                  ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
                   : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
