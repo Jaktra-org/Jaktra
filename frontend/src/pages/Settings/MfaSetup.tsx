@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ShieldCheck, ShieldOff, QrCode, Copy, Check, AlertTriangle } from "lucide-react";
+import React, { useState } from "react";
+import { QrCode, Copy, Check, AlertTriangle, Key } from "lucide-react";
 import { authService } from "../../services/auth";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -26,11 +26,15 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
   const [disableCode, setDisableCode] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [codeError, setCodeError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [savedConfirmed, setSavedConfirmed] = useState(false);
 
-  const clearError = () => setError("");
+  const clearError = () => {
+    setError("");
+    setCodeError(false);
+  };
 
   const handleStartSetup = async () => {
     clearError();
@@ -58,6 +62,7 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
       setStep("backup_codes");
     } catch (err) {
       setError(getErrorMessage(err));
+      setCodeError(true);
     } finally {
       setIsLoading(false);
     }
@@ -95,6 +100,7 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
       onMfaChange(false);
     } catch (err) {
       setError(getErrorMessage(err));
+      setCodeError(true);
     } finally {
       setIsLoading(false);
     }
@@ -102,21 +108,26 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
 
   if (step === "idle") {
     return (
-      <Card className="border border-[#23252a] bg-[#0f1011]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm text-[#f7f8f8]">
-            <ShieldOff className="w-4 h-4 text-[#8a8f98]" />
-            Two-Factor Authentication
-          </CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">
-            Add an extra layer of security to your account using an authenticator app (Google Authenticator, Authy, etc.)
-          </CardDescription>
+      <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[#23252a] pb-4">
+          <div>
+            <CardTitle className="text-base font-bold text-[#f7f8f8]">
+              Two-Factor Authentication
+            </CardTitle>
+            <CardDescription className="text-xs text-[#8a8f98] mt-0.5">
+              Add an extra layer of security to your account using an authenticator app (Google Authenticator, Authy, etc.)
+            </CardDescription>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-[#18191c] border border-[#34343a] px-2.5 py-1 text-[10px] font-bold text-[#8a8f98] flex-shrink-0">
+            Disabled
+          </span>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-5">
           {error && (
-            <div className="mb-4 rounded-md bg-red-950/40 border border-red-900/50 p-3 text-xs text-red-400 font-medium">{error}</div>
+            <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 font-medium mb-4">{error}</div>
           )}
-          <Button onClick={handleStartSetup} isLoading={isLoading} size="sm">
+
+          <Button onClick={handleStartSetup} isLoading={isLoading} size="sm" className="font-bold rounded-xl">
             Enable Two-Factor Authentication
           </Button>
         </CardContent>
@@ -126,58 +137,75 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
 
   if (step === "qr") {
     return (
-      <Card className="border border-[#23252a] bg-[#0f1011]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm text-[#f7f8f8]">
-            <QrCode className="w-4 h-4 text-[#5e6ad2]" />
+      <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+        <CardHeader className="border-b border-[#23252a] pb-4">
+          <CardTitle className="flex items-center text-base font-bold text-[#f7f8f8]">
+            <QrCode className="w-4 h-4 mr-2 text-[#8a8f98]" />
             Set up Authenticator
           </CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">
+          <CardDescription className="text-xs text-[#8a8f98] mt-0.5">
             Scan this QR code with your authenticator app, then enter the 6-digit code to confirm.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="pt-5 space-y-5">
           {error && (
-            <div className="rounded-md bg-red-950/40 border border-red-900/50 p-3 text-xs text-red-400 font-medium">{error}</div>
+            <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 font-medium">{error}</div>
           )}
 
-          {qrCodeDataUrl && (
-            <div className="flex justify-center">
-              <img
-                src={qrCodeDataUrl}
-                alt="QR code for authenticator app setup"
-                className="w-44 h-44 rounded-lg border border-[#23252a] bg-white p-2"
-              />
-            </div>
-          )}
+          <div className="p-5 border border-[#23252a] rounded-xl bg-[#010102] flex flex-col md:flex-row items-center gap-6">
+            {qrCodeDataUrl && (
+              <div className="flex-shrink-0">
+                <img
+                  src={qrCodeDataUrl}
+                  alt="QR code for authenticator app setup"
+                  className="w-40 h-40 rounded-xl border border-[#23252a] bg-white p-2.5 shadow-md"
+                />
+              </div>
+            )}
 
-          <form onSubmit={handleConfirmSetup} className="space-y-4">
-            <Input
-              label="Verification code"
-              type="text"
-              inputMode="numeric"
-              required
-              value={confirmCode}
-              onChange={(e) => setConfirmCode(e.target.value)}
-              placeholder="000000"
-              maxLength={6}
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <Button type="submit" size="sm" isLoading={isLoading}>
-                Confirm
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => { setStep("idle"); clearError(); }}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
+            <div className="flex-1 space-y-4 w-full">
+              <div>
+                <h4 className="text-xs font-bold text-[#f7f8f8]">Enter 6-Digit Code</h4>
+                <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                  After scanning the QR code, type the 6-digit security code generated by your app below.
+                </p>
+              </div>
+
+              <form onSubmit={handleConfirmSetup} className="space-y-4">
+                <Input
+                  label="Verification code"
+                  type="text"
+                  inputMode="numeric"
+                  required
+                  error={codeError}
+                  value={confirmCode}
+                  onChange={(e) => {
+                    setConfirmCode(e.target.value);
+                    if (codeError) setCodeError(false);
+                  }}
+                  placeholder="000000"
+                  maxLength={6}
+                  autoFocus
+                  className="font-mono text-center tracking-widest text-lg max-w-xs"
+                />
+                <div className="flex gap-3 pt-1">
+                  <Button type="submit" size="sm" isLoading={isLoading} className="font-bold rounded-xl">
+                    Confirm
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setStep("idle"); clearError(); }}
+                    disabled={isLoading}
+                    className="rounded-xl"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </CardContent>
       </Card>
     );
@@ -185,62 +213,65 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
 
   if (step === "backup_codes") {
     return (
-      <Card className="border border-[#23252a] bg-[#0f1011]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm text-[#f7f8f8]">
-            <ShieldCheck className="w-4 h-4 text-[#27a644]" />
+      <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+        <CardHeader className="border-b border-[#23252a] pb-4">
+          <CardTitle className="flex items-center text-base font-bold text-[#f7f8f8]">
+            <Key className="w-4 h-4 mr-2 text-[#27a644]" />
             Save your backup codes
           </CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">
+          <CardDescription className="text-xs text-[#8a8f98] mt-0.5">
             Store these codes somewhere safe. Each code can only be used once. You will not be able to see them again.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-md bg-amber-950/40 border border-amber-900/50 p-3 flex gap-2 text-xs text-amber-300">
+        <CardContent className="pt-5 space-y-5">
+          <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-900/40 flex gap-2.5 text-xs text-amber-300">
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
-            <span>If you lose your authenticator and run out of backup codes, an admin must reset your MFA manually.</span>
+            <span>If you lose your authenticator app and run out of backup codes, an admin must reset your 2FA credentials manually.</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {backupCodes.map((code, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-md bg-[#010102] border border-[#23252a] px-3 py-1.5 font-mono text-xs text-[#f7f8f8]"
-              >
-                <span>{code}</span>
-                <button
-                  type="button"
-                  className="ml-2 text-[#8a8f98] hover:text-[#f7f8f8] transition-colors"
-                  onClick={() => handleCopyCode(code, i)}
-                  title="Copy code"
+          <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] space-y-3">
+            <div className="grid grid-cols-2 gap-2.5">
+              {backupCodes.map((code, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-xl bg-[#0f1011] border border-[#23252a] px-3.5 py-2 font-mono text-xs text-[#f7f8f8]"
                 >
-                  {copiedIndex === i ? (
-                    <Check className="w-3.5 h-3.5 text-[#27a644]" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </div>
-            ))}
-          </div>
+                  <span>{code}</span>
+                  <button
+                    type="button"
+                    className="ml-2 text-[#8a8f98] hover:text-[#f7f8f8] transition-colors cursor-pointer"
+                    onClick={() => handleCopyCode(code, i)}
+                    title="Copy code"
+                  >
+                    {copiedIndex === i ? (
+                      <Check className="w-3.5 h-3.5 text-[#27a644]" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
 
-          <div className="flex items-center gap-2.5">
-            <input
-              type="checkbox"
-              id="mfa-saved-confirm"
-              checked={savedConfirmed}
-              onChange={(e) => setSavedConfirmed(e.target.checked)}
-              className="h-4 w-4 rounded border-[#23252a] bg-[#010102] text-[#5e6ad2] focus:ring-[#5e69d1]"
-            />
-            <label htmlFor="mfa-saved-confirm" className="text-xs text-[#8a8f98]">
-              I've saved all backup codes in a secure location
-            </label>
+            <div className="flex items-center gap-2.5 pt-2">
+              <input
+                type="checkbox"
+                id="mfa-saved-confirm"
+                checked={savedConfirmed}
+                onChange={(e) => setSavedConfirmed(e.target.checked)}
+                className="h-4 w-4 rounded border-[#23252a] bg-[#0f1011] text-[#f7f8f8] focus:ring-0 cursor-pointer"
+              />
+              <label htmlFor="mfa-saved-confirm" className="text-xs text-[#8a8f98] cursor-pointer">
+                I've saved all backup codes in a secure location
+              </label>
+            </div>
           </div>
 
           <Button
             onClick={handleSavedConfirmation}
             disabled={!savedConfirmed}
             size="sm"
+            className="font-bold rounded-xl"
           >
             Done — Enable 2FA
           </Button>
@@ -251,28 +282,30 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
 
   if (step === "enrolled") {
     return (
-      <Card className="border border-[#23252a] bg-[#0f1011]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm text-[#f7f8f8]">
-            <ShieldCheck className="w-4 h-4 text-[#27a644]" />
-            Two-Factor Authentication
-            <span className="ml-auto inline-flex items-center rounded-full bg-[#27a644]/10 border border-[#27a644]/20 px-2 py-0.5 text-[10px] font-bold text-[#27a644]">
-              Active
-            </span>
-          </CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">
-            Your account is protected by an authenticator app.
-          </CardDescription>
+      <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[#23252a] pb-4">
+          <div>
+            <CardTitle className="text-base font-bold text-[#f7f8f8]">
+              Two-Factor Authentication
+            </CardTitle>
+            <CardDescription className="text-xs text-[#8a8f98] mt-0.5">
+              Your account is currently protected by time-based authenticator codes.
+            </CardDescription>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-[#27a644]/10 border border-[#27a644]/20 px-2.5 py-1 text-[10px] font-bold text-[#27a644] flex-shrink-0">
+            Active
+          </span>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-5">
           {error && (
-            <div className="mb-4 rounded-md bg-red-950/40 border border-red-900/50 p-3 text-xs text-red-400 font-medium">{error}</div>
+            <div className="p-3 rounded-xl bg-red-950/40 border border-red-900/50 text-xs text-red-400 font-medium mb-4">{error}</div>
           )}
+          
           <Button
             onClick={handleStartDisable}
             size="sm"
             variant="outline"
-            className="text-red-400 border-red-900/50 bg-[#0f1011] hover:bg-red-950/40"
+            className="text-red-400 border-red-900/50 bg-[#0f1011] hover:bg-red-950/40 rounded-xl font-medium"
           >
             Disable Two-Factor Authentication
           </Button>
@@ -283,35 +316,39 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
 
   if (step === "disable") {
     return (
-      <Card className="border border-[#23252a] bg-[#0f1011]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm text-red-400">
-            <ShieldOff className="w-4 h-4" />
+      <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+        <CardHeader className="border-b border-[#23252a] pb-4">
+          <CardTitle className="text-base font-bold text-red-400">
             Disable Two-Factor Authentication
           </CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">
-            Enter your current authenticator code to confirm. This will remove MFA from your account.
+          <CardDescription className="text-xs text-[#8a8f98] mt-0.5">
+            Enter your current authenticator code to confirm. This will remove 2FA security from your account.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleDisable} className="space-y-4">
+        <CardContent className="pt-5">
+          <form onSubmit={handleDisable} className="space-y-4 max-w-sm">
             {error && (
-              <div className="rounded-md bg-red-950/40 border border-red-900/50 p-3 text-xs text-red-400 font-medium">{error}</div>
+              <div className="p-3 rounded-xl bg-red-950/40 border border-red-900/50 text-xs text-red-400 font-medium">{error}</div>
             )}
             <Input
               label="Authenticator code"
               type="text"
               inputMode="numeric"
               required
+              error={codeError}
               value={disableCode}
-              onChange={(e) => setDisableCode(e.target.value)}
+              onChange={(e) => {
+                setDisableCode(e.target.value);
+                if (codeError) setCodeError(false);
+              }}
               placeholder="000000"
               maxLength={6}
               autoFocus
+              className="font-mono text-center tracking-widest text-lg"
             />
-            <div className="flex gap-3">
-              <Button type="submit" size="sm" isLoading={isLoading} className="bg-red-600 hover:bg-red-700 text-white">
-                Disable MFA
+            <div className="flex gap-3 pt-1">
+              <Button type="submit" size="sm" isLoading={isLoading} className="bg-red-950/40 text-red-400 border border-red-900/50 hover:bg-red-900/60 font-bold rounded-xl">
+                Disable 2FA
               </Button>
               <Button
                 type="button"
@@ -319,6 +356,7 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
                 variant="outline"
                 onClick={() => { setStep("enrolled"); clearError(); }}
                 disabled={isLoading}
+                className="rounded-xl"
               >
                 Cancel
               </Button>
@@ -331,4 +369,3 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
 
   return null;
 }
-
