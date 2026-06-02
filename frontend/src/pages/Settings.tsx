@@ -4,9 +4,9 @@ import { settingsService } from '../services/settings';
 import { authService } from '../services/auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { 
-  Loader2, Save, Building, Clock, DollarSign, 
+  Loader2, Building, Clock, DollarSign, 
   Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon, Trash2, 
-  X, ChevronRight, Check, LogOut, Zap, ShieldCheck, HelpCircle, Copy, AlertTriangle
+  X, ChevronRight, Check, LogOut, Zap, ShieldCheck, HelpCircle, Copy, AlertTriangle, Eye, EyeOff
 } from 'lucide-react';
 import type { TenantSettings, IntegrationsResponse, SmtpConfig, SendgridSetupProgress } from '../types/api';
 
@@ -18,6 +18,8 @@ import { MfaSetup } from './Settings/MfaSetup';
 import { SendGridWizardStep1 } from './Settings/SendGridWizardStep1';
 import { SendGridWizardStep2 } from './Settings/SendGridWizardStep2';
 import { SendGridWizardStep3 } from './Settings/SendGridWizardStep3';
+import { CustomSelect } from '../components/ui/CustomSelect';
+import { MultiStepForm } from '../components/ui/multi-step-form';
 
 export function Settings() {
   const { user } = useAuth();
@@ -35,13 +37,13 @@ export function Settings() {
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 items-start">
+      <div className="border border-[#23252a] bg-[#0f1011] rounded-2xl flex flex-col md:flex-row overflow-hidden min-h-[550px]">
         {/* Sidebar Nav */}
-        <div className="w-full md:w-64 bg-transparent border border-[#1e2025]/80 rounded-2xl p-1.5 space-y-1 flex-shrink-0">
+        <div className="w-full md:w-60 border-b md:border-b-0 md:border-r border-[#23252a] p-3 space-y-1 flex-shrink-0 bg-[#0f1011]">
           <TabButton 
             active={activeTab === 'general'} 
             onClick={() => setActiveTab('general')} 
-            icon={<Building className="w-4 h-4 mr-2.5 text-[#5e6ad2]" />} 
+            icon={<Building className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
             label="General" 
           />
           {user?.role === 'admin' && (
@@ -49,13 +51,13 @@ export function Settings() {
               <TabButton 
                 active={activeTab === 'integrations'} 
                 onClick={() => setActiveTab('integrations')} 
-                icon={<LinkIcon className="w-4 h-4 mr-2.5 text-emerald-400" />} 
+                icon={<LinkIcon className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
                 label="Integrations" 
               />
               <TabButton 
                 active={activeTab === 'customization'} 
                 onClick={() => setActiveTab('customization')} 
-                icon={<Zap className="w-4 h-4 mr-2.5 text-amber-400" />} 
+                icon={<Zap className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
                 label="Preferences & Automation" 
               />
             </>
@@ -63,33 +65,33 @@ export function Settings() {
           <TabButton 
             active={activeTab === 'team'} 
             onClick={() => setActiveTab('team')} 
-            icon={<Users className="w-4 h-4 mr-2.5 text-[#5e6ad2]" />} 
+            icon={<Users className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
             label="Team & Access" 
           />
           <TabButton 
             active={activeTab === 'security'} 
             onClick={() => setActiveTab('security')} 
-            icon={<ShieldCheck className="w-4 h-4 mr-2.5 text-violet-400" />} 
+            icon={<ShieldCheck className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
             label="Profile & Security" 
           />
           {user?.role === 'admin' && (
             <TabButton 
               active={activeTab === 'billing'} 
               onClick={() => setActiveTab('billing')} 
-              icon={<CreditCard className="w-4 h-4 mr-2.5 text-cyan-400" />} 
+              icon={<CreditCard className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
               label="Billing & Plans" 
             />
           )}
           <TabButton 
             active={activeTab === 'support'} 
             onClick={() => setActiveTab('support')} 
-            icon={<HelpCircle className="w-4 h-4 mr-2.5 text-rose-400" />} 
+            icon={<HelpCircle className="w-4 h-4 mr-2.5 text-[#8a8f98]" />} 
             label="Support" 
           />
         </div>
 
         {/* Main Content Pane */}
-        <div className="flex-1 w-full space-y-6 min-w-0">
+        <div className="flex-1 w-full p-6 min-w-0 overflow-y-auto">
           {activeTab === 'general' && <GeneralSettings />}
           {activeTab === 'integrations' && user?.role === 'admin' && <IntegrationsSection />}
           {activeTab === 'customization' && user?.role === 'admin' && <CustomizationSettings />}
@@ -117,8 +119,8 @@ function TabButton({ active, onClick, icon, label }: TabButtonProps) {
       onClick={onClick}
       className={`w-full flex items-center px-3.5 py-2.5 text-xs rounded-xl transition-all cursor-pointer ${
         active 
-          ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-bold shadow-sm' 
-          : 'text-[#8a8f98] hover:bg-[#181a26]/40 hover:text-[#f7f8f8] border border-transparent font-medium'
+          ? 'bg-[#18191a] text-[#f7f8f8] border border-[#34343a] font-bold shadow-xs' 
+          : 'text-[#8a8f98] hover:bg-[#141516] hover:text-[#f7f8f8] border border-transparent font-medium'
       }`}
     >
       {icon}
@@ -150,7 +152,7 @@ function GeneralSettings() {
 
   useEffect(() => {
     if (settings) {
-      Promise.resolve().then(() => {
+      queueMicrotask(() => {
         setFormData(settings);
       });
     }
@@ -188,149 +190,156 @@ function GeneralSettings() {
     },
   });
 
-  useEffect(() => {
-    if (!settings) return;
-
-    const hasChanges = Object.keys(formData).some(
-      key => formData[key as keyof TenantSettings] !== settings[key as keyof TenantSettings]
-    );
-
-    if (hasChanges) {
-      const timer = setTimeout(() => {
-        tenantMutation.mutate(formData);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [formData, settings, tenantMutation]);
+  const isSaving = profileSaveStatus === 'saving' || tenantSaveStatus === 'saving';
 
   const handleTenantChange = (field: keyof TenantSettings, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  const handleCombinedSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) {
       setProfileError('Display name cannot be empty.');
       return;
     }
-    profileMutation.mutate(displayName.trim());
+    if (displayName.trim() !== user?.name) {
+      profileMutation.mutate(displayName.trim());
+    }
+    tenantMutation.mutate(formData);
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#8a8f98]" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-bold text-[#f7f8f8]">General Settings</CardTitle>
-              <CardDescription className="text-xs text-[#8a8f98]">Manage your personal identity, company profile, and default timezone.</CardDescription>
-            </div>
-            <div className="flex items-center h-8">
-              {(tenantSaveStatus === 'saving' || profileSaveStatus === 'saving') && (
-                <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-[#5e6ad2]" /> Saving...</span>
-              )}
-              {(tenantSaveStatus === 'saved' || profileSaveStatus === 'saved') && (
-                <span className="text-xs text-[#27a644] flex items-center"><Save className="w-3.5 h-3.5 mr-1.5" /> Saved</span>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* User Profile Info */}
-          <form onSubmit={handleProfileSubmit} className="space-y-4 pb-6 border-b border-[#1e2025]">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-                <Mail className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-                Email Address (Not Editable)
-              </label>
-              <input
-                type="email"
-                value={user?.email || ''}
-                disabled
-                className="w-full p-2.5 border border-[#1e2025] rounded-xl bg-[#1e2025]/40 text-[#8a8f98] text-xs cursor-not-allowed"
-              />
-              <p className="text-[10px] text-[#8a8f98]">Your account email address is managed by your administrator and cannot be changed.</p>
-            </div>
+    <form onSubmit={handleCombinedSubmit} className="space-y-6">
+      {/* Email Field */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+          <Mail className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+          Email Address
+        </label>
+        <input
+          type="email"
+          value={user?.email || ''}
+          disabled
+          className="w-full p-2.5 border border-[#23252a] rounded-xl bg-[#010102]/60 text-[#8a8f98] text-xs cursor-not-allowed"
+        />
+      </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-                <UserIcon className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-                Display Name
-              </label>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="flex-1 p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
-                  placeholder="e.g. John Doe"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={profileSaveStatus === 'saving' || displayName.trim() === user?.name}
-                  className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-xl text-xs font-medium transition-colors disabled:opacity-40 flex items-center justify-center cursor-pointer flex-shrink-0"
-                >
-                  {profileSaveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
-                  Save Name
-                </button>
-              </div>
-              {profileError && <p className="text-xs text-red-400 font-medium">{profileError}</p>}
-            </div>
-          </form>
+      {/* 2x2 Grid: Name & Company Name, Timezone & Currency */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Row 1 Left: Name */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+            <UserIcon className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+            Display Name
+          </label>
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="w-full p-2.5 border border-[#23252a] bg-[#010102] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none"
+            placeholder="e.g. John Doe"
+            required
+          />
+        </div>
 
-          {/* Tenant Company & Localization Info */}
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-                <Building className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-                Company Name
-              </label>
-              <input
-                type="text"
-                value={formData.companyName || ''}
-                onChange={(e) => handleTenantChange('companyName', e.target.value)}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
-                placeholder="e.g. Acme Corp"
-              />
-            </div>
+        {/* Row 1 Right: Company Name */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+            <Building className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+            Company Name
+          </label>
+          <input
+            type="text"
+            value={formData.companyName || ''}
+            onChange={(e) => handleTenantChange('companyName', e.target.value)}
+            className="w-full p-2.5 border border-[#23252a] bg-[#010102] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none"
+            placeholder="e.g. Acme Corp"
+          />
+        </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-                <Clock className="w-3.5 h-3.5 mr-1.5 text-[#5e6ad2]" />
-                Timezone
-              </label>
-              <select
-                value={formData.timezone || 'UTC'}
-                onChange={(e) => handleTenantChange('timezone', e.target.value)}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none cursor-pointer"
-              >
-                <option value="UTC">UTC</option>
-                <option value="America/New_York">Eastern Time (ET)</option>
-                <option value="America/Chicago">Central Time (CT)</option>
-                <option value="America/Denver">Mountain Time (MT)</option>
-                <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                <option value="Europe/London">London (GMT)</option>
-                <option value="Europe/Paris">Central Europe (CET)</option>
-                <option value="Asia/Dubai">Dubai (GST)</option>
-                <option value="Asia/Kolkata">India (IST)</option>
-                <option value="Asia/Singapore">Singapore (SGT)</option>
-                <option value="Australia/Sydney">Sydney (AEST)</option>
-              </select>
-              <p className="text-[11px] text-[#8a8f98]">This timezone is used for scheduled autopilot execution and reporting timelines.</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        {/* Row 2 Left: Timezone */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+            <Clock className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+            Timezone
+          </label>
+          <CustomSelect
+            value={formData.timezone || 'UTC'}
+            onChange={(val) => handleTenantChange('timezone', val)}
+            options={[
+              { label: 'UTC', value: 'UTC' },
+              { label: 'Eastern Time (ET)', value: 'America/New_York' },
+              { label: 'Central Time (CT)', value: 'America/Chicago' },
+              { label: 'Mountain Time (MT)', value: 'America/Denver' },
+              { label: 'Pacific Time (PT)', value: 'America/Los_Angeles' },
+              { label: 'London (GMT)', value: 'Europe/London' },
+              { label: 'Central Europe (CET)', value: 'Europe/Paris' },
+              { label: 'Dubai (GST)', value: 'Asia/Dubai' },
+              { label: 'India (IST)', value: 'Asia/Kolkata' },
+              { label: 'Singapore (SGT)', value: 'Asia/Singapore' },
+              { label: 'Sydney (AEST)', value: 'Australia/Sydney' },
+            ]}
+          />
+        </div>
+
+        {/* Row 2 Right: Currency */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+            <DollarSign className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+            Currency
+          </label>
+          <CustomSelect
+            value={formData.currency || 'USD'}
+            onChange={(val) => handleTenantChange('currency', val)}
+            options={[
+              { label: 'USD ($)', value: 'USD' },
+              { label: 'EUR (€)', value: 'EUR' },
+              { label: 'GBP (£)', value: 'GBP' },
+              { label: 'INR (₹)', value: 'INR' },
+              { label: 'CAD ($)', value: 'CAD' },
+              { label: 'AUD ($)', value: 'AUD' },
+            ]}
+          />
+        </div>
+      </div>
+
+      {profileError && <p className="text-xs text-red-400 font-medium">{profileError}</p>}
+
+      {/* Combined Save Option for All 4 Fields */}
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center h-8">
+          {isSaving && (
+            <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-[#8a8f98]" /> Saving...</span>
+          )}
+          {(tenantSaveStatus === 'saved' || profileSaveStatus === 'saved') && (
+            <span className="text-xs text-[#27a644] flex items-center"><Check className="w-3.5 h-3.5 mr-1.5" /> Saved</span>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all disabled:opacity-40 flex items-center justify-center cursor-pointer shadow-xs"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <span>Save Changes</span>
+          )}
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -338,13 +347,65 @@ function GeneralSettings() {
  * 2. INTEGRATIONS SECTION (Payment Gateways & Email Providers)
  * ============================================================================ */
 function IntegrationsSection() {
-  return (
-    <div className="space-y-6">
-      {/* Payment Gateways (Razorpay) */}
-      <IntegrationsTab />
+  const [openSection, setOpenSection] = useState<'payment' | 'email' | null>(null);
 
-      {/* Email Delivery Integrations */}
-      <EmailSettings />
+  return (
+    <div className="space-y-4 text-[#f7f8f8]">
+      {/* Payment Integration Category */}
+      <div className="border border-[#23252a] rounded-2xl bg-[#010102] overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setOpenSection(openSection === 'payment' ? null : 'payment')}
+          className="w-full flex items-center justify-between p-4 hover:bg-[#141516] transition-all cursor-pointer text-left select-none"
+        >
+          <div>
+            <h3 className="text-sm font-bold text-[#f7f8f8] flex items-center">
+              <CreditCard className="w-4 h-4 mr-2.5 text-[#8a8f98]" />
+              Payment Integration
+            </h3>
+            <p className="text-xs text-[#8a8f98] mt-0.5">
+              Connect payment providers to automatically generate payment links and reconcile payments.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-[#8a8f98] flex-shrink-0 ml-4">
+            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${openSection === 'payment' ? 'rotate-90 text-[#f7f8f8]' : ''}`} />
+          </div>
+        </button>
+
+        {openSection === 'payment' && (
+          <div className="p-5 border-t border-[#23252a] bg-[#0f1011]">
+            <IntegrationsTab />
+          </div>
+        )}
+      </div>
+
+      {/* Email Integration Category */}
+      <div className="border border-[#23252a] rounded-2xl bg-[#010102] overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setOpenSection(openSection === 'email' ? null : 'email')}
+          className="w-full flex items-center justify-between p-4 hover:bg-[#141516] transition-all cursor-pointer text-left select-none"
+        >
+          <div>
+            <h3 className="text-sm font-bold text-[#f7f8f8] flex items-center">
+              <Mail className="w-4 h-4 mr-2.5 text-[#8a8f98]" />
+              Email Integration
+            </h3>
+            <p className="text-xs text-[#8a8f98] mt-0.5">
+              Connect SendGrid API or custom outbound SMTP server for automated collection emails.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-[#8a8f98] flex-shrink-0 ml-4">
+            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${openSection === 'email' ? 'rotate-90 text-[#f7f8f8]' : ''}`} />
+          </div>
+        </button>
+
+        {openSection === 'email' && (
+          <div className="p-5 border-t border-[#23252a] bg-[#0f1011]">
+            <EmailSettings />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -394,7 +455,7 @@ function EmailSettings() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#8a8f98]" />
       </div>
     );
   }
@@ -405,164 +466,159 @@ function EmailSettings() {
   const smtpProgress = integrations?.smtpProgress;
 
   return (
-    <div className="space-y-6">
-      <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
-            <Mail className="w-4 h-4 mr-2 text-[#5e6ad2]" />
-            Email Delivery Integration
-          </CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">Connect SendGrid API or custom outbound SMTP server for sending collection emails.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Default Provider Selector */}
-          <div className="space-y-2 pb-4 border-b border-[#1e2025]">
-            <label className="text-xs font-semibold text-[#f7f8f8]">Active Default Email Provider</label>
-            <p className="text-[11px] text-[#8a8f98]">Select which provider should be used for automated collection emails.</p>
-            <div className="flex items-center space-x-6 pt-1">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="defaultProvider"
-                  value="sendgrid"
-                  checked={sendgridProgress?.isActive || settings?.defaultEmailProvider === 'sendgrid'}
-                  onChange={() => activateProviderMutation.mutate('sendgrid')}
-                  disabled={sendgridProgress?.overallStatus !== 'active' && (!sendgrid?.isConfigured || sendgrid?.lastValidationResult !== 'valid')}
-                  className="text-[#5e6ad2] focus:ring-[#5e69d1]"
-                />
-                <span className="text-xs font-medium text-[#f7f8f8]">SendGrid API</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="defaultProvider"
-                  value="smtp"
-                  checked={smtpProgress?.isActive || settings?.defaultEmailProvider === 'smtp'}
-                  onChange={() => activateProviderMutation.mutate('smtp')}
-                  disabled={smtpProgress?.overallStatus !== 'active' && (!smtp?.isConfigured || smtp?.lastValidationResult !== 'valid')}
-                  className="text-[#5e6ad2] focus:ring-[#5e69d1]"
-                />
-                <span className="text-xs font-medium text-[#f7f8f8]">Custom SMTP</span>
-              </label>
+    <div className="space-y-6 text-[#f7f8f8]">
+
+      {/* Default Provider Selector */}
+      <div className="border border-[#23252a] rounded-xl p-4 bg-[#010102] space-y-3">
+        <label className="text-xs font-semibold text-[#f7f8f8]">Active Default Email Provider</label>
+        <p className="text-[11px] text-[#8a8f98]">Select which provider should be used for automated collection emails.</p>
+        <div className="flex items-center space-x-6 pt-1">
+          <label className="flex items-center space-x-2.5 cursor-pointer">
+            <input
+              type="radio"
+              name="defaultProvider"
+              value="sendgrid"
+              checked={sendgridProgress?.isActive || settings?.defaultEmailProvider === 'sendgrid'}
+              onChange={() => activateProviderMutation.mutate('sendgrid')}
+              disabled={sendgridProgress?.overallStatus !== 'active' && (!sendgrid?.isConfigured || sendgrid?.lastValidationResult !== 'valid')}
+              className="w-4 h-4 accent-[#f7f8f8] bg-[#0f1011] border-[#23252a] cursor-pointer"
+            />
+            <span className="text-xs font-medium text-[#f7f8f8]">SendGrid API</span>
+          </label>
+          <label className="flex items-center space-x-2.5 cursor-pointer">
+            <input
+              type="radio"
+              name="defaultProvider"
+              value="smtp"
+              checked={smtpProgress?.isActive || settings?.defaultEmailProvider === 'smtp'}
+              onChange={() => activateProviderMutation.mutate('smtp')}
+              disabled={smtpProgress?.overallStatus !== 'active' && (!smtp?.isConfigured || smtp?.lastValidationResult !== 'valid')}
+              className="w-4 h-4 accent-[#f7f8f8] bg-[#0f1011] border-[#23252a] cursor-pointer"
+            />
+            <span className="text-xs font-medium text-[#f7f8f8]">Custom SMTP</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Configured Email Providers List */}
+      <div className="space-y-4">
+        {/* Custom SMTP Provider */}
+        <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${smtpProgress?.isActive ? 'bg-[#27a644]' : smtpProgress?.overallStatus === 'partially_configured' ? 'bg-amber-400' : smtp?.isConfigured ? (smtp.lastValidationResult === 'valid' ? 'bg-[#27a644]' : 'bg-red-400') : 'bg-[#34343a]'}`} />
+            <div>
+              <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
+                Custom SMTP Server
+                {smtpProgress?.isActive && (
+                  <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">Active ✓</span>
+                )}
+                {!smtpProgress?.isActive && smtpProgress?.overallStatus === 'active' && (
+                  <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#8a8f98] bg-[#8a8f98]/10 px-2 py-0.5 rounded-full border border-[#8a8f98]/20">Ready to Activate</span>
+                )}
+              </h4>
+              <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                {smtpProgress?.overallStatus === 'active' || smtp?.isConfigured
+                  ? `Connected to ${smtpProgress?.step1ConnectionDetails.host || smtp?.displayHost}:${smtpProgress?.step1ConnectionDetails.port || smtp?.port} • Outbound SMTP mail server active`
+                  : 'Send automated collection emails through your organization\'s custom SMTP host and credentials.'}
+              </p>
             </div>
           </div>
-
-          {/* Custom SMTP Provider */}
-          <div className="p-4 border border-[#1e2025] rounded-xl bg-[#0f1011] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${smtpProgress?.isActive ? 'bg-[#27a644]' : smtpProgress?.overallStatus === 'partially_configured' ? 'bg-amber-400' : smtp?.isConfigured ? (smtp.lastValidationResult === 'valid' ? 'bg-[#27a644]' : 'bg-red-400') : 'bg-[#3e3e44]'}`} />
-              <div>
-                <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
-                  Custom SMTP Server
-                  {smtpProgress?.isActive && (
-                    <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">Active ✓</span>
-                  )}
-                  {!smtpProgress?.isActive && smtpProgress?.overallStatus === 'active' && (
-                    <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#5e6ad2] bg-[#5e6ad2]/10 px-2 py-0.5 rounded-full border border-[#5e6ad2]/20">Ready to Activate</span>
-                  )}
-                </h4>
-                <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                  {smtpProgress?.overallStatus === 'active' || smtp?.isConfigured
-                    ? `${smtpProgress?.step1ConnectionDetails.host || smtp?.displayHost}:${smtpProgress?.step1ConnectionDetails.port || smtp?.port}`
-                    : 'Not configured — connect your outbound SMTP mail server credentials.'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2 flex-shrink-0">
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setSmtpModalOpen(true)}
+              className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#18191c] border border-[#34343a] hover:bg-[#23252a] rounded-xl transition-all cursor-pointer"
+            >
+              {smtpProgress?.overallStatus === 'active' || smtp?.isConfigured ? 'Configure Settings' : 'Set Up SMTP'}
+            </button>
+            {(smtpProgress?.overallStatus !== 'not_configured' || smtp?.isConfigured) && (
               <button
                 type="button"
-                onClick={() => setSmtpModalOpen(true)}
-                className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#13161c] border border-[#1e2025] hover:bg-[#1e2025] rounded-xl transition-colors cursor-pointer"
+                onClick={() => disconnectSmtpMutation.mutate()}
+                className="px-3.5 py-1.5 text-xs font-medium text-red-400 bg-red-950/20 border border-red-900/40 hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"
               >
-                {smtpProgress?.overallStatus === 'active' || smtp?.isConfigured ? 'Configure Settings' : 'Set Up SMTP'}
+                Remove
               </button>
-              {(smtpProgress?.overallStatus !== 'not_configured' || smtp?.isConfigured) && (
-                <button
-                  type="button"
-                  onClick={() => disconnectSmtpMutation.mutate()}
-                  className="px-3.5 py-1.5 text-xs font-medium text-red-400 bg-red-950/20 border border-red-900/40 hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
+            )}
           </div>
+        </div>
 
-          {/* SendGrid API Provider */}
-          {(() => {
-            const isSendgridFullyActive =
-              !!sendgrid?.isConfigured &&
-              sendgrid.lastValidationResult === 'valid' &&
-              !!sendgrid?.isSenderConfigured &&
-              !!integrations?.inboundParse?.isVerified;
+        {/* SendGrid API Provider */}
+        {(() => {
+          const isSendgridFullyActive =
+            !!sendgrid?.isConfigured &&
+            sendgrid.lastValidationResult === 'valid' &&
+            !!sendgrid?.isSenderConfigured &&
+            !!integrations?.inboundParse?.isVerified;
 
-            const isSendgridPartial =
-              !!sendgrid?.isConfigured && !isSendgridFullyActive;
+          const isSendgridPartial =
+            !!sendgrid?.isConfigured && !isSendgridFullyActive;
 
-            const nextStep = !sendgrid?.isSenderConfigured ? 2 : 3;
+          const nextStep = !sendgrid?.isSenderConfigured ? 2 : 3;
 
-            return (
-              <div className="p-4 border border-[#1e2025] rounded-xl bg-[#0f1011] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-center space-x-3">
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                      isSendgridFullyActive
-                        ? 'bg-[#27a644]'
-                        : sendgrid?.isConfigured && sendgrid.lastValidationResult !== 'valid'
-                        ? 'bg-red-400'
-                        : isSendgridPartial
-                        ? 'bg-amber-400'
-                        : 'bg-[#3e3e44]'
-                    }`}
-                  />
-                  <div>
-                    <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
-                      SendGrid API Integration
-                      {isSendgridFullyActive && (
-                        <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">
-                          Active ✓
-                        </span>
-                      )}
-                      {isSendgridPartial && (
-                        <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                          Incomplete Setup (Step {nextStep} of 3)
-                        </span>
-                      )}
-                    </h4>
-                    <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                      {isSendgridFullyActive
-                        ? `Connected (${sendgrid?.senderEmail || settings?.senderEmail || 'Sender set'})`
-                        : 'Connect your SendGrid API key and sender identity for automated email delivery.'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setSendgridModalOpen(true)}
-                    className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#13161c] border border-[#1e2025] hover:bg-[#1e2025] rounded-xl transition-colors cursor-pointer"
-                  >
-                    {isSendgridFullyActive
-                      ? 'Configure Settings'
+          return (
+            <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center space-x-3">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                    isSendgridFullyActive
+                      ? 'bg-[#27a644]'
+                      : sendgrid?.isConfigured && sendgrid.lastValidationResult !== 'valid'
+                      ? 'bg-red-400'
                       : isSendgridPartial
-                      ? `Continue Setup (Step ${nextStep})`
-                      : 'Set Up SendGrid'}
-                  </button>
-                  {sendgrid?.isConfigured && (
-                    <button
-                      type="button"
-                      onClick={() => disconnectSendgridMutation.mutate()}
-                      className="px-3.5 py-1.5 text-xs font-medium text-red-400 bg-red-950/20 border border-red-900/40 hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
-                    >
-                      Remove
-                    </button>
-                  )}
+                      ? 'bg-amber-400'
+                      : 'bg-[#34343a]'
+                  }`}
+                />
+                <div>
+                  <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
+                    SendGrid API Integration
+                    {isSendgridFullyActive && (
+                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">
+                        Active ✓
+                      </span>
+                    )}
+                    {isSendgridPartial && (
+                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                        Incomplete Setup (Step {nextStep} of 3)
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                    {isSendgridFullyActive
+                      ? `Connected (${sendgrid?.senderEmail || settings?.senderEmail || 'Sender Configured'}) • High-speed API delivery & inbound webhook active`
+                      : isSendgridPartial
+                      ? `Setup in progress • Step ${nextStep} pending: ${nextStep === 2 ? 'Sender Identity & Mode' : 'Inbound Webhook Verification'}`
+                      : 'High-speed API email delivery with bounce tracking, verified sender identity, and inbound reply parsing.'}
+                  </p>
                 </div>
               </div>
-            );
-          })()}
-        </CardContent>
-      </Card>
+              <div className="flex items-center space-x-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSendgridModalOpen(true)}
+                  className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#18191c] border border-[#34343a] hover:bg-[#23252a] rounded-xl transition-all cursor-pointer"
+                >
+                  {isSendgridFullyActive
+                    ? 'Configure Settings'
+                    : isSendgridPartial
+                    ? `Continue Setup (Step ${nextStep})`
+                    : 'Set Up SendGrid'}
+                </button>
+                {sendgrid?.isConfigured && (
+                  <button
+                    type="button"
+                    onClick={() => disconnectSendgridMutation.mutate()}
+                    className="px-3.5 py-1.5 text-xs font-medium text-red-400 bg-red-950/20 border border-red-900/40 hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
 
       {/* Setup Modals */}
       {smtpModalOpen && (
@@ -594,6 +650,8 @@ function CustomizationSettings() {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Partial<TenantSettings>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string>('');
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
@@ -602,7 +660,7 @@ function CustomizationSettings() {
 
   useEffect(() => {
     if (settings) {
-      Promise.resolve().then(() => {
+      queueMicrotask(() => {
         setFormData(settings);
       });
     }
@@ -611,221 +669,318 @@ function CustomizationSettings() {
   const mutation = useMutation({
     mutationFn: (newSettings: Partial<TenantSettings>) => settingsService.updateSettings(newSettings),
     onMutate: () => setSaveStatus('saving'),
-    onError: () => {
+    onError: (err: unknown) => {
       setSaveStatus('idle');
+      setGeneralError(getErrorMessage(err));
     },
     onSuccess: () => {
       setSaveStatus('saved');
+      setGeneralError('');
+      setFieldErrors({});
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      setTimeout(() => setSaveStatus('idle'), 2500);
     },
   });
 
-  const localError = formData.autoPurgeEnabled && formData.autoPurgeDays !== undefined && formData.autoPurgeDays < 7
-    ? "Auto-purge retention period must be at least 7 days"
-    : null;
-
-  useEffect(() => {
-    if (!settings || localError) return;
-
-    const hasChanges = Object.keys(formData).some(
-      key => formData[key as keyof TenantSettings] !== settings[key as keyof TenantSettings]
-    );
-
-    if (hasChanges) {
-      const timer = setTimeout(() => {
-        mutation.mutate(formData);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [formData, settings, localError, mutation]);
-
   const handleChange = (field: keyof TenantSettings, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => {
+        const copy = { ...prev };
+        delete copy[field];
+        return copy;
+      });
+    }
+    if (generalError) setGeneralError('');
+  };
+
+  const validateAndSave = () => {
+    const errors: Record<string, string> = {};
+
+    const windowHours = formData.idempotencyWindowHours;
+    if (windowHours === undefined || windowHours === null || isNaN(windowHours) || windowHours < 1 || windowHours > 168) {
+      errors.idempotencyWindowHours = "Idempotency window must be between 1 and 168 hours.";
+    }
+
+    if (formData.autoPurgeEnabled) {
+      const purgeDays = formData.autoPurgeDays;
+      if (purgeDays === undefined || purgeDays === null || isNaN(purgeDays) || purgeDays < 7) {
+        errors.autoPurgeDays = "Invoice retention period must be at least 7 days.";
+      }
+    }
+
+    const disputeDays = formData.autoPurgeArchivedDisputesDays;
+    if (disputeDays === undefined || disputeDays === null || isNaN(disputeDays) || disputeDays < 1) {
+      errors.autoPurgeArchivedDisputesDays = "Archived disputes cleanup must be at least 1 day.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setGeneralError("Please fix the invalid inputs highlighted below before saving.");
+      return;
+    }
+
+    setFieldErrors({});
+    setGeneralError('');
+    
+    // Construct clean payload to prevent extra fields or invalid strings from failing backend Zod validation
+    const payload: Partial<TenantSettings> = {
+      scheduleHour: formData.scheduleHour ?? 9,
+      idempotencyWindowHours: formData.idempotencyWindowHours ?? 24,
+      skipPaymentWarning: !!formData.skipPaymentWarning,
+      autoPurgeEnabled: !!formData.autoPurgeEnabled,
+      autoPurgeDays: formData.autoPurgeDays ?? 30,
+      autoPurgeArchivedDisputesDays: formData.autoPurgeArchivedDisputesDays ?? 30,
+    };
+    mutation.mutate(payload);
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#8a8f98]" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
-        <CardHeader>
+    <div className="space-y-6 text-[#f7f8f8]">
+      <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+        <CardHeader className="border-b border-[#23252a] pb-4">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
-                <Zap className="w-4 h-4 mr-2 text-amber-400" />
+                <Zap className="w-4 h-4 mr-2 text-[#8a8f98]" />
                 Preferences &amp; Automation
               </CardTitle>
-              <CardDescription className="text-xs text-[#8a8f98]">Configure currency defaults, autopilot execution rules, safety warnings, and data retention policies.</CardDescription>
-            </div>
-            <div className="flex items-center h-8">
-              {saveStatus === 'saving' && <span className="text-xs text-[#8a8f98] flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-[#5e6ad2]" /> Saving...</span>}
-              {saveStatus === 'saved' && <span className="text-xs text-[#27a644] flex items-center"><Save className="w-3.5 h-3.5 mr-1.5" /> Saved</span>}
+              <CardDescription className="text-xs text-[#8a8f98]">
+                Configure currency defaults, autopilot execution rules, safety warnings, and data retention policies.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Currency Selection */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
-              <DollarSign className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
-              Default System Currency
-            </label>
-            <select
-              value="USD"
-              disabled
-              className="w-full p-2.5 border border-[#1e2025] bg-[#1e2025]/40 text-[#8a8f98] rounded-xl text-xs cursor-not-allowed"
-            >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="INR">INR (₹)</option>
-            </select>
-            <p className="text-[11px] text-[#8a8f98]">Multi-currency billing is supported dynamically per invoice.</p>
-          </div>
-
-          {/* Autopilot & Execution Rules */}
-          <div className="pt-5 border-t border-[#1e2025] space-y-4">
-            <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-              <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
-              Autopilot &amp; Execution Rules
-            </h4>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8a8f98]">Daily Execution Schedule (Hour)</label>
-              <select
-                value={formData.scheduleHour ?? 9}
-                onChange={(e) => handleChange('scheduleHour', Number(e.target.value))}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none cursor-pointer"
-              >
-                {Array.from({ length: 24 }).map((_, i) => (
-                  <option key={i} value={i}>
-                    {i.toString().padStart(2, '0')}:00 {i < 12 ? 'AM' : 'PM'}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[11px] text-[#8a8f98]">Autopilot runs automatically every day at this hour in your configured timezone.</p>
+        <CardContent className="space-y-5 pt-5">
+          {generalError && (
+            <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 font-medium flex items-center space-x-2">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-red-400" />
+              <span>{generalError}</span>
             </div>
+          )}
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8a8f98]">Idempotency Window (Hours)</label>
-              <input
-                type="number"
-                min="1"
-                max="168"
-                value={formData.idempotencyWindowHours ?? 24}
-                onChange={(e) => handleChange('idempotencyWindowHours', Number(e.target.value))}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2] focus:outline-none"
+          {/* Section 1: System Currency & Payment Link Warning in ONE line (2-column grid) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Currency Selection */}
+            <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] flex flex-col justify-between space-y-3">
+              <div>
+                <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+                  <DollarSign className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+                  Default System Currency
+                </h4>
+                <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                  Multi-currency billing supported per invoice.
+                </p>
+              </div>
+              <CustomSelect
+                value="USD"
+                onChange={() => {}}
+                options={[
+                  { label: 'USD ($)', value: 'USD' },
+                  { label: 'EUR (€)', value: 'EUR', disabled: true },
+                  { label: 'GBP (£)', value: 'GBP', disabled: true },
+                  { label: 'INR (₹)', value: 'INR', disabled: true },
+                ]}
+                disabled
               />
-              <p className="text-[11px] text-[#8a8f98]">Prevents sending duplicate follow-up communications to the same invoice within this window.</p>
             </div>
-          </div>
 
-          {/* Safeguards & Warning Signs */}
-          <div className="pt-5 border-t border-[#1e2025] space-y-3">
-            <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-              <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
-              Collection Safeguards &amp; Warning Signs
-            </h4>
-            <div className="flex items-start justify-between gap-6 pt-1">
+            {/* Payment Link Enforcement Warning */}
+            <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#f7f8f8]">Payment Link Enforcement Warning</p>
-                <p className="text-[11px] text-[#8a8f98] mt-0.5 leading-relaxed">
-                  When enabled, Autopilot warns you before queueing emails for invoices that do not have a payment link attached.
+                <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+                  <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+                  Payment Link Warning
+                </h4>
+                <p className="text-[11px] text-[#8a8f98] mt-1 leading-relaxed">
+                  Warn before queueing emails for invoices without a payment link.
                 </p>
               </div>
               <button
                 type="button"
+                role="switch"
+                aria-checked={!formData.skipPaymentWarning}
                 onClick={() => handleChange('skipPaymentWarning', !formData.skipPaymentWarning)}
-                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                  formData.skipPaymentWarning
-                    ? 'bg-[#1e2025]/40 text-[#8a8f98] border-[#1e2025] hover:bg-[#1e2025]'
-                    : 'bg-[#27a644]/10 text-[#27a644] border-[#27a644]/30 font-semibold'
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                  !formData.skipPaymentWarning ? 'bg-[#27a644]' : 'bg-[#23252a]'
                 }`}
+                title={!formData.skipPaymentWarning ? 'Warning Active' : 'Warning Disabled'}
               >
-                {formData.skipPaymentWarning ? 'Warning Disabled' : '✓ Warning Active'}
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    !formData.skipPaymentWarning ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
               </button>
             </div>
           </div>
 
-          {/* Data Retention & Cleanup Policies */}
-          <div className="pt-5 border-t border-[#1e2025] space-y-4">
-            <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-              <Trash2 className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
-              Data Retention &amp; Cleanup Policies
-            </h4>
+          {/* Section 2: Autopilot & Execution Rules */}
+          <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] space-y-4">
+            <div>
+              <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+                <Clock className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+                Autopilot &amp; Execution Rules
+              </h4>
+              <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                Manage automated workflow run schedules and duplicate message throttling safeguards.
+              </p>
+            </div>
 
-            {/* Invoice Trash Retention (Auto-Purge) */}
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-6">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-[#f7f8f8]">Automatic Invoice Trash Purge</p>
-                  <p className="text-[11px] text-[#8a8f98] mt-0.5 leading-relaxed">
-                    Permanently delete invoices that have remained in the Trash past the retention threshold.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleChange('autoPurgeEnabled', !formData.autoPurgeEnabled)}
-                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                    formData.autoPurgeEnabled
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 font-semibold'
-                      : 'bg-[#1e2025]/40 text-[#8a8f98] border-[#1e2025] hover:bg-[#1e2025]'
-                  }`}
-                >
-                  {formData.autoPurgeEnabled ? '✓ Auto-Purge Enabled' : 'Auto-Purge Disabled'}
-                </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 border-t border-[#23252a]/60">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#8a8f98]">Daily Execution Schedule</label>
+                <CustomSelect
+                  value={String(formData.scheduleHour ?? 9)}
+                  onChange={(val) => handleChange('scheduleHour', Number(val))}
+                  options={Array.from({ length: 24 }).map((_, i) => ({
+                    label: `${i.toString().padStart(2, '0')}:00 ${i < 12 ? 'AM' : 'PM'}`,
+                    value: String(i)
+                  }))}
+                />
+                <p className="text-[10px] text-[#8a8f98]">Runs automatically every day at this hour in your configured timezone.</p>
               </div>
 
-              {formData.autoPurgeEnabled && (
-                <div className="space-y-1.5 max-w-xs pt-1">
-                  <label className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider">
-                    Invoice Retention Period (Days)
-                  </label>
-                  <input
-                    type="number"
-                    min="7"
-                    value={formData.autoPurgeDays || 30}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      handleChange('autoPurgeDays', isNaN(val) ? 7 : val);
-                    }}
-                    className={`w-full p-2.5 border rounded-xl text-xs font-medium bg-[#0f1011] text-[#f7f8f8] ${
-                      localError ? 'border-red-900/50 text-red-400' : 'border-[#1e2025] focus:border-[#5e6ad2]'
-                    }`}
-                  />
-                  {localError ? (
-                    <p className="text-[11px] text-red-400 font-medium">{localError}</p>
-                  ) : (
-                    <p className="text-[10px] text-[#8a8f98]">Minimum retention period is 7 days.</p>
-                  )}
-                </div>
-              )}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#8a8f98]">Idempotency Window (Hours)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="168"
+                  value={formData.idempotencyWindowHours ?? 24}
+                  onChange={(e) => handleChange('idempotencyWindowHours', Number(e.target.value))}
+                  className={`w-full p-2.5 border rounded-xl text-xs ${
+                    fieldErrors.idempotencyWindowHours
+                      ? 'border-red-500 bg-red-950/20 text-red-300 ring-1 ring-red-500/50'
+                      : 'border-[#23252a] bg-[#0f1011] text-[#f7f8f8] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none'
+                  }`}
+                />
+                {fieldErrors.idempotencyWindowHours ? (
+                  <p className="text-[10px] text-red-400 font-medium flex items-center mt-1">
+                    <AlertTriangle className="w-3 h-3 mr-1 flex-shrink-0 text-red-400" />
+                    {fieldErrors.idempotencyWindowHours}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-[#8a8f98]">Prevents duplicate follow-ups for the same invoice within this window.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Data Retention & Cleanup Policies */}
+          <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+                  Automatic Invoice Trash Purge
+                </h4>
+                <p className="text-[11px] text-[#8a8f98] mt-0.5 leading-relaxed">
+                  Permanently delete invoices that have remained in the Trash past the retention threshold.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={formData.autoPurgeEnabled}
+                onClick={() => handleChange('autoPurgeEnabled', !formData.autoPurgeEnabled)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                  formData.autoPurgeEnabled ? 'bg-[#27a644]' : 'bg-[#23252a]'
+                }`}
+                title={formData.autoPurgeEnabled ? 'Auto-Purge Enabled' : 'Auto-Purge Disabled'}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    formData.autoPurgeEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
             </div>
 
-            {/* Archived Disputes Purge */}
-            <div className="space-y-1.5 max-w-xs pt-2">
-              <label className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider">
-                Archived Disputes Cleanup (Days)
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.autoPurgeArchivedDisputesDays ?? 30}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  handleChange('autoPurgeArchivedDisputesDays', isNaN(val) ? 30 : val);
-                }}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] text-[#f7f8f8] rounded-xl text-xs font-medium focus:border-[#5e6ad2]"
-              />
-              <p className="text-[10px] text-[#8a8f98]">Archived disputes older than this number of days will be purged automatically.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-[#23252a]/60">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#8a8f98]">
+                  Invoice Retention Period (Days)
+                </label>
+                <input
+                  type="number"
+                  min="7"
+                  disabled={!formData.autoPurgeEnabled}
+                  value={formData.autoPurgeDays || 30}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    handleChange('autoPurgeDays', isNaN(val) ? 7 : val);
+                  }}
+                  className={`w-full p-2.5 border rounded-xl text-xs font-medium ${
+                    !formData.autoPurgeEnabled
+                      ? 'bg-[#0f1011]/50 border-[#23252a] text-[#62666d] cursor-not-allowed'
+                      : fieldErrors.autoPurgeDays
+                      ? 'bg-red-950/20 border-red-500 text-red-300 ring-1 ring-red-500/50'
+                      : 'bg-[#0f1011] border-[#23252a] text-[#f7f8f8] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none'
+                  }`}
+                />
+                {fieldErrors.autoPurgeDays ? (
+                  <p className="text-[10px] text-red-400 font-medium flex items-center mt-1">
+                    <AlertTriangle className="w-3 h-3 mr-1 flex-shrink-0 text-red-400" />
+                    {fieldErrors.autoPurgeDays}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-[#8a8f98]">Minimum retention period is 7 days.</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#8a8f98]">
+                  Archived Disputes Cleanup (Days)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.autoPurgeArchivedDisputesDays ?? 30}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    handleChange('autoPurgeArchivedDisputesDays', isNaN(val) ? 30 : val);
+                  }}
+                  className={`w-full p-2.5 border rounded-xl text-xs font-medium ${
+                    fieldErrors.autoPurgeArchivedDisputesDays
+                      ? 'bg-red-950/20 border-red-500 text-red-300 ring-1 ring-red-500/50'
+                      : 'bg-[#0f1011] border-[#23252a] text-[#f7f8f8] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none'
+                  }`}
+                />
+                {fieldErrors.autoPurgeArchivedDisputesDays ? (
+                  <p className="text-[10px] text-red-400 font-medium flex items-center mt-1">
+                    <AlertTriangle className="w-3 h-3 mr-1 flex-shrink-0 text-red-400" />
+                    {fieldErrors.autoPurgeArchivedDisputesDays}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-[#8a8f98]">Archived disputes older than this will be purged automatically.</p>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Explicit Save Preferences Footer Button */}
+          <div className="flex items-center justify-end pt-3 border-t border-[#23252a]">
+            <button
+              type="button"
+              onClick={validateAndSave}
+              disabled={saveStatus === 'saving'}
+              className="px-5 py-2.5 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-bold transition-all disabled:opacity-40 flex items-center cursor-pointer shadow-sm"
+            >
+              {saveStatus === 'saving'
+                ? 'Saving Preferences...'
+                : saveStatus === 'saved'
+                ? 'Preferences Saved'
+                : 'Save Preferences'}
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -839,8 +994,55 @@ function CustomizationSettings() {
 function SecuritySettings() {
   const { user, updateUser, logout } = useAuth();
 
+  const initials = user?.name
+    ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    : 'U';
+
   return (
     <div className="space-y-6">
+      {/* 1. Account Session & Authentication FIRST */}
+      <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+        <CardHeader className="border-b border-[#23252a] pb-4">
+          <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
+            <UserIcon className="w-4 h-4 mr-2 text-[#8a8f98]" />
+            Account Session &amp; Authentication
+          </CardTitle>
+          <CardDescription className="text-xs text-[#8a8f98]">
+            Manage your current active user session and sign out of your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-5">
+          <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] flex items-center justify-between gap-4">
+            <div className="flex items-center space-x-3.5 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-[#18191c] border border-[#23252a] text-[#f7f8f8] font-bold text-xs flex items-center justify-center flex-shrink-0">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-2">
+                  <span className="font-semibold text-xs text-[#f7f8f8] truncate">{user?.name || 'User'}</span>
+                  {user?.role && (
+                    <span className="text-[10px] bg-[#18191c] text-[#8a8f98] border border-[#34343a] px-2 py-0.5 rounded-full capitalize font-medium flex-shrink-0">
+                      {user.role}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-[#8a8f98] truncate block mt-0.5">{user?.email}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="px-4 py-2 bg-[#18191c] text-red-400 hover:text-red-300 border border-red-900/40 hover:bg-red-950/40 rounded-xl text-xs font-semibold transition-all flex items-center justify-center cursor-pointer flex-shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5 mr-1.5" />
+              Log Out
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2. MFA Setup SECOND */}
       <MfaSetup
         mfaEnabled={user?.mfaEnabled ?? false}
         onMfaChange={(enabled) => {
@@ -849,27 +1051,6 @@ function SecuritySettings() {
           }
         }}
       />
-
-      <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-base font-bold text-[#f7f8f8]">Account Session &amp; Authentication</CardTitle>
-          <CardDescription className="text-xs text-[#8a8f98]">Manage your current active user session and sign out of your account.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between pt-2">
-          <div>
-            <p className="text-xs font-bold text-[#f7f8f8]">{user?.name || 'User'}</p>
-            <p className="text-[11px] text-[#8a8f98]">{user?.email}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => logout()}
-            className="px-4 py-2 bg-red-950/30 hover:bg-red-900/50 text-red-400 border border-red-900/40 rounded-xl text-xs font-medium transition-colors flex items-center justify-center cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5 mr-1.5" />
-            Log Out
-          </button>
-        </CardContent>
-      </Card>
     </div>
   );
 }
@@ -879,16 +1060,16 @@ function SecuritySettings() {
  * ============================================================================ */
 function BillingSection() {
   return (
-    <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
-      <CardHeader>
+    <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+      <CardHeader className="border-b border-[#23252a] pb-4">
         <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
-          <CreditCard className="w-4 h-4 mr-2 text-cyan-400" />
+          <CreditCard className="w-4 h-4 mr-2 text-[#8a8f98]" />
           Billing &amp; Subscription Plans
         </CardTitle>
         <CardDescription className="text-xs text-[#8a8f98]">View your current tier and billing information.</CardDescription>
       </CardHeader>
       <CardContent className="py-8 text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#27a644]/10 border border-[#27a644]/30 text-[#27a644] mx-auto">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#18191c] border border-[#23252a] text-[#f7f8f8] mx-auto">
           <Check className="w-6 h-6" />
         </div>
         <div>
@@ -916,16 +1097,16 @@ function SupportSection() {
   };
 
   return (
-    <Card className="border border-[#1e2025]/80 bg-[#13161c]/40 rounded-2xl">
-      <CardHeader>
+    <Card className="border border-[#23252a] bg-[#0f1011] rounded-2xl">
+      <CardHeader className="border-b border-[#23252a] pb-4">
         <CardTitle className="text-base font-bold text-[#f7f8f8] flex items-center">
-          <HelpCircle className="w-4 h-4 mr-2 text-rose-400" />
+          <HelpCircle className="w-4 h-4 mr-2 text-[#8a8f98]" />
           Contact Support
         </CardTitle>
         <CardDescription className="text-xs text-[#8a8f98]">Get dedicated technical support and assistance for your tenant configuration.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="p-5 border border-[#1e2025] rounded-xl bg-[#0f1011] space-y-4">
+      <CardContent className="space-y-6 pt-5">
+        <div className="p-5 border border-[#23252a] rounded-xl bg-[#010102] space-y-4">
           <div>
             <h4 className="text-xs font-bold text-[#f7f8f8]">Dedicated Technical Assistance</h4>
             <p className="text-xs text-[#8a8f98] mt-1 leading-relaxed">
@@ -933,9 +1114,9 @@ function SupportSection() {
             </p>
           </div>
 
-          <div className="p-3 bg-[#13161c] border border-[#1e2025] rounded-xl flex items-center justify-between gap-4">
+          <div className="p-3 bg-[#0f1011] border border-[#23252a] rounded-xl flex items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <Mail className="w-4 h-4 text-rose-400 flex-shrink-0" />
+              <Mail className="w-4 h-4 text-[#8a8f98] flex-shrink-0" />
               <div>
                 <span className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider block">Official Support Email</span>
                 <span className="text-xs font-mono font-bold text-[#f7f8f8] select-all">{supportEmail}</span>
@@ -946,14 +1127,14 @@ function SupportSection() {
               <button
                 type="button"
                 onClick={handleCopy}
-                className="px-3 py-1.5 bg-[#1e2025] hover:bg-[#1e2025]/80 text-[#f7f8f8] rounded-lg text-xs font-medium transition-colors flex items-center cursor-pointer"
+                className="px-3 py-1.5 bg-[#18191c] hover:bg-[#23252a] text-[#8a8f98] hover:text-[#f7f8f8] border border-[#34343a] rounded-xl text-xs font-medium transition-all flex items-center cursor-pointer"
               >
                 {copied ? <Check className="w-3.5 h-3.5 mr-1 text-[#27a644]" /> : <Copy className="w-3.5 h-3.5 mr-1 text-[#8a8f98]" />}
                 {copied ? 'Copied' : 'Copy Email'}
               </button>
               <a
                 href={`mailto:${supportEmail}`}
-                className="px-3.5 py-1.5 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-lg text-xs font-medium transition-colors inline-flex items-center"
+                className="px-3.5 py-1.5 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all inline-flex items-center shadow-xs"
               >
                 Send Email
               </a>
@@ -965,21 +1146,19 @@ function SupportSection() {
   );
 }
 
-/* Modals */
+/* ============================================================================
+ * 7. CUSTOM SMTP SETUP MODAL
+ * ============================================================================ */
 interface SmtpSetupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  integration: IntegrationsResponse['smtp'] | undefined;
-  settings: TenantSettings | undefined;
+  integration?: IntegrationsResponse['smtp'];
+  settings?: TenantSettings;
   userEmail: string;
 }
 
 function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: SmtpSetupModalProps) {
   const queryClient = useQueryClient();
-  const [errorMsg, setErrorMsg] = useState('');
-  const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [testEmailInput, setTestEmailInput] = useState(userEmail || '');
-
   const [formData, setFormData] = useState({
     senderName: settings?.senderName || 'Finance Team',
     host: integration?.displayHost || '',
@@ -988,6 +1167,11 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
     username: settings?.senderEmail || userEmail || '',
     password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ senderName?: boolean; host?: boolean; username?: boolean; password?: boolean }>({});
+  const [testEmailInput, setTestEmailInput] = useState(userEmail);
+  const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   const saveMutation = useMutation({
     mutationFn: (config: SmtpConfig & { senderName: string }) => settingsService.saveSmtpConfig(config),
@@ -995,6 +1179,7 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
       setErrorMsg('');
+      setFieldErrors({});
       onClose();
     },
     onError: (err: unknown) => {
@@ -1015,14 +1200,19 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
   });
 
   const handleSave = () => {
-    if (!formData.senderName.trim()) {
-      setErrorMsg('Sender Name is required.');
+    const errors: typeof fieldErrors = {};
+    if (!formData.senderName.trim()) errors.senderName = true;
+    if (!formData.host.trim()) errors.host = true;
+    if (!formData.username.trim()) errors.username = true;
+    if (!integration?.isConfigured && !formData.password.trim()) errors.password = true;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setErrorMsg('Please fill in all required SMTP server fields highlighted below.');
       return;
     }
-    if (!formData.host.trim() || !formData.port || !formData.username.trim()) {
-      setErrorMsg('Please fill in all required SMTP fields.');
-      return;
-    }
+    setFieldErrors({});
+    setErrorMsg('');
     saveMutation.mutate({
       senderName: formData.senderName.trim(),
       host: formData.host.trim(),
@@ -1037,8 +1227,8 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#010102]/80 backdrop-blur-sm p-4">
-      <div className="bg-[#13161c] rounded-2xl max-w-xl w-full border border-[#1e2025] overflow-hidden flex flex-col max-h-[90vh] text-[#f7f8f8]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2025] bg-[#0f1011]">
+      <div className="bg-[#010102] rounded-2xl max-w-2xl w-full border border-[#23252a] overflow-hidden flex flex-col text-[#f7f8f8] shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#23252a] bg-[#0f1011]">
           <div>
             <h3 className="text-sm font-bold text-[#f7f8f8]">Custom SMTP Configuration</h3>
             <p className="text-[11px] text-[#8a8f98]">Configure your outbound email server credentials.</p>
@@ -1048,103 +1238,129 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
           </button>
         </div>
 
-        <div className="p-6 space-y-4 overflow-y-auto">
+        <div className="p-6 space-y-5 bg-[#0f1011]">
           {errorMsg && (
             <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 font-medium">
               {errorMsg}
             </div>
           )}
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="text-xs font-semibold text-[#8a8f98]">Sender Name</label>
             <input
               type="text"
               value={formData.senderName}
               onChange={(e) => setFormData({ ...formData, senderName: e.target.value })}
-              className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2]"
-              placeholder="e.g. Acme Billing"
+              className={`w-full p-2.5 border rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] ${
+                fieldErrors.senderName
+                  ? 'border-red-500 bg-red-950/20 text-red-300 ring-1 ring-red-500/50'
+                  : 'border-[#23252a] bg-[#010102] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none'
+              }`}
+              placeholder="e.g. Finance Team"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-semibold text-[#8a8f98]">SMTP Host</label>
               <input
                 type="text"
                 value={formData.host}
                 onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2]"
+                className={`w-full p-2.5 border rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] ${
+                  fieldErrors.host
+                    ? 'border-red-500 bg-red-950/20 text-red-300 ring-1 ring-red-500/50'
+                    : 'border-[#23252a] bg-[#010102] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none'
+                }`}
                 placeholder="smtp.example.com"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-[#8a8f98]">Port</label>
-                <select
-                  value={formData.port}
-                  onChange={(e) => setFormData({ ...formData, port: Number(e.target.value) })}
-                  className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2]"
-                >
-                  <option value="587">587 (STARTTLS)</option>
-                  <option value="465">465 (Implicit TLS)</option>
-                  <option value="2525">2525 (Alternative)</option>
-                </select>
+                <CustomSelect
+                  value={String(formData.port)}
+                  onChange={(val) => setFormData({ ...formData, port: Number(val) })}
+                  options={[
+                    { label: '587 (STARTTLS)', value: '587' },
+                    { label: '465 (Implicit TLS)', value: '465' },
+                    { label: '2525 (Alternative)', value: '2525' },
+                  ]}
+                />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-[#8a8f98]">Security</label>
-                <select
+                <CustomSelect
                   value={formData.securityMode}
-                  onChange={(e) => setFormData({ ...formData, securityMode: e.target.value })}
-                  className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2]"
-                >
-                  <option value="starttls">STARTTLS</option>
-                  <option value="implicit_tls">Implicit TLS</option>
-                </select>
+                  onChange={(val) => setFormData({ ...formData, securityMode: val })}
+                  options={[
+                    { label: 'STARTTLS', value: 'starttls' },
+                    { label: 'Implicit TLS', value: 'implicit_tls' },
+                  ]}
+                />
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-semibold text-[#8a8f98]">Username (Sender Email)</label>
               <input
                 type="email"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2]"
+                className={`w-full p-2.5 border rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] ${
+                  fieldErrors.username
+                    ? 'border-red-500 bg-red-950/20 text-red-300 ring-1 ring-red-500/50'
+                    : 'border-[#23252a] bg-[#010102] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none'
+                }`}
                 placeholder="admin@example.com"
               />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-semibold text-[#8a8f98]">
                 Password {integration?.isConfigured && '(Leave blank to keep)'}
               </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2]"
-                placeholder={integration?.isConfigured ? '********' : 'Your SMTP password'}
-              />
+              <div className="relative flex items-center">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className={`w-full p-2.5 pr-10 border rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] font-mono ${
+                    fieldErrors.password
+                      ? 'border-red-500 bg-red-950/20 text-red-300 ring-1 ring-red-500/50'
+                      : 'border-[#23252a] bg-[#010102] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none'
+                  }`}
+                  placeholder={integration?.isConfigured ? '••••••••' : 'Your SMTP password'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 text-[#8a8f98] hover:text-[#f7f8f8] transition-colors cursor-pointer"
+                  title={showPassword ? "Hide Password" : "View Password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
 
           {integration?.isConfigured && (
-            <div className="pt-4 border-t border-[#1e2025]">
+            <div className="pt-4 border-t border-[#23252a]">
               <h4 className="text-[10px] font-bold text-[#8a8f98] uppercase tracking-wider mb-2">Send Test Email</h4>
               <div className="flex gap-2">
                 <input
                   type="email"
                   value={testEmailInput}
                   onChange={(e) => setTestEmailInput(e.target.value)}
-                  className="flex-1 p-2.5 border border-[#1e2025] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] focus:border-[#5e6ad2]"
+                  className="flex-1 p-2.5 border border-[#23252a] bg-[#010102] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none"
                   placeholder="recipient@example.com"
                 />
                 <button
                   type="button"
                   onClick={() => testEmailInput && testEmailMutation.mutate(testEmailInput)}
                   disabled={testEmailStatus === 'sending' || !testEmailInput}
-                  className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-xl text-xs font-medium transition-colors flex items-center disabled:opacity-40 cursor-pointer"
+                  className="px-4 py-2 bg-[#18191c] text-[#f7f8f8] border border-[#34343a] hover:bg-[#23252a] rounded-xl text-xs font-medium transition-all flex items-center disabled:opacity-40 cursor-pointer"
                 >
                   {testEmailStatus === 'sending' ? (
                     <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Sending...</>
@@ -1161,11 +1377,11 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#1e2025] bg-[#0f1011]">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#23252a] bg-[#0f1011]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-[#f7f8f8] bg-[#13161c] border border-[#1e2025] hover:bg-[#1e2025] rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-medium text-[#f7f8f8] bg-[#18191c] border border-[#34343a] hover:bg-[#23252a] rounded-xl transition-all cursor-pointer"
           >
             Cancel
           </button>
@@ -1173,7 +1389,7 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
             type="button"
             onClick={handleSave}
             disabled={saveMutation.isPending}
-            className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#828fff] text-white rounded-xl text-xs font-medium transition-colors disabled:opacity-40 flex items-center cursor-pointer"
+            className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all disabled:opacity-40 flex items-center cursor-pointer shadow-xs"
           >
             {saveMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
             {saveMutation.isPending ? 'Verifying & Saving...' : 'Verify & Save'}
@@ -1227,95 +1443,49 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
     }
   };
 
-  const isStep1Done = sendgridProgress?.step1ApiKey.isDone ?? false;
-  const isStep2Done = sendgridProgress?.step2SenderAndMode.isDone ?? false;
-  const isStep3Done = sendgridProgress?.step3InboundWebhook.isDone ?? false;
+  const getStepTitle = () => {
+    switch (wizardStep) {
+      case 1: return "SendGrid Integration — API Key";
+      case 2: return "SendGrid Integration — Sender & Mode";
+      case 3: return "SendGrid Integration — Inbound Webhook";
+      default: return "SendGrid Integration Setup";
+    }
+  };
+
+  const getStepDescription = () => {
+    switch (wizardStep) {
+      case 1: return "Save and validate your SendGrid API key with Mail Send permissions.";
+      case 2: return "Configure your outbound sender identity and reply copy forwarding preferences.";
+      case 3: return "Set up MX records and verify inbound email reply webhook parsing.";
+      default: return "Complete all steps to activate automated email delivery.";
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#010102]/80 backdrop-blur-sm p-4">
-      <div className="bg-[#13161c] rounded-2xl max-w-2xl w-full border border-[#1e2025] overflow-hidden flex flex-col max-h-[90vh] text-[#f7f8f8]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2025] bg-[#0f1011]">
-          <div>
-            <h3 className="text-sm font-bold text-[#f7f8f8]">SendGrid Integration Setup</h3>
-            <p className="text-[11px] text-[#8a8f98]">
-              Step {wizardStep} of 3 - Complete all 3 steps to activate outbound email &amp; inbound webhook.
-            </p>
-          </div>
-          <button type="button" onClick={handleAttemptClose} className="p-1 text-[#8a8f98] hover:text-[#f7f8f8] rounded-md transition-colors cursor-pointer">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Step navigation bar */}
-        <div className="px-6 py-3 bg-[#0f1011] border-b border-[#1e2025] flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-xs font-medium">
-            <button type="button" onClick={() => goToStep(1)}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-                wizardStep === 1 ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-bold shadow-sm'
-                  : isStep1Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20 font-medium'
-                  : 'bg-[#1e2025]/40 text-[#8a8f98] font-medium'
-              }`}>
-              <span>1. API Key</span>
-              {isStep1Done && <Check className="w-3 h-3 text-[#27a644]" />}
-            </button>
-
-            <ChevronRight className="w-3.5 h-3.5 text-[#3e3e44]" />
-
-            <button type="button" disabled={!isStep1Done} onClick={() => isStep1Done && goToStep(2)}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
-                wizardStep === 2 ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-bold shadow-sm'
-                  : isStep2Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20 font-medium'
-                  : !isStep1Done ? 'bg-[#1e2025]/20 text-[#8a8f98]/40 cursor-not-allowed font-medium'
-                  : 'bg-[#1e2025]/40 text-[#8a8f98] hover:bg-[#1e2025]/80 cursor-pointer font-medium'
-              }`}>
-              <span>2. Sender &amp; Mode</span>
-              {isStep2Done && <Check className="w-3 h-3 text-[#27a644]" />}
-            </button>
-
-            <ChevronRight className="w-3.5 h-3.5 text-[#3e3e44]" />
-
-            <button type="button" disabled={!isStep2Done} onClick={() => isStep2Done && goToStep(3)}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
-                wizardStep === 3 ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-bold shadow-sm'
-                  : isStep3Done ? 'bg-[#27a644]/10 text-[#27a644] hover:bg-[#27a644]/20 border border-[#27a644]/20 font-medium'
-                  : !isStep2Done ? 'bg-[#1e2025]/20 text-[#8a8f98]/40 cursor-not-allowed font-medium'
-                  : 'bg-[#1e2025]/40 text-[#8a8f98] hover:bg-[#1e2025]/80 cursor-pointer font-medium'
-              }`}>
-              <span>3. Webhook</span>
-              {isStep3Done && <Check className="w-3 h-3 text-[#27a644]" />}
-            </button>
-          </div>
-          <span className="text-[11px] font-bold text-[#8a8f98]">Step {wizardStep} of 3</span>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 space-y-6 overflow-y-auto">
-          {showExitConfirm && (
-            <div className="p-4 bg-amber-950/30 border border-amber-900/40 rounded-xl space-y-2">
-              <p className="text-xs text-amber-300 font-semibold">
-                SendGrid setup is incomplete. Exit before completing all 3 steps?
-              </p>
-              <div className="flex space-x-2">
-                <button type="button" onClick={() => setShowExitConfirm(false)}
-                  className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-medium rounded-lg hover:bg-amber-500/30 transition-colors cursor-pointer">
-                  Continue Setup
-                </button>
-                <button type="button" onClick={() => { setShowExitConfirm(false); onClose(); }}
-                  className="px-3 py-1 bg-[#1e2025] text-[#8a8f98] border border-[#1e2025] text-xs font-medium rounded-lg hover:bg-[#1e2025]/80 transition-colors cursor-pointer">
-                  Exit Anyway
-                </button>
-              </div>
-            </div>
-          )}
-
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#010102]/80 backdrop-blur-sm p-4">
+        <MultiStepForm
+          size="lg"
+          currentStep={wizardStep}
+          totalSteps={3}
+          title={getStepTitle()}
+          description={getStepDescription()}
+          onBack={() => {
+            if (wizardStep > 1) goToStep((wizardStep - 1) as 1 | 2 | 3);
+          }}
+          onNext={() => {
+            if (wizardStep < 3) goToStep((wizardStep + 1) as 1 | 2 | 3);
+          }}
+          onClose={handleAttemptClose}
+          showBackButton={false}
+          showNextButton={false}
+        >
           {!sendgridProgress ? (
             <div className="space-y-4 animate-pulse">
-              <div className="h-6 bg-[#1e2025] rounded w-1/2" />
-              <div className="h-4 bg-[#1e2025] rounded w-full" />
-              <div className="h-4 bg-[#1e2025] rounded w-3/4" />
-              <div className="h-20 bg-[#1e2025] rounded w-full" />
-              <div className="h-10 bg-[#1e2025] rounded w-1/3 ml-auto" />
+              <div className="h-6 bg-[#18191c] rounded w-1/2" />
+              <div className="h-4 bg-[#18191c] rounded w-full" />
+              <div className="h-4 bg-[#18191c] rounded w-3/4" />
+              <div className="h-20 bg-[#18191c] rounded w-full" />
             </div>
           ) : (
             <>
@@ -1344,30 +1514,48 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
               )}
             </>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#1e2025] bg-[#0f1011] flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-[11px] font-medium text-[#8a8f98]">
-            <span>Overall Progress:</span>
-            <span className={isStep1Done ? 'text-[#27a644] font-bold' : 'text-amber-400 font-semibold'}>
-              Step 1 {isStep1Done ? '(done)' : '(pending)'}
-            </span>
-            <span>|</span>
-            <span className={isStep2Done ? 'text-[#27a644] font-bold' : 'text-amber-400 font-semibold'}>
-              Step 2 {isStep2Done ? '(done)' : '(pending)'}
-            </span>
-            <span>|</span>
-            <span className={isStep3Done ? 'text-[#27a644] font-bold' : 'text-amber-400 font-semibold'}>
-              Step 3 {isStep3Done ? '(done)' : '(pending)'}
-            </span>
-          </div>
-          <button type="button" onClick={handleAttemptClose}
-            className="px-4 py-2 border border-[#1e2025] rounded-xl text-[#f7f8f8] bg-[#13161c] hover:bg-[#1e2025] text-xs font-medium transition-colors cursor-pointer">
-            Cancel
-          </button>
-        </div>
+        </MultiStepForm>
       </div>
-    </div>
+
+      {showExitConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#010102]/85 backdrop-blur-md p-4">
+          <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl max-w-md w-full p-6 space-y-5 text-[#f7f8f8] shadow-2xl">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#f7f8f8]">Incomplete Setup</h3>
+                <p className="text-xs text-[#8a8f98]">Your SendGrid integration is not fully configured.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#8a8f98] leading-relaxed">
+              SendGrid setup is incomplete. Exit before completing all 3 steps?
+            </p>
+
+            <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#23252a]">
+              <button
+                type="button"
+                onClick={() => setShowExitConfirm(false)}
+                className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+              >
+                Continue Setup
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExitConfirm(false);
+                  onClose();
+                }}
+                className="px-4 py-2 bg-[#18191c] text-[#8a8f98] hover:text-[#f7f8f8] border border-[#34343a] hover:bg-[#23252a] rounded-xl text-xs font-medium transition-all cursor-pointer"
+              >
+                Exit Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
