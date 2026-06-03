@@ -95,7 +95,7 @@ export function Agent() {
             <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">
               Autopilot
             </h1>
-            <p className="text-xs text-[#8a8f98] mt-1">Manage and monitor automated invoice processing, AI triage, and follow-up dispatching.</p>
+            <p className="text-xs text-[#8a8f98] mt-1">AI Agent Control — Manage and monitor automated invoice processing, AI triage, and follow-up dispatching.</p>
           </div>
           <div className="flex items-center space-x-3 self-start md:self-auto">
             {user?.role !== 'viewer' && (
