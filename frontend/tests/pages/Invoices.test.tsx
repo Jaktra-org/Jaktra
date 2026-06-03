@@ -38,7 +38,7 @@ describe('Invoices list page', () => {
     pagination: {
       total: 1,
       page: 1,
-      limit: 50,
+      limit: 15,
       totalPages: 1,
     },
   };
@@ -47,7 +47,7 @@ describe('Invoices list page', () => {
     vi.clearAllMocks();
     vi.mocked(invoiceService.getTrashedInvoices).mockResolvedValue({
       data: [],
-      pagination: { total: 0, page: 1, limit: 50, totalPages: 0 },
+      pagination: { total: 0, page: 1, limit: 15, totalPages: 0 },
     });
   });
 
@@ -61,7 +61,7 @@ describe('Invoices list page', () => {
     // Initially fetches with empty search query
     expect(invoiceService.getInvoices).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 15,
       sort_by: 'createdAt',
       order: 'desc',
     });
@@ -97,8 +97,8 @@ describe('Invoices list page', () => {
       pagination: {
         total: 100,
         page: 1,
-        limit: 50,
-        totalPages: 2,
+        limit: 15,
+        totalPages: 7,
       },
     });
 
