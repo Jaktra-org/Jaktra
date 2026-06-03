@@ -45,7 +45,7 @@ describe('Settings page tabs and general auto-save configurations', () => {
 
     // General page renders initially by default
     await waitFor(() => {
-      expect(screen.getByText('General Settings')).toBeInTheDocument();
+      expect(screen.getByText('Display Name')).toBeInTheDocument();
     });
 
     // Click Profile & Security Tab
@@ -59,7 +59,7 @@ describe('Settings page tabs and general auto-save configurations', () => {
     });
   });
 
-  it('runs debounced auto-saves on form input changes, discarding unsaved state if tabbed out early', async () => {
+  it('submits general settings form when clicking Save Changes button', async () => {
     vi.mocked(settingsService.getSettings).mockResolvedValue(mockSettings);
     vi.mocked(settingsService.updateSettings).mockResolvedValue({} as any);
 
@@ -78,48 +78,23 @@ describe('Settings page tabs and general auto-save configurations', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('General Settings')).toBeInTheDocument();
+      expect(screen.getByText('Display Name')).toBeInTheDocument();
     });
 
-    // Turn on fake timers for input change auto-save checks
     // Trigger form change
     const nameInput = screen.getByDisplayValue('Acme Corp');
     act(() => {
       fireEvent.change(nameInput, { target: { value: 'Updated Company Name' } });
     });
 
-    // Switch tab immediately within 500ms
-    const profileTabBtn = screen.getByRole('button', { name: /Profile/i });
+    // Click Save Changes button
+    const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
     await act(async () => {
-      profileTabBtn.click();
-    });
-
-    // Verify updateSettings was not called (aborted/cleared)
-    expect(settingsService.updateSettings).not.toHaveBeenCalled();
-
-    // Switch back to General tab
-    await act(async () => {
-      generalTabBtn.click();
-    });
-
-    await waitFor(() => {
-      // Input value should have reverted to mockSettings value 'Acme Corp'
-      expect(screen.getByDisplayValue('Acme Corp')).toBeInTheDocument();
-    });
-
-    // Make change again
-    const nameInput2 = screen.getByDisplayValue('Acme Corp');
-    act(() => {
-      fireEvent.change(nameInput2, { target: { value: 'New Auto Save Name' } });
-    });
-
-    // Wait for the 1000ms debounce save timer to fire
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      saveBtn.click();
     });
 
     expect(settingsService.updateSettings).toHaveBeenCalledWith(
-      expect.objectContaining({ companyName: 'New Auto Save Name' })
+      expect.objectContaining({ companyName: 'Updated Company Name' })
     );
   });
 });
