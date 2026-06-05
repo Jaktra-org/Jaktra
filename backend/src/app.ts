@@ -4,12 +4,14 @@ import healthRouter from './routes/health.router.js';
 import { createAuthRouter } from './routes/auth.router.js';
 import { createTenantRouter } from './routes/tenant.router.js';
 import { createInvoiceImportRouter } from './routes/invoice-import.router.js';
+import { createTriageRouter } from './routes/triage.router.js';
 import { UserRepository } from './repositories/user.repository.js';
 import { TenantRepository } from './repositories/tenant.repository.js';
 import { InvoiceRepository } from './repositories/invoice.repository.js';
 import { AuthService } from './services/auth.service.js';
 import { TenantService } from './services/tenant.service.js';
 import { InvoiceImportService } from './services/invoice-import.service.js';
+import { TriageService } from './services/triage.service.js';
 import { createAuthMiddleware } from './middleware/auth.js';
 import { tenantScoped } from './middleware/tenant-scoped.js';
 import { logger } from './utils/logger.js';
@@ -53,7 +55,9 @@ export function createApp(config: AppConfig): Application {
 
     const invoiceRepo = new InvoiceRepository(config.db);
     const invoiceImportService = new InvoiceImportService(invoiceRepo);
+    const triageService = new TriageService();
     app.use('/api/invoices', createInvoiceImportRouter(invoiceImportService, authMiddleware, tenantScoped));
+    app.use('/api/invoices', createTriageRouter(triageService, invoiceRepo, authMiddleware, tenantScoped));
     app.locals.authMiddleware = authMiddleware;
     app.locals.authService = authService;
     app.locals.tenantScoped = tenantScoped;

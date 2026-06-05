@@ -1,10 +1,25 @@
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, inArray } from 'drizzle-orm';
 import { invoices } from '../db/index.js';
 import type { DatabaseClient } from '../db/index.js';
 import type { Invoice, NewInvoice } from '../db/index.js';
+import type { UrgencyTier } from '../services/triage.service.js';
 
 export class InvoiceRepository {
   constructor(private db: DatabaseClient) {}
+
+  async findByTenant(tenantId: string): Promise<Invoice[]> {
+    return this.db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.tenantId, tenantId), isNull(invoices.deletedAt)));
+  }
+
+  async updateUrgencyTier(invoiceId: string, tier: UrgencyTier): Promise<void> {
+    await this.db
+      .update(invoices)
+      .set({ urgencyTier: tier, updatedAt: new Date() })
+      .where(eq(invoices.id, invoiceId));
+  }
 
   async findByInvoiceNo(invoiceNo: string, tenantId: string): Promise<Invoice | undefined> {
     const rows = await this.db
