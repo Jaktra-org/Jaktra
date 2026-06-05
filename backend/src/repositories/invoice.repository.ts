@@ -14,6 +14,15 @@ export class InvoiceRepository {
       .where(and(eq(invoices.tenantId, tenantId), isNull(invoices.deletedAt)));
   }
 
+  async findById(invoiceId: string): Promise<Invoice | undefined> {
+    const rows = await this.db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.id, invoiceId), isNull(invoices.deletedAt)))
+      .limit(1);
+    return rows[0];
+  }
+
   async updateUrgencyTier(invoiceId: string, tier: UrgencyTier): Promise<void> {
     await this.db
       .update(invoices)
