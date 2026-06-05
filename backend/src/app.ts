@@ -2,9 +2,13 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import healthRouter from './routes/health.router.js';
 import { createAuthRouter } from './routes/auth.router.js';
+import { createTenantRouter } from './routes/tenant.router.js';
 import { UserRepository } from './repositories/user.repository.js';
+import { TenantRepository } from './repositories/tenant.repository.js';
 import { AuthService } from './services/auth.service.js';
+import { TenantService } from './services/tenant.service.js';
 import { createAuthMiddleware } from './middleware/auth.js';
+import { tenantScoped } from './middleware/tenant-scoped.js';
 import { logger } from './utils/logger.js';
 import type { DatabaseClient } from './db/index.js';
 
@@ -35,17 +39,17 @@ export function createApp(config: AppConfig): Application {
 
   app.use('/api/health', healthRouter);
 
-  // Auth routes require db + jwt config
   if (config.db && config.jwtSecret) {
     const userRepo = new UserRepository(config.db);
+    const tenantRepo = new TenantRepository(config.db);
     const authService = new AuthService(userRepo, config.jwtSecret, config.jwtExpiresIn ?? '7d');
+    const tenantService = new TenantService(tenantRepo);
     const authMiddleware = createAuthMiddleware(authService);
-
     app.use('/api/auth', createAuthRouter(authService, authMiddleware));
-
-    // Expose on app.locals so other routers can reference them
+    app.use('/api/tenants', createTenantRouter(tenantService, authMiddleware));
     app.locals.authMiddleware = authMiddleware;
     app.locals.authService = authService;
+    app.locals.tenantScoped = tenantScoped;
   }
 
   return app;
