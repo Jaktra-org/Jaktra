@@ -5,6 +5,7 @@ import { createAuthRouter } from './routes/auth.router.js';
 import { createTenantRouter } from './routes/tenant.router.js';
 import { createInvoiceImportRouter } from './routes/invoice-import.router.js';
 import { createTriageRouter } from './routes/triage.router.js';
+import { createReconcilerRouter } from './routes/reconciler.router.js';
 import { createCommunicationRouter } from './routes/communication.router.js';
 import { createEventRouter } from './routes/event.router.js';
 import { createAimlRouter } from './routes/aiml.router.js';
@@ -20,6 +21,7 @@ import { AuthService } from './services/auth.service.js';
 import { TenantService } from './services/tenant.service.js';
 import { InvoiceImportService } from './services/invoice-import.service.js';
 import { TriageService } from './services/triage.service.js';
+import { ReconcilerService } from './services/reconciler.service.js';
 import { CommunicationService } from './services/communication.service.js';
 import { EventService } from './services/event.service.js';
 import { AimlService } from './services/aiml.service.js';
@@ -80,6 +82,9 @@ export function createApp(config: AppConfig): Application {
     app.use('/api/invoices', createTriageRouter(triageService, invoiceRepo, authMiddleware, tenantScoped));
 
     const communicationRepo = new CommunicationRepository(config.db);
+    const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo);
+    app.use('/api/invoices', createReconcilerRouter(reconcilerService, authMiddleware, tenantScoped));
+
     const communicationService = new CommunicationService(communicationRepo, invoiceRepo);
     app.use('/api', createCommunicationRouter(communicationService, authMiddleware, tenantScoped));
 

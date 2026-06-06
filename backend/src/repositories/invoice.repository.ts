@@ -30,6 +30,13 @@ export class InvoiceRepository {
       .where(eq(invoices.id, invoiceId));
   }
 
+  async updateFollowupCount(invoiceId: string, count: number): Promise<void> {
+    await this.db
+      .update(invoices)
+      .set({ followupCount: count, updatedAt: new Date() })
+      .where(eq(invoices.id, invoiceId));
+  }
+
   async findByInvoiceNo(invoiceNo: string, tenantId: string): Promise<Invoice | undefined> {
     const rows = await this.db
       .select()
