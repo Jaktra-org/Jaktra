@@ -67,11 +67,12 @@ export class EmailService {
     return await this.emailRepo.getSettings(tenantId);
   }
 
-  async updateSettings(tenantId: string, senderName: string, senderEmail: string, replyTo?: string) {
+  async updateSettings(tenantId: string, senderName: string, senderEmail: string, replyTo?: string, idempotencyWindowHours: number = 20) {
     return await this.emailRepo.upsertSettings(tenantId, {
       senderName,
       senderEmail,
       replyTo: replyTo || null,
+      idempotencyWindowHours,
     });
   }
 }

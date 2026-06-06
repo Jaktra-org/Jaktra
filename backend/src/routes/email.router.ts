@@ -7,6 +7,7 @@ const EmailSettingsSchema = z.object({
   senderName: z.string().min(1),
   senderEmail: z.string().email(),
   replyTo: z.string().email().optional(),
+  idempotencyWindowHours: z.number().int().min(0).optional().default(20),
 });
 
 const TestEmailSchema = z.object({
@@ -47,8 +48,8 @@ export function createEmailRouter(
         return res.status(400).json({ error: parsed.error.format() });
       }
 
-      const { senderName, senderEmail, replyTo } = parsed.data;
-      const settings = await emailService.updateSettings(tenantId, senderName, senderEmail, replyTo);
+      const { senderName, senderEmail, replyTo, idempotencyWindowHours } = parsed.data;
+      const settings = await emailService.updateSettings(tenantId, senderName, senderEmail, replyTo, idempotencyWindowHours);
       res.status(200).json(settings);
     } catch (err) {
       res.status(500).json({ error: { message: 'Failed to update email settings' } });

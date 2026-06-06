@@ -26,6 +26,7 @@ import { AimlService } from './services/aiml.service.js';
 import { AgentService } from './services/agent.service.js';
 import { DlqService } from './services/dlq.service.js';
 import { EmailService } from './services/email.service.js';
+import { IdempotencyService } from './services/idempotency.service.js';
 import { AgentRepository } from './repositories/agent.repository.js';
 import { DlqRepository } from './repositories/dlq.repository.js';
 import { EmailRepository } from './repositories/email.repository.js';
@@ -103,8 +104,10 @@ export function createApp(config: AppConfig): Application {
       const emailService = new EmailService(emailRepo, config.sendgridApiKey);
       app.use('/api/settings/email', createEmailRouter(emailService, authMiddleware, tenantScoped));
 
+      const idempotencyService = new IdempotencyService(communicationRepo, emailRepo);
+
       const agentRepo = new AgentRepository(config.db);
-      const agentService = new AgentService(agentRepo, aimlService, invoiceRepo, triageService, eventService, dlqService);
+      const agentService = new AgentService(agentRepo, aimlService, invoiceRepo, triageService, eventService, dlqService, idempotencyService);
       app.use('/api/agent', createAgentRouter(agentService, authMiddleware, tenantScoped));
     }
   }

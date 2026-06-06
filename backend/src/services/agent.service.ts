@@ -4,6 +4,7 @@ import { InvoiceRepository } from '../repositories/invoice.repository.js';
 import { TriageService } from './triage.service.js';
 import { EventService } from './event.service.js';
 import { DlqService } from './dlq.service.js';
+import { IdempotencyService } from './idempotency.service.js';
 
 export class AgentService {
   constructor(
@@ -13,6 +14,7 @@ export class AgentService {
     private triageService: TriageService,
     private eventService: EventService,
     private dlqService: DlqService,
+    private idempotencyService: IdempotencyService,
   ) {}
 
   async triggerRun(tenantId: string, dryRun = false) {
@@ -48,6 +50,18 @@ export class AgentService {
 
     for (const inv of triaged.invoices) {
       try {
+        const idempotencyCheck = await this.idempotencyService.checkInvoice(tenantId, inv.id);
+        if (idempotencyCheck.skipped) {
+          // Log skip and move on
+          await this.eventService.emitEvent(
+            inv.id,
+            'halted',
+            { reason: 'idempotency_skip', ...idempotencyCheck, runId: run.id },
+            'system'
+          );
+          continue;
+        }
+
         const resp = await this.aimlService.triggerFollowup({
           invoiceId: inv.id,
           invoiceNo: inv.invoiceNo,
@@ -108,6 +122,17 @@ export class AgentService {
 
     const daysOverdue = this.triageService.computeDaysOverdue(invoice.dueDate);
     const urgencyTier = this.triageService.assignTier(daysOverdue);
+
+    const idempotencyCheck = await this.idempotencyService.checkInvoice(tenantId, invoice.id);
+    if (idempotencyCheck.skipped) {
+      await this.eventService.emitEvent(
+        invoice.id,
+        'halted',
+        { reason: 'idempotency_skip', ...idempotencyCheck },
+        'system'
+      );
+      return idempotencyCheck;
+    }
 
     try {
       const resp = await this.aimlService.triggerFollowup({

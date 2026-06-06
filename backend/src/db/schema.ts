@@ -222,6 +222,7 @@ export const tenantSettings = pgTable('tenant_settings', {
   senderName: text('sender_name').notNull(),
   senderEmail: text('sender_email').notNull(),
   replyTo: text('reply_to'),
+  idempotencyWindowHours: integer('idempotency_window_hours').notNull().default(20),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
