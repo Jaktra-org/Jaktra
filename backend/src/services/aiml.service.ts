@@ -105,7 +105,7 @@ export class AimlService {
 
         this.onSuccess();
         return (await response.json()) as T;
-      } catch (err) {
+      } catch (err: unknown) {
         lastError = err instanceof Error ? err : new Error(String(err));
 
         if (err instanceof AimlServiceError && err.statusCode >= 400 && err.statusCode < 500) {
@@ -135,7 +135,7 @@ export class AimlService {
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         throw new AimlServiceError(`AI-ML request timed out after ${this.timeoutMs}ms`, 504);
       }

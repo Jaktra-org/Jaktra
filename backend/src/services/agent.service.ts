@@ -93,7 +93,7 @@ export class AgentService {
           // It's possible the AI-ML service returned a soft error
           await this.dlqService.recordFailure(inv.id, resp.error).catch(() => {});
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         errorsCount++;
         await this.eventService.emitEvent(
           inv.id,
@@ -161,7 +161,7 @@ export class AgentService {
       }
 
       return resp;
-    } catch (err: any) {
+    } catch (err: unknown) {
       await this.eventService.emitEvent(
         invoice.id,
         'halted',

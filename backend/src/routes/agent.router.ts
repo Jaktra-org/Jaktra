@@ -30,7 +30,7 @@ export function createAgentRouter(
       // We will await to return the final status for simplicity of this phase.
       const run = await agentService.triggerRun(tenantId, dryRun);
       res.status(200).json(run);
-    } catch (err) {
+    } catch (err: unknown) {
       res.status(500).json({
         error: {
           code: 'AGENT_RUN_ERROR',
@@ -49,7 +49,7 @@ export function createAgentRouter(
       
       const runs = await agentService.getRuns(tenantId);
       res.status(200).json({ runs, total: runs.length });
-    } catch (err) {
+    } catch (err: unknown) {
       res.status(500).json({
         error: {
           code: 'INTERNAL_ERROR',
@@ -78,7 +78,7 @@ export function createAgentRouter(
       }
       
       res.status(200).json(run);
-    } catch (err) {
+    } catch (err: unknown) {
       res.status(500).json({
         error: {
           code: 'INTERNAL_ERROR',
@@ -98,7 +98,7 @@ export function createAgentRouter(
       
       const result = await agentService.triggerSingleInvoice(invoiceId, tenantId);
       res.status(200).json(result);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof Error && err.message === 'Invoice not found') {
         return res.status(404).json({
           error: { code: 'NOT_FOUND', message: 'Invoice not found or not actionable' }

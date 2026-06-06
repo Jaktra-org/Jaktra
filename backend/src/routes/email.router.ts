@@ -32,7 +32,7 @@ export function createEmailRouter(
       
       const settings = await emailService.getSettings(tenantId);
       res.status(200).json(settings || {});
-    } catch (err) {
+    } catch (err: unknown) {
       res.status(500).json({ error: { message: 'Failed to fetch email settings' } });
     }
   });
@@ -51,7 +51,7 @@ export function createEmailRouter(
       const { senderName, senderEmail, replyTo, idempotencyWindowHours } = parsed.data;
       const settings = await emailService.updateSettings(tenantId, senderName, senderEmail, replyTo, idempotencyWindowHours);
       res.status(200).json(settings);
-    } catch (err) {
+    } catch (err: unknown) {
       res.status(500).json({ error: { message: 'Failed to update email settings' } });
     }
   });
@@ -78,7 +78,7 @@ export function createEmailRouter(
       });
 
       res.status(200).json({ success: true, message: `Test email sent successfully in ${mode} mode` });
-    } catch (err: any) {
+    } catch (err: unknown) {
       res.status(500).json({ error: { message: err.message || 'Failed to send test email' } });
     }
   });

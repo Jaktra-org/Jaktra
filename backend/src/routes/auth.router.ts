@@ -33,7 +33,7 @@ export function createAuthRouter(
     try {
       const result = await authService.register(parsed.data);
       res.status(201).json(result);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof AuthError) {
         res.status(err.statusCode).json({ error: err.message });
         return;
@@ -52,7 +52,7 @@ export function createAuthRouter(
     try {
       const result = await authService.login(parsed.data);
       res.status(200).json(result);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof AuthError) {
         res.status(err.statusCode).json({ error: err.message });
         return;
@@ -71,7 +71,7 @@ export function createAuthRouter(
     try {
       const result = await authService.refreshToken(header.slice(7));
       res.status(200).json(result);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof AuthError) {
         res.status(err.statusCode).json({ error: err.message });
         return;
@@ -85,7 +85,7 @@ export function createAuthRouter(
       const { userId } = (req as AuthenticatedRequest).user;
       const profile = await authService.getProfile(userId);
       res.status(200).json(profile);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof AuthError) {
         res.status(err.statusCode).json({ error: err.message });
         return;

@@ -33,7 +33,7 @@ export function createTenantRouter(
       try {
         const tenant = await tenantService.create(parsed.data);
         res.status(201).json(tenant);
-      } catch (err) {
+      } catch (err: unknown) {
         if (err instanceof TenantError) {
           res.status(err.statusCode).json({ error: err.message });
           return;
@@ -59,7 +59,7 @@ export function createTenantRouter(
       try {
         const tenant = await tenantService.getById(id);
         res.status(200).json(tenant);
-      } catch (err) {
+      } catch (err: unknown) {
         if (err instanceof TenantError) {
           res.status(err.statusCode).json({ error: err.message });
           return;

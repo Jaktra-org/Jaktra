@@ -40,7 +40,7 @@ export class InvoiceImportService {
             skipped++;
             break;
         }
-      } catch (err) {
+      } catch (err: unknown) {
         errors.push({
           row: 0,
           invoiceNo: row.invoiceNo,

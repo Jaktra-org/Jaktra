@@ -4,13 +4,52 @@ import { PaymentGatewayFactory } from '../services/payment/gateway.factory.js';
 import { WebhookService } from '../services/webhook.service.js';
 import { logger } from '../utils/logger.js';
 
+import { SendgridWebhookService } from '../services/webhooks/sendgrid.webhook.js';
+
 export function createWebhookRouter(
   gatewayFactory: PaymentGatewayFactory,
   webhookService: WebhookService,
-  webhookSecrets: Record<string, string> // e.g. { razorpay: process.env.RAZORPAY_WEBHOOK_SECRET }
+  webhookSecrets: Record<string, string>, // e.g. { razorpay: process.env.RAZORPAY_WEBHOOK_SECRET }
+  sendgridService?: SendgridWebhookService
 ): Router {
   const router = Router();
 
+  // SendGrid Email Webhooks
+  router.post(
+    '/sendgrid',
+    express.raw({ type: 'application/json' }),
+    async (req: Request, res: Response) => {
+      if (!sendgridService) {
+        return res.status(501).json({ error: 'SendGrid webhook service not configured' });
+      }
+
+      const rawBody = req.body;
+      if (!rawBody || !Buffer.isBuffer(rawBody)) {
+        logger.error(`Raw body is missing or not a buffer for sendgrid.`);
+        return res.status(400).json({ error: 'Invalid request body' });
+      }
+
+      const signature = req.headers['x-twilio-email-event-webhook-signature'];
+      const timestamp = req.headers['x-twilio-email-event-webhook-timestamp'];
+
+      try {
+        await sendgridService.processEvents(
+          rawBody,
+          typeof signature === 'string' ? signature : undefined,
+          typeof timestamp === 'string' ? timestamp : undefined
+        );
+        res.status(200).json({ status: 'success' });
+      } catch (error: unknown) {
+        logger.error('SendGrid webhook processing failed', { error });
+        if (error.message.includes('signature')) {
+          return res.status(401).json({ error: 'Invalid signature' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  );
+
+  // Payment Gateways
   router.post(
     '/:provider',
     express.raw({ type: 'application/json' }),

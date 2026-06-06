@@ -18,7 +18,7 @@ export function createEventRouter(
         const invoiceId = req.params.id as string;
         const timeline = await eventService.listByInvoice(invoiceId, tenantId);
         res.status(200).json(timeline);
-      } catch (err) {
+      } catch (err: unknown) {
         if (err instanceof EventError) {
           res.status(err.statusCode).json({ error: err.message });
           return;

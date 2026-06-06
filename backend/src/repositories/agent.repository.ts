@@ -1,5 +1,5 @@
 import { eq, desc, and } from 'drizzle-orm';
-import { agentRuns, events, type AgentRun, type NewAgentRun } from '../db/schema.js';
+import { agentRuns, type AgentRun, type NewAgentRun } from '../db/schema.js';
 import type { DatabaseClient } from '../db/index.js';
 
 export class AgentRepository {

@@ -15,10 +15,13 @@ export const createCommunicationSchema = z.object({
 
 export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>;
 
+import type { EventRepository } from '../repositories/event.repository.js';
+
 export class CommunicationService {
   constructor(
     private communicationRepo: CommunicationRepository,
     private invoiceRepo: InvoiceRepository,
+    private eventRepo?: EventRepository // Optional to avoid breaking existing usages if any, but we will inject it
   ) {}
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Communication[]> {
@@ -44,6 +47,32 @@ export class CommunicationService {
       sentAt: input.sentAt ?? null,
       error: input.error ?? null,
     });
+  }
+
+  async handleEmailEvent(
+    communicationId: string,
+    invoiceId: string,
+    eventType: 'opened' | 'clicked' | 'bounced' | 'dropped',
+    timestamp: Date,
+    rawEvent: any
+  ): Promise<void> {
+    if (eventType === 'opened') {
+      await this.communicationRepo.updateOpenedAt(communicationId, timestamp);
+    } else if (eventType === 'clicked') {
+      await this.communicationRepo.updateClickedAt(communicationId, timestamp);
+    } else if (eventType === 'bounced' || eventType === 'dropped') {
+      await this.communicationRepo.markFailed(communicationId, rawEvent.reason || 'Email bounced or dropped');
+    }
+
+    if (this.eventRepo) {
+      const dbEventType = `email_${eventType === 'dropped' ? 'bounced' : eventType}`;
+      await this.eventRepo.create({
+        invoiceId,
+        eventType: dbEventType,
+        actor: 'system',
+        payload: rawEvent
+      });
+    }
   }
 }
 

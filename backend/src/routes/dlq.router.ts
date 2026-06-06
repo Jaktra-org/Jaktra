@@ -14,7 +14,7 @@ export function createDlqRouter(
     try {
       const entries = await dlqService.getDlqEntries();
       res.json(entries);
-    } catch (err: any) {
+    } catch (err: unknown) {
       res.status(500).json({ error: err.message || 'Internal Server Error' });
     }
   });
@@ -23,7 +23,7 @@ export function createDlqRouter(
     try {
       const stats = await dlqService.getDlqStats();
       res.json(stats);
-    } catch (err: any) {
+    } catch (err: unknown) {
       res.status(500).json({ error: err.message || 'Internal Server Error' });
     }
   });
@@ -33,7 +33,7 @@ export function createDlqRouter(
       const { invoice_id } = req.params;
       await dlqService.clearFailure(invoice_id);
       res.json({ success: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       res.status(500).json({ error: err.message || 'Internal Server Error' });
     }
   });

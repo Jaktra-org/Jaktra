@@ -14,6 +14,7 @@ const schema = z.object({
     .transform((val) => val.split(',').map((s) => s.trim())),
 
   SENDGRID_API_KEY: z.string().optional(),
+  SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
 

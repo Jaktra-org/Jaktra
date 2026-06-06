@@ -19,7 +19,7 @@ export function createReconcilerRouter(
       
       const result = await reconcilerService.reconcile(tenantId);
       res.status(200).json(result);
-    } catch (err) {
+    } catch (err: unknown) {
       res.status(500).json({ error: { message: 'Failed to reconcile invoices' } });
     }
   });

@@ -1,4 +1,4 @@
-import { eq, and, isNull, inArray } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { invoices } from '../db/index.js';
 import type { DatabaseClient } from '../db/index.js';
 import type { Invoice, NewInvoice } from '../db/index.js';

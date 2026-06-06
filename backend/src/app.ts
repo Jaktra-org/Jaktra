@@ -40,6 +40,7 @@ import { PaymentGatewayFactory } from './services/payment/gateway.factory.js';
 import { RazorpayAdapter } from './services/payment/adapters/razorpay.adapter.js';
 import { WebhookService } from './services/webhook.service.js';
 import { createWebhookRouter } from './routes/webhook.router.js';
+import { SendgridWebhookService } from './services/webhooks/sendgrid.webhook.js';
 
 export interface AppConfig {
   corsOrigins: string[];
@@ -49,6 +50,7 @@ export interface AppConfig {
   aimlServiceUrl?: string;
   sendgridApiKey?: string;
   razorpayWebhookSecret?: string;
+  sendgridWebhookPublicKey?: string;
 }
 
 export function createApp(config: AppConfig): Application {
@@ -65,18 +67,21 @@ export function createApp(config: AppConfig): Application {
   if (config.db) {
     const invoiceRepo = new InvoiceRepository(config.db);
     const eventRepo = new EventRepository(config.db);
+    const communicationRepo = new CommunicationRepository(config.db);
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, eventRepo);
     
     const gatewayFactory = new PaymentGatewayFactory();
     gatewayFactory.register(new RazorpayAdapter());
     
     const webhookService = new WebhookService(invoiceRepo, eventRepo);
+    const sendgridService = new SendgridWebhookService(communicationService, config.sendgridWebhookPublicKey);
     
     const webhookSecrets: Record<string, string> = {};
     if (config.razorpayWebhookSecret) {
       webhookSecrets['razorpay'] = config.razorpayWebhookSecret;
     }
     
-    app.use('/api/webhooks', createWebhookRouter(gatewayFactory, webhookService, webhookSecrets));
+    app.use('/api/webhooks', createWebhookRouter(gatewayFactory, webhookService, webhookSecrets, sendgridService));
   }
 
   app.use(express.json());

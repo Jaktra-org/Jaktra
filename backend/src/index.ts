@@ -14,6 +14,7 @@ const app = createApp({
   aimlServiceUrl: config.AI_ML_SERVICE_URL,
   sendgridApiKey: config.SENDGRID_API_KEY,
   razorpayWebhookSecret: config.RAZORPAY_WEBHOOK_SECRET,
+  sendgridWebhookPublicKey: config.SENDGRID_WEBHOOK_PUBLIC_KEY,
 });
 
 const server = app.listen(config.PORT, () => {

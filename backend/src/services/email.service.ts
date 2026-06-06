@@ -57,7 +57,7 @@ export class EmailService {
       await sgMail.send(msg);
       logger.info(`[LIVE] Email sent successfully to ${to} from ${from.email}`);
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error(`[LIVE] Failed to send email to ${to}: ${error.message}`);
       throw new Error(`Email sending failed: ${error.message}`);
     }

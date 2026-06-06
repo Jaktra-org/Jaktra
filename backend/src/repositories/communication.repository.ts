@@ -34,4 +34,25 @@ export class CommunicationRepository {
       .returning();
     return rows[0]!;
   }
+
+  async updateOpenedAt(id: string, openedAt: Date): Promise<void> {
+    await this.db
+      .update(communications)
+      .set({ openedAt })
+      .where(eq(communications.id, id));
+  }
+
+  async updateClickedAt(id: string, clickedAt: Date): Promise<void> {
+    await this.db
+      .update(communications)
+      .set({ clickedAt })
+      .where(eq(communications.id, id));
+  }
+
+  async markFailed(id: string, error: string): Promise<void> {
+    await this.db
+      .update(communications)
+      .set({ status: 'failed', error })
+      .where(eq(communications.id, id));
+  }
 }

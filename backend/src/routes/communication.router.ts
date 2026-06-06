@@ -22,7 +22,7 @@ export function createCommunicationRouter(
         const invoiceId = req.params.id as string;
         const records = await communicationService.listByInvoice(invoiceId, tenantId);
         res.status(200).json(records);
-      } catch (err) {
+      } catch (err: unknown) {
         if (err instanceof CommunicationError) {
           res.status(err.statusCode).json({ error: err.message });
           return;
@@ -50,7 +50,7 @@ export function createCommunicationRouter(
         const tenantId = res.locals.tenantId as string;
         const record = await communicationService.create(parsed.data, tenantId);
         res.status(201).json(record);
-      } catch (err) {
+      } catch (err: unknown) {
         if (err instanceof CommunicationError) {
           res.status(err.statusCode).json({ error: err.message });
           return;
