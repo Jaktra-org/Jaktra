@@ -62,6 +62,8 @@ import { RazorpayAdapter } from './modules/payment/adapters/razorpay.adapter.js'
 import { WebhookService } from './modules/webhook/webhook.service.js';
 import { SendgridWebhookService } from './modules/webhook/providers/sendgrid.webhook.js';
 import { SendgridProvider } from './modules/communication/providers/sendgrid.provider.js';
+import { standardLimiter, authLimiter } from './middleware/rate-limiter.js';
+import { requestLogger } from './middleware/request-logger.js';
 
 export interface AppConfig {
   corsOrigins: string[];
@@ -108,10 +110,10 @@ export function createApp(config: AppConfig): Application {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  app.use((req: Request, _res: Response, next: NextFunction): void => {
-    logger.info(`→ ${req.method} ${req.path}`);
-    next();
-  });
+  app.use(requestLogger);
+  
+  // Apply standard rate limit to all routes
+  app.use(standardLimiter);
 
   const healthController = new HealthController();
   app.use('/api/health', createHealthRouter(healthController));
@@ -122,7 +124,10 @@ export function createApp(config: AppConfig): Application {
     const authService = new AuthService(userRepo, config.jwtSecret, config.jwtExpiresIn ?? '7d');
     const tenantService = new TenantService(tenantRepo);
     const authMiddleware = createAuthMiddleware(authService);
-    app.use('/api/auth', createAuthRouter(new AuthController(authService), authMiddleware));
+    
+    const authRouter = createAuthRouter(new AuthController(authService), authMiddleware);
+    app.use('/api/auth', authLimiter, authRouter);
+    
     app.use('/api/tenants', createTenantRouter(new TenantController(tenantService), authMiddleware));
 
     const invoiceRepo = new InvoiceRepository(config.db);
