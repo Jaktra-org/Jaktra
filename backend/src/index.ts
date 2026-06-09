@@ -1,8 +1,8 @@
 import 'dotenv/config';
-import { config } from './config.js';
+import { config } from './config/index.js';
 import { createApp } from './app.js';
 import { createDatabaseClient } from './db/index.js';
-import { logger } from './utils/logger.js';
+import { logger } from './shared/logger.js';
 
 const db = createDatabaseClient({ connectionString: config.DATABASE_URL });
 

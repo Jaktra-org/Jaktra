@@ -1,52 +1,67 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import healthRouter from './routes/health.router.js';
-import { createAuthRouter } from './routes/auth.router.js';
-import { createTenantRouter } from './routes/tenant.router.js';
-import { createInvoiceImportRouter } from './routes/invoice-import.router.js';
-import { createTriageRouter } from './routes/triage.router.js';
-import { createReconcilerRouter } from './routes/reconciler.router.js';
-import { createCommunicationRouter } from './routes/communication.router.js';
-import { createEventRouter } from './routes/event.router.js';
-import { createAimlRouter } from './routes/aiml.router.js';
-import { createAgentRouter } from './routes/agent.router.js';
-import { createDlqRouter } from './routes/dlq.router.js';
-import { createEmailRouter } from './routes/email.router.js';
-import { createAnalyticsRouter } from './routes/analytics.router.js';
-import { createSettingsRouter } from './routes/settings.router.js';
-import { UserRepository } from './repositories/user.repository.js';
-import { TenantRepository } from './repositories/tenant.repository.js';
-import { InvoiceRepository } from './repositories/invoice.repository.js';
-import { CommunicationRepository } from './repositories/communication.repository.js';
-import { EventRepository } from './repositories/event.repository.js';
-import { AuthService } from './services/auth.service.js';
-import { TenantService } from './services/tenant.service.js';
-import { InvoiceImportService } from './services/invoice-import.service.js';
-import { TriageService } from './services/triage.service.js';
-import { ReconcilerService } from './services/reconciler.service.js';
-import { CommunicationService } from './services/communication.service.js';
-import { EventService } from './services/event.service.js';
-import { AimlService } from './services/aiml.service.js';
-import { AgentService } from './services/agent.service.js';
-import { DlqService } from './services/dlq.service.js';
-import { EmailService } from './services/email.service.js';
-import { AnalyticsService } from './services/analytics.service.js';
-import { IdempotencyService } from './services/idempotency.service.js';
-import { AgentRepository } from './repositories/agent.repository.js';
-import { DlqRepository } from './repositories/dlq.repository.js';
-import { EmailRepository } from './repositories/email.repository.js';
-import { AnalyticsRepository } from './repositories/analytics.repository.js';
-import { SettingsRepository } from './repositories/settings.repository.js';
-import { SettingsService } from './services/settings.service.js';
+import { createHealthRouter } from './modules/health/health.routes.js';
+import { HealthController } from './modules/health/health.controller.js';
+import { createAuthRouter } from './modules/auth/auth.routes.js';
+import { AuthController } from './modules/auth/auth.controller.js';
+import { createTenantRouter } from './modules/tenant/tenant.routes.js';
+import { TenantController } from './modules/tenant/tenant.controller.js';
+import { createInvoiceRouter } from './modules/invoice/invoice.routes.js';
+import { InvoiceController } from './modules/invoice/invoice.controller.js';
+import { createTriageRouter } from './modules/agent/triage.routes.js';
+import { TriageController } from './modules/agent/triage.controller.js';
+import { createReconcilerRouter } from './modules/agent/reconciler.routes.js';
+import { ReconcilerController } from './modules/agent/reconciler.controller.js';
+import { createCommunicationRouter } from './modules/communication/communication.routes.js';
+import { CommunicationController } from './modules/communication/communication.controller.js';
+import { createEventRouter } from './modules/event/event.routes.js';
+import { EventController } from './modules/event/event.controller.js';
+import { createAimlRouter } from './modules/agent/aiml.routes.js';
+import { AimlController } from './modules/agent/aiml.controller.js';
+import { createAgentRouter } from './modules/agent/agent.routes.js';
+import { AgentController } from './modules/agent/agent.controller.js';
+import { createDlqRouter } from './modules/dlq/dlq.routes.js';
+import { DlqController } from './modules/dlq/dlq.controller.js';
+import { createAnalyticsRouter } from './modules/analytics/analytics.routes.js';
+import { AnalyticsController } from './modules/analytics/analytics.controller.js';
+import { createSettingsRouter } from './modules/settings/settings.routes.js';
+import { SettingsController } from './modules/settings/settings.controller.js';
+import { createWebhookRouter } from './modules/webhook/webhook.routes.js';
+import { WebhookController } from './modules/webhook/webhook.controller.js';
+
+import { UserRepository } from './modules/auth/user.repository.js';
+import { TenantRepository } from './modules/tenant/tenant.repository.js';
+import { InvoiceRepository } from './modules/invoice/invoice.repository.js';
+import { CommunicationRepository } from './modules/communication/communication.repository.js';
+import { EventRepository } from './modules/event/event.repository.js';
+import { AgentRepository } from './modules/agent/agent.repository.js';
+import { DlqRepository } from './modules/dlq/dlq.repository.js';
+import { AnalyticsRepository } from './modules/analytics/analytics.repository.js';
+import { SettingsRepository } from './modules/settings/settings.repository.js';
+
+import { AuthService } from './modules/auth/auth.service.js';
+import { TenantService } from './modules/tenant/tenant.service.js';
+import { InvoiceImportService } from './modules/invoice/invoice.service.js';
+import { TriageService } from './modules/agent/triage.service.js';
+import { ReconcilerService } from './modules/agent/reconciler.service.js';
+import { CommunicationService } from './modules/communication/communication.service.js';
+import { EventService } from './modules/event/event.service.js';
+import { AimlService } from './modules/agent/aiml.service.js';
+import { AgentService } from './modules/agent/agent.service.js';
+import { DlqService } from './modules/dlq/dlq.service.js';
+import { AnalyticsService } from './modules/analytics/analytics.service.js';
+import { IdempotencyService } from './modules/communication/services/idempotency.service.js';
+import { SettingsService } from './modules/settings/settings.service.js';
+
 import { createAuthMiddleware } from './middleware/auth.js';
 import { tenantScoped } from './middleware/tenant-scoped.js';
-import { logger } from './utils/logger.js';
+import { logger } from './shared/logger.js';
 import type { DatabaseClient } from './db/index.js';
-import { PaymentGatewayFactory } from './services/payment/gateway.factory.js';
-import { RazorpayAdapter } from './services/payment/adapters/razorpay.adapter.js';
-import { WebhookService } from './services/webhook.service.js';
-import { createWebhookRouter } from './routes/webhook.router.js';
-import { SendgridWebhookService } from './services/webhooks/sendgrid.webhook.js';
+import { PaymentGatewayFactory } from './modules/payment/gateway.factory.js';
+import { RazorpayAdapter } from './modules/payment/adapters/razorpay.adapter.js';
+import { WebhookService } from './modules/webhook/webhook.service.js';
+import { SendgridWebhookService } from './modules/webhook/providers/sendgrid.webhook.js';
+import { SendgridProvider } from './modules/communication/providers/sendgrid.provider.js';
 
 export interface AppConfig {
   corsOrigins: string[];
@@ -69,12 +84,12 @@ export function createApp(config: AppConfig): Application {
     })
   );
 
-  // --- Webhooks must be registered BEFORE express.json() ---
   if (config.db) {
     const invoiceRepo = new InvoiceRepository(config.db);
     const eventRepo = new EventRepository(config.db);
     const communicationRepo = new CommunicationRepository(config.db);
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, eventRepo);
+    const sendgridProvider = new SendgridProvider(config.sendgridApiKey || (process.env.SENDGRID_API_KEY as string));
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, sendgridProvider, eventRepo);
     
     const gatewayFactory = new PaymentGatewayFactory();
     gatewayFactory.register(new RazorpayAdapter());
@@ -87,7 +102,7 @@ export function createApp(config: AppConfig): Application {
       webhookSecrets['razorpay'] = config.razorpayWebhookSecret;
     }
     
-    app.use('/api/webhooks', createWebhookRouter(gatewayFactory, webhookService, webhookSecrets, sendgridService));
+    app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, webhookSecrets, sendgridService)));
   }
 
   app.use(express.json());
@@ -98,7 +113,8 @@ export function createApp(config: AppConfig): Application {
     next();
   });
 
-  app.use('/api/health', healthRouter);
+  const healthController = new HealthController();
+  app.use('/api/health', createHealthRouter(healthController));
 
   if (config.db && config.jwtSecret) {
     const userRepo = new UserRepository(config.db);
@@ -106,33 +122,34 @@ export function createApp(config: AppConfig): Application {
     const authService = new AuthService(userRepo, config.jwtSecret, config.jwtExpiresIn ?? '7d');
     const tenantService = new TenantService(tenantRepo);
     const authMiddleware = createAuthMiddleware(authService);
-    app.use('/api/auth', createAuthRouter(authService, authMiddleware));
-    app.use('/api/tenants', createTenantRouter(tenantService, authMiddleware));
+    app.use('/api/auth', createAuthRouter(new AuthController(authService), authMiddleware));
+    app.use('/api/tenants', createTenantRouter(new TenantController(tenantService), authMiddleware));
 
     const invoiceRepo = new InvoiceRepository(config.db);
     const invoiceImportService = new InvoiceImportService(invoiceRepo);
     const triageService = new TriageService();
-    app.use('/api/invoices', createInvoiceImportRouter(invoiceImportService, authMiddleware, tenantScoped));
-    app.use('/api/invoices', createTriageRouter(triageService, invoiceRepo, authMiddleware, tenantScoped));
+    app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService), authMiddleware, tenantScoped));
+    app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo), authMiddleware, tenantScoped));
 
     const analyticsRepo = new AnalyticsRepository(config.db);
     const analyticsService = new AnalyticsService(analyticsRepo);
-    app.use('/api/analytics', createAnalyticsRouter(analyticsService, authMiddleware, tenantScoped));
+    app.use('/api/analytics', createAnalyticsRouter(new AnalyticsController(analyticsService), authMiddleware, tenantScoped));
 
     const settingsRepo = new SettingsRepository(config.db);
     const settingsService = new SettingsService(settingsRepo);
-    app.use('/api/settings', createSettingsRouter(settingsService, authMiddleware, tenantScoped));
+    app.use('/api/settings', createSettingsRouter(new SettingsController(settingsService), authMiddleware, tenantScoped));
 
     const communicationRepo = new CommunicationRepository(config.db);
     const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo);
-    app.use('/api/invoices', createReconcilerRouter(reconcilerService, authMiddleware, tenantScoped));
-
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo);
-    app.use('/api', createCommunicationRouter(communicationService, authMiddleware, tenantScoped));
+    app.use('/api/invoices', createReconcilerRouter(new ReconcilerController(reconcilerService), authMiddleware, tenantScoped));
 
     const eventRepo = new EventRepository(config.db);
     const eventService = new EventService(eventRepo, invoiceRepo);
-    app.use('/api', createEventRouter(eventService, authMiddleware, tenantScoped));
+    app.use('/api', createEventRouter(new EventController(eventService), authMiddleware, tenantScoped));
+
+    const sendgridProvider = new SendgridProvider(config.sendgridApiKey || (process.env.SENDGRID_API_KEY as string));
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, sendgridProvider, eventRepo);
+    app.use('/api/settings/communication', createCommunicationRouter(new CommunicationController(communicationService), authMiddleware, tenantScoped));
     
     app.locals.authMiddleware = authMiddleware;
     app.locals.authService = authService;
@@ -140,25 +157,20 @@ export function createApp(config: AppConfig): Application {
 
     if (config.aimlServiceUrl) {
       const aimlService = new AimlService({ baseUrl: config.aimlServiceUrl });
-      app.use('/api/aiml', createAimlRouter(aimlService, authMiddleware));
+      app.use('/api/aiml', createAimlRouter(new AimlController(aimlService), authMiddleware));
       app.locals.aimlService = aimlService;
 
       const dlqRepo = new DlqRepository(config.db);
       const dlqService = new DlqService(dlqRepo);
-      app.use('/api/dlq', createDlqRouter(dlqService, authMiddleware, tenantScoped));
+      app.use('/api/dlq', createDlqRouter(new DlqController(dlqService), authMiddleware, tenantScoped));
 
-      const emailRepo = new EmailRepository(config.db);
-      const emailService = new EmailService(emailRepo, config.sendgridApiKey);
-      app.use('/api/settings/email', createEmailRouter(emailService, authMiddleware, tenantScoped));
-
-      const idempotencyService = new IdempotencyService(communicationRepo, emailRepo);
+      const idempotencyService = new IdempotencyService(communicationRepo);
 
       const agentRepo = new AgentRepository(config.db);
       const agentService = new AgentService(agentRepo, aimlService, invoiceRepo, triageService, eventService, dlqService, idempotencyService);
-      app.use('/api/agent', createAgentRouter(agentService, authMiddleware, tenantScoped));
+      app.use('/api/agent', createAgentRouter(new AgentController(agentService), authMiddleware, tenantScoped));
     }
   }
 
   return app;
 }
-

@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import type { AuthenticatedRequest } from '../types/auth.js';
+import type { AuthenticatedRequest } from '../shared/types/auth.js';
 
-// Attaches tenantId from the JWT to res.locals so all downstream
-// handlers/repositories can scope queries without reading req.user directly.
 export function tenantScoped(req: Request, res: Response, next: NextFunction): void {
   const { tenantId } = (req as AuthenticatedRequest).user;
 

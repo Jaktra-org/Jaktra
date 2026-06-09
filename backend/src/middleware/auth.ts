@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import type { AuthService } from '../services/auth.service.js';
-import type { AuthenticatedRequest } from '../types/auth.js';
+import type { AuthService } from '../modules/auth/auth.service.js';
+import type { AuthenticatedRequest } from '../shared/types/auth.js';
 
 export function createAuthMiddleware(authService: AuthService) {
   return (req: Request, res: Response, next: NextFunction): void => {
