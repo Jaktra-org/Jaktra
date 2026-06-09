@@ -4,6 +4,7 @@ import type { StringValue } from 'ms';
 import type { UserRepository } from './user.repository.js';
 import type { JwtPayload } from '../../shared/types/auth.js';
 import type { User } from '../../db/index.js';
+import { AuthError } from '../../shared/errors/index.js';
 
 const SALT_ROUNDS = 12;
 
@@ -114,15 +115,5 @@ export class AuthService {
   private stripHash(user: User): Omit<User, 'passwordHash'> {
     const { passwordHash: _, ...safe } = user;
     return safe;
-  }
-}
-
-export class AuthError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-  ) {
-    super(message);
-    this.name = 'AuthError';
   }
 }

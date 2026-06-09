@@ -64,6 +64,10 @@ import { SendgridWebhookService } from './modules/webhook/providers/sendgrid.web
 import { SendgridProvider } from './modules/communication/providers/sendgrid.provider.js';
 import { standardLimiter, authLimiter } from './middleware/rate-limiter.js';
 import { requestLogger } from './middleware/request-logger.js';
+import { requestId } from './middleware/request-id.js';
+import { errorHandler } from './middleware/error-handler.js';
+import { NotFoundError } from './shared/errors/index.js';
+import * as Sentry from '@sentry/node';
 
 export interface AppConfig {
   corsOrigins: string[];
@@ -77,6 +81,13 @@ export interface AppConfig {
 }
 
 export function createApp(config: AppConfig): Application {
+  if (process.env.SENTRY_DSN) {
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || 'development',
+    });
+  }
+
   const app = express();
 
   app.use(
@@ -110,6 +121,7 @@ export function createApp(config: AppConfig): Application {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  app.use(requestId);
   app.use(requestLogger);
   
   // Apply standard rate limit to all routes
@@ -176,6 +188,13 @@ export function createApp(config: AppConfig): Application {
       app.use('/api/agent', createAgentRouter(new AgentController(agentService), authMiddleware, tenantScoped));
     }
   }
+
+  // 404 Fallback
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    next(new NotFoundError(`Route ${req.method} ${req.path} not found`));
+  });
+
+  app.use(errorHandler);
 
   return app;
 }

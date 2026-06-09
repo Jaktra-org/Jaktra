@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import type { AuthService } from './auth.service.js';
-import { AuthError } from './auth.service.js';
+import { AuthError } from '../../shared/errors/index.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 
 const registerSchema = z.object({
