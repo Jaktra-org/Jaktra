@@ -5,9 +5,13 @@ import { invoiceService } from "../services/invoice";
 import type { ListInvoicesParams } from "../types/api";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
+import { CreateInvoiceModal } from "../components/invoices/CreateInvoiceModal";
+import { ImportInvoiceModal } from "../components/invoices/ImportInvoiceModal";
 import { 
   Search, 
   Download, 
+  Upload,
+  Plus, 
   ChevronLeft, 
   ChevronRight, 
   ArrowUpDown,
@@ -34,6 +38,9 @@ export function Invoices() {
     order: 'desc'
   });
   const [searchInput, setSearchInput] = useState('');
+  
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Debounce search input
   useEffect(() => {
@@ -127,12 +134,18 @@ export function Invoices() {
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </button>
-          {/* Add Invoice button is for B9, but we can place it here to prep */}
           <button
-            disabled
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2 opacity-50 cursor-not-allowed"
-            title="Coming in Phase B9"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-10 px-4 py-2"
           >
+            <Upload className="mr-2 h-4 w-4" />
+            Import CSV
+          </button>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2"
+          >
+            <Plus className="mr-2 h-4 w-4" />
             Add Invoice
           </button>
         </div>
@@ -307,6 +320,15 @@ export function Invoices() {
           </div>
         )}
       </Card>
+
+      <CreateInvoiceModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+      />
+      <ImportInvoiceModal 
+        isOpen={isImportModalOpen} 
+        onClose={() => setIsImportModalOpen(false)} 
+      />
     </div>
   );
 }
