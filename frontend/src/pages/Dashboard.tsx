@@ -1,14 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/Card";
 import { analyticsService } from "../services/analytics";
-import { AlertCircle, FileText, TrendingUp, DollarSign, Loader2 } from "lucide-react";
+import { AlertCircle, FileText, TrendingUp, DollarSign, Loader2, PieChart as PieChartIcon, BarChart3 } from "lucide-react";
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Legend
+} from "recharts";
 
 export function Dashboard() {
-  const { data, isLoading, isError } = useQuery({
+  const { data: summaryData, isLoading: isSummaryLoading, isError: isSummaryError } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: () => analyticsService.getSummary(),
-    refetchInterval: 30000, // 30 seconds auto-refetch
+    refetchInterval: 30000,
   });
+
+  const { data: agingData, isLoading: isAgingLoading } = useQuery({
+    queryKey: ['analytics-aging'],
+    queryFn: () => analyticsService.getAging(),
+    refetchInterval: 30000,
+  });
+
+  const isLoading = isSummaryLoading || isAgingLoading;
+  const isError = isSummaryError;
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
@@ -17,15 +30,49 @@ export function Dashboard() {
     `${val.toFixed(1)}%`;
 
   // Calculations
-  const actionableQueue = data?.invoiceCount || 0;
-  const totalExposure = data?.totalReceivable || 0;
+  const actionableQueue = summaryData?.invoiceCount || 0;
+  const totalExposure = summaryData?.totalReceivable || 0;
   
-  const totalCollected = data?.totalCollected || 0;
+  const totalCollected = summaryData?.totalCollected || 0;
   const recoveryRate = (totalCollected + totalExposure) > 0 
     ? (totalCollected / (totalCollected + totalExposure)) * 100 
     : 0;
     
-  const criticalFlags = data?.totalOverdue || 0;
+  const criticalFlags = summaryData?.totalOverdue || 0;
+
+  // Portfolio Mix Data
+  const portfolioData = [
+    { name: 'Collected', value: totalCollected, color: '#10b981' }, // emerald-500
+    { name: 'Pending', value: Math.max(0, totalExposure - criticalFlags), color: '#3b82f6' }, // blue-500
+    { name: 'Overdue', value: criticalFlags, color: '#ef4444' } // red-500
+  ].filter(d => d.value > 0);
+
+  // Aging Pipeline Data
+  const tierConfig: Record<string, { label: string, color: string }> = {
+    stage_1_warm: { label: 'Warm (Stage 1)', color: '#3b82f6' },
+    stage_2_firm: { label: 'Firm (Stage 2)', color: '#eab308' },
+    stage_3_serious: { label: 'Serious (Stage 3)', color: '#f97316' },
+    stage_4_stern: { label: 'Stern (Stage 4)', color: '#ef4444' },
+    legal_escalation: { label: 'Legal Escalation', color: '#7f1d1d' },
+  };
+
+  const agingChartData = (agingData || []).map(d => ({
+    name: tierConfig[d.tier]?.label || d.tier,
+    value: d.totalAmount,
+    fill: tierConfig[d.tier]?.color || '#cbd5e1'
+  }));
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white border border-slate-200 p-3 shadow-lg rounded-md">
+          <p className="font-medium text-slate-900 mb-1">{payload[0].name}</p>
+          <p className="text-sm text-slate-600 font-semibold">{formatCurrency(payload[0].value)}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -103,6 +150,82 @@ export function Dashboard() {
               {isLoading ? "-" : formatCurrency(criticalFlags)}
             </div>
             <p className="text-xs text-red-500 font-medium mt-1">Overdue Balance</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+        {/* Aging Pipeline */}
+        <Card className="animate-in fade-in duration-500 slide-in-from-bottom-2 delay-300">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5 text-slate-500" />
+              <CardTitle>Aging Pipeline</CardTitle>
+            </div>
+            <CardDescription>Outstanding exposure by urgency tier</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full mt-4">
+              {isAgingLoading ? (
+                <div className="h-full w-full flex items-center justify-center text-slate-400">Loading chart...</div>
+              ) : agingChartData.length === 0 ? (
+                <div className="h-full w-full flex items-center justify-center text-slate-400">No aging data available</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={agingChartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <XAxis type="number" tickFormatter={(val) => `$${val/1000}k`} stroke="#94a3b8" fontSize={12} />
+                    <YAxis dataKey="name" type="category" width={120} stroke="#94a3b8" fontSize={12} />
+                    <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                      {agingChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Portfolio Mix */}
+        <Card className="animate-in fade-in duration-500 slide-in-from-bottom-2 delay-300">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <PieChartIcon className="h-5 w-5 text-slate-500" />
+              <CardTitle>Portfolio Mix</CardTitle>
+            </div>
+            <CardDescription>Distribution of active and recovered funds</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full mt-4">
+              {isSummaryLoading ? (
+                <div className="h-full w-full flex items-center justify-center text-slate-400">Loading chart...</div>
+              ) : portfolioData.length === 0 ? (
+                <div className="h-full w-full flex items-center justify-center text-slate-400">No portfolio data available</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={portfolioData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {portfolioData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

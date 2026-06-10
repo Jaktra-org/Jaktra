@@ -34,3 +34,9 @@ export interface AnalyticsSummary {
   totalOverdue: number;
   invoiceCount: number;
 }
+
+export interface AgingTier {
+  tier: string;
+  totalAmount: number;
+  count: number;
+}
