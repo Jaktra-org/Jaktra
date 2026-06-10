@@ -13,4 +13,14 @@ export class AnalyticsController {
       res.status(500).json({ error: 'Internal server error' });
     }
   };
+
+  getAging = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const tenantId = res.locals.tenantId as string;
+      const stats = await this.analyticsService.getAging(tenantId, req.query);
+      res.status(200).json(stats);
+    } catch (err: unknown) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
 }

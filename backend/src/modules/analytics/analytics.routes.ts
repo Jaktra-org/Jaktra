@@ -11,6 +11,7 @@ export function createAnalyticsRouter(
   router.use(authMiddleware, tenantScoped);
 
   router.get('/summary', analyticsController.getSummary);
+  router.get('/aging', analyticsController.getAging);
 
   return router;
 }
