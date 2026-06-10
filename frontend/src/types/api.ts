@@ -104,4 +104,6 @@ export interface DlqEntry {
   lastError: string | null;
   firstFailure: string;
   lastFailure: string;
+  clientName: string | null;
+  invoiceNo: string | null;
 }

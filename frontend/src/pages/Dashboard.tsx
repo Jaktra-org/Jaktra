@@ -319,7 +319,7 @@ export function Dashboard() {
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50 text-slate-500 font-medium">
                 <tr>
-                  <th className="px-4 py-3 border-b border-slate-200">Invoice ID</th>
+                  <th className="px-4 py-3 border-b border-slate-200">Client & Invoice</th>
                   <th className="px-4 py-3 border-b border-slate-200">Failures</th>
                   <th className="px-4 py-3 border-b border-slate-200">Last Error</th>
                   <th className="px-4 py-3 border-b border-slate-200">Last Attempt</th>
@@ -337,8 +337,13 @@ export function Dashboard() {
                 ) : (
                   dlqEntries.slice(0, 5).map((entry) => (
                     <tr key={entry.invoiceId} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-slate-900 truncate max-w-[150px]" title={entry.invoiceId}>
-                        {entry.invoiceId.substring(0, 8)}...
+                      <td className="px-4 py-3 font-medium text-slate-900 truncate max-w-[200px]" title={entry.clientName || entry.invoiceId}>
+                        <Link to={`/invoices/${entry.invoiceId}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                          {entry.clientName || 'Unknown Client'}
+                        </Link>
+                        <div className="text-xs text-slate-500 font-normal">
+                          {entry.invoiceNo || entry.invoiceId.substring(0, 8)}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${entry.consecutiveFailures >= 3 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>

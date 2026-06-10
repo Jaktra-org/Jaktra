@@ -1,6 +1,6 @@
 import { eq, desc, sql } from 'drizzle-orm';
 import type { DatabaseClient } from '../../db/index.js';
-import { dlqEntries } from '../../db/schema.js';
+import { dlqEntries, invoices } from '../../db/schema.js';
 
 export class DlqRepository {
   constructor(private readonly db: DatabaseClient) {}
@@ -26,7 +26,6 @@ export class DlqRepository {
       .returning();
   }
 
-
   async clearFailure(invoiceId: string) {
     return await this.db
       .delete(dlqEntries)
@@ -34,11 +33,19 @@ export class DlqRepository {
       .returning();
   }
 
-
   async getAllEntries() {
     return await this.db
-      .select()
+      .select({
+        invoiceId: dlqEntries.invoiceId,
+        consecutiveFailures: dlqEntries.consecutiveFailures,
+        lastError: dlqEntries.lastError,
+        firstFailure: dlqEntries.firstFailure,
+        lastFailure: dlqEntries.lastFailure,
+        clientName: invoices.clientName,
+        invoiceNo: invoices.invoiceNo,
+      })
       .from(dlqEntries)
+      .leftJoin(invoices, eq(dlqEntries.invoiceId, invoices.id))
       .orderBy(desc(dlqEntries.consecutiveFailures), desc(dlqEntries.lastFailure));
   }
 
