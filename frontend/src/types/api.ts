@@ -27,3 +27,10 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
 }
+
+export interface AnalyticsSummary {
+  totalReceivable: number;
+  totalCollected: number;
+  totalOverdue: number;
+  invoiceCount: number;
+}

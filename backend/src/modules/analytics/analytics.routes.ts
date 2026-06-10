@@ -10,7 +10,7 @@ export function createAnalyticsRouter(
 
   router.use(authMiddleware, tenantScoped);
 
-  router.get('/', analyticsController.getDashboard);
+  router.get('/summary', analyticsController.getSummary);
 
   return router;
 }
