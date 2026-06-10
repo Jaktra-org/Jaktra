@@ -1,4 +1,4 @@
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, desc, asc, ilike, inArray, count, lte, gte } from 'drizzle-orm';
 import { invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Invoice, NewInvoice } from '../../db/index.js';
@@ -73,6 +73,90 @@ export class InvoiceRepository {
   async createMany(data: NewInvoice[]): Promise<Invoice[]> {
     if (data.length === 0) return [];
     return this.db.insert(invoices).values(data).returning();
+  }
+
+  async findMany(params: {
+    tenantId: string;
+    page: number;
+    limit: number;
+    sortBy: 'dueDate' | 'invoiceAmount' | 'createdAt' | 'clientName' | 'invoiceNo';
+    sortOrder: 'asc' | 'desc';
+    status?: string[];
+    urgencyTier?: string[];
+    clientName?: string;
+    daysOverdueMin?: number;
+    daysOverdueMax?: number;
+  }): Promise<{ data: Invoice[]; total: number }> {
+    const conditions = [
+      eq(invoices.tenantId, params.tenantId),
+      isNull(invoices.deletedAt),
+    ];
+
+    if (params.status && params.status.length > 0) {
+      conditions.push(inArray(invoices.paymentStatus, params.status as any[]));
+    }
+    if (params.urgencyTier && params.urgencyTier.length > 0) {
+      conditions.push(inArray(invoices.urgencyTier, params.urgencyTier as any[]));
+    }
+    if (params.clientName) {
+      conditions.push(ilike(invoices.clientName, `%${params.clientName}%`));
+    }
+    
+    // days_overdue = today - due_date
+    // so due_date <= today - daysOverdueMin
+    // due_date >= today - daysOverdueMax
+    if (params.daysOverdueMin !== undefined) {
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() - params.daysOverdueMin);
+      conditions.push(lte(invoices.dueDate, targetDate.toISOString().split('T')[0] as string));
+    }
+    if (params.daysOverdueMax !== undefined) {
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() - params.daysOverdueMax);
+      conditions.push(gte(invoices.dueDate, targetDate.toISOString().split('T')[0] as string));
+    }
+
+    const whereClause = and(...conditions);
+
+    const [totalRow] = await this.db
+      .select({ count: count() })
+      .from(invoices)
+      .where(whereClause);
+
+    const data = await this.db
+      .select()
+      .from(invoices)
+      .where(whereClause)
+      .orderBy(
+        params.sortOrder === 'asc'
+          ? asc(invoices[params.sortBy])
+          : desc(invoices[params.sortBy])
+      )
+      .limit(params.limit)
+      .offset((params.page - 1) * params.limit);
+
+    return {
+      data,
+      total: Number(totalRow?.count || 0),
+    };
+  }
+
+  async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>): Promise<Invoice | undefined> {
+    const rows = await this.db
+      .update(invoices)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  async softDelete(invoiceId: string, tenantId: string): Promise<boolean> {
+    const rows = await this.db
+      .update(invoices)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
+      .returning();
+    return rows.length > 0;
   }
 
   async upsertByInvoiceNo(data: NewInvoice): Promise<{ invoice: Invoice; wasUpdated: boolean }> {

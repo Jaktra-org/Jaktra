@@ -9,10 +9,16 @@ export function createInvoiceRouter(
 ): Router {
   const router = Router();
 
+  // Middleware for all invoice routes
+  router.use(authMiddleware);
+  router.use(tenantScoped);
+
+  router.post('/', invoiceController.create);
+  router.post('/bulk', invoiceController.createBulk);
+  router.get('/', invoiceController.list);
+
   router.post(
     '/import',
-    authMiddleware,
-    tenantScoped,
     (req: Request, res: Response, next: NextFunction) => {
       csvUpload(req, res, (err: unknown) => {
         if (err instanceof Error) {
@@ -24,6 +30,11 @@ export function createInvoiceRouter(
     },
     invoiceController.importFromCsv,
   );
+
+  router.get('/:id', invoiceController.getById);
+  router.patch('/:id', invoiceController.update);
+  router.delete('/:id', invoiceController.delete);
+  router.patch('/:id/status', invoiceController.updateStatus);
 
   return router;
 }

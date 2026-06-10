@@ -145,7 +145,7 @@ export function createApp(config: AppConfig): Application {
     const invoiceRepo = new InvoiceRepository(config.db);
     const invoiceImportService = new InvoiceImportService(invoiceRepo);
     const triageService = new TriageService();
-    app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService), authMiddleware, tenantScoped));
+    app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo), authMiddleware, tenantScoped));
     app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo), authMiddleware, tenantScoped));
 
     const analyticsRepo = new AnalyticsRepository(config.db);
