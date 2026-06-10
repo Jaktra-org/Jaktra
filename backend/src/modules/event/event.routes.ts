@@ -15,5 +15,12 @@ export function createEventRouter(
     eventController.getTimeline,
   );
 
+  router.get(
+    '/events/feed',
+    authMiddleware,
+    tenantScoped,
+    eventController.getFeed,
+  );
+
   return router;
 }

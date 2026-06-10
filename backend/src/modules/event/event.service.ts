@@ -43,6 +43,10 @@ export class EventService {
     }
     return this.eventRepo.findByInvoiceId(invoiceId);
   }
+
+  async getFeed(tenantId: string, limit?: number) {
+    return this.eventRepo.getTenantFeed(tenantId, limit);
+  }
 }
 
 export class EventError extends Error {
