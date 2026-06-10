@@ -103,8 +103,22 @@ export class AnalyticsService {
       successRate = (data.successData.paidAfterFollowUp / data.successData.totalFollowedUp) * 100;
     }
 
+    let automationYield = 0;
+    if (data.runData.invoicesProcessed > 0) {
+      automationYield = (data.runData.emailsSent / data.runData.invoicesProcessed) * 100;
+    }
+
+    let errorRate = 0;
+    if (data.runData.totalRuns > 0) {
+      errorRate = (data.runData.errors / data.runData.totalRuns) * 100;
+    }
+
     return {
+      totalRuns: data.runData.totalRuns,
+      invoicesProcessed: data.runData.invoicesProcessed,
       emailsSent: data.runData.emailsSent,
+      automationYield: Math.round(automationYield * 10) / 10,
+      errorRate: Math.round(errorRate * 10) / 10,
       successRate: Math.round(successRate * 10) / 10,
       avgDaysToPayment: data.successData.avgDaysToPayment ? Math.round(data.successData.avgDaysToPayment * 10) / 10 : 0
     };
@@ -140,12 +154,42 @@ export class AnalyticsService {
 
     const result = allTiers.map(tier => {
       const found = data.find(d => d.tier === tier);
+      let successRate = 0;
+      if (found && found.totalFollowedUp > 0) {
+        successRate = (found.paidAfterFollowUp / found.totalFollowedUp) * 100;
+      }
       return {
         tier,
-        avgDaysToPayment: found && found.avgDaysToPayment ? Math.round(found.avgDaysToPayment * 10) / 10 : 0
+        avgDaysToPayment: found && found.avgDaysToPayment ? Math.round(found.avgDaysToPayment * 10) / 10 : 0,
+        successRate: Math.round(successRate * 10) / 10
       };
     });
 
     return result;
+  }
+
+  async getEmailVolume(tenantId: string, query: DateRange) {
+    const { fromDate, toDate } = this.parseDateRange(query);
+    return this.analyticsRepo.getEmailVolume(tenantId, fromDate, toDate);
+  }
+
+  async getCommunicationStats(tenantId: string, query: DateRange) {
+    const { fromDate, toDate } = this.parseDateRange(query);
+    const data = await this.analyticsRepo.getCommunicationStats(tenantId, fromDate, toDate);
+    
+    let openRate = 0;
+    let clickRate = 0;
+    if (data.totalSent > 0) {
+      openRate = (data.totalOpened / data.totalSent) * 100;
+      clickRate = (data.totalClicked / data.totalSent) * 100;
+    }
+
+    return {
+      totalSent: data.totalSent,
+      totalOpened: data.totalOpened,
+      totalClicked: data.totalClicked,
+      openRate: Math.round(openRate * 10) / 10,
+      clickRate: Math.round(clickRate * 10) / 10
+    };
   }
 }

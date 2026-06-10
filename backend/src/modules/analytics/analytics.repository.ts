@@ -141,14 +141,17 @@ export class AnalyticsRepository {
     
     const runData = await this.db
       .select({
-        emailsSent: sql<number>`COALESCE(SUM(${agentRuns.emailsSent}), 0)::int`
+        totalRuns: sql<number>`COUNT(*)::int`,
+        invoicesProcessed: sql<number>`COALESCE(SUM(${agentRuns.invoicesProcessed}), 0)::int`,
+        emailsSent: sql<number>`COALESCE(SUM(${agentRuns.emailsSent}), 0)::int`,
+        errors: sql<number>`COALESCE(SUM(${agentRuns.errors}), 0)::int`,
       })
       .from(agentRuns)
       .where(runConditions);
 
     return {
       successData: successData[0] || { totalFollowedUp: 0, paidAfterFollowUp: 0, avgDaysToPayment: 0 },
-      runData: runData[0] || { emailsSent: 0 },
+      runData: runData[0] || { totalRuns: 0, invoicesProcessed: 0, emailsSent: 0, errors: 0 },
     };
   }
 
@@ -181,7 +184,6 @@ export class AnalyticsRepository {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt),
-      eq(invoices.paymentStatus, 'Paid'),
       gte(invoices.followupCount, 1)
     );
     if (fromDate) {
@@ -194,12 +196,61 @@ export class AnalyticsRepository {
     const result = await this.db
       .select({
         tier: invoices.urgencyTier,
-        avgDaysToPayment: sql<number>`AVG(EXTRACT(EPOCH FROM (${invoices.updatedAt} - ${invoices.createdAt})) / 86400)::float`,
+        totalFollowedUp: sql<number>`COUNT(*)::int`,
+        paidAfterFollowUp: sql<number>`SUM(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN 1 ELSE 0 END)::int`,
+        avgDaysToPayment: sql<number>`AVG(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN EXTRACT(EPOCH FROM (${invoices.updatedAt} - ${invoices.createdAt})) / 86400 ELSE NULL END)::float`,
       })
       .from(invoices)
       .where(baseConditions)
       .groupBy(invoices.urgencyTier);
 
     return result;
+  }
+
+  async getEmailVolume(tenantId: string, fromDate?: Date, toDate?: Date) {
+    let runConditions: any = eq(agentRuns.tenantId, tenantId);
+    if (fromDate) {
+      runConditions = and(runConditions, gte(agentRuns.startTime, fromDate));
+    }
+    if (toDate) {
+      runConditions = and(runConditions, lte(agentRuns.startTime, toDate));
+    }
+
+    const result = await this.db
+      .select({
+        date: sql<string>`TO_CHAR(DATE(${agentRuns.startTime}), 'YYYY-MM-DD')`,
+        emailsSent: sql<number>`SUM(${agentRuns.emailsSent})::int`,
+      })
+      .from(agentRuns)
+      .where(runConditions)
+      .groupBy(sql`DATE(${agentRuns.startTime})`)
+      .orderBy(sql`DATE(${agentRuns.startTime}) ASC`);
+
+    return result;
+  }
+
+  async getCommunicationStats(tenantId: string, fromDate?: Date, toDate?: Date) {
+    let baseConditions = and(
+      eq(invoices.tenantId, tenantId),
+      isNull(invoices.deletedAt)
+    );
+    if (fromDate) {
+      baseConditions = and(baseConditions, gte(communications.sentAt, fromDate));
+    }
+    if (toDate) {
+      baseConditions = and(baseConditions, lte(communications.sentAt, toDate));
+    }
+
+    const result = await this.db
+      .select({
+        totalSent: sql<number>`COUNT(*)::int`,
+        totalOpened: sql<number>`SUM(CASE WHEN ${communications.openedAt} IS NOT NULL THEN 1 ELSE 0 END)::int`,
+        totalClicked: sql<number>`SUM(CASE WHEN ${communications.clickedAt} IS NOT NULL THEN 1 ELSE 0 END)::int`,
+      })
+      .from(communications)
+      .innerJoin(invoices, eq(communications.invoiceId, invoices.id))
+      .where(and(baseConditions, eq(communications.status, 'sent')));
+
+    return result[0] || { totalSent: 0, totalOpened: 0, totalClicked: 0 };
   }
 }
