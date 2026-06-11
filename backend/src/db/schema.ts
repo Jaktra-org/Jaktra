@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   index,
   boolean,
+  unique,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -19,6 +20,11 @@ export const userRoleEnum = pgEnum('user_role', [
   'admin',
   'manager',
   'viewer',
+]);
+
+export const providerEnum = pgEnum('integration_provider', ['sendgrid']);
+export const validationResultEnum = pgEnum('validation_result', [
+  'valid', 'invalid', 'revoked', 'insufficient_scope', 'unverified_sender', 'unknown'
 ]);
 
 
@@ -234,6 +240,28 @@ export const tenantSettings = pgTable('tenant_settings', {
     .defaultNow(),
 });
 
+export const tenantIntegrations = pgTable('tenant_integrations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  provider: providerEnum('provider').notNull(),
+  
+  ciphertext: text('ciphertext').notNull(),
+  iv: text('iv').notNull(),
+  authTag: text('auth_tag').notNull(),
+  keyVersion: integer('key_version').notNull().default(1),
+  
+  lastValidatedAt: timestamp('last_validated_at', { withTimezone: true }),
+  lastValidationResult: validationResultEnum('last_validation_result').notNull().default('unknown'),
+  lastOperationalErrorCode: text('last_operational_error_code'),
+  
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return { 
+    tenantProviderUniq: unique('tenant_integrations_tenant_provider_uniq').on(table.tenantId, table.provider)
+  };
+});
+
 export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   users: many(users),
   invoices: many(invoices),
@@ -241,6 +269,14 @@ export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   settings: one(tenantSettings, {
     fields: [tenants.id],
     references: [tenantSettings.tenantId],
+  }),
+  integrations: many(tenantIntegrations),
+}));
+
+export const tenantIntegrationsRelations = relations(tenantIntegrations, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantIntegrations.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -322,3 +358,6 @@ export type NewDlqEntry = typeof dlqEntries.$inferInsert;
 
 export type TenantSettings = typeof tenantSettings.$inferSelect;
 export type NewTenantSettings = typeof tenantSettings.$inferInsert;
+
+export type TenantIntegration = typeof tenantIntegrations.$inferSelect;
+export type NewTenantIntegration = typeof tenantIntegrations.$inferInsert;

@@ -15,6 +15,13 @@
       "when": 1780716088826,
       "tag": "0001_blushing_thunderbolts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781155074712,
+      "tag": "0002_add_integrations",
+      "breakpoints": true
     }
   ]
 }

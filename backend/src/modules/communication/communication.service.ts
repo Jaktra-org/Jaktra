@@ -16,7 +16,8 @@ export const createCommunicationSchema = z.object({
 export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>;
 
 import type { EventRepository } from '../event/event.repository.js';
-import type { SendgridProvider } from './providers/sendgrid.provider.js';
+import type { IntegrationService } from '../settings/integration.service.js';
+import { MailService } from '@sendgrid/mail';
 
 export interface SendCommunicationOptions {
   tenantId: string;
@@ -30,7 +31,7 @@ export class CommunicationService {
   constructor(
     private communicationRepo: CommunicationRepository,
     private invoiceRepo: InvoiceRepository,
-    private sendgridProvider: SendgridProvider,
+    private integrationService: IntegrationService,
     private eventRepo?: EventRepository
   ) {}
 
@@ -95,9 +96,13 @@ export class CommunicationService {
     }
 
     const settings = await this.communicationRepo.getSettings(tenantId);
-    if (!settings) {
-      throw new Error('Communication settings not configured for this tenant');
+    if (!settings || !settings.senderEmail) {
+      throw new CommunicationError('Communication settings not configured for this tenant', 400);
     }
+
+    const apiKey = await this.integrationService.getDecryptedSendgridKey(tenantId).catch(() => {
+      throw new CommunicationError('Email provider not configured or invalid. Go to Settings → Email Configuration.', 400);
+    });
 
     const from = {
       name: settings.senderName,
@@ -106,7 +111,31 @@ export class CommunicationService {
 
     const replyTo = settings.replyTo ? { email: settings.replyTo } : undefined;
 
-    return this.sendgridProvider.sendEmail(to, from, replyTo, subject, html);
+    const sgMail = new MailService();
+    sgMail.setApiKey(apiKey);
+
+    try {
+      await sgMail.send({
+        to,
+        from,
+        replyTo,
+        subject,
+        html,
+      });
+      return true;
+    } catch (error: any) {
+      await this.integrationService.handleDeliveryError(tenantId, 'sendgrid', error);
+      throw error;
+    }
+  }
+
+  async testConnection(tenantId: string, to: string): Promise<boolean> {
+    return this.send({
+      tenantId,
+      to,
+      subject: 'Integration Test',
+      html: '<p>Your email integration is working correctly.</p>',
+    });
   }
 
   // --- Provider Settings ---

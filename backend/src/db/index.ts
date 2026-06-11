@@ -8,6 +8,7 @@ export {
   agentRuns,
   dlqEntries,
   tenantSettings,
+  tenantIntegrations,
 } from './schema.js';
 
 export {
@@ -16,6 +17,8 @@ export {
   urgencyTierEnum,
   communicationChannelEnum,
   communicationStatusEnum,
+  providerEnum,
+  validationResultEnum,
 } from './schema.js';
 
 export type {
@@ -35,6 +38,8 @@ export type {
   NewDlqEntry,
   TenantSettings,
   NewTenantSettings,
+  TenantIntegration,
+  NewTenantIntegration,
 } from './schema.js';
 
 export { createDatabaseClient } from './client.js';

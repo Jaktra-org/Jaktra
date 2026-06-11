@@ -12,7 +12,6 @@ export function createSettingsRouter(
 
   router.get('/', settingsController.getSettings);
   router.patch('/', settingsController.updateSettings);
-  router.get('/integrations', settingsController.getIntegrations);
 
   return router;
 }

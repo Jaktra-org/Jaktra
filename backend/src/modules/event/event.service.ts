@@ -44,6 +44,10 @@ export class EventService {
     return this.eventRepo.findByInvoiceId(invoiceId);
   }
 
+  async findByRunId(runId: string): Promise<Event[]> {
+    return this.eventRepo.findByRunId(runId);
+  }
+
   async getFeed(tenantId: string, limit?: number) {
     return this.eventRepo.getTenantFeed(tenantId, limit);
   }

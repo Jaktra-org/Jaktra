@@ -57,6 +57,10 @@ import { createAuthMiddleware } from './middleware/auth.js';
 import { tenantScoped } from './middleware/tenant-scoped.js';
 import { logger } from './shared/logger.js';
 import type { DatabaseClient } from './db/index.js';
+import { IntegrationRepository } from './modules/settings/integration.repository.js';
+import { IntegrationService } from './modules/settings/integration.service.js';
+import { IntegrationController } from './modules/settings/integration.controller.js';
+import { createIntegrationRouter } from './modules/settings/integration.routes.js';
 import { PaymentGatewayFactory } from './modules/payment/gateway.factory.js';
 import { RazorpayAdapter } from './modules/payment/adapters/razorpay.adapter.js';
 import { WebhookService } from './modules/webhook/webhook.service.js';
@@ -101,8 +105,9 @@ export function createApp(config: AppConfig): Application {
     const invoiceRepo = new InvoiceRepository(config.db);
     const eventRepo = new EventRepository(config.db);
     const communicationRepo = new CommunicationRepository(config.db);
-    const sendgridProvider = new SendgridProvider(config.sendgridApiKey || (process.env.SENDGRID_API_KEY as string));
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, sendgridProvider, eventRepo);
+    const integrationRepo = new IntegrationRepository(config.db);
+    const integrationService = new IntegrationService(integrationRepo);
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventRepo);
     
     const gatewayFactory = new PaymentGatewayFactory();
     gatewayFactory.register(new RazorpayAdapter());
@@ -164,10 +169,15 @@ export function createApp(config: AppConfig): Application {
     const eventService = new EventService(eventRepo, invoiceRepo);
     app.use('/api', createEventRouter(new EventController(eventService), authMiddleware, tenantScoped));
 
-    const sendgridProvider = new SendgridProvider(config.sendgridApiKey || (process.env.SENDGRID_API_KEY as string));
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, sendgridProvider, eventRepo);
+    const integrationRepo = new IntegrationRepository(config.db);
+    const integrationService = new IntegrationService(integrationRepo);
+
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventRepo);
     app.use('/api/settings/communication', createCommunicationRouter(new CommunicationController(communicationService), authMiddleware, tenantScoped));
     
+    app.use('/api/settings/integrations', authMiddleware, tenantScoped, createIntegrationRouter(new IntegrationController(integrationService, communicationService)));
+    
+    app.use('/api/settings', createSettingsRouter(new SettingsController(settingsService), authMiddleware, tenantScoped));
     app.locals.authMiddleware = authMiddleware;
     app.locals.authService = authService;
     app.locals.tenantScoped = tenantScoped;

@@ -176,3 +176,10 @@ export interface TenantSettings {
   scheduleHour: number;
   idempotencyWindowHours: number;
 }
+
+export interface IntegrationStatus {
+  provider: 'sendgrid';
+  isConfigured: boolean;
+  lastValidatedAt: string | null;
+  lastValidationResult: 'valid' | 'invalid' | 'revoked' | 'insufficient_scope' | 'unverified_sender' | 'unknown';
+}

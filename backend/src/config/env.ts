@@ -21,6 +21,14 @@ const schema = z.object({
   AI_ML_SERVICE_URL: z.string().url().optional(),
 
   REDIS_URL: z.string().url().optional(),
+
+  ENCRYPTION_KEY: z.string().refine((val) => {
+    try {
+      return Buffer.from(val, 'base64').length === 32;
+    } catch {
+      return false;
+    }
+  }, { message: "ENCRYPTION_KEY must be a valid base64 string exactly 32 bytes long." }),
 });
 
 function parseConfig() {
