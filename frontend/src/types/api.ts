@@ -175,11 +175,28 @@ export interface TenantSettings {
   timezone: string;
   scheduleHour: number;
   idempotencyWindowHours: number;
+  defaultEmailProvider: 'sendgrid' | 'smtp' | null;
 }
 
-export interface IntegrationStatus {
-  provider: 'sendgrid';
+export interface BaseIntegrationStatus {
   isConfigured: boolean;
   lastValidatedAt: string | null;
   lastValidationResult: 'valid' | 'invalid' | 'revoked' | 'insufficient_scope' | 'unverified_sender' | 'unknown';
+}
+
+export interface SendgridIntegrationStatus extends BaseIntegrationStatus {
+  provider: 'sendgrid';
+}
+
+export interface SmtpIntegrationStatus extends BaseIntegrationStatus {
+  provider: 'smtp';
+  displayHost?: string;
+  maskedUsername?: string;
+  port?: number;
+  securityMode?: string;
+}
+
+export interface IntegrationsResponse {
+  sendgrid: SendgridIntegrationStatus;
+  smtp: SmtpIntegrationStatus;
 }

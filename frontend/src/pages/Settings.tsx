@@ -231,13 +231,17 @@ function EmailSettings() {
   const { user } = useAuth();
   const [formData, setFormData] = useState<Partial<TenantSettings>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [provider, setProvider] = useState<'sendgrid' | 'smtp'>('sendgrid');
-  const [apiKey, setApiKey] = useState('********************************');
   const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
     queryFn: settingsService.getSettings,
+  });
+
+  const { data: integrations } = useQuery({
+    queryKey: ['integrations'],
+    queryFn: () => settingsService.getIntegrations(),
+    retry: false,
   });
 
   useEffect(() => {
@@ -357,16 +361,18 @@ function EmailSettings() {
           <CardDescription>Configure your sending infrastructure.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Provider Type</label>
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-slate-900">1. Default Provider</h4>
+            <p className="text-xs text-slate-500">Select which configured provider should be used for outgoing emails.</p>
             <div className="flex items-center space-x-4">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input 
                   type="radio" 
-                  name="provider" 
+                  name="defaultProvider" 
                   value="sendgrid" 
-                  checked={provider === 'sendgrid'} 
-                  onChange={() => setProvider('sendgrid')}
+                  checked={settings?.defaultEmailProvider === 'sendgrid'} 
+                  onChange={() => settingsService.setDefaultProvider('sendgrid').then(() => queryClient.invalidateQueries({ queryKey: ['settings'] }))}
+                  disabled={!integrations?.sendgrid.isConfigured || integrations?.sendgrid.lastValidationResult !== 'valid'}
                   className="text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-slate-700">SendGrid API</span>
@@ -374,30 +380,47 @@ function EmailSettings() {
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input 
                   type="radio" 
-                  name="provider" 
+                  name="defaultProvider" 
                   value="smtp" 
-                  checked={provider === 'smtp'} 
-                  onChange={() => setProvider('smtp')}
+                  checked={settings?.defaultEmailProvider === 'smtp'} 
+                  onChange={() => settingsService.setDefaultProvider('smtp').then(() => queryClient.invalidateQueries({ queryKey: ['settings'] }))}
+                  disabled={!integrations?.smtp.isConfigured || integrations?.smtp.lastValidationResult !== 'valid'}
                   className="text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-slate-700">Custom SMTP</span>
               </label>
             </div>
+            {!settings?.defaultEmailProvider && (
+               <p className="text-xs text-red-500 font-medium">No default provider is selected. Emails will not be sent.</p>
+            )}
           </div>
 
-          {provider === 'sendgrid' && (
-            <SendGridConfig 
-              testEmailMutation={testEmailMutation} 
-              testEmailStatus={testEmailStatus} 
-              userEmail={user?.email || ''} 
-            />
-          )}
+          <hr className="border-slate-200" />
 
-          {provider === 'smtp' && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800 flex items-center">
-              <span className="font-semibold mr-2">Coming Soon:</span> Custom SMTP is currently disabled. Please use SendGrid.
-            </div>
-          )}
+          <div className="space-y-4">
+             <h4 className="text-sm font-medium text-slate-900">2. Provider Configurations</h4>
+             <div className="space-y-8">
+               <div>
+                  <h5 className="text-sm font-medium text-slate-700 mb-2">SendGrid</h5>
+                  <SendGridConfig 
+                    integration={integrations?.sendgrid}
+                    testEmailMutation={testEmailMutation} 
+                    testEmailStatus={testEmailStatus} 
+                    userEmail={user?.email || ''} 
+                  />
+               </div>
+               
+               <hr className="border-slate-100" />
+
+               <div>
+                  <h5 className="text-sm font-medium text-slate-700 mb-2">Custom SMTP</h5>
+                  <SmtpConfigurator 
+                    integration={integrations?.smtp}
+                    userEmail={user?.email || ''}
+                  />
+               </div>
+             </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -446,23 +469,18 @@ function EmailSettings() {
 
 
 
-function SendGridConfig({ testEmailMutation, testEmailStatus, userEmail }: any) {
+function SendGridConfig({ integration, testEmailMutation, testEmailStatus, userEmail }: any) {
   const queryClient = useQueryClient();
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [testEmailInput, setTestEmailInput] = useState(userEmail || '');
 
-  const { data: integration, isLoading } = useQuery({
-    queryKey: ['integrations', 'sendgrid'],
-    queryFn: () => settingsService.getIntegrations(),
-    retry: false,
-  });
-
   const saveMutation = useMutation({
     mutationFn: (key: string) => settingsService.saveSendgridKey(key),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['integrations', 'sendgrid'] });
+      queryClient.invalidateQueries({ queryKey: ['integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
       setIsEditing(false);
       setApiKeyInput('');
       setErrorMsg('');
@@ -475,7 +493,8 @@ function SendGridConfig({ testEmailMutation, testEmailStatus, userEmail }: any) 
   const disconnectMutation = useMutation({
     mutationFn: () => settingsService.disconnectSendgrid(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['integrations', 'sendgrid'] });
+      queryClient.invalidateQueries({ queryKey: ['integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
       setIsEditing(true);
     }
   });
@@ -590,6 +609,225 @@ function SendGridConfig({ testEmailMutation, testEmailStatus, userEmail }: any) 
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-800 font-medium">Failed to send test email.</p>
               <p className="text-sm text-red-700 mt-1">Check that your API key is valid and your sender identity is verified in SendGrid.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SmtpConfigurator({ integration, userEmail }: any) {
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [testEmailInput, setTestEmailInput] = useState(userEmail || '');
+  
+  const [formData, setFormData] = useState({
+    host: '',
+    port: 587,
+    securityMode: 'starttls',
+    username: '',
+    password: ''
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (config: any) => settingsService.saveSmtpConfig(config),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      setIsEditing(false);
+      setFormData({ host: '', port: 587, securityMode: 'starttls', username: '', password: '' });
+      setErrorMsg('');
+    },
+    onError: (err: any) => {
+      setErrorMsg(err.response?.data?.error?.message || 'Failed to validate SMTP settings.');
+    }
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: () => settingsService.disconnectSmtp(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      setIsEditing(true);
+    }
+  });
+
+  const testEmailMutation = useMutation({
+    mutationFn: (to: string) => settingsService.testSmtpEmail(to),
+    onMutate: () => setTestEmailStatus('sending'),
+    onSuccess: () => {
+      setTestEmailStatus('success');
+      setTimeout(() => setTestEmailStatus('idle'), 5000);
+    },
+    onError: () => {
+      setTestEmailStatus('error');
+    }
+  });
+
+  const handleSave = () => {
+    if (!formData.host || !formData.port || !formData.username) {
+       setErrorMsg('Please fill in all required fields.');
+       return;
+    }
+    saveMutation.mutate({ ...formData, port: Number(formData.port) });
+  };
+
+  const isConfigured = integration?.isConfigured;
+  const isInvalid = isConfigured && integration?.lastValidationResult !== 'valid';
+
+  return (
+    <div className="space-y-4">
+      {isConfigured && !isEditing ? (
+        <div className="p-4 border rounded-md bg-slate-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center">
+            {isInvalid ? (
+              <span className="w-3 h-3 rounded-full bg-red-500 mr-3 flex-shrink-0"></span>
+            ) : (
+              <span className="w-3 h-3 rounded-full bg-emerald-500 mr-3 flex-shrink-0"></span>
+            )}
+            <div>
+              <p className="text-sm font-medium text-slate-900 flex items-center">
+                {integration.displayHost}:{integration.port}
+                {isInvalid && <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-red-600 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">Invalid</span>}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Username: {integration.maskedUsername} | Mode: {integration.securityMode}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Last validated: {integration?.lastValidatedAt ? new Date(integration.lastValidatedAt).toLocaleString() : 'Unknown'}
+              </p>
+              {isInvalid && <p className="text-xs text-red-600 mt-1">SMTP credentials failed verification or were revoked.</p>}
+            </div>
+          </div>
+          <div className="space-x-2 flex-shrink-0">
+            <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded shadow-sm transition-colors">
+              Update
+            </button>
+            <button onClick={() => disconnectMutation.mutate()} className="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-slate-300 hover:bg-red-50 hover:border-red-200 rounded shadow-sm transition-colors">
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4 p-4 border border-slate-200 rounded-md bg-white">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700">SMTP Host</label>
+              <input
+                type="text"
+                value={formData.host}
+                onChange={(e) => setFormData({...formData, host: e.target.value})}
+                className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder="smtp.example.com"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+               <div className="space-y-1">
+                 <label className="text-xs font-medium text-slate-700">Port</label>
+                 <select
+                   value={formData.port}
+                   onChange={(e) => setFormData({...formData, port: Number(e.target.value)})}
+                   className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                 >
+                   <option value="587">587 (STARTTLS)</option>
+                   <option value="465">465 (Implicit TLS)</option>
+                   <option value="2525">2525 (Alternative)</option>
+                 </select>
+               </div>
+               <div className="space-y-1">
+                 <label className="text-xs font-medium text-slate-700">Security</label>
+                 <select
+                   value={formData.securityMode}
+                   onChange={(e) => setFormData({...formData, securityMode: e.target.value})}
+                   className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                 >
+                   <option value="starttls">STARTTLS</option>
+                   <option value="implicit_tls">Implicit TLS</option>
+                 </select>
+               </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700">Username</label>
+              <input
+                type="text"
+                value={formData.username}
+                onChange={(e) => setFormData({...formData, username: e.target.value})}
+                className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder="admin@example.com"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700">Password {isConfigured && '(Leave blank to keep)'}</label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                placeholder={isConfigured ? '********' : 'Your SMTP password'}
+              />
+            </div>
+          </div>
+
+          {errorMsg && <p className="text-sm text-red-600 font-medium">{errorMsg}</p>}
+
+          <div className="flex gap-2 pt-2">
+            <button 
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+            >
+              {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {saveMutation.isPending ? 'Validating Connection...' : 'Verify & Save'}
+            </button>
+            {isConfigured && isEditing && (
+              <button 
+                onClick={() => { setIsEditing(false); setErrorMsg(''); }} 
+                className="px-4 py-2 text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isConfigured && !isEditing && (
+        <div className="pt-4 border-t border-slate-100">
+          <h4 className="text-sm font-medium text-slate-900 mb-2">Test SMTP Connection</h4>
+          <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+            <input
+              type="email"
+              value={testEmailInput}
+              onChange={(e) => setTestEmailInput(e.target.value)}
+              className="flex-1 p-2 border border-slate-300 rounded-md focus:ring-blue-500 text-sm"
+              placeholder="recipient@example.com"
+            />
+            <button
+              onClick={() => testEmailInput && testEmailMutation.mutate(testEmailInput)}
+              disabled={testEmailStatus === 'sending' || !testEmailInput}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-sm font-medium transition-colors flex items-center shadow-sm disabled:opacity-50"
+            >
+              {testEmailStatus === 'sending' ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+              ) : testEmailStatus === 'success' ? (
+                <><span className="text-emerald-400 font-bold mr-2">✓</span> Sent</>
+              ) : testEmailStatus === 'error' ? (
+                <><span className="text-red-400 font-bold mr-2">✕</span> Failed</>
+              ) : (
+                <><Mail className="w-4 h-4 mr-2" /> Test Email</>
+              )}
+            </button>
+          </div>
+          {testEmailStatus === 'error' && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-800 font-medium">Failed to send test email.</p>
+              <p className="text-sm text-red-700 mt-1">Check your settings or view server logs for more details.</p>
             </div>
           )}
         </div>
