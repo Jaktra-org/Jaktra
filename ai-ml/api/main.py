@@ -4,12 +4,15 @@ load_dotenv()
 from fastapi import FastAPI, Depends
 from api.routes import health, generation, risk, agents
 from api.middleware.auth import verify_service_key
+from api.middleware.logging import LoggingMiddleware
 
 app = FastAPI(
     title="CreditOps AI-ML Service",
     description="Agent executor service for CreditOps",
     version="1.0.0",
 )
+
+app.add_middleware(LoggingMiddleware)
 
 app.include_router(health.router)
 app.include_router(generation.router, dependencies=[Depends(verify_service_key)])

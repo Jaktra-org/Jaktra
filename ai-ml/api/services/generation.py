@@ -6,6 +6,8 @@ from api.config import settings as config
 from src.security import sanitize_input
 from api.services.output_parser import _parse_email_output
 from prompts.email_prompt import get_prompt_for_tier
+from api.logging import logger
+import time
 
 def _get_llm() -> ChatGroq:
     """Return a ChatGroq instance configured from src/config.py."""
@@ -42,12 +44,10 @@ def generate_followup_content(invoice_data: dict) -> dict:
     
     prompt = get_prompt_for_tier(urgency_tier)
 
-    # Use getattr for configuration properties to handle changes in config struct safely
     sender_name = getattr(config, "SMTP_SENDER_NAME", "Finance Department")
     payment_link = invoice_data.get("payment_link") or getattr(config, "PAYMENT_LINK", "")
     bank_details = getattr(config, "BANK_DETAILS", "")
 
-    # Format prompt with invoice data
     messages = prompt.format_messages(
         client_name=sanitize_input(invoice_data.get("client_name", "")),
         invoice_no=sanitize_input(invoice_no),
@@ -65,6 +65,7 @@ def generate_followup_content(invoice_data: dict) -> dict:
     )
 
     llm = _get_llm()
+    start_time = time.perf_counter()
     try:
         response = _invoke_llm_with_retry(llm, messages)
     except groq.GroqError as exc:
@@ -74,8 +75,25 @@ def generate_followup_content(invoice_data: dict) -> dict:
             "reason": f"LLM generation failed: {exc}",
         }
     
+    generation_ms = (time.perf_counter() - start_time) * 1000
     raw_text: str = response.content.strip()
+    
+    token_count = 0
+    if hasattr(response, "response_metadata") and "token_usage" in response.response_metadata:
+        token_count = response.response_metadata["token_usage"].get("total_tokens", 0)
+
     subject, body = _parse_email_output(raw_text)
+
+    logger.info(
+        "generation_complete",
+        invoice_id=invoice_no,
+        tier=urgency_tier,
+        channel="email",
+        model=config.LLM_MODEL,
+        provider=config.LLM_PROVIDER,
+        generation_ms=round(generation_ms, 2),
+        token_count=token_count
+    )
 
     return {
         "invoice_no": invoice_no,

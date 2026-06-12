@@ -12,3 +12,4 @@ apscheduler
 pytz
 tenacity
 sqlalchemy
+structlog
