@@ -1,9 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from api.services.generation import generate_followup_content
+from api.services.content_generator import ContentGenerator
+from src.prompt_registry import registry
+from src.llm_client import llm_client
 
 router = APIRouter(prefix="/followup", tags=["Generation"])
+content_generator = ContentGenerator(prompt_registry=registry, llm_client=llm_client)
 
 class FollowupRequest(BaseModel):
     invoice_id: str
@@ -68,47 +71,49 @@ from src.exceptions import OutputValidationError, PromptInjectionDetectedError
 
 @router.post("", response_model=FollowupResponse)
 async def generate_followup(request: FollowupRequest):
+    from src.exceptions import LLMGenerationError, OutputValidationError, PromptInjectionDetectedError
     try:
-        result = await generate_followup_content(request.model_dump())
+        result = await content_generator.generate(request)
     except ValueError as e:
-        if "legal_escalation" in str(e):
+        if "legal_escalation" in str(e) or "does not have an automated prompt" in str(e):
             raise HTTPException(status_code=400, detail="TIER_NOT_AUTOMATABLE")
+        if "UNSUPPORTED_CHANNEL" in str(e):
+            raise HTTPException(status_code=400, detail="UNSUPPORTED_CHANNEL")
         raise HTTPException(status_code=400, detail=str(e))
-    except KeyError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except OutputValidationError as e:
+    except OutputValidationError:
         raise HTTPException(status_code=422, detail="GENERATION_VALIDATION_FAILED")
-    except PromptInjectionDetectedError as e:
+    except PromptInjectionDetectedError:
         raise HTTPException(status_code=422, detail="GENERATION_VALIDATION_FAILED")
-    
-    if result.get("status") == "error":
-        raise HTTPException(status_code=502, detail={"error": result.get("reason", "LLM Generation failed"), "retryable": True})
+    except LLMGenerationError as e:
+        raise HTTPException(status_code=502, detail={"error": str(e), "retryable": True})
         
-    plain_body = result["body"]
-    html_body = f"<p>{plain_body.replace(chr(10), '<br>')}</p>"
+    plain_body = result.plain_body or ""
+    html_body = result.html_body or plain_body
+    subject = result.subject or ""
 
     return FollowupResponse(
         invoice_id=request.invoice_id,
         channel=request.channel,
         content=Content(
-            subject=result["subject"],
+            subject=subject,
             html_body=html_body,
             plain_body=plain_body
         ),
         metadata=Metadata(
-            tier_used=result["metadata"]["tier_used"],
-            model=result["metadata"]["model"],
-            generation_ms=result["metadata"]["generation_ms"],
-            token_count=result["metadata"]["token_count"]
+            tier_used=result.metadata["tier_used"],
+            model=result.metadata["model"],
+            generation_ms=result.metadata["generation_ms"],
+            token_count=result.metadata["token_count"]
         )
     )
 
 async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Semaphore) -> dict:
+    from src.exceptions import LLMGenerationError, OutputValidationError, PromptInjectionDetectedError
     async with sem:
         try:
             # Enforce 60 second timeout per invoice
             result = await asyncio.wait_for(
-                generate_followup_content(invoice.model_dump()),
+                content_generator.generate(invoice),
                 timeout=60.0
             )
         except asyncio.TimeoutError:
@@ -119,7 +124,7 @@ async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Sema
                 "retryable": True
             }
         except ValueError as e:
-            if "legal_escalation" in str(e):
+            if "legal_escalation" in str(e) or "does not have an automated prompt" in str(e):
                 return {
                     "invoice_id": invoice.invoice_id,
                     "status": "error",
@@ -146,6 +151,13 @@ async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Sema
                 "error": "GENERATION_VALIDATION_FAILED",
                 "retryable": False
             }
+        except LLMGenerationError as e:
+            return {
+                "invoice_id": invoice.invoice_id,
+                "status": "error",
+                "error": str(e),
+                "retryable": True
+            }
         except Exception as e:
             return {
                 "invoice_id": invoice.invoice_id,
@@ -154,30 +166,23 @@ async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Sema
                 "retryable": False
             }
 
-        if result.get("status") == "error":
-            return {
-                "invoice_id": invoice.invoice_id,
-                "status": "error",
-                "error": result.get("reason", "LLM_GENERATION_FAILED"),
-                "retryable": True
-            }
-
-        plain_body = result["body"]
-        html_body = f"<p>{plain_body.replace(chr(10), '<br>')}</p>"
+        plain_body = result.plain_body or ""
+        html_body = result.html_body or plain_body
+        subject = result.subject or ""
 
         return {
             "invoice_id": invoice.invoice_id,
             "status": "success",
             "content": Content(
-                subject=result["subject"],
+                subject=subject,
                 html_body=html_body,
                 plain_body=plain_body
             ),
             "metadata": Metadata(
-                tier_used=result["metadata"]["tier_used"],
-                model=result["metadata"]["model"],
-                generation_ms=result["metadata"]["generation_ms"],
-                token_count=result["metadata"]["token_count"]
+                tier_used=result.metadata["tier_used"],
+                model=result.metadata["model"],
+                generation_ms=result.metadata["generation_ms"],
+                token_count=result.metadata["token_count"]
             )
         }
 
