@@ -1,28 +1,13 @@
-"""WhatsApp Persona"""
 from langchain_core.prompts import ChatPromptTemplate
 
-_SYSTEM_PERSONA = (
-    "You are a Senior Accounts Receivable Manager. Your WhatsApp messages should be professional, "
-    "direct, and easily readable on a mobile device."
-)
-
-_FORMAT_INSTRUCTION = """
-Respond with ONLY the WhatsApp message body. Do not include a subject or any extra text.
-"""
-
-_HUMAN = """
-Write a warm WhatsApp notification for warm tier.
-
-Invoice Details:
-- Client: {client_name}
-- Invoice No: {invoice_no}
-- Amount: ${invoice_amount}
-
-Instructions: Mention payment is overdue. Include link: {payment_link}. Tone should be warm.
-{format_instruction}
-"""
-
 PROMPT = ChatPromptTemplate.from_messages([
-    ("system", _SYSTEM_PERSONA),
-    ("human", _HUMAN),
+    ("system", "You write WhatsApp payment reminders under 500 characters. "
+               "Use *bold* for emphasis. Use line breaks for readability. "
+               "Include the amount, due date, and payment link. The CTA must be on its own line. Friendly tone."),
+    ("human", "Invoice {invoice_no} for ${invoice_amount} was due {due_date}. "
+              "Client: {client_name}. Payment link: {payment_link}. "
+              "Write a single WhatsApp reminder under 500 characters. Example format:\n"
+              "Hi {client_name},\n\n"
+              "This is a friendly reminder that *Invoice {invoice_no}* for *${invoice_amount}* was due on {due_date}.\n\n"
+              "You can easily pay using this link:\n{payment_link}")
 ])

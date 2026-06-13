@@ -64,3 +64,8 @@ def validate_sms_output(raw_text: str) -> str:
         raise OutputValidationError("SMS exceeds 160 characters")
     return raw_text.strip()
 
+def validate_whatsapp_output(raw_text: str) -> str:
+    """Validate WhatsApp output is within 500 chars."""
+    if len(raw_text) > 500:
+        raise OutputValidationError("WhatsApp message exceeds 500 characters")
+    return raw_text.strip()
