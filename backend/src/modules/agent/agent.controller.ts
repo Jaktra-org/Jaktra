@@ -13,7 +13,7 @@ export class AgentController {
       const authReq = req as AuthenticatedRequest;
       const tenantId = authReq.user.tenantId;
       const run = await this.agentService.triggerRun(tenantId);
-      res.status(200).json(run);
+      res.status(202).json(run);  // 202 = Accepted, processing in background
     } catch (err: unknown) {
       res.status(500).json({
         error: {

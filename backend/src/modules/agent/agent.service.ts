@@ -1,7 +1,7 @@
 import { AgentRepository } from './agent.repository.js';
 import { AimlService } from './aiml.service.js';
 import { InvoiceRepository } from '../invoice/invoice.repository.js';
-import { TriageService } from './triage.service.js';
+import { TriageService, type TriagedInvoice } from './triage.service.js';
 import { EventService } from '../event/event.service.js';
 import { DlqService } from '../dlq/dlq.service.js';
 import { IdempotencyService } from '../../modules/communication/services/idempotency.service.js';
@@ -23,33 +23,45 @@ export class AgentService {
   async triggerRun(tenantId: string) {
     const invoices = await this.invoiceRepo.findByTenant(tenantId);
     const triaged = this.triageService.triageInvoices(invoices);
-    const invoiceIds = triaged.invoices.map((inv) => inv.id);
+
     const run = await this.agentRepo.createRun({
       tenantId,
       status: 'running',
+      invoicesProcessed: 0,
+      emailsSent: 0,
+      errors: 0,
     });
 
-    if (invoiceIds.length === 0) {
+    if (triaged.invoices.length === 0) {
       return await this.agentRepo.updateRun(run.id, tenantId, {
         status: 'completed',
         endTime: new Date(),
-        invoicesProcessed: 0,
-        emailsSent: 0,
-        errors: 0,
       });
     }
+
+    this.processRunInBackground(run.id, tenantId, triaged.invoices)
+      .catch(err => logger.error(`Background run ${run.id} failed`, err));
+
+    return run;
+  }
+
+  private async processRunInBackground(
+    runId: string,
+    tenantId: string,
+    invoices: TriagedInvoice[]
+  ): Promise<void> {
     let processed = 0;
     let emailsSent = 0;
     let errorsCount = 0;
 
-    for (const inv of triaged.invoices) {
+    for (const inv of invoices) {
       try {
         const idempotencyCheck = await this.idempotencyService.checkInvoice(tenantId, inv.id);
         if (idempotencyCheck.skipped) {
           await this.eventService.emitEvent(
             inv.id,
             'halted',
-            { reason: 'idempotency_skip', ...idempotencyCheck, runId: run.id },
+            { reason: 'idempotency_skip', ...idempotencyCheck, runId },
             'system'
           );
           continue;
@@ -82,7 +94,7 @@ export class AgentService {
         await this.eventService.emitEvent(
           inv.id,
           resp.emailSent ? 'email_sent' : 'email_generated',
-          { subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error, runId: run.id },
+          { subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error, runId },
           'ai-agent'
         );
 
@@ -96,14 +108,22 @@ export class AgentService {
         await this.eventService.emitEvent(
           inv.id,
           'halted',
-          { error: String(err), runId: run.id },
+          { error: String(err), runId },
           'system'
         );
         await this.dlqService.recordFailure(inv.id, String(err)).catch(() => {});
       }
+
+      if (processed % 10 === 0 || processed === invoices.length) {
+        await this.agentRepo.updateRun(runId, tenantId, {
+          invoicesProcessed: processed,
+          emailsSent,
+          errors: errorsCount,
+        });
+      }
     }
 
-    return await this.agentRepo.updateRun(run.id, tenantId, {
+    await this.agentRepo.updateRun(runId, tenantId, {
       status: 'completed',
       endTime: new Date(),
       invoicesProcessed: processed,
