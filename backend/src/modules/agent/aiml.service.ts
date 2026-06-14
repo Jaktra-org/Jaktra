@@ -46,6 +46,7 @@ interface CircuitBreakerState {
 
 export interface AimlServiceConfig {
   baseUrl: string;
+  serviceKey?: string;
   timeoutMs?: number;
   maxRetries?: number;
   circuitBreakerThreshold?: number;
@@ -54,6 +55,7 @@ export interface AimlServiceConfig {
 
 export class AimlService {
   private readonly baseUrl: string;
+  private readonly serviceKey: string;
   private readonly timeoutMs: number;
   private readonly maxRetries: number;
   private readonly cbThreshold: number;
@@ -62,6 +64,7 @@ export class AimlService {
 
   constructor(clientConfig: AimlServiceConfig) {
     this.baseUrl = clientConfig.baseUrl.replace(/\/+$/, '');
+    this.serviceKey = clientConfig.serviceKey ?? '';
     this.timeoutMs = clientConfig.timeoutMs ?? 30_000;
     this.maxRetries = clientConfig.maxRetries ?? 2;
     this.cbThreshold = clientConfig.circuitBreakerThreshold ?? 5;
@@ -129,9 +132,16 @@ export class AimlService {
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Request-ID': crypto.randomUUID(),
+      };
+      if (this.serviceKey) {
+        headers['X-Service-Key'] = this.serviceKey;
+      }
       return await fetch(`${this.baseUrl}${path}`, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });

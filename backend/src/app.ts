@@ -85,6 +85,7 @@ export interface AppConfig {
   jwtSecret?: string;
   jwtExpiresIn?: string;
   aimlServiceUrl?: string;
+  aimlServiceKey?: string;
   sendgridApiKey?: string;
   razorpayWebhookSecret?: string;
   sendgridWebhookPublicKey?: string;
@@ -199,7 +200,7 @@ export function createApp(config: AppConfig): Application {
     app.locals.tenantScoped = tenantScoped;
 
     if (config.aimlServiceUrl) {
-      const aimlService = new AimlService({ baseUrl: config.aimlServiceUrl });
+      const aimlService = new AimlService({ baseUrl: config.aimlServiceUrl, serviceKey: config.aimlServiceKey });
       app.use('/api/aiml', createAimlRouter(new AimlController(aimlService), authMiddleware));
       app.locals.aimlService = aimlService;
 

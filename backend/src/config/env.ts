@@ -21,6 +21,7 @@ const schema = z.object({
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
 
   AI_ML_SERVICE_URL: z.string().url().optional(),
+  AI_ML_SERVICE_KEY: z.string().min(32).optional(),
 
   REDIS_URL: z.string().url().optional(),
 
