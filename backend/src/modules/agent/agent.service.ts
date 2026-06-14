@@ -1,7 +1,7 @@
 import { AgentRepository } from './agent.repository.js';
 import { AimlService } from './aiml.service.js';
 import { InvoiceRepository } from '../invoice/invoice.repository.js';
-import { TriageService, type TriagedInvoice } from './triage.service.js';
+import { TriageService, type TriagedInvoice, type UrgencyTier } from './triage.service.js';
 import { EventService } from '../event/event.service.js';
 import { DlqService } from '../dlq/dlq.service.js';
 import { IdempotencyService } from '../../modules/communication/services/idempotency.service.js';
@@ -67,6 +67,17 @@ export class AgentService {
           continue;
         }
 
+        const channels = this.selectChannels(inv.computedTier);
+        if (channels.length === 0) {
+          await this.eventService.emitEvent(
+            inv.id,
+            'halted',
+            { reason: 'no_automated_channel', tier: inv.computedTier, runId },
+            'system'
+          );
+          continue;
+        }
+
         let paymentLink = undefined;
         try {
           paymentLink = await this.paymentService.getOrGeneratePaymentLink(tenantId, inv.id, 'razorpay');
@@ -74,35 +85,39 @@ export class AgentService {
           logger.warn(`Could not generate payment link for invoice ${inv.id} - ${e.message}`);
         }
 
-        const resp = await this.aimlService.triggerFollowup({
-          invoiceId: inv.id,
-          invoiceNo: inv.invoiceNo,
-          clientName: inv.clientName,
-          contactEmail: inv.contactEmail,
-          invoiceAmount: inv.invoiceAmount.toString(),
-          dueDate: inv.dueDate,
-          daysOverdue: inv.daysOverdue,
-          urgencyTier: inv.computedTier,
-          followupCount: inv.followupCount,
-          paymentLink,
-        });
+        for (const channel of channels) {
+          const resp = await this.aimlService.triggerFollowup({
+            invoiceId: inv.id,
+            invoiceNo: inv.invoiceNo,
+            clientName: inv.clientName,
+            contactEmail: inv.contactEmail,
+            invoiceAmount: inv.invoiceAmount.toString(),
+            dueDate: inv.dueDate,
+            daysOverdue: inv.daysOverdue,
+            urgencyTier: inv.computedTier,
+            followupCount: inv.followupCount,
+            channel,
+            paymentLink,
+          });
+
+          if (resp.emailSent) emailsSent++;
+          if (resp.error) errorsCount++;
+
+          await this.eventService.emitEvent(
+            inv.id,
+            resp.emailSent ? 'email_sent' : 'email_generated',
+            { subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error, channel, runId },
+            'ai-agent'
+          );
+
+          if (!resp.error) {
+            await this.dlqService.clearFailure(inv.id, tenantId).catch(() => {});
+          } else {
+            await this.dlqService.recordFailure(inv.id, resp.error).catch(() => {});
+          }
+        }
 
         processed++;
-        if (resp.emailSent) emailsSent++;
-        if (resp.error) errorsCount++;
-
-        await this.eventService.emitEvent(
-          inv.id,
-          resp.emailSent ? 'email_sent' : 'email_generated',
-          { subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error, runId },
-          'ai-agent'
-        );
-
-        if (!resp.error) {
-          await this.dlqService.clearFailure(inv.id, tenantId).catch(() => {});
-        } else {
-          await this.dlqService.recordFailure(inv.id, resp.error).catch(() => {});
-        }
       } catch (err: unknown) {
         errorsCount++;
         await this.eventService.emitEvent(
@@ -141,6 +156,17 @@ export class AgentService {
     const daysOverdue = this.triageService.computeDaysOverdue(invoice.dueDate);
     const urgencyTier = this.triageService.assignTier(daysOverdue);
 
+    const channels = this.selectChannels(urgencyTier);
+    if (channels.length === 0) {
+      await this.eventService.emitEvent(
+        invoice.id,
+        'halted',
+        { reason: 'no_automated_channel', tier: urgencyTier },
+        'system'
+      );
+      return { skipped: true, reason: 'no_automated_channel', tier: urgencyTier };
+    }
+
     const idempotencyCheck = await this.idempotencyService.checkInvoice(tenantId, invoice.id);
     if (idempotencyCheck.skipped) {
       await this.eventService.emitEvent(
@@ -160,33 +186,39 @@ export class AgentService {
         logger.warn(`Could not generate payment link for invoice ${invoice.id} - ${e.message}`);
       }
 
-      const resp = await this.aimlService.triggerFollowup({
-        invoiceId: invoice.id,
-        invoiceNo: invoice.invoiceNo,
-        clientName: invoice.clientName,
-        contactEmail: invoice.contactEmail,
-        invoiceAmount: invoice.invoiceAmount.toString(),
-        dueDate: invoice.dueDate,
-        daysOverdue,
-        urgencyTier,
-        followupCount: invoice.followupCount,
-        paymentLink,
-      });
+      const results = [];
+      for (const channel of channels) {
+        const resp = await this.aimlService.triggerFollowup({
+          invoiceId: invoice.id,
+          invoiceNo: invoice.invoiceNo,
+          clientName: invoice.clientName,
+          contactEmail: invoice.contactEmail,
+          invoiceAmount: invoice.invoiceAmount.toString(),
+          dueDate: invoice.dueDate,
+          daysOverdue,
+          urgencyTier,
+          followupCount: invoice.followupCount,
+          channel,
+          paymentLink,
+        });
 
-      await this.eventService.emitEvent(
-        invoice.id,
-        resp.emailSent ? 'email_sent' : 'email_generated',
-        { subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error },
-        'ai-agent'
-      );
+        await this.eventService.emitEvent(
+          invoice.id,
+          resp.emailSent ? 'email_sent' : 'email_generated',
+          { subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error, channel },
+          'ai-agent'
+        );
 
-      if (!resp.error) {
-        await this.dlqService.clearFailure(invoice.id, tenantId).catch(() => {});
-      } else {
-        await this.dlqService.recordFailure(invoice.id, resp.error).catch(() => {});
+        if (!resp.error) {
+          await this.dlqService.clearFailure(invoice.id, tenantId).catch(() => {});
+        } else {
+          await this.dlqService.recordFailure(invoice.id, resp.error).catch(() => {});
+        }
+
+        results.push(resp);
       }
 
-      return resp;
+      return results.length === 1 ? results[0] : results;
     } catch (err: unknown) {
       await this.eventService.emitEvent(
         invoice.id,
@@ -197,6 +229,17 @@ export class AgentService {
       await this.dlqService.recordFailure(invoice.id, String(err)).catch(() => {});
       throw err;
     }
+  }
+
+  private selectChannels(tier: UrgencyTier): string[] {
+    const channelMatrix: Record<UrgencyTier, string[]> = {
+      'stage_1_warm': ['email'],
+      'stage_2_firm': ['email'],
+      'stage_3_serious': ['email'],  // future: ['email', 'sms']
+      'stage_4_stern': ['email'],    // future: ['email', 'sms']
+      'legal_escalation': [],        // no automated communication
+    };
+    return channelMatrix[tier] || ['email'];
   }
 
   async getRuns(tenantId: string) {
