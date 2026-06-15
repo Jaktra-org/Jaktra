@@ -1,4 +1,4 @@
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, count } from 'drizzle-orm';
 import { communications } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Communication, NewCommunication } from '../../db/index.js';
@@ -31,8 +31,8 @@ export class CommunicationRepository {
   }
 
   async countSuccessfulByInvoiceId(invoiceId: string): Promise<number> {
-    const comms = await this.db
-      .select()
+    const [result] = await this.db
+      .select({ count: count() })
       .from(communications)
       .where(
         and(
@@ -40,7 +40,7 @@ export class CommunicationRepository {
           eq(communications.status, 'sent')
         )
       );
-    return comms.length;
+    return Number(result?.count ?? 0);
   }
 
   async create(data: NewCommunication): Promise<Communication> {
