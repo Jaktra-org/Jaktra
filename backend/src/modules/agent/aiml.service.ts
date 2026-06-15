@@ -42,7 +42,7 @@ export interface BatchRunResponse {
 interface CircuitBreakerState {
   failures: number;
   lastFailureAt: number;
-  isOpen: boolean;
+  state: 'closed' | 'open' | 'half-open';
 }
 
 export interface AimlServiceConfig {
@@ -70,7 +70,7 @@ export class AimlService {
     this.maxRetries = clientConfig.maxRetries ?? 2;
     this.cbThreshold = clientConfig.circuitBreakerThreshold ?? 5;
     this.cbResetMs = clientConfig.circuitBreakerResetMs ?? 60_000;
-    this.circuit = { failures: 0, lastFailureAt: 0, isOpen: false };
+    this.circuit = { failures: 0, lastFailureAt: 0, state: 'closed' };
   }
 
   async getAgentStatus(): Promise<AimlHealthResponse> {
@@ -157,13 +157,12 @@ export class AimlService {
   }
 
   private checkCircuitBreaker(): void {
-    if (!this.circuit.isOpen) return;
+    if (this.circuit.state === 'closed') return;
 
     const elapsed = Date.now() - this.circuit.lastFailureAt;
     if (elapsed >= this.cbResetMs) {
-      this.circuit.isOpen = false;
-      this.circuit.failures = 0;
-      logger.info('AI-ML circuit breaker reset — allowing requests');
+      this.circuit.state = 'half-open';
+      logger.info('AI-ML circuit breaker half-open — allowing probe request');
       return;
     }
 
@@ -174,19 +173,22 @@ export class AimlService {
   }
 
   private onSuccess(): void {
-    if (this.circuit.failures > 0) {
-      this.circuit.failures = 0;
-      this.circuit.isOpen = false;
+    if (this.circuit.state === 'half-open') {
+      logger.info('AI-ML circuit breaker closed — probe request succeeded');
     }
+    this.circuit = { failures: 0, lastFailureAt: 0, state: 'closed' };
   }
 
   private onFailure(): void {
     this.circuit.failures++;
     this.circuit.lastFailureAt = Date.now();
 
-    if (this.circuit.failures >= this.cbThreshold) {
-      this.circuit.isOpen = true;
-      logger.error(`AI-ML circuit breaker opened after ${this.circuit.failures} consecutive failures`);
+    if (this.circuit.state === 'half-open') {
+      this.circuit.state = 'open';
+      logger.error('AI-ML circuit breaker re-opened — probe request failed');
+    } else if (this.circuit.failures >= this.cbThreshold) {
+      this.circuit.state = 'open';
+      logger.error(`AI-ML circuit breaker opened after ${this.circuit.failures} failures`);
     }
   }
 
