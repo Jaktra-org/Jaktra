@@ -12,6 +12,10 @@ export class SendgridWebhookService {
     this.eventWebhook = new EventWebhook();
   }
 
+  hasVerificationKey(): boolean {
+    return !!this.publicKey;
+  }
+
   verifySignature(publicKey: string, payload: string, signature: string, timestamp: string): boolean {
     try {
       const ecPublicKey = this.eventWebhook.convertPublicKeyToECDSA(publicKey);

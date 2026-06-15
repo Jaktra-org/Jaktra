@@ -20,6 +20,11 @@ export class WebhookController {
       return res.status(501).json({ error: 'SendGrid webhook service not configured' });
     }
 
+    if (!this.sendgridService.hasVerificationKey()) {
+      logger.warn('SendGrid webhook received but no public key configured — rejecting');
+      return res.status(403).json({ error: 'Webhook signature verification not configured' });
+    }
+
     const rawBody = req.body;
     if (!rawBody || !Buffer.isBuffer(rawBody)) {
       logger.error(`Raw body is missing or not a buffer for sendgrid.`);
