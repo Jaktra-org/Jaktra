@@ -6,6 +6,16 @@ export class DlqRepository {
   constructor(private readonly db: DatabaseClient) {}
   
   async recordFailure(invoiceId: string, tenantId: string, errorMsg: string) {
+    const invoice = await this.db
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
+      .limit(1);
+
+    if (invoice.length === 0) {
+      throw new Error('Invoice not found or does not belong to this tenant');
+    }
+
     return await this.db
       .insert(dlqEntries)
       .values({
