@@ -34,6 +34,14 @@ export class SettingsService {
     return updated;
   }
 
+  async rotateWebhookToken(tenantId: string): Promise<TenantSettings> {
+    const updated = await this.settingsRepo.rotateWebhookToken(tenantId);
+    if (!updated) {
+      throw new Error('Settings not found for this tenant');
+    }
+    return updated;
+  }
+
   async getIntegrations(_tenantId: string): Promise<Array<{ id: string; name: string; category: string; status: string; description: string }>> {
     // Stub for now
     return [

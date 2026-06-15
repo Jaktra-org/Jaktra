@@ -3,7 +3,7 @@ import { PaymentGatewayFactory } from '../../modules/payment/gateway.factory.js'
 import type { WebhookService } from './webhook.service.js';
 import { logger } from '../../shared/logger.js';
 import type { SendgridWebhookService } from './providers/sendgrid.webhook.js';
-
+import type { SettingsRepository } from '../settings/settings.repository.js';
 import type { PaymentService } from '../payment/payment.service.js';
 
 export class WebhookController {
@@ -11,6 +11,7 @@ export class WebhookController {
     private gatewayFactory: PaymentGatewayFactory,
     private webhookService: WebhookService,
     private paymentService: PaymentService,
+    private settingsRepo: SettingsRepository,
     private sendgridService?: SendgridWebhookService
   ) {}
 
@@ -45,17 +46,18 @@ export class WebhookController {
   };
 
   handlePayment = async (req: Request, res: Response): Promise<any> => {
-    const tenantId = req.params.tenantId as string;
+    const webhookToken = req.params.webhookToken as string;
     const provider = req.params.provider as string;
     
-    if (!tenantId || !provider) {
-      return res.status(400).json({ error: 'Tenant ID and Provider required' });
+    if (!webhookToken || !provider) {
+      return res.status(404).json({ error: 'Invalid webhook URL' });
     }
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(tenantId)) {
-      return res.status(400).json({ error: 'Invalid Tenant ID format' });
+    const settings = await this.settingsRepo.findByWebhookToken(webhookToken);
+    if (!settings) {
+      return res.status(404).json({ error: 'Invalid webhook URL' });
     }
+    const tenantId = settings.tenantId;
 
     const rawBody = req.body;
     if (!rawBody || !Buffer.isBuffer(rawBody)) {

@@ -144,7 +144,7 @@ export function createApp(config: AppConfig): Application {
     const webhookService = new WebhookService(invoiceRepo, eventRepo);
     const sendgridService = new SendgridWebhookService(communicationService, config.sendgridWebhookPublicKey);
     
-    app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, sendgridService)));
+    app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, settingsRepo, sendgridService)));
 
     if (config.jwtSecret) {
       const userRepo = new UserRepository(config.db);

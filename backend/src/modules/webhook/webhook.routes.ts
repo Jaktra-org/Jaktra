@@ -16,7 +16,7 @@ export function createWebhookRouter(
 
   // Payment Gateways
   router.post(
-    '/payments/:tenantId/:provider',
+    '/payments/:webhookToken/:provider',
     express.raw({ type: 'application/json', limit: '2mb' }),
     webhookController.handlePayment
   );

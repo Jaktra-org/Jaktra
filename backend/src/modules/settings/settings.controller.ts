@@ -66,4 +66,19 @@ export class SettingsController {
       res.status(500).json({ error: message });
     }
   };
+
+  rotateWebhookToken = async (req: Request, res: Response): Promise<any> => {
+    try {
+      const tenantId = res.locals.tenantId as string;
+      if (!tenantId) {
+        return res.status(401).json({ error: { code: 'AuthError', message: 'Tenant ID required' } });
+      }
+
+      const updated = await this.settingsService.rotateWebhookToken(tenantId);
+      res.json({ webhookToken: updated.webhookToken });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: message });
+    }
+  };
 }

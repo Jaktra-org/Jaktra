@@ -1,4 +1,5 @@
 import { eq, desc, and, count } from 'drizzle-orm';
+import crypto from 'crypto';
 import { communications } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Communication, NewCommunication } from '../../db/index.js';
@@ -87,6 +88,7 @@ export class CommunicationRepository {
       .values({
         tenantId,
         ...settings,
+        webhookToken: crypto.randomBytes(32).toString('hex'),
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({

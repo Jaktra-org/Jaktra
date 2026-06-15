@@ -13,6 +13,7 @@ export function createSettingsRouter(
 
   router.get('/', settingsController.getSettings);
   router.patch('/', requireRole('admin'), settingsController.updateSettings);
+  router.post('/webhook-token/rotate', requireRole('admin'), settingsController.rotateWebhookToken);
 
   return router;
 }

@@ -254,6 +254,7 @@ export const tenantSettings = pgTable('tenant_settings', {
     .notNull()
     .defaultNow(),
   defaultEmailProvider: defaultEmailProviderEnum('default_email_provider'),
+  webhookToken: text('webhook_token').unique(),
 });
 
 export const tenantIntegrations = pgTable('tenant_integrations', {
