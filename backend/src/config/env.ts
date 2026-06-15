@@ -6,7 +6,9 @@ const schema = z.object({
 
   DATABASE_URL: z.string().url(),
 
-  JWT_SECRET: z.string().min(12),
+  JWT_SECRET: z.string().min(32, {
+    message: 'JWT_SECRET must be at least 32 characters. Generate with: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64\'))"'
+  }),
   JWT_EXPIRES_IN: z.string().default('7d'),
 
   CORS_ORIGINS: z
