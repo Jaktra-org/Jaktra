@@ -178,7 +178,7 @@ export function createApp(config: AppConfig): Application {
     app.use('/api/settings', createSettingsRouter(new SettingsController(settingsService), authMiddleware, tenantScoped));
 
     const communicationRepo = new CommunicationRepository(config.db);
-    const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo);
+    const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo, config.db);
     app.use('/api/invoices', createReconcilerRouter(new ReconcilerController(reconcilerService), authMiddleware, tenantScoped));
 
     const eventRepo = new EventRepository(config.db);

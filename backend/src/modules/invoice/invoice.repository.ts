@@ -14,6 +14,14 @@ export class InvoiceRepository {
       .where(and(eq(invoices.tenantId, tenantId), isNull(invoices.deletedAt)));
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    const [row] = await this.db
+      .select({ count: count() })
+      .from(invoices)
+      .where(and(eq(invoices.tenantId, tenantId), isNull(invoices.deletedAt)));
+    return Number(row?.count || 0);
+  }
+
   async findById(invoiceId: string): Promise<Invoice | undefined> {
     const rows = await this.db
       .select()
