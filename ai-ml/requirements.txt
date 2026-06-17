@@ -14,3 +14,7 @@ pytz
 tenacity
 sqlalchemy
 structlog
+fastapi
+uvicorn[standard]
+pydantic-settings
+httpx
