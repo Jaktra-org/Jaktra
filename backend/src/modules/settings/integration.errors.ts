@@ -2,7 +2,12 @@ import { AppError } from '../../shared/errors/index.js';
 
 export class IntegrationError extends AppError {
   constructor(message: string, code: string, statusCode: number = 400) {
-    super(message, statusCode, code);
+    super({
+      statusCode,
+      errorCode: code,
+      displayMessage: message,
+      technicalMessage: message,
+    });
     this.name = 'IntegrationError';
   }
 }

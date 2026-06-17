@@ -13,11 +13,14 @@ if (redisClient) {
   });
 }
 
-const store = redisClient
-  ? new RedisStore({
-      sendCommand: (...args: string[]) => redisClient.sendCommand(args),
-    })
-  : undefined;
+const createStore = (prefix: string) => {
+  return redisClient
+    ? new RedisStore({
+        sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+        prefix,
+      })
+    : undefined;
+};
 
 export const standardLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -25,7 +28,7 @@ export const standardLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false, 
   message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests, please try again later.' } },
-  store,
+  store: createStore('rl:standard:'),
 });
 
 export const authLimiter = rateLimit({
@@ -34,6 +37,6 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many authentication attempts, please try again later.' } },
-  store,
+  store: createStore('rl:auth:'),
 });
 
