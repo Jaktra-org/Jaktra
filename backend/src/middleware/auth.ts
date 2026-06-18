@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import type { AuthService } from '../modules/auth/auth.service.js';
 import type { AuthenticatedRequest } from '../shared/types/auth.js';
+import { AuthError } from '../shared/errors/index.js';
 
 export function createAuthMiddleware(authService: AuthService) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -15,8 +16,12 @@ export function createAuthMiddleware(authService: AuthService) {
     try {
       (req as AuthenticatedRequest).user = await authService.verifyAndFetchUser(token);
       next();
-    } catch {
-      res.status(401).json({ error: 'Invalid or expired token' });
+    } catch (err) {
+      if (err instanceof AuthError) {
+        res.status(401).json({ error: err.message });
+      } else {
+        next(err);
+      }
     }
   };
 }
