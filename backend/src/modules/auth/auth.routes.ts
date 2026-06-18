@@ -11,6 +11,7 @@ export function createAuthRouter(
   router.post('/login', authController.login);
   router.post('/refresh', authController.refresh);
   router.get('/me', authMiddleware, authController.getMe);
+  router.patch('/profile', authMiddleware, authController.updateProfile);
 
   return router;
 }

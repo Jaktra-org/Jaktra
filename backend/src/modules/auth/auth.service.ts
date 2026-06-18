@@ -114,6 +114,14 @@ export class AuthService {
     return this.stripHash(user);
   }
 
+  async updateProfile(userId: string, data: { name: string }): Promise<Omit<User, 'passwordHash'>> {
+    const updated = await this.userRepo.update(userId, { name: data.name });
+    if (!updated) {
+      throw new AuthError('User not found', 404);
+    }
+    return this.stripHash(updated);
+  }
+
   private signToken(user: User): string {
     const payload: JwtPayload = {
       userId: user.id,

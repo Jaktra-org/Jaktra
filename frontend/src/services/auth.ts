@@ -35,4 +35,9 @@ export const authService = {
     const response = await api.get<User>("/auth/me");
     return response.data;
   },
+
+  async updateProfile(name: string): Promise<User> {
+    const response = await api.patch<User>("/auth/profile", { name });
+    return response.data;
+  },
 };

@@ -41,6 +41,15 @@ export class UserRepository {
     return rows[0]!;
   }
 
+  async update(id: string, data: Partial<NewUser>): Promise<User | undefined> {
+    const [updated] = await this.db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
+  }
+
   async tenantExists(tenantId: string): Promise<boolean> {
     const rows = await this.db
       .select({ id: tenants.id })

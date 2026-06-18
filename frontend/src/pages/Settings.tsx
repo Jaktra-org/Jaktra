@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../services/settings';
+import { authService } from '../services/auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
-import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard } from 'lucide-react';
+import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon } from 'lucide-react';
 import type { TenantSettings } from '../types/api';
 import { getErrorMessage } from '../utils/error-utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,8 +12,8 @@ import { IntegrationsTab } from './Settings/IntegrationsTab';
 
 export function Settings() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'general' | 'email' | 'integrations' | 'team' | 'billing'>(
-    user?.role === 'admin' ? 'general' : 'team'
+  const [activeTab, setActiveTab] = useState<'profile' | 'general' | 'email' | 'integrations' | 'team' | 'billing'>(
+    'profile'
   );
 
   return (
@@ -28,6 +29,12 @@ export function Settings() {
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar Nav */}
         <div className="w-full md:w-64 space-y-1">
+          <TabButton 
+            active={activeTab === 'profile'} 
+            onClick={() => setActiveTab('profile')} 
+            icon={<UserIcon className="w-4 h-4 mr-3" />} 
+            label="Profile" 
+          />
           {user?.role === 'admin' && (
             <>
               <TabButton 
@@ -68,6 +75,7 @@ export function Settings() {
 
         {/* Content Area */}
         <div className="flex-1">
+          {activeTab === 'profile' && <ProfileSettings />}
           {activeTab === 'general' && user?.role === 'admin' && <GeneralSettings />}
           {activeTab === 'email' && user?.role === 'admin' && <EmailSettings />}
           {activeTab === 'integrations' && user?.role === 'admin' && <IntegrationsTab />}
@@ -842,5 +850,96 @@ function SmtpConfigurator({ integration, userEmail }: any) {
         </div>
       )}
     </div>
+  );
+}
+
+function ProfileSettings() {
+  const { user, updateUser } = useAuth();
+  const [name, setName] = useState(user?.name || '');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const mutation = useMutation({
+    mutationFn: (newName: string) => authService.updateProfile(newName),
+    onMutate: () => {
+      setSaveStatus('saving');
+      setErrorMessage('');
+    },
+    onSuccess: (updatedUser) => {
+      setSaveStatus('saved');
+      updateUser(updatedUser);
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    },
+    onError: (err: any) => {
+      setSaveStatus('error');
+      setErrorMessage(getErrorMessage(err));
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setErrorMessage('Name cannot be empty.');
+      return;
+    }
+    mutation.mutate(name.trim());
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Profile Settings</CardTitle>
+            <CardDescription>Manage your personal profile and display settings.</CardDescription>
+          </div>
+          <div className="flex items-center h-8">
+            {saveStatus === 'saving' && <span className="text-sm text-slate-500 flex items-center"><Loader2 className="w-3 h-3 animate-spin mr-2" /> Saving...</span>}
+            {saveStatus === 'saved' && <span className="text-sm text-emerald-600 flex items-center"><Save className="w-3 h-3 mr-2" /> Saved</span>}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Email Address</label>
+            <input
+              type="email"
+              value={user?.email || ''}
+              disabled
+              className="w-full p-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed"
+            />
+            <p className="text-xs text-slate-500">Your email address is managed by your administrator and cannot be changed.</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Display Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g. John Doe"
+              required
+            />
+          </div>
+
+          {errorMessage && (
+            <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={saveStatus === 'saving' || name.trim() === user?.name}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+            >
+              {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

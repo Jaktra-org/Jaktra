@@ -75,5 +75,25 @@ export class AuthController {
       next(err);
     }
   };
+
+  updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = updateProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      const { userId } = (req as AuthenticatedRequest).user;
+      const updatedUser = await this.authService.updateProfile(userId, parsed.data);
+      res.status(200).json(updatedUser);
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
 }
+
+const updateProfileSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+});
 
