@@ -192,15 +192,13 @@ export class IntegrationService {
 
     const validatedConfig = await SmtpConnectionFactory.validatePayload(candidateConfig);
 
-    // Run Verification
     let transporter;
     try {
       transporter = await SmtpConnectionFactory.createTransporter(validatedConfig);
       await SmtpConnectionFactory.executeWithTimeout(transporter, () => transporter!.verify(), 15000);
     } catch (error: any) {
       logger.warn(`SMTP validation failed for tenant ${tenantId}: ${error.message}`);
-      // Return 400 to the user, preserving the existing integration intact.
-      throw new IntegrationError(`SMTP Validation failed: ${error.message}`, 'INTEGRATION_VALIDATION_FAILED', 400);
+      throw new IntegrationError('SMTP validation failed. Please check your host, port, and credentials.', 'INTEGRATION_VALIDATION_FAILED', 400);
     } finally {
       if (transporter) transporter.close();
     }
