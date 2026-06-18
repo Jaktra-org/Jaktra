@@ -25,6 +25,9 @@ export function getErrorMessage(error: unknown): string {
   if (lowerMsg.includes('circuit breaker is open') || lowerMsg.includes('circuit breaker open') || lowerMsg.includes('circuitbreaker')) {
     return 'AI service temporarily unavailable';
   }
+  if (lowerMsg.includes('validation failed') || lowerMsg.includes('invalid credentials') || lowerMsg.includes('bad request')) {
+    return message;
+  }
   if (lowerMsg.includes('smtp') || lowerMsg.includes('email sending failed') || lowerMsg.includes('sendgrid')) {
     return 'Email service unavailable';
   }
