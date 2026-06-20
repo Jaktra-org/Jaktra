@@ -1,5 +1,6 @@
 import { logger } from '../../../shared/logger.js';
 import { SmtpConnectionFactory, SmtpConfig } from './smtp.factory.js';
+import { ValidationError } from '../../../shared/errors/index.js';
 
 export class SmtpProvider {
   constructor(private readonly config: SmtpConfig) {}
@@ -7,7 +8,7 @@ export class SmtpProvider {
   private checkHeaderInjection(value: string | undefined): void {
     if (!value) return;
     if (value.includes('\r') || value.includes('\n')) {
-      throw new Error('Header injection detected. CR/LF characters are not allowed.');
+      throw new ValidationError('Header injection detected. CR/LF characters are not allowed.');
     }
   }
 

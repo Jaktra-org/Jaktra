@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { IntegrationService } from './integration.service.js';
 import { CommunicationService } from '../communication/communication.service.js';
 import { z } from 'zod';
+import { ValidationError } from '../../shared/errors/index.js';
 
 const razorpayCredsSchema = z.object({
   keyId: z.string().min(5).max(50).regex(/^rzp_/, 'Key ID must start with rzp_'),
@@ -40,7 +41,8 @@ export class IntegrationController {
       const { apiKey } = req.body;
 
       if (!apiKey || typeof apiKey !== 'string' || apiKey.length > 200) {
-        return res.status(400).json({ error: 'Invalid API Key format' });
+        next(new ValidationError('Invalid API Key format'));
+        return;
       }
 
       await this.integrationService.validateAndSaveSendgridKey(tenantId, apiKey);
@@ -57,7 +59,8 @@ export class IntegrationController {
       const { to } = req.body;
 
       if (!to || typeof to !== 'string') {
-        return res.status(400).json({ error: 'Valid recipient email required' });
+        next(new ValidationError('Valid recipient email required'));
+        return;
       }
 
       await this.communicationService.testConnection(tenantId, to);
@@ -90,7 +93,8 @@ export class IntegrationController {
       
       const bodyStr = JSON.stringify(req.body);
       if (bodyStr.length > 5000) {
-        return res.status(400).json({ error: 'Request body too large' });
+        next(new ValidationError('Request body too large'));
+        return;
       }
 
       await this.integrationService.validateAndSaveSmtpConfig(tenantId, req.body);
@@ -107,7 +111,8 @@ export class IntegrationController {
       const { to } = req.body;
 
       if (!to || typeof to !== 'string') {
-        return res.status(400).json({ error: 'Valid recipient email required' });
+        next(new ValidationError('Valid recipient email required'));
+        return;
       }
 
 
@@ -117,7 +122,8 @@ export class IntegrationController {
       const settings = await this.communicationService.getSettings(tenantId);
       
       if (!settings || !settings.senderEmail) {
-        return res.status(400).json({ error: 'Communication settings (Sender Email) not configured' });
+        next(new ValidationError('Communication settings (Sender Email) not configured'));
+        return;
       }
 
       const from = { name: settings.senderName, email: settings.senderEmail };
@@ -159,7 +165,8 @@ export class IntegrationController {
       
       const validationResult = razorpayCredsSchema.safeParse(req.body);
       if (!validationResult.success) {
-        return res.status(400).json({ error: 'Invalid Razorpay credentials format', details: validationResult.error.issues });
+        next(new ValidationError('Invalid Razorpay credentials format', JSON.stringify(validationResult.error.issues)));
+        return;
       }
 
       const { keyId, keySecret, webhookSecret } = validationResult.data;
@@ -188,13 +195,15 @@ export class IntegrationController {
       const { provider } = req.body;
 
       if (provider !== 'sendgrid' && provider !== 'smtp' && provider !== null) {
-         return res.status(400).json({ error: 'Invalid provider' });
+         next(new ValidationError('Invalid provider'));
+         return;
       }
 
       if (provider) {
         const status = await this.integrationService.getIntegrationStatus(tenantId, provider);
         if (!status || !status.isConfigured || status.lastValidationResult !== 'valid') {
-           return res.status(400).json({ error: 'Cannot select an absent or invalid provider' });
+           next(new ValidationError('Cannot select an absent or invalid provider'));
+           return;
         }
       }
 

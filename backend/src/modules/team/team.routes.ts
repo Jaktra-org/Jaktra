@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction, RequestHandler } from 'express
 import rateLimit from 'express-rate-limit';
 import { TeamController } from './team.controller.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
+import { ForbiddenError } from '../../shared/errors/index.js';
 
 export function createTeamRouter(
   teamController: TeamController,
@@ -12,7 +13,7 @@ export function createTeamRouter(
   const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
     const user = (req as AuthenticatedRequest).user;
     if (user.role !== 'admin') {
-      res.status(403).json({ error: 'Requires admin role' });
+      next(new ForbiddenError('Requires admin role'));
       return;
     }
     next();
@@ -21,7 +22,7 @@ export function createTeamRouter(
   const requireManagerOrAdmin = (req: Request, res: Response, next: NextFunction): void => {
     const user = (req as AuthenticatedRequest).user;
     if (user.role !== 'admin' && user.role !== 'manager') {
-      res.status(403).json({ error: 'Requires manager or admin role' });
+      next(new ForbiddenError('Requires manager or admin role'));
       return;
     }
     next();

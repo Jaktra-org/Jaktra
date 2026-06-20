@@ -7,6 +7,8 @@ import { DlqService } from '../dlq/dlq.service.js';
 import { IdempotencyService } from '../../modules/communication/services/idempotency.service.js';
 import { PaymentService } from '../payment/payment.service.js';
 import { logger } from '../../shared/logger.js';
+import { NotFoundError } from '../../shared/errors/index.js';
+import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 
 export class AgentService {
   private activeRuns = new Set<string>();
@@ -47,7 +49,14 @@ export class AgentService {
 
     this.activeRuns.add(run.id);
     this.processRunInBackground(run.id, tenantId, triaged.invoices)
-      .catch(err => logger.error(`Background run ${run.id} failed`, err))
+      .catch(async (err) => {
+        logger.error(`Background run ${run.id} failed`, err);
+        await this.agentRepo.updateRun(run.id, tenantId, {
+          status: 'failed',
+          endTime: new Date(),
+          errorDetails: err instanceof Error ? err.stack || err.message : String(err),
+        }).catch((dbErr) => logger.error('Failed to update run status to failed in database', dbErr));
+      })
       .finally(() => {
         this.activeRuns.delete(run.id);
       });
@@ -133,14 +142,17 @@ export class AgentService {
         processed++;
       } catch (err: unknown) {
         errorsCount++;
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const errStack = err instanceof Error ? err.stack : undefined;
+        const displayErr = mapErrorToDisplayMessage(err);
         await this.eventService.emitEvent(
           inv.id,
           'halted',
-          { error: String(err), runId },
+          { error: displayErr, runId },
           'system',
           tenantId
         );
-        await this.dlqService.recordFailure(inv.id, tenantId, String(err)).catch(() => {});
+        await this.dlqService.recordFailure(inv.id, tenantId, errMsg, errStack).catch(() => {});
       }
 
       if (processed % 10 === 0 || processed === invoices.length) {
@@ -164,7 +176,7 @@ export class AgentService {
   async triggerSingleInvoice(invoiceId: string, tenantId: string) {
     const invoice = await this.invoiceRepo.findById(invoiceId);
     if (!invoice || invoice.tenantId !== tenantId) {
-      throw new Error('Invoice not found');
+      throw new NotFoundError('Invoice not found');
     }
 
     const daysOverdue = this.triageService.computeDaysOverdue(invoice.dueDate);
@@ -237,14 +249,17 @@ export class AgentService {
 
       return results.length === 1 ? results[0] : results;
     } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const errStack = err instanceof Error ? err.stack : undefined;
+      const displayErr = mapErrorToDisplayMessage(err);
       await this.eventService.emitEvent(
         invoice.id,
         'halted',
-        { error: String(err) },
+        { error: displayErr },
         'system',
         tenantId
       );
-      await this.dlqService.recordFailure(invoice.id, tenantId, String(err)).catch(() => {});
+      await this.dlqService.recordFailure(invoice.id, tenantId, errMsg, errStack).catch(() => {});
       throw err;
     }
   }

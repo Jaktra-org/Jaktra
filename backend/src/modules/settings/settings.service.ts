@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { TenantSettings } from '../../db/schema.js';
 import type { SettingsRepository } from './settings.repository.js';
+import { NotFoundError } from '../../shared/errors/index.js';
 
 export const updateSettingsSchema = z.object({
   companyName: z.string().optional(),
@@ -33,7 +34,7 @@ export class SettingsService {
   ): Promise<TenantSettings> {
     const updated = await this.settingsRepo.updateSettings(tenantId, data);
     if (!updated) {
-      throw new Error('Settings not found for this tenant');
+      throw new NotFoundError('Settings not found for this tenant');
     }
     return updated;
   }
@@ -41,7 +42,7 @@ export class SettingsService {
   async rotateWebhookToken(tenantId: string): Promise<TenantSettings> {
     const updated = await this.settingsRepo.rotateWebhookToken(tenantId);
     if (!updated) {
-      throw new Error('Settings not found for this tenant');
+      throw new NotFoundError('Settings not found for this tenant');
     }
     return updated;
   }

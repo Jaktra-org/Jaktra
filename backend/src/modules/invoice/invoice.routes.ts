@@ -3,6 +3,7 @@ import { csvUpload } from '../../middleware/csv-upload.js';
 import { InvoiceController } from './invoice.controller.js';
 import { requireRole } from '../../middleware/require-role.js';
 import { validateParam } from '../../middleware/validate-param.js';
+import { ValidationError } from '../../shared/errors/index.js';
 
 export function createInvoiceRouter(
   invoiceController: InvoiceController,
@@ -23,8 +24,8 @@ export function createInvoiceRouter(
     requireRole('admin', 'manager'),
     (req: Request, res: Response, next: NextFunction) => {
       csvUpload(req, res, (err: unknown) => {
-        if (err instanceof Error) {
-          res.status(400).json({ error: err.message });
+        if (err) {
+          next(new ValidationError('CSV upload failed', err instanceof Error ? err.message : String(err)));
           return;
         }
         next();

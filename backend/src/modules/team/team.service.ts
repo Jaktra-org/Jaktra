@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
 import { TeamRepository } from './team.repository.js';
 import { UserRepository } from '../auth/user.repository.js';
-import { AuthError } from '../../shared/errors/index.js';
+import { AuthError, ValidationError } from '../../shared/errors/index.js';
 import { logger } from '../../shared/logger.js';
 import { config } from '../../config/env.js';
 
@@ -28,7 +28,7 @@ export class TeamService {
 
     if (!process.env.PLATFORM_SMTP_URL) {
       if (process.env.NODE_ENV === 'production') {
-        throw new Error('PLATFORM_SMTP_URL must be configured in production');
+        throw new ValidationError('PLATFORM_SMTP_URL must be configured in production');
       }
       logger.warn('PLATFORM_SMTP_URL is not set. Emails will be skipped.');
       return null;
@@ -157,7 +157,11 @@ export class TeamService {
       });
     });
     
-    await this.sendInvitationEmail(newInvite.id, newInvite.email, rawToken);
+    try {
+      await this.sendInvitationEmail(newInvite.id, newInvite.email, rawToken);
+    } catch (err) {
+      logger.error(`Failed to send invitation email to ${newInvite.email} on resend:`, err);
+    }
     return newInvite;
   }
 

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import type { AgentService } from './agent.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
+import { NotFoundError } from '../../shared/errors/index.js';
 
 
 
@@ -39,12 +40,8 @@ export class AgentController {
       
       const run = await this.agentService.getRunDetails(runId, tenantId);
       if (!run) {
-        return res.status(404).json({
-          error: {
-            code: 'NOT_FOUND',
-            message: 'Agent run not found',
-          },
-        });
+        next(new NotFoundError('Agent run not found'));
+        return;
       }
       
       res.status(200).json(run);

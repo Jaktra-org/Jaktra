@@ -6,6 +6,7 @@ import { IntegrationService } from '../settings/integration.service.js';
 import { logger } from '../../shared/logger.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
 import type { EventRepository } from '../event/event.repository.js';
+import { NotFoundError, ValidationError, AuthError } from '../../shared/errors/index.js';
 
 export class PaymentService {
   constructor(
@@ -24,13 +25,13 @@ export class PaymentService {
         return existingLink.paymentUrl;
       }
       const invoice = await this.invoiceRepo.findById(invoiceId);
-      if (!invoice) throw new Error('Invoice not found');
-      if (invoice.tenantId !== tenantId) throw new Error('Invoice not found');
+      if (!invoice) throw new NotFoundError('Invoice not found');
+      if (invoice.tenantId !== tenantId) throw new NotFoundError('Invoice not found');
 
       const credentials = await this.integrationService.getDecryptedRazorpayConfig(tenantId);
 
       const adapter = this.gatewayFactory.getAdapter(provider);
-      if (!adapter) throw new Error(`Provider ${provider} not registered`);
+      if (!adapter) throw new ValidationError(`Provider ${provider} not registered`);
 
       let linkData;
       try {
@@ -100,13 +101,13 @@ export class PaymentService {
 
   async processPaymentCaptured(tenantId: string, provider: 'razorpay', payload: any, rawBody: Buffer, signature: string) {
     const adapter = this.gatewayFactory.getAdapter(provider);
-    if (!adapter) throw new Error(`Provider ${provider} not registered`);
+    if (!adapter) throw new ValidationError(`Provider ${provider} not registered`);
 
     const credentials = await this.integrationService.getDecryptedRazorpayConfig(tenantId);
     const isValid = adapter.verifyWebhookSignature(rawBody, signature, credentials.webhookSecret);
     if (!isValid) {
       logger.error(`Webhook signature validation failed for tenant ${tenantId}`);
-      throw new Error('Invalid signature');
+      throw new AuthError('Invalid signature', 401);
     }
 
     const parsedEvent = adapter.parseWebhookEvent(rawBody);

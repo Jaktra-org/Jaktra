@@ -36,6 +36,7 @@ export class IntegrationService {
           securityMode: config.securityMode,
         };
       } catch (e) {
+        logger.error(`Failed to decrypt SMTP config for status check (tenant: ${tenantId}):`, e);
       }
     }
 
@@ -64,6 +65,7 @@ export class IntegrationService {
       const config = await this.getDecryptedRazorpayConfig(tenantId);
       maskedKeyId = config.keyId.substring(0, 8) + '...';
     } catch (e) {
+      logger.error(`Failed to decrypt Razorpay config for status check (tenant: ${tenantId}):`, e);
     }
 
     return {
@@ -77,7 +79,7 @@ export class IntegrationService {
 
   async validateAndSaveSendgridKey(tenantId: string, apiKey: string): Promise<void> {
     if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
-      throw IntegrationErrors.CREDENTIAL_INVALID;
+      throw IntegrationErrors.CREDENTIAL_INVALID();
     }
 
     sgClient.setApiKey(apiKey);
@@ -99,11 +101,11 @@ export class IntegrationService {
       logger.warn(`SendGrid validation failed for tenant ${tenantId}. Status: ${status}`);
 
       if (status === 400 || status === 401 || status === 403) {
-        throw IntegrationErrors.CREDENTIAL_INVALID;
+        throw IntegrationErrors.CREDENTIAL_INVALID();
       } else if (status === 429) {
-        throw IntegrationErrors.RATE_LIMITED;
+        throw IntegrationErrors.RATE_LIMITED();
       } else {
-        throw IntegrationErrors.PROVIDER_UNAVAILABLE;
+        throw IntegrationErrors.PROVIDER_UNAVAILABLE();
       }
     }
 
@@ -130,7 +132,7 @@ export class IntegrationService {
   async getDecryptedSendgridKey(tenantId: string): Promise<string> {
     const integration = await this.repo.getIntegration(tenantId, 'sendgrid');
     if (!integration) {
-      throw IntegrationErrors.NOT_CONFIGURED;
+      throw IntegrationErrors.NOT_CONFIGURED();
     }
 
     try {
@@ -143,14 +145,14 @@ export class IntegrationService {
       }, aadContext);
     } catch (e) {
       logger.error(`Decryption failed for tenant ${tenantId} SendGrid integration.`);
-      throw IntegrationErrors.CREDENTIAL_INVALID;
+      throw IntegrationErrors.CREDENTIAL_INVALID();
     }
   }
 
   async getDecryptedSmtpConfig(tenantId: string): Promise<SmtpConfig> {
     const integration = await this.repo.getIntegration(tenantId, 'smtp');
     if (!integration) {
-      throw IntegrationErrors.NOT_CONFIGURED;
+      throw IntegrationErrors.NOT_CONFIGURED();
     }
 
     try {
@@ -166,7 +168,7 @@ export class IntegrationService {
       return await SmtpConnectionFactory.validatePayload(payload);
     } catch (e) {
       logger.error(`Decryption failed for tenant ${tenantId} SMTP integration.`);
-      throw IntegrationErrors.CREDENTIAL_INVALID;
+      throw IntegrationErrors.CREDENTIAL_INVALID();
     }
   }
 
@@ -274,7 +276,7 @@ export class IntegrationService {
 
   async validateAndSaveRazorpayKey(tenantId: string, payload: { keyId: string, keySecret: string, webhookSecret: string }): Promise<void> {
     if (!payload.keyId || !payload.keySecret || !payload.webhookSecret) {
-      throw IntegrationErrors.CREDENTIAL_INVALID;
+      throw IntegrationErrors.CREDENTIAL_INVALID();
     }
 
     let validationResult: TenantIntegration['lastValidationResult'] = 'unknown';
@@ -288,16 +290,19 @@ export class IntegrationService {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized');
+        if (response.status === 401 || response.status === 403) {
+          throw IntegrationErrors.CREDENTIAL_INVALID();
         }
-        throw new Error(`Razorpay API Error: ${response.status}`);
+        throw IntegrationErrors.PROVIDER_UNAVAILABLE();
       }
       validationResult = 'valid';
     } catch (error: any) {
-      console.error('validateAndSaveRazorpayKey error:', error);
+      if (error instanceof IntegrationError) {
+        throw error;
+      }
+      logger.error('validateAndSaveRazorpayKey error:', error);
       logger.warn(`Razorpay validation failed for tenant ${tenantId}. Error: ${error.message}`);
-      throw new Error('Invalid Razorpay credentials. Validation request failed.');
+      throw IntegrationErrors.CREDENTIAL_INVALID();
     }
 
     const version = 1;
@@ -323,7 +328,7 @@ export class IntegrationService {
   async getDecryptedRazorpayConfig(tenantId: string): Promise<{ keyId: string, keySecret: string, webhookSecret: string }> {
     const integration = await this.repo.getIntegration(tenantId, 'razorpay');
     if (!integration) {
-      throw IntegrationErrors.NOT_CONFIGURED;
+      throw IntegrationErrors.NOT_CONFIGURED();
     }
 
     try {
@@ -338,7 +343,7 @@ export class IntegrationService {
       return JSON.parse(decryptedString);
     } catch (e) {
       logger.error(`Decryption failed for tenant ${tenantId} Razorpay integration.`);
-      throw IntegrationErrors.CREDENTIAL_INVALID;
+      throw IntegrationErrors.CREDENTIAL_INVALID();
     }
   }
 }

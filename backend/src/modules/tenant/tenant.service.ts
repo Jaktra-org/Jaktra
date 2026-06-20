@@ -1,5 +1,6 @@
 import type { TenantRepository } from '../tenant/tenant.repository.js';
 import type { Tenant } from '../../db/index.js';
+import { TenantError } from '../../shared/errors/index.js';
 export interface CreateTenantInput {
   name: string;
   slug: string;
@@ -19,14 +20,5 @@ export class TenantService {
       throw new TenantError('Tenant not found', 404);
     }
     return tenant;
-  }
-}
-export class TenantError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-  ) {
-    super(message);
-    this.name = 'TenantError';
   }
 }

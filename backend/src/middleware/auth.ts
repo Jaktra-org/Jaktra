@@ -7,7 +7,7 @@ export function createAuthMiddleware(authService: AuthService) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const header = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Missing or malformed Authorization header' });
+      next(new AuthError('Missing or malformed Authorization header', 401));
       return;
     }
 
@@ -17,11 +17,7 @@ export function createAuthMiddleware(authService: AuthService) {
       (req as AuthenticatedRequest).user = await authService.verifyAndFetchUser(token);
       next();
     } catch (err) {
-      if (err instanceof AuthError) {
-        res.status(401).json({ error: err.message });
-      } else {
-        next(err);
-      }
+      next(err);
     }
   };
 }

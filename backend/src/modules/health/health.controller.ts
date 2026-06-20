@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { sql } from 'drizzle-orm';
 import type { DatabaseClient } from '../../db/index.js';
 import type { AimlService } from '../agent/aiml.service.js';
+import { logger } from '../../shared/logger.js';
 
 export interface HealthResponse {
   status: 'ok' | 'degraded' | 'unhealthy';
@@ -50,7 +51,8 @@ export class HealthController {
       if (!this.db) return false;
       await this.db.execute(sql`SELECT 1`);
       return true;
-    } catch {
+    } catch (err) {
+      logger.error('Database health check failed', err);
       return false;
     }
   }
@@ -60,7 +62,8 @@ export class HealthController {
       if (!this.aimlService) return true; // not configured = not a failure
       const status = await this.aimlService.getAgentStatus();
       return status.status !== 'down';
-    } catch {
+    } catch (err) {
+      logger.error('AIML Health check failed', err);
       return false;
     }
   }

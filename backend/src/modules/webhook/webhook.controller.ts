@@ -5,7 +5,7 @@ import { logger } from '../../shared/logger.js';
 import type { SendgridWebhookService } from './providers/sendgrid.webhook.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
 import type { PaymentService } from '../payment/payment.service.js';
-import { AppError, AuthError, ValidationError, NotFoundError } from '../../shared/errors/index.js';
+import { AppError, AuthError, ValidationError, NotFoundError, ForbiddenError } from '../../shared/errors/index.js';
 
 export class WebhookController {
   constructor(
@@ -29,7 +29,7 @@ export class WebhookController {
 
     if (!this.sendgridService.hasVerificationKey()) {
       logger.warn('SendGrid webhook received but no public key configured — rejecting');
-      next(new AuthError('Webhook signature verification not configured', 403));
+      next(new ForbiddenError('Webhook signature verification not configured'));
       return;
     }
 
@@ -105,9 +105,9 @@ export class WebhookController {
       const result = await this.paymentService.processPaymentCaptured(tenantId as string, provider as any, payload, rawBody, signature as string);
       res.status(200).json(result);
     } catch (error: any) {
-      logger.error(`Failed to process payment capture: ${error instanceof Error ? error.stack : JSON.stringify(error)}`);
+      logger.warn(`Failed to process payment capture webhook: ${error.message || String(error)}`);
       if (error.message === 'Invalid signature' || error.message?.includes('not registered')) {
-        next(new AuthError(error.message, 401));
+        next(new AuthError('Payment capture webhook verification failed', 401, error.message));
         return;
       }
       next(error);

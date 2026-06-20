@@ -152,12 +152,14 @@ export class InvoiceController {
       const daysOverdue = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
       let paymentLink = null;
+      let paymentWarning = null;
       try {
         if (this.paymentService) {
           paymentLink = await this.paymentService.getLatestPaymentLink(id, tenantId);
         }
-      } catch (e) {
+      } catch (e: any) {
         logger.error('Failed to get payment link for invoice', { error: e });
+        paymentWarning = 'Failed to fetch latest payment link status';
       }
 
       res.status(200).json({ 
@@ -166,7 +168,8 @@ export class InvoiceController {
         paymentLink: paymentLink ? {
           url: paymentLink.paymentUrl,
           status: paymentLink.status,
-        } : null
+        } : null,
+        warning: paymentWarning
       });
     } catch (error: any) {
       next(error);

@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../shared/types/auth.js';
+import { ForbiddenError } from '../shared/errors/index.js';
 
 export function tenantScoped(req: Request, res: Response, next: NextFunction): void {
   const { tenantId } = (req as AuthenticatedRequest).user;
 
   if (!tenantId) {
-    res.status(403).json({ error: 'No tenant context in token' });
+    next(new ForbiddenError('No tenant context in token'));
     return;
   }
 

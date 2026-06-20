@@ -1,4 +1,6 @@
+import crypto from 'crypto';
 import { logger } from '../../shared/logger.js';
+import { AimlServiceError } from '../../shared/errors/index.js';
 
 export interface AimlHealthResponse {
   status: 'ok' | 'degraded' | 'down';
@@ -197,12 +199,3 @@ export class AimlService {
   }
 }
 
-export class AimlServiceError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-  ) {
-    super(message);
-    this.name = 'AimlServiceError';
-  }
-}

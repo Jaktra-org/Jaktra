@@ -277,7 +277,7 @@ export function parseCsvBuffer(buffer: Buffer): CsvParseResult {
     for (const err of parsed.errors) {
       errors.push({
         row: (err.row ?? 0) + 2,
-        errors: [err.message],
+        errors: ['Unable to parse CSV row correctly'],
       });
     }
   }

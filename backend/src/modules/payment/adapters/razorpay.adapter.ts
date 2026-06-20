@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { IPaymentGateway, WebhookEventPayload } from '../gateway.interface.js';
 import { logger } from '../../../shared/logger.js';
+import { ValidationError, ExternalServiceError } from '../../../shared/errors/index.js';
 
 export class RazorpayAdapter implements IPaymentGateway {
   getProviderName(): string {
@@ -70,7 +71,7 @@ export class RazorpayAdapter implements IPaymentGateway {
   ): Promise<{ paymentUrl: string; providerPaymentLinkId: string; providerOrderId?: string }> {
     const { keyId, keySecret } = credentials;
     if (!keyId || !keySecret) {
-      throw new Error('Razorpay credentials missing keyId or keySecret');
+      throw new ValidationError('Razorpay credentials missing keyId or keySecret');
     }
 
     const amountInPaise = Math.round(amount * 100);
@@ -96,7 +97,7 @@ export class RazorpayAdapter implements IPaymentGateway {
     if (!response.ok) {
       const errorBody = await response.text();
       logger.error('Razorpay createPaymentLink failed', { status: response.status, body: errorBody });
-      throw new Error(`Razorpay API error: ${response.status} ${errorBody}`);
+      throw new ExternalServiceError('Failed to generate Razorpay payment link', `Razorpay API error: ${response.status} ${errorBody}`);
     }
 
     const data = await response.json() as any;

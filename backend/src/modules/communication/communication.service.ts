@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { CommunicationRepository } from './communication.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
 import type { Communication } from '../../db/index.js';
+import { CommunicationError } from '../../shared/errors/index.js';
 
 export const createCommunicationSchema = z.object({
   invoiceId: z.string().uuid(),
@@ -167,12 +168,3 @@ export class CommunicationService {
   }
 }
 
-export class CommunicationError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-  ) {
-    super(message);
-    this.name = 'CommunicationError';
-  }
-}

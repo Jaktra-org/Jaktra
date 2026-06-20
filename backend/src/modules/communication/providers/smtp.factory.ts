@@ -2,6 +2,7 @@ import * as dns from 'dns/promises';
 import net from 'net';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
+import { ValidationError, ExternalServiceError } from '../../../shared/errors/index.js';
 
 export const SmtpConfigSchema = z.object({
   payloadVersion: z.literal(1),
@@ -58,14 +59,14 @@ export class SmtpConnectionFactory {
   static async validatePayload(payload: unknown): Promise<SmtpConfig> {
     const result = SmtpConfigSchema.safeParse(payload);
     if (!result.success) {
-      throw new Error(`Invalid SMTP configuration payload: ${result.error.message}`);
+      throw new ValidationError(`Invalid SMTP configuration payload: ${result.error.message}`);
     }
     return result.data;
   }
 
   static async resolveAndValidateHost(host: string): Promise<string> {
     if (net.isIP(host)) {
-      throw new Error('IP literals are not allowed. Please provide a valid hostname.');
+      throw new ValidationError('IP literals are not allowed. Please provide a valid hostname.');
     }
 
     let records4: string[] = [];
@@ -75,7 +76,7 @@ export class SmtpConnectionFactory {
       records4 = await dns.resolve4(host);
     } catch (e: any) {
       if (e.code !== 'ENODATA' && e.code !== 'ENOTFOUND') {
-        throw new Error(`DNS resolution failed for ${host}: ${e.message}`);
+        throw new ExternalServiceError(`DNS resolution failed for ${host}: ${e.message}`);
       }
     }
 
@@ -83,26 +84,26 @@ export class SmtpConnectionFactory {
       records6 = await dns.resolve6(host);
     } catch (e: any) {
       if (e.code !== 'ENODATA' && e.code !== 'ENOTFOUND') {
-        throw new Error(`DNS resolution failed for ${host}: ${e.message}`);
+        throw new ExternalServiceError(`DNS resolution failed for ${host}: ${e.message}`);
       }
     }
 
     const allRecords = [...records4, ...records6];
 
     if (allRecords.length === 0) {
-      throw new Error(`No DNS records found for host ${host}`);
+      throw new ValidationError(`No DNS records found for host ${host}`);
     }
 
     let hasSafe = false;
     for (const ip of allRecords) {
       if (isProhibitedIP(ip)) {
-        throw new Error(`Host ${host} resolved to a prohibited IP address: ${ip}`);
+        throw new ValidationError(`Host ${host} resolved to a prohibited IP address: ${ip}`);
       }
       hasSafe = true;
     }
 
     if (!hasSafe) {
-      throw new Error(`No safe public IP addresses found for host ${host}`);
+      throw new ValidationError(`No safe public IP addresses found for host ${host}`);
     }
 
     // Prefer IPv4 for compatibility, return the first one
@@ -114,10 +115,10 @@ export class SmtpConnectionFactory {
     
     // Strict port and TLS mode validation
     if (validConfig.port === 465 && validConfig.securityMode !== 'implicit_tls') {
-      throw new Error('Port 465 requires implicit_tls securityMode');
+      throw new ValidationError('Port 465 requires implicit_tls securityMode');
     }
     if ((validConfig.port === 587 || validConfig.port === 2525) && validConfig.securityMode !== 'starttls') {
-      throw new Error(`Port ${validConfig.port} requires starttls securityMode`);
+      throw new ValidationError(`Port ${validConfig.port} requires starttls securityMode`);
     }
 
     const pinnedIp = await this.resolveAndValidateHost(validConfig.host);
@@ -152,7 +153,7 @@ export class SmtpConnectionFactory {
     return new Promise<T>((resolve, reject) => {
       const timer = setTimeout(() => {
         transporter.close();
-        reject(new Error(`SMTP operation timed out after ${timeoutMs}ms`));
+        reject(new ExternalServiceError(`SMTP operation timed out after ${timeoutMs}ms`));
       }, timeoutMs);
 
       operation()

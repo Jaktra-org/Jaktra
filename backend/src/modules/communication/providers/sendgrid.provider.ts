@@ -1,5 +1,6 @@
 import sgMail from '@sendgrid/mail';
 import { logger } from '../../../shared/logger.js';
+import { ValidationError, ExternalServiceError } from '../../../shared/errors/index.js';
 
 export class SendgridProvider {
   constructor(private readonly sendgridApiKey?: string) {
@@ -27,7 +28,7 @@ export class SendgridProvider {
 
     if (!this.sendgridApiKey) {
       logger.warn(`[LIVE] Cannot send email to ${to} - SendGrid API Key is missing. Check .env config.`);
-      throw new Error('SendGrid API key not configured globally');
+      throw new ValidationError('SendGrid API key not configured globally');
     }
 
     try {
@@ -36,7 +37,7 @@ export class SendgridProvider {
       return true;
     } catch (error: unknown) {
       logger.error(`[LIVE] Failed to send email to ${to}: ${(error as Error).message}`);
-      throw new Error(`Email sending failed: ${(error as Error).message}`);
+      throw new ExternalServiceError('Email sending failed', (error as Error).message);
     }
   }
 }

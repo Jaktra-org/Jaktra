@@ -7,7 +7,7 @@ import { NotFoundError } from '../../shared/errors/index.js';
 export class DlqRepository {
   constructor(private readonly db: DatabaseClient) {}
   
-  async recordFailure(invoiceId: string, tenantId: string, errorMsg: string) {
+  async recordFailure(invoiceId: string, tenantId: string, errorMsg: string, technicalMsg?: string) {
     const invoice = await this.db
       .select({ id: invoices.id })
       .from(invoices)
@@ -28,7 +28,7 @@ export class DlqRepository {
         consecutiveFailures: 1,
         lastError: errorMsg,
         lastErrorDisplay: displayError,
-        lastErrorTechnical: errorMsg,
+        lastErrorTechnical: technicalMsg || errorMsg,
         firstFailure: new Date(),
         lastFailure: new Date(),
       })
@@ -38,7 +38,7 @@ export class DlqRepository {
           consecutiveFailures: sql`${dlqEntries.consecutiveFailures} + 1`,
           lastError: errorMsg,
           lastErrorDisplay: displayError,
-          lastErrorTechnical: errorMsg,
+          lastErrorTechnical: technicalMsg || errorMsg,
           lastFailure: new Date(),
         },
       })

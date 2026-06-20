@@ -100,3 +100,76 @@ export class RateLimitError extends AppError {
     });
   }
 }
+
+export class ForbiddenError extends AppError {
+  constructor(displayMessage = 'Insufficient permissions', technicalMessage?: string) {
+    super({
+      statusCode: 403,
+      errorCode: 'FORBIDDEN',
+      displayMessage,
+      technicalMessage: technicalMessage || displayMessage,
+    });
+  }
+}
+
+export class TenantError extends AppError {
+  constructor(message: string, statusCode: number) {
+    let errorCode = 'TENANT_ERROR';
+    if (statusCode === 409) errorCode = 'CONFLICT';
+    if (statusCode === 404) errorCode = 'NOT_FOUND';
+    super({
+      statusCode,
+      errorCode,
+      displayMessage: message,
+      technicalMessage: message,
+    });
+    this.name = 'TenantError';
+  }
+}
+
+export class CommunicationError extends AppError {
+  constructor(message: string, statusCode: number) {
+    super({
+      statusCode,
+      errorCode: 'COMMUNICATION_ERROR',
+      displayMessage: message,
+      technicalMessage: message,
+    });
+    this.name = 'CommunicationError';
+  }
+}
+
+export class AimlServiceError extends AppError {
+  constructor(message: string, statusCode: number) {
+    super({
+      statusCode,
+      errorCode: 'EXTERNAL_SERVICE_ERROR',
+      displayMessage: 'AI service temporarily unavailable',
+      technicalMessage: message,
+    });
+    this.name = 'AimlServiceError';
+  }
+}
+
+export class IntegrationError extends AppError {
+  constructor(message: string, code: string, statusCode: number = 400) {
+    super({
+      statusCode,
+      errorCode: code,
+      displayMessage: message,
+      technicalMessage: message,
+    });
+    this.name = 'IntegrationError';
+  }
+}
+
+export const IntegrationErrors = {
+  NOT_CONFIGURED: () => new IntegrationError('Integration is not configured', 'INTEGRATION_NOT_CONFIGURED', 400),
+  CREDENTIAL_INVALID: () => new IntegrationError('Integration credentials are invalid or unauthorized', 'INTEGRATION_CREDENTIAL_INVALID', 422),
+  INSUFFICIENT_SCOPE: () => new IntegrationError('Integration key lacks required scopes', 'INTEGRATION_INSUFFICIENT_SCOPE', 403),
+  SENDER_UNVERIFIED: () => new IntegrationError('Sender identity is unverified in SendGrid', 'INTEGRATION_SENDER_UNVERIFIED', 403),
+  PROVIDER_UNAVAILABLE: () => new IntegrationError('Integration provider is temporarily unavailable', 'INTEGRATION_PROVIDER_UNAVAILABLE', 502),
+  RATE_LIMITED: () => new IntegrationError('Too many requests. Please try again later.', 'INTEGRATION_RATE_LIMITED', 429),
+};
+
+
