@@ -46,7 +46,13 @@ export class IntegrationController {
       }
 
       await this.integrationService.validateAndSaveSendgridKey(tenantId, apiKey);
-      
+
+      // Auto-select as default if no provider is currently set
+      const settings = await this.communicationService.getSettings(tenantId);
+      if (!settings?.defaultEmailProvider) {
+        await this.communicationService.setDefaultEmailProvider(tenantId, 'sendgrid');
+      }
+
       res.json({ message: 'SendGrid integration saved successfully' });
     } catch (error) {
       next(error);
@@ -75,12 +81,18 @@ export class IntegrationController {
     try {
       const tenantId = (req as any).user.tenantId;
       await this.integrationService.deleteSendgridIntegration(tenantId);
-      
+
       const settings = await this.communicationService.getSettings(tenantId);
       if (settings && (settings as any).defaultEmailProvider === 'sendgrid') {
-         await this.communicationService.setDefaultEmailProvider(tenantId, null);
+        // If SMTP is configured and valid, auto-switch to it
+        const smtpStatus = await this.integrationService.getIntegrationStatus(tenantId, 'smtp');
+        if (smtpStatus.isConfigured && smtpStatus.lastValidationResult === 'valid') {
+          await this.communicationService.setDefaultEmailProvider(tenantId, 'smtp');
+        } else {
+          await this.communicationService.setDefaultEmailProvider(tenantId, null);
+        }
       }
-      
+
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -90,7 +102,7 @@ export class IntegrationController {
   saveSmtpConfig = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tenantId = (req as any).user.tenantId;
-      
+
       const bodyStr = JSON.stringify(req.body);
       if (bodyStr.length > 5000) {
         next(new ValidationError('Request body too large'));
@@ -98,7 +110,13 @@ export class IntegrationController {
       }
 
       await this.integrationService.validateAndSaveSmtpConfig(tenantId, req.body);
-      
+
+      // Auto-select as default if no provider is currently set
+      const settings = await this.communicationService.getSettings(tenantId);
+      if (!settings?.defaultEmailProvider) {
+        await this.communicationService.setDefaultEmailProvider(tenantId, 'smtp');
+      }
+
       res.json({ message: 'SMTP connection verified and saved successfully' });
     } catch (error) {
       next(error);
@@ -147,10 +165,16 @@ export class IntegrationController {
     try {
       const tenantId = (req as any).user.tenantId;
       await this.integrationService.deleteSmtpIntegration(tenantId);
-      
+
       const settings = await this.communicationService.getSettings(tenantId);
       if (settings && (settings as any).defaultEmailProvider === 'smtp') {
-         await this.communicationService.setDefaultEmailProvider(tenantId, null);
+        // If SendGrid is configured and valid, auto-switch to it
+        const sendgridStatus = await this.integrationService.getIntegrationStatus(tenantId, 'sendgrid');
+        if (sendgridStatus.isConfigured && sendgridStatus.lastValidationResult === 'valid') {
+          await this.communicationService.setDefaultEmailProvider(tenantId, 'sendgrid');
+        } else {
+          await this.communicationService.setDefaultEmailProvider(tenantId, null);
+        }
       }
 
       res.status(204).send();
