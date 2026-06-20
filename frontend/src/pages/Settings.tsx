@@ -480,9 +480,45 @@ function EmailSettings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Agent Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Agent Preferences</CardTitle>
+          <CardDescription>Control how the AI agent behaves when sending follow-up emails.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-900">Payment link warning</p>
+              <p className="text-xs text-slate-500 mt-1">
+                When enabled, the agent will warn you before sending emails without a payment link
+                (i.e. when no payment integration is configured). You previously dismissed this warning
+                — re-enable it here to see it again.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                if (settings?.skipPaymentWarning) {
+                  mutation.mutate({ ...formData, skipPaymentWarning: false });
+                }
+              }}
+              disabled={!settings?.skipPaymentWarning || mutation.isPending}
+              className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                settings?.skipPaymentWarning
+                  ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default'
+              }`}
+            >
+              {settings?.skipPaymentWarning ? 'Re-enable Warning' : '✓ Warning Active'}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
 
 
 

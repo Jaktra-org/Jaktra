@@ -181,6 +181,7 @@ export interface TenantSettings {
   scheduleHour: number;
   idempotencyWindowHours: number;
   defaultEmailProvider: 'sendgrid' | 'smtp' | null;
+  skipPaymentWarning: boolean;
 }
 
 export interface BaseIntegrationStatus {

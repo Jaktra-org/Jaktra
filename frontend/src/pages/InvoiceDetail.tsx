@@ -5,8 +5,11 @@ import { invoiceService } from "../services/invoice";
 import { eventService } from "../services/event";
 import { agentService } from "../services/agent";
 import { communicationService } from "../services/communication";
+import { settingsService } from "../services/settings";
 import { Badge } from "../components/ui/Badge";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
+import { PaymentWarningModal } from "../components/common/PaymentWarningModal";
+import { usePaymentWarning } from "../hooks/usePaymentWarning";
 import { useAuth } from "../contexts/AuthContext";
 import { EditInvoiceModal } from "../components/invoices/EditInvoiceModal";
 import { CommunicationList } from "../components/invoices/CommunicationList";
@@ -65,6 +68,20 @@ export function InvoiceDetail() {
     enabled: !!id,
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ['tenant-settings'],
+    queryFn: settingsService.getSettings,
+  });
+
+  const { data: integrations } = useQuery({
+    queryKey: ['integrations'],
+    queryFn: settingsService.getIntegrations,
+    retry: false,
+  });
+
+  const { showModal: showPaymentModal, runWithWarningCheck, handleConfirm: handlePaymentConfirm, handleCancel: handlePaymentCancel } =
+    usePaymentWarning({ integrations, settings });
+
   const statusMutation = useMutation({
     mutationFn: (status: string) => invoiceService.updateInvoiceStatus(id!, status),
     onMutate: () => setError(null),
@@ -93,6 +110,10 @@ export function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
     }
   });
+
+  const handleTriggerFollowup = () => {
+    runWithWarningCheck(() => agentMutation.mutate());
+  };
 
   const generateLinkMutation = useMutation({
     mutationFn: () => invoiceService.generatePaymentLink(id!),
@@ -239,7 +260,7 @@ export function InvoiceDetail() {
                   </button>
 
                   <button
-                    onClick={() => agentMutation.mutate()}
+                    onClick={handleTriggerFollowup}
                     disabled={agentMutation.isPending}
                     className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2 disabled:opacity-50"
                   >
@@ -447,6 +468,13 @@ export function InvoiceDetail() {
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           invoice={invoice}
+        />
+      )}
+
+      {showPaymentModal && (
+        <PaymentWarningModal
+          onConfirm={handlePaymentConfirm}
+          onCancel={handlePaymentCancel}
         />
       )}
     </div>

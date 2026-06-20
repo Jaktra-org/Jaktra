@@ -13,6 +13,7 @@ export const updateSettingsSchema = z.object({
   timezone: z.string().optional(),
   scheduleHour: z.number().min(0).max(23).optional(),
   idempotencyWindowHours: z.number().min(0).optional(),
+  skipPaymentWarning: z.boolean().optional(),
 });
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

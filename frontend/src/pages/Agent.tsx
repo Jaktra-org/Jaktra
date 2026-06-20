@@ -5,9 +5,10 @@ import { settingsService } from '../services/settings';
 import { RunList } from '../components/agent/RunList';
 import { ActivityFeed } from '../components/agent/ActivityFeed';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { PaymentWarningModal } from '../components/common/PaymentWarningModal';
+import { usePaymentWarning } from '../hooks/usePaymentWarning';
 import { useAuth } from '../contexts/AuthContext';
 import { Bot, Play, AlertCircle, Loader2, AlertTriangle, Settings } from 'lucide-react';
-
 import { getErrorMessage } from '../utils/error-utils';
 
 export function Agent() {
@@ -25,6 +26,12 @@ export function Agent() {
     queryFn: settingsService.getSettings,
   });
 
+  const { data: integrations } = useQuery({
+    queryKey: ['integrations'],
+    queryFn: settingsService.getIntegrations,
+    retry: false,
+  });
+
   // Email is ready only when both a provider and a sender email are configured
   const emailReady = !!(settings?.defaultEmailProvider && settings?.senderEmail);
 
@@ -37,8 +44,11 @@ export function Agent() {
     },
   });
 
+  const { showModal, runWithWarningCheck, handleConfirm, handleCancel } =
+    usePaymentWarning({ integrations, settings });
+
   const handleRunAgent = () => {
-    runMutation.mutate();
+    runWithWarningCheck(() => runMutation.mutate());
   };
 
   const isRunning = runsResponse?.runs[0]?.status === 'running' || runMutation.isPending;
@@ -77,7 +87,7 @@ export function Agent() {
         </div>
       </div>
 
-      {/* Email not configured warning — shown before the user tries anything */}
+      {/* Email not configured warning */}
       {settings && !emailReady && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
@@ -172,6 +182,14 @@ export function Agent() {
           <ActivityFeed isRunning={isRunning} />
         </div>
       </div>
+
+      {/* Payment warning modal — shown once per batch run when Razorpay is not configured */}
+      {showModal && (
+        <PaymentWarningModal
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
+      )}
     </div>
   );
 }
