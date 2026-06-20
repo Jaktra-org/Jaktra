@@ -148,6 +148,7 @@ export function InvoiceDetail() {
         return <CheckCircle2 className="w-4 h-4 text-green-600" />;
       case 'legal_escalated':
       case 'dlq_added':
+      case 'halted':
         return <AlertTriangle className="w-4 h-4 text-red-600" />;
       default:
         return <MessageSquare className="w-4 h-4 text-slate-600" />;
@@ -173,6 +174,48 @@ export function InvoiceDetail() {
         return 'Invoice escalated to legal due to aging.';
       case 'dlq_added':
         return `Added to Dead Letter Queue: ${payload?.reason || 'Unknown error'}`;
+      case 'halted':
+        if (payload?.error) {
+          return (
+            <div>
+              <p className="font-semibold text-red-600">Follow-up halted due to error</p>
+              <p className="text-xs text-slate-600 mt-1 bg-red-50 p-2 border border-red-100 rounded font-mono">
+                {payload.error}
+              </p>
+            </div>
+          );
+        }
+        if (payload?.reason === 'no_automated_channel') {
+          return (
+            <div>
+              <p className="font-semibold text-slate-800">Follow-up halted</p>
+              <p className="text-xs text-slate-600 mt-1">
+                No automated communication channels configured for the <span className="font-mono bg-slate-100 px-1 rounded">{payload.tier || 'unknown'}</span> tier.
+              </p>
+            </div>
+          );
+        }
+        if (payload?.reason && payload.reason !== 'idempotency_skip') {
+          const isIdempotency = typeof payload.reason === 'string' && (payload.reason.includes('sent ') || payload.reason.includes('ago'));
+          if (isIdempotency) {
+            return (
+              <div>
+                <p className="font-semibold text-slate-800">Follow-up skipped</p>
+                <p className="text-xs text-slate-600 mt-1">
+                  Skipped because a follow-up was recently sent ({payload.reason}).
+                </p>
+              </div>
+            );
+          }
+        }
+        return (
+          <div>
+            <p className="font-semibold text-slate-800">Follow-up halted</p>
+            <p className="text-xs text-slate-600 mt-1">
+              Reason: {payload?.reason || 'Unknown reason'}
+            </p>
+          </div>
+        );
       default:
         return eventType.replace('_', ' ');
     }
