@@ -1,4 +1,4 @@
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 import { agentRuns, type AgentRun, type NewAgentRun } from '../../db/schema.js';
 import type { DatabaseClient } from '../../db/index.js';
 
@@ -17,6 +17,16 @@ export class AgentRepository {
       .where(and(eq(agentRuns.id, id), eq(agentRuns.tenantId, tenantId)))
       .returning();
     return updated;
+  }
+
+  async recordBounce(id: string, tenantId: string): Promise<void> {
+    await this.db
+      .update(agentRuns)
+      .set({
+        emailsSent: sql`GREATEST(0, ${agentRuns.emailsSent} - 1)`,
+        errors: sql`${agentRuns.errors} + 1`,
+      })
+      .where(and(eq(agentRuns.id, id), eq(agentRuns.tenantId, tenantId)));
   }
 
   async getRuns(tenantId: string, limit = 50, offset = 0): Promise<AgentRun[]> {

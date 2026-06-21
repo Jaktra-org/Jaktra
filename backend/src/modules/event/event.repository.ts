@@ -1,4 +1,4 @@
-import { eq, asc, desc, sql } from 'drizzle-orm';
+import { eq, asc, desc, sql, and } from 'drizzle-orm';
 import { events, invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Event, NewEvent } from '../../db/index.js';
@@ -12,6 +12,21 @@ export class EventRepository {
       .from(events)
       .where(eq(events.invoiceId, invoiceId))
       .orderBy(asc(events.createdAt));
+  }
+
+  async findLatestEmailSent(invoiceId: string): Promise<Event | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(events)
+      .where(
+        and(
+          eq(events.invoiceId, invoiceId),
+          eq(events.eventType, 'email_sent')
+        )
+      )
+      .orderBy(desc(events.createdAt))
+      .limit(1);
+    return row;
   }
 
   async findByRunId(runId: string): Promise<Event[]> {

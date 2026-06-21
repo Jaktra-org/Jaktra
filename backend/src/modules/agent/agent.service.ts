@@ -194,7 +194,19 @@ export class AgentService {
             continue;
           }
 
-          // Generation succeeded — now actually send the email
+          // Create the communication record first in 'pending' status
+          const commRecord = await this.communicationRepo.create({
+            tenantId,
+            invoiceId: inv.id,
+            channel: channel as 'email' | 'sms' | 'whatsapp',
+            subject: resp.subject ?? null,
+            body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
+            status: 'pending',
+            sentAt: null,
+            error: null,
+          });
+
+          // Succeeded in generation — now actually send the email
           let sendError: string | undefined;
           try {
             await this.communicationService.send({
@@ -204,6 +216,8 @@ export class AgentService {
               html: resp.htmlBody ?? resp.bodyPreview ?? '',
               channel: channel as 'email',
               invoiceId: inv.id,
+              communicationId: commRecord.id,
+              runId,
             });
           } catch (sendErr: any) {
             sendError = sendErr?.message ?? String(sendErr);
@@ -212,16 +226,10 @@ export class AgentService {
 
           const now = new Date();
           if (!sendError) {
-            // Record successful communication
-            await this.communicationRepo.create({
-              tenantId,
-              invoiceId: inv.id,
-              channel: channel as 'email' | 'sms' | 'whatsapp',
-              subject: resp.subject ?? null,
-              body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
+            // Update successful communication
+            await this.communicationRepo.update(commRecord.id, {
               status: 'sent',
               sentAt: now,
-              error: null,
             });
             // Update invoice followup tracking
             await this.invoiceRepo.update(inv.id, tenantId, {
@@ -232,28 +240,22 @@ export class AgentService {
             await this.eventService.emitEvent(
               inv.id,
               'email_sent',
-              { subject: resp.subject, bodyPreview: resp.bodyPreview, channel, runId },
+              { subject: resp.subject, bodyPreview: resp.bodyPreview, channel, runId, communicationId: commRecord.id },
               'ai-agent',
               tenantId
             );
             await this.dlqService.clearFailure(inv.id, tenantId).catch(() => {});
           } else {
-            // Record failed delivery
-            errorsCount++;
-            await this.communicationRepo.create({
-              tenantId,
-              invoiceId: inv.id,
-              channel: channel as 'email' | 'sms' | 'whatsapp',
-              subject: resp.subject ?? null,
-              body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
+            // Update failed communication
+            await this.communicationRepo.update(commRecord.id, {
               status: 'failed',
-              sentAt: null,
               error: sendError,
             });
+            errorsCount++;
             await this.eventService.emitEvent(
               inv.id,
               'email_generated',
-              { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, runId },
+              { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, runId, communicationId: commRecord.id },
               'ai-agent',
               tenantId
             );
@@ -413,6 +415,18 @@ export class AgentService {
           continue;
         }
 
+        // Create the communication record first in 'pending' status
+        const commRecord = await this.communicationRepo.create({
+          tenantId,
+          invoiceId: invoice.id,
+          channel: channel as 'email' | 'sms' | 'whatsapp',
+          subject: resp.subject ?? null,
+          body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
+          status: 'pending',
+          sentAt: null,
+          error: null,
+        });
+
         // Generation succeeded — now actually send
         let sendError: string | undefined;
         try {
@@ -423,6 +437,7 @@ export class AgentService {
             html: resp.htmlBody ?? resp.bodyPreview ?? '',
             channel: channel as 'email',
             invoiceId: invoice.id,
+            communicationId: commRecord.id,
           });
         } catch (sendErr: any) {
           sendError = sendErr?.message ?? String(sendErr);
@@ -431,15 +446,9 @@ export class AgentService {
 
         const now = new Date();
         if (!sendError) {
-          await this.communicationRepo.create({
-            tenantId,
-            invoiceId: invoice.id,
-            channel: channel as 'email' | 'sms' | 'whatsapp',
-            subject: resp.subject ?? null,
-            body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
+          await this.communicationRepo.update(commRecord.id, {
             status: 'sent',
             sentAt: now,
-            error: null,
           });
           await this.invoiceRepo.update(invoice.id, tenantId, {
             followupCount: invoice.followupCount + 1,
@@ -448,26 +457,20 @@ export class AgentService {
           await this.eventService.emitEvent(
             invoice.id,
             'email_sent',
-            { subject: resp.subject, bodyPreview: resp.bodyPreview, channel },
+            { subject: resp.subject, bodyPreview: resp.bodyPreview, channel, communicationId: commRecord.id },
             'ai-agent',
             tenantId
           );
           await this.dlqService.clearFailure(invoice.id, tenantId).catch(() => {});
         } else {
-          await this.communicationRepo.create({
-            tenantId,
-            invoiceId: invoice.id,
-            channel: channel as 'email' | 'sms' | 'whatsapp',
-            subject: resp.subject ?? null,
-            body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
+          await this.communicationRepo.update(commRecord.id, {
             status: 'failed',
-            sentAt: null,
             error: sendError,
           });
           await this.eventService.emitEvent(
             invoice.id,
             'email_generated',
-            { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel },
+            { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, communicationId: commRecord.id },
             'ai-agent',
             tenantId
           );

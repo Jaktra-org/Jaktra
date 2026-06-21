@@ -93,6 +93,13 @@ export class CommunicationRepository {
       .where(eq(communications.id, id));
   }
 
+  async update(id: string, updates: Partial<Omit<Communication, 'id' | 'createdAt'>>): Promise<void> {
+    await this.db
+      .update(communications)
+      .set(updates)
+      .where(eq(communications.id, id));
+  }
+
   // Provider Settings Management (e.g. Email Settings)
   async getSettings(tenantId: string): Promise<TenantSettings | undefined> {
     const [settings] = await this.db

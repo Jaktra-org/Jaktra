@@ -14,7 +14,8 @@ export class SendgridProvider {
     from: { name: string; email: string },
     replyTo: { email: string } | undefined,
     subject: string,
-    html: string
+    html: string,
+    customArgs?: Record<string, string>
   ): Promise<boolean> {
     const msg = {
       to,
@@ -22,6 +23,7 @@ export class SendgridProvider {
       replyTo,
       subject,
       html,
+      customArgs,
     };
 
 

@@ -49,7 +49,7 @@ export class SendgridWebhookService {
     }
 
     for (const event of events) {
-      const { event: eventType, communication_id, invoice_id, tenant_id, timestamp: eventTimestamp } = event;
+      const { event: eventType, communication_id, invoice_id, tenant_id, run_id, timestamp: eventTimestamp } = event;
 
       if (!communication_id || !invoice_id) {
         continue;
@@ -64,7 +64,8 @@ export class SendgridWebhookService {
           invoice_id,
           'opened',
           new Date(eventTimestamp * 1000),
-          event
+          event,
+          run_id
         );
       } else if (['clicked', 'click'].includes(eventType)) {
         await this.communicationService.handleEmailEvent(
@@ -73,7 +74,8 @@ export class SendgridWebhookService {
           invoice_id,
           'clicked',
           new Date(eventTimestamp * 1000),
-          event
+          event,
+          run_id
         );
       } else if (['bounced', 'bounce'].includes(eventType)) {
         await this.communicationService.handleEmailEvent(
@@ -82,7 +84,8 @@ export class SendgridWebhookService {
           invoice_id,
           'bounced',
           new Date(eventTimestamp * 1000),
-          event
+          event,
+          run_id
         );
       } else if (['dropped', 'drop'].includes(eventType)) {
         await this.communicationService.handleEmailEvent(
@@ -91,7 +94,8 @@ export class SendgridWebhookService {
           invoice_id,
           'dropped',
           new Date(eventTimestamp * 1000),
-          event
+          event,
+          run_id
         );
       }
     }

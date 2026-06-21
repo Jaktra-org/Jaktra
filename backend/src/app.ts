@@ -130,10 +130,11 @@ export function createApp(config: AppConfig): Application {
     const settingsRepo = new SettingsRepository(config.db);
     const paymentRepo = new PaymentRepository(config.db);
     const dlqRepo = new DlqRepository(config.db);
+    const agentRepo = new AgentRepository(config.db);
 
     // Shared Services
     const integrationService = new IntegrationService(integrationRepo);
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventRepo, dlqRepo);
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventRepo, dlqRepo, agentRepo);
     
     const gatewayFactory = new PaymentGatewayFactory();
     gatewayFactory.register(new RazorpayAdapter());
@@ -197,7 +198,6 @@ export function createApp(config: AppConfig): Application {
 
         const idempotencyService = new IdempotencyService(communicationRepo);
 
-        const agentRepo = new AgentRepository(config.db);
         const agentService = new AgentService(agentRepo, aimlService, invoiceRepo, triageService, eventService, dlqService, idempotencyService, paymentService, communicationService, communicationRepo);
         app.locals.agentService = agentService;
         app.use('/api/agent', createAgentRouter(new AgentController(agentService), authMiddleware, tenantScoped));
