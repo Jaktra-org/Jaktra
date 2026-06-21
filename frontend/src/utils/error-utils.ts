@@ -9,11 +9,20 @@ export function getErrorMessage(error: unknown): string {
       message = data.error.message;
       if (data.error.details && (message === 'An unexpected error occurred' || message === 'Internal Server Error')) {
         if (import.meta.env.DEV) {
-          message = data.error.details;
+          console.error('[Dev Error Details]:', data.error.details);
+          if (data.error.stack) {
+            console.error('[Dev Error Stack]:', data.error.stack);
+          }
         }
       }
     } else if (data?.error?.details) {
-      message = import.meta.env.DEV ? data.error.details : 'Service unavailable';
+      if (import.meta.env.DEV) {
+        console.error('[Dev Error Details]:', data.error.details);
+        if (data.error.stack) {
+          console.error('[Dev Error Stack]:', data.error.stack);
+        }
+      }
+      message = 'Service unavailable';
     } else if (data?.message) {
       message = data.message;
     } else {

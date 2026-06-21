@@ -5,6 +5,26 @@ import { AppError } from '../shared/errors/index.js';
 import { logger } from '../shared/logger.js';
 import { mapErrorToDisplayMessage } from '../shared/utils/error-mapper.js';
 
+function sanitizeTechnicalMessage(message: string): string {
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('select ') ||
+    lower.includes('insert ') ||
+    lower.includes('update ') ||
+    lower.includes('delete ') ||
+    lower.includes('failed query') ||
+    lower.includes('postgres') ||
+    lower.includes('postgresql') ||
+    lower.includes('relation "') ||
+    lower.includes('table "') ||
+    lower.includes('column "') ||
+    lower.includes('drizzle')
+  ) {
+    return 'Database Error';
+  }
+  return message;
+}
+
 export function errorHandler(
   err: Error,
   req: Request,
@@ -72,9 +92,12 @@ export function errorHandler(
 
   // Dev only — never in production
   if (process.env.NODE_ENV !== 'production') {
-    errorResponse.error.details = technicalMessage;
-    errorResponse.error.stack = err.stack;
+    errorResponse.error.details = sanitizeTechnicalMessage(technicalMessage);
+    if (err.stack) {
+      errorResponse.error.stack = sanitizeTechnicalMessage(err.stack);
+    }
   }
 
   res.status(statusCode).json(errorResponse);
 }
+
