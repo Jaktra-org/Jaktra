@@ -38,6 +38,9 @@ export function getErrorMessage(error: unknown): string {
 
   // Normalize/sanitize raw technical messages
   const lowerMsg = message.toLowerCase();
+  if (lowerMsg.includes('querymx') || lowerMsg.includes('unreachable or invalid') || lowerMsg.includes('does not have valid mail servers')) {
+    return 'Recipient email domain is invalid or does not exist';
+  }
   if (lowerMsg.includes('circuit breaker is open') || lowerMsg.includes('circuit breaker open') || lowerMsg.includes('circuitbreaker')) {
     return 'AI service temporarily unavailable';
   }

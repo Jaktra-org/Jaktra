@@ -44,7 +44,7 @@ export class CommunicationService {
     private dlqRepo?: DlqRepository
   ) {}
 
-  async listByInvoice(invoiceId: string, tenantId: string): Promise<Communication[]> {
+  async listByInvoice(invoiceId: string, tenantId: string): Promise<any[]> {
     const invoice = await this.invoiceRepo.findById(invoiceId);
     if (!invoice || invoice.tenantId !== tenantId) {
       throw new CommunicationError('Invoice not found', 404);
@@ -126,6 +126,20 @@ export class CommunicationService {
     }
   }
 
+  async validateRecipientEmail(email: string): Promise<void> {
+    const domain = email.split('@')[1];
+    if (!domain) {
+      throw new CommunicationError(`Invalid recipient email address format: ${email}`, 400);
+    }
+    try {
+      const mx = await dns.resolveMx(domain);
+      if (!mx || mx.length === 0) {
+        throw new CommunicationError(`Recipient domain '${domain}' has no valid mail servers (MX records). Delivery will fail.`, 400);
+      }
+    } catch (err: any) {
+      throw new CommunicationError(`Recipient domain '${domain}' is unreachable or invalid: ${err.message}`, 400);
+    }
+  }
 
   async send(options: SendCommunicationOptions): Promise<boolean> {
     const { tenantId, to, subject, html, channel = 'email', invoiceId } = options;
@@ -138,18 +152,7 @@ export class CommunicationService {
     }
 
     // Validate email domain MX records synchronously to catch typos/non-existent domains
-    const domain = to.split('@')[1];
-    if (!domain) {
-      throw new CommunicationError(`Invalid recipient email address format: ${to}`, 400);
-    }
-    try {
-      const mx = await dns.resolveMx(domain);
-      if (!mx || mx.length === 0) {
-        throw new CommunicationError(`Recipient domain '${domain}' has no valid mail servers (MX records). Delivery will fail.`, 400);
-      }
-    } catch (err: any) {
-      throw new CommunicationError(`Recipient domain '${domain}' is unreachable or invalid: ${err.message}`, 400);
-    }
+    await this.validateRecipientEmail(to);
 
     const settings = await this.communicationRepo.getSettings(tenantId);
     if (!settings || !settings.senderEmail) {

@@ -1,6 +1,6 @@
 import { eq, desc, and, count } from 'drizzle-orm';
 import crypto from 'crypto';
-import { communications } from '../../db/index.js';
+import { communications, invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Communication, NewCommunication } from '../../db/index.js';
 import { tenantSettings, type TenantSettings, type NewTenantSettings } from '../../db/schema.js';
@@ -8,12 +8,32 @@ import { tenantSettings, type TenantSettings, type NewTenantSettings } from '../
 export class CommunicationRepository {
   constructor(private db: DatabaseClient) {}
 
-  async findByInvoiceId(invoiceId: string): Promise<Communication[]> {
-    return this.db
-      .select()
+  async findByInvoiceId(invoiceId: string): Promise<any[]> {
+    const rows = await this.db
+      .select({
+        id: communications.id,
+        invoiceId: communications.invoiceId,
+        tenantId: communications.tenantId,
+        channel: communications.channel,
+        subject: communications.subject,
+        body: communications.body,
+        status: communications.status,
+        sentAt: communications.sentAt,
+        openedAt: communications.openedAt,
+        clickedAt: communications.clickedAt,
+        error: communications.error,
+        createdAt: communications.createdAt,
+        recipient: invoices.contactEmail,
+      })
       .from(communications)
+      .innerJoin(invoices, eq(communications.invoiceId, invoices.id))
       .where(eq(communications.invoiceId, invoiceId))
       .orderBy(desc(communications.createdAt));
+
+    return rows.map((r) => ({
+      ...r,
+      errorMsg: r.error,
+    }));
   }
 
   async findLastSuccessfulByInvoiceId(invoiceId: string): Promise<Communication | undefined> {

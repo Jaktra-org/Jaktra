@@ -127,6 +127,33 @@ export class AgentService {
         }
 
         for (const channel of channels) {
+          if (channel === 'email') {
+            try {
+              await this.communicationService.validateRecipientEmail(inv.contactEmail);
+            } catch (validationErr: any) {
+              errorsCount++;
+              await this.communicationRepo.create({
+                tenantId,
+                invoiceId: inv.id,
+                channel: 'email',
+                subject: 'Email generation skipped',
+                body: 'Recipient email domain is invalid or does not exist.',
+                status: 'failed',
+                sentAt: null,
+                error: validationErr.message,
+              });
+              await this.eventService.emitEvent(
+                inv.id,
+                'halted',
+                { reason: 'mail_invalid', error: validationErr.message, channel, runId },
+                'system',
+                tenantId
+              );
+              await this.dlqService.recordFailure(inv.id, tenantId, validationErr.message).catch(() => {});
+              continue;
+            }
+          }
+
           const resp = await this.aimlService.triggerFollowup({
             invoiceId: inv.id,
             invoiceNo: inv.invoiceNo,
@@ -313,6 +340,40 @@ export class AgentService {
 
       const results = [];
       for (const channel of channels) {
+        if (channel === 'email') {
+          try {
+            await this.communicationService.validateRecipientEmail(invoice.contactEmail);
+          } catch (validationErr: any) {
+            await this.communicationRepo.create({
+              tenantId,
+              invoiceId: invoice.id,
+              channel: 'email',
+              subject: 'Email generation skipped',
+              body: 'Recipient email domain is invalid or does not exist.',
+              status: 'failed',
+              sentAt: null,
+              error: validationErr.message,
+            });
+            await this.eventService.emitEvent(
+              invoice.id,
+              'halted',
+              { reason: 'mail_invalid', error: validationErr.message, channel },
+              'system',
+              tenantId
+            );
+            await this.dlqService.recordFailure(invoice.id, tenantId, validationErr.message).catch(() => {});
+            
+            results.push({
+              invoiceId: invoice.id,
+              channel,
+              emailGenerated: false,
+              emailSent: false,
+              error: validationErr.message,
+            });
+            continue;
+          }
+        }
+
         const resp = await this.aimlService.triggerFollowup({
           invoiceId: invoice.id,
           invoiceNo: invoice.invoiceNo,

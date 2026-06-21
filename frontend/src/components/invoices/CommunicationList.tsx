@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Communication } from '../../types/api';
 import { Mail, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { getErrorMessage } from '../../utils/error-utils';
 
 interface CommunicationListProps {
   communications: Communication[];
@@ -91,7 +92,7 @@ export function CommunicationList({ communications }: CommunicationListProps) {
             <div className="border-t border-slate-200 bg-slate-50 p-4 animate-in slide-in-from-top-2 duration-200">
               {comm.errorMsg && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
-                  <span className="font-semibold">Delivery Error:</span> {comm.errorMsg}
+                  <span className="font-semibold">Delivery Error:</span> {getErrorMessage(comm.errorMsg)}
                 </div>
               )}
               

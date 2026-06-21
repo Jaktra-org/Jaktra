@@ -180,7 +180,7 @@ export function InvoiceDetail() {
             <div>
               <p className="font-semibold text-red-600">Follow-up halted due to error</p>
               <p className="text-xs text-slate-600 mt-1 bg-red-50 p-2 border border-red-100 rounded font-mono">
-                {payload.error}
+                {getErrorMessage(payload.error)}
               </p>
             </div>
           );
