@@ -224,6 +224,7 @@ export class IntegrationService {
         replyMode,
         replyMailboxEmail: replyMode === 'real_mailbox' ? replyMailboxEmail : null,
         replyMailboxVerified: keepVerified ?? false,
+        clearStep3: true,
       }
     );
     return this.getSendgridSetupProgress(tenantId);
@@ -254,6 +255,7 @@ export class IntegrationService {
         replyMailboxVerified: false,
         replyMailboxOtpCode: otpCode,
         replyMailboxOtpExpiresAt: expiresAt,
+        clearStep3: true,
       }
     );
 
@@ -508,16 +510,34 @@ export class IntegrationService {
 
     const targetMailbox = (data.replyTo && data.replyTo.trim()) ? data.replyTo.trim() : (data.senderEmail ? data.senderEmail.trim() : null);
 
+    const isStep1Change = data.apiKey !== 'SG.placeholder';
+    const isStep2Change = !isStep1Change && (data.senderName !== undefined || data.senderEmail !== undefined || data.replyMode !== undefined);
+
     await this.repo.saveSendgridIntegrationTransaction(
       tenantId,
-      { senderName: data.senderName, senderEmail: data.senderEmail, replyTo: data.replyTo },
+      isStep1Change
+        ? { senderName: null, senderEmail: null, replyTo: null }
+        : { senderName: data.senderName, senderEmail: data.senderEmail, replyTo: data.replyTo },
       {
         ciphertext: encrypted.ciphertext,
         iv: encrypted.iv,
         authTag: encrypted.authTag,
         keyVersion: version,
-        ...(data.replyMode ? { replyMode: data.replyMode as 'real_mailbox' | 'webhook_only' } : {}),
-        ...(data.replyMailboxEmail ? { replyMailboxEmail: data.replyMailboxEmail } : (targetMailbox ? { replyMailboxEmail: targetMailbox } : {})),
+        ...(isStep1Change
+          ? {
+              clearStep2: true,
+              clearStep3: true,
+            }
+          : isStep2Change
+          ? {
+              clearStep3: true,
+              ...(data.replyMode ? { replyMode: data.replyMode as 'real_mailbox' | 'webhook_only' } : {}),
+              ...(data.replyMailboxEmail ? { replyMailboxEmail: data.replyMailboxEmail } : (targetMailbox ? { replyMailboxEmail: targetMailbox } : {})),
+            }
+          : {
+              ...(data.replyMode ? { replyMode: data.replyMode as 'real_mailbox' | 'webhook_only' } : {}),
+              ...(data.replyMailboxEmail ? { replyMailboxEmail: data.replyMailboxEmail } : (targetMailbox ? { replyMailboxEmail: targetMailbox } : {})),
+            }),
       }
     );
 
