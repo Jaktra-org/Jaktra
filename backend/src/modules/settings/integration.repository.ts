@@ -362,6 +362,8 @@ export class IntegrationRepository {
       replyMailboxVerified?: boolean;
       replyMailboxOtpCode?: string | null;
       replyMailboxOtpExpiresAt?: Date | null;
+      clearStep2?: boolean;
+      clearStep3?: boolean;
     }
   ): Promise<void> {
     await this.db.transaction(async (tx) => {
@@ -369,9 +371,15 @@ export class IntegrationRepository {
 
       // Update base fields
       const baseUpdate: Record<string, unknown> = { updatedAt: new Date() };
-      if (baseData.senderName !== undefined) baseUpdate.senderName = baseData.senderName;
-      if (baseData.senderEmail !== undefined) baseUpdate.senderEmail = baseData.senderEmail;
-      if (baseData.replyTo !== undefined) baseUpdate.replyTo = baseData.replyTo;
+      if (sendgridData.clearStep2) {
+        baseUpdate.senderName = null;
+        baseUpdate.senderEmail = null;
+        baseUpdate.replyTo = null;
+      } else {
+        if (baseData.senderName !== undefined) baseUpdate.senderName = baseData.senderName;
+        if (baseData.senderEmail !== undefined) baseUpdate.senderEmail = baseData.senderEmail;
+        if (baseData.replyTo !== undefined) baseUpdate.replyTo = baseData.replyTo;
+      }
 
       await tx.update(emailIntegrations).set(baseUpdate).where(eq(emailIntegrations.id, base.id));
 
@@ -384,7 +392,9 @@ export class IntegrationRepository {
 
       // Data-consistency guard for replyMailboxVerified & replyMailboxEmail
       let finalMailboxVerified = sendgridData.replyMailboxVerified;
-      if (sendgridData.replyMailboxEmail !== undefined) {
+      if (sendgridData.clearStep2) {
+        finalMailboxVerified = false;
+      } else if (sendgridData.replyMailboxEmail !== undefined) {
         const newMailbox = sendgridData.replyMailboxEmail?.trim().toLowerCase() || '';
         const oldMailbox = existingDetail?.replyMailboxEmail?.trim().toLowerCase() || '';
         if (!newMailbox) {
@@ -401,13 +411,28 @@ export class IntegrationRepository {
         if (sendgridData.iv !== undefined) detailUpdate.iv = sendgridData.iv;
         if (sendgridData.authTag !== undefined) detailUpdate.authTag = sendgridData.authTag;
         if (sendgridData.keyVersion !== undefined) detailUpdate.keyVersion = sendgridData.keyVersion;
-        if (sendgridData.inboundDomain !== undefined) detailUpdate.inboundDomain = sendgridData.inboundDomain;
-        if (sendgridData.inboundParseVerified !== undefined) detailUpdate.inboundParseVerified = sendgridData.inboundParseVerified;
-        if (sendgridData.replyMode !== undefined) detailUpdate.replyMode = sendgridData.replyMode;
-        if (sendgridData.replyMailboxEmail !== undefined) detailUpdate.replyMailboxEmail = sendgridData.replyMailboxEmail;
-        if (finalMailboxVerified !== undefined) detailUpdate.replyMailboxVerified = finalMailboxVerified;
-        if (sendgridData.replyMailboxOtpCode !== undefined) detailUpdate.replyMailboxOtpCode = sendgridData.replyMailboxOtpCode;
-        if (sendgridData.replyMailboxOtpExpiresAt !== undefined) detailUpdate.replyMailboxOtpExpiresAt = sendgridData.replyMailboxOtpExpiresAt;
+
+        if (sendgridData.clearStep2) {
+          detailUpdate.replyMode = 'webhook_only';
+          detailUpdate.replyMailboxEmail = null;
+          detailUpdate.replyMailboxVerified = false;
+          detailUpdate.replyMailboxOtpCode = null;
+          detailUpdate.replyMailboxOtpExpiresAt = null;
+        } else {
+          if (sendgridData.replyMode !== undefined) detailUpdate.replyMode = sendgridData.replyMode;
+          if (sendgridData.replyMailboxEmail !== undefined) detailUpdate.replyMailboxEmail = sendgridData.replyMailboxEmail;
+          if (finalMailboxVerified !== undefined) detailUpdate.replyMailboxVerified = finalMailboxVerified;
+          if (sendgridData.replyMailboxOtpCode !== undefined) detailUpdate.replyMailboxOtpCode = sendgridData.replyMailboxOtpCode;
+          if (sendgridData.replyMailboxOtpExpiresAt !== undefined) detailUpdate.replyMailboxOtpExpiresAt = sendgridData.replyMailboxOtpExpiresAt;
+        }
+
+        if (sendgridData.clearStep3) {
+          detailUpdate.inboundDomain = null;
+          detailUpdate.inboundParseVerified = false;
+        } else {
+          if (sendgridData.inboundDomain !== undefined) detailUpdate.inboundDomain = sendgridData.inboundDomain;
+          if (sendgridData.inboundParseVerified !== undefined) detailUpdate.inboundParseVerified = sendgridData.inboundParseVerified;
+        }
 
         if (Object.keys(detailUpdate).length > 0) {
           await tx.update(emailIntegrationSendgrid).set(detailUpdate).where(eq(emailIntegrationSendgrid.integrationId, base.id));
@@ -420,13 +445,13 @@ export class IntegrationRepository {
           iv: sendgridData.iv || null,
           authTag: sendgridData.authTag || null,
           keyVersion: sendgridData.keyVersion || 1,
-          inboundDomain: sendgridData.inboundDomain || null,
-          inboundParseVerified: sendgridData.inboundParseVerified || false,
-          replyMode: sendgridData.replyMode || 'webhook_only',
-          replyMailboxEmail: sendgridData.replyMailboxEmail || null,
-          replyMailboxVerified: finalMailboxVerified || false,
-          replyMailboxOtpCode: sendgridData.replyMailboxOtpCode || null,
-          replyMailboxOtpExpiresAt: sendgridData.replyMailboxOtpExpiresAt || null,
+          inboundDomain: sendgridData.clearStep3 ? null : (sendgridData.inboundDomain || null),
+          inboundParseVerified: sendgridData.clearStep3 ? false : (sendgridData.inboundParseVerified || false),
+          replyMode: sendgridData.clearStep2 ? 'webhook_only' : (sendgridData.replyMode || 'webhook_only'),
+          replyMailboxEmail: sendgridData.clearStep2 ? null : (sendgridData.replyMailboxEmail || null),
+          replyMailboxVerified: sendgridData.clearStep2 ? false : (finalMailboxVerified || false),
+          replyMailboxOtpCode: sendgridData.clearStep2 ? null : (sendgridData.replyMailboxOtpCode || null),
+          replyMailboxOtpExpiresAt: sendgridData.clearStep2 ? null : (sendgridData.replyMailboxOtpExpiresAt || null),
         });
       }
 
