@@ -26,7 +26,7 @@ export class AgentService {
     private paymentService: PaymentService,
     private communicationService: CommunicationService,
     private communicationRepo: CommunicationRepository
-  ) {}
+  ) { }
 
   hasActiveRuns(): boolean {
     return this.activeRuns.size > 0;
@@ -149,7 +149,7 @@ export class AgentService {
                 'system',
                 tenantId
               );
-              await this.dlqService.recordFailure(inv.id, tenantId, validationErr.message).catch(() => {});
+              await this.dlqService.recordFailure(inv.id, tenantId, validationErr.message).catch(() => { });
               continue;
             }
           }
@@ -190,23 +190,11 @@ export class AgentService {
               'ai-agent',
               tenantId
             );
-            await this.dlqService.recordFailure(inv.id, tenantId, resp.error ?? 'Generation produced no content').catch(() => {});
+            await this.dlqService.recordFailure(inv.id, tenantId, resp.error ?? 'Generation produced no content').catch(() => { });
             continue;
           }
 
-          // Create the communication record first in 'pending' status
-          const commRecord = await this.communicationRepo.create({
-            tenantId,
-            invoiceId: inv.id,
-            channel: channel as 'email' | 'sms' | 'whatsapp',
-            subject: resp.subject ?? null,
-            body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
-            status: 'pending',
-            sentAt: null,
-            error: null,
-          });
-
-          // Succeeded in generation — now actually send the email
+          // Generation succeeded — now actually send the email
           let sendError: string | undefined;
           try {
             await this.communicationService.send({
@@ -216,8 +204,6 @@ export class AgentService {
               html: resp.htmlBody ?? resp.bodyPreview ?? '',
               channel: channel as 'email',
               invoiceId: inv.id,
-              communicationId: commRecord.id,
-              runId,
             });
           } catch (sendErr: any) {
             sendError = sendErr?.message ?? String(sendErr);
@@ -226,10 +212,16 @@ export class AgentService {
 
           const now = new Date();
           if (!sendError) {
-            // Update successful communication
-            await this.communicationRepo.update(commRecord.id, {
+            // Record successful communication
+            await this.communicationRepo.create({
+              tenantId,
+              invoiceId: inv.id,
+              channel: channel as 'email' | 'sms' | 'whatsapp',
+              subject: resp.subject ?? null,
+              body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
               status: 'sent',
               sentAt: now,
+              error: null,
             });
             // Update invoice followup tracking
             await this.invoiceRepo.update(inv.id, tenantId, {
@@ -240,26 +232,32 @@ export class AgentService {
             await this.eventService.emitEvent(
               inv.id,
               'email_sent',
-              { subject: resp.subject, bodyPreview: resp.bodyPreview, channel, runId, communicationId: commRecord.id },
+              { subject: resp.subject, bodyPreview: resp.bodyPreview, channel, runId },
               'ai-agent',
               tenantId
             );
-            await this.dlqService.clearFailure(inv.id, tenantId).catch(() => {});
+            await this.dlqService.clearFailure(inv.id, tenantId).catch(() => { });
           } else {
-            // Update failed communication
-            await this.communicationRepo.update(commRecord.id, {
+            // Record failed delivery
+            errorsCount++;
+            await this.communicationRepo.create({
+              tenantId,
+              invoiceId: inv.id,
+              channel: channel as 'email' | 'sms' | 'whatsapp',
+              subject: resp.subject ?? null,
+              body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
               status: 'failed',
+              sentAt: null,
               error: sendError,
             });
-            errorsCount++;
             await this.eventService.emitEvent(
               inv.id,
               'email_generated',
-              { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, runId, communicationId: commRecord.id },
+              { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, runId },
               'ai-agent',
               tenantId
             );
-            await this.dlqService.recordFailure(inv.id, tenantId, sendError).catch(() => {});
+            await this.dlqService.recordFailure(inv.id, tenantId, sendError).catch(() => { });
           }
         }
 
@@ -276,7 +274,7 @@ export class AgentService {
           'system',
           tenantId
         );
-        await this.dlqService.recordFailure(inv.id, tenantId, errMsg, errStack).catch(() => {});
+        await this.dlqService.recordFailure(inv.id, tenantId, errMsg, errStack).catch(() => { });
       }
 
       if (processed % 10 === 0 || processed === invoices.length) {
@@ -363,8 +361,8 @@ export class AgentService {
               'system',
               tenantId
             );
-            await this.dlqService.recordFailure(invoice.id, tenantId, validationErr.message).catch(() => {});
-            
+            await this.dlqService.recordFailure(invoice.id, tenantId, validationErr.message).catch(() => { });
+
             results.push({
               invoiceId: invoice.id,
               channel,
@@ -410,22 +408,10 @@ export class AgentService {
             'ai-agent',
             tenantId
           );
-          await this.dlqService.recordFailure(invoice.id, tenantId, resp.error ?? 'Generation produced no content').catch(() => {});
+          await this.dlqService.recordFailure(invoice.id, tenantId, resp.error ?? 'Generation produced no content').catch(() => { });
           results.push(resp);
           continue;
         }
-
-        // Create the communication record first in 'pending' status
-        const commRecord = await this.communicationRepo.create({
-          tenantId,
-          invoiceId: invoice.id,
-          channel: channel as 'email' | 'sms' | 'whatsapp',
-          subject: resp.subject ?? null,
-          body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
-          status: 'pending',
-          sentAt: null,
-          error: null,
-        });
 
         // Generation succeeded — now actually send
         let sendError: string | undefined;
@@ -437,7 +423,6 @@ export class AgentService {
             html: resp.htmlBody ?? resp.bodyPreview ?? '',
             channel: channel as 'email',
             invoiceId: invoice.id,
-            communicationId: commRecord.id,
           });
         } catch (sendErr: any) {
           sendError = sendErr?.message ?? String(sendErr);
@@ -446,9 +431,15 @@ export class AgentService {
 
         const now = new Date();
         if (!sendError) {
-          await this.communicationRepo.update(commRecord.id, {
+          await this.communicationRepo.create({
+            tenantId,
+            invoiceId: invoice.id,
+            channel: channel as 'email' | 'sms' | 'whatsapp',
+            subject: resp.subject ?? null,
+            body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
             status: 'sent',
             sentAt: now,
+            error: null,
           });
           await this.invoiceRepo.update(invoice.id, tenantId, {
             followupCount: invoice.followupCount + 1,
@@ -457,24 +448,30 @@ export class AgentService {
           await this.eventService.emitEvent(
             invoice.id,
             'email_sent',
-            { subject: resp.subject, bodyPreview: resp.bodyPreview, channel, communicationId: commRecord.id },
+            { subject: resp.subject, bodyPreview: resp.bodyPreview, channel },
             'ai-agent',
             tenantId
           );
-          await this.dlqService.clearFailure(invoice.id, tenantId).catch(() => {});
+          await this.dlqService.clearFailure(invoice.id, tenantId).catch(() => { });
         } else {
-          await this.communicationRepo.update(commRecord.id, {
+          await this.communicationRepo.create({
+            tenantId,
+            invoiceId: invoice.id,
+            channel: channel as 'email' | 'sms' | 'whatsapp',
+            subject: resp.subject ?? null,
+            body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
             status: 'failed',
+            sentAt: null,
             error: sendError,
           });
           await this.eventService.emitEvent(
             invoice.id,
             'email_generated',
-            { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, communicationId: commRecord.id },
+            { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel },
             'ai-agent',
             tenantId
           );
-          await this.dlqService.recordFailure(invoice.id, tenantId, sendError).catch(() => {});
+          await this.dlqService.recordFailure(invoice.id, tenantId, sendError).catch(() => { });
         }
 
         results.push({ ...resp, emailSent: !sendError });
@@ -492,7 +489,7 @@ export class AgentService {
         'system',
         tenantId
       );
-      await this.dlqService.recordFailure(invoice.id, tenantId, errMsg, errStack).catch(() => {});
+      await this.dlqService.recordFailure(invoice.id, tenantId, errMsg, errStack).catch(() => { });
       throw err;
     }
   }
@@ -517,10 +514,29 @@ export class AgentService {
     if (!run) return null;
 
     const events = await this.eventService.findByRunId(runId);
-    
+
+    const latestEventsMap = new Map<string, typeof events[number]>();
+    const nonInvoiceEvents: typeof events = [];
+
+    for (const event of events) {
+      if (!event.invoiceId) {
+        nonInvoiceEvents.push(event);
+        continue;
+      }
+      const existing = latestEventsMap.get(event.invoiceId);
+      if (!existing || new Date(event.createdAt) > new Date(existing.createdAt)) {
+        latestEventsMap.set(event.invoiceId, event);
+      }
+    }
+
+    const sortedEvents = [
+      ...Array.from(latestEventsMap.values()),
+      ...nonInvoiceEvents
+    ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
     return {
       ...run,
-      events
+      events: sortedEvents
     };
   }
 }

@@ -134,7 +134,7 @@ export function createApp(config: AppConfig): Application {
 
     // Shared Services
     const integrationService = new IntegrationService(integrationRepo);
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventRepo, dlqRepo, agentRepo);
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventRepo, dlqRepo);
     
     const gatewayFactory = new PaymentGatewayFactory();
     gatewayFactory.register(new RazorpayAdapter());

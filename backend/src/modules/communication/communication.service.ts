@@ -3,7 +3,6 @@ import type { CommunicationRepository } from './communication.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
 import type { Communication } from '../../db/index.js';
 import { CommunicationError } from '../../shared/errors/index.js';
-import type { AgentRepository } from '../agent/agent.repository.js';
 import * as dns from 'dns/promises';
 import { logger } from '../../shared/logger.js';
 import type { DlqRepository } from '../dlq/dlq.repository.js';
@@ -34,8 +33,6 @@ export interface SendCommunicationOptions {
   html: string;
   channel?: 'email' | 'sms' | 'whatsapp';
   invoiceId?: string;
-  communicationId?: string;
-  runId?: string;
 }
 
 export class CommunicationService {
@@ -44,9 +41,8 @@ export class CommunicationService {
     private invoiceRepo: InvoiceRepository,
     private integrationService: IntegrationService,
     private eventRepo?: EventRepository,
-    private dlqRepo?: DlqRepository,
-    private agentRepo?: AgentRepository
-  ) {}
+    private dlqRepo?: DlqRepository
+  ) { }
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<any[]> {
     const invoice = await this.invoiceRepo.findById(invoiceId);
@@ -117,35 +113,22 @@ export class CommunicationService {
           logger.error(`Failed to record bounce in DLQ for invoice ${invoiceId}`, err);
         }
       }
-
-      // Update agent run statistics
-      let activeRunId = runId || rawEvent.run_id || rawEvent.runId;
-      if (!activeRunId && this.eventRepo) {
-        try {
-          const latestEvent = await this.eventRepo.findLatestEmailSent(invoiceId);
-          if (latestEvent && latestEvent.payload) {
-            activeRunId = (latestEvent.payload as any).runId;
-          }
-        } catch (err: any) {
-          logger.error(`Failed to lookup runId from events for invoice ${invoiceId}: ${err.message}`);
-        }
-      }
-
-      if (activeRunId && this.agentRepo) {
-        try {
-          await this.agentRepo.recordBounce(activeRunId, tenantId);
-        } catch (err: any) {
-          logger.error(`Failed to update agent run stats for run ${activeRunId}: ${err.message}`);
-        }
-      }
     }
 
     if (this.eventRepo) {
-      const dbEventType = `email_${eventType === 'dropped' ? 'bounced' : eventType}`;
-      const payload = { ...rawEvent };
-      if (runId) {
-        payload.runId = runId;
-      }
+      const resolvedRunId = runId || rawEvent?.run_id || rawEvent?.runId;
+      const isBounceOrDrop = eventType === 'bounced' || eventType === 'dropped';
+      const dbEventType = isBounceOrDrop ? 'halted' : `email_${eventType}`;
+      
+      const reason = rawEvent.reason || 'Email bounced or dropped';
+      const payload = isBounceOrDrop
+        ? {
+            reason: eventType === 'dropped' ? 'mail_dropped' : 'mail_bounced',
+            error: reason,
+            runId: resolvedRunId,
+          }
+        : { ...rawEvent, runId: resolvedRunId };
+
       await this.eventRepo.create({
         tenantId,
         invoiceId,
@@ -172,7 +155,7 @@ export class CommunicationService {
   }
 
   async send(options: SendCommunicationOptions): Promise<boolean> {
-    const { tenantId, to, subject, html, channel = 'email', invoiceId, communicationId, runId } = options;
+    const { tenantId, to, subject, html, channel = 'email', invoiceId } = options;
 
     if (channel !== 'email') {
       throw new CommunicationError(
@@ -204,16 +187,7 @@ export class CommunicationService {
       if (defaultProvider === 'sendgrid') {
         const apiKey = await this.integrationService.getDecryptedSendgridKey(tenantId);
         const provider = new SendgridProvider(apiKey);
-        
-        // Pass tracking args so they're returned via webhook
-        const customArgs: Record<string, string> = {
-          tenant_id: tenantId,
-        };
-        if (invoiceId) customArgs.invoice_id = invoiceId;
-        if (communicationId) customArgs.communication_id = communicationId;
-        if (runId) customArgs.run_id = runId;
-
-        await provider.sendEmail(to, from, replyTo, subject, html, customArgs);
+        await provider.sendEmail(to, from, replyTo, subject, html);
         return true;
       } else if (defaultProvider === 'smtp') {
         const smtpConfig = await this.integrationService.getDecryptedSmtpConfig(tenantId);
@@ -222,7 +196,7 @@ export class CommunicationService {
 
         // Start background polling for bounces if invoiceId is provided
         if (invoiceId) {
-          this.startSmtpBouncePolling(tenantId, invoiceId, to, smtpConfig, runId).catch((err) => {
+          this.startSmtpBouncePolling(tenantId, invoiceId, to, smtpConfig).catch((err) => {
             logger.error(`Error in background SMTP bounce polling for invoice ${invoiceId}:`, err);
           });
         }
@@ -233,7 +207,7 @@ export class CommunicationService {
       }
     } catch (error: any) {
       if (error instanceof CommunicationError) throw error;
-      
+
       await this.integrationService.handleDeliveryError(tenantId, defaultProvider, error);
       throw error;
     }
@@ -290,13 +264,13 @@ export class CommunicationService {
 
       socket.on('data', (data) => {
         buffer += data.toString('utf8');
-        
+
         // Process responses line-by-line
         while (buffer.includes('\r\n')) {
           const lineEnd = buffer.indexOf('\r\n');
           const line = buffer.substring(0, lineEnd);
           buffer = buffer.substring(lineEnd + 2);
-          
+
           logger.debug(`[IMAP] Received: ${line}`);
 
           if (commandStep === 0 && line.includes('* OK')) {
@@ -359,8 +333,7 @@ export class CommunicationService {
     tenantId: string,
     invoiceId: string,
     recipient: string,
-    smtpConfig: SmtpConfig,
-    runId?: string
+    smtpConfig: SmtpConfig
   ): Promise<void> {
     const maxPolls = 8; // 8 * 15 seconds = 2 minutes
     const pollIntervalMs = 15000;
@@ -376,7 +349,7 @@ export class CommunicationService {
         const isBounced = await this.checkImapForBounce(smtpConfig, recipient);
         if (isBounced) {
           logger.warn(`[IMAP] Asynchronous bounce detected for invoice ${invoiceId} recipient ${recipient}`);
-          
+
           // 1. Mark latest sent communication as failed
           const comms = await this.communicationRepo.findByInvoiceId(invoiceId);
           const latestSent = comms.find((c) => c.status === 'sent');
@@ -396,7 +369,7 @@ export class CommunicationService {
             });
           }
 
-          // 3. Emit halted event with mail_invalid reason
+          // 3. Emit halted event with mail_bounced reason
           if (this.eventRepo) {
             await this.eventRepo.create({
               tenantId,
@@ -404,10 +377,9 @@ export class CommunicationService {
               eventType: 'halted',
               actor: 'system',
               payload: {
-                reason: 'mail_invalid',
+                reason: 'mail_bounced',
                 error: 'Recipient email address does not exist',
                 recipient,
-                runId,
               },
             });
           }
@@ -420,15 +392,6 @@ export class CommunicationService {
               'Delivery failed: Mailbox does not exist (bounced)',
               `Recipient email address ${recipient} is invalid or non-existent.`
             );
-          }
-
-          // 5. Update agent run stats
-          if (runId && this.agentRepo) {
-            try {
-              await this.agentRepo.recordBounce(runId, tenantId);
-            } catch (err: any) {
-              logger.error(`Failed to update agent run stats on IMAP bounce: ${err.message}`);
-            }
           }
 
           // Stop polling

@@ -187,6 +187,7 @@ export const events = pgTable(
       table.invoiceId,
       table.createdAt
     ),
+    index('events_payload_run_id_idx').on(sql`(${table.payload}->>'runId')`),
   ]
 );
 

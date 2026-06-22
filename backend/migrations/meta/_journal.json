@@ -43,6 +43,13 @@
       "when": 1781237874387,
       "tag": "0005_manual_payment_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782075129719,
+      "tag": "0006_add_run_id_index",
+      "breakpoints": true
     }
   ]
 }
