@@ -90,7 +90,7 @@ export function AppLayout() {
         
         <div className="flex h-16 items-center justify-center md:justify-start md:px-6 border-b border-slate-200">
           <Bot className="h-6 w-6 text-blue-600 flex-shrink-0" />
-          <span className="text-lg font-bold text-slate-900 tracking-tight hidden md:block ml-2 whitespace-nowrap overflow-hidden">CreditOps AI</span>
+          <span className="text-lg font-bold text-slate-900 tracking-tight hidden md:block ml-2 whitespace-nowrap overflow-hidden">Jaktra</span>
         </div>
         
         <nav className="flex-1 space-y-1 px-2 md:px-3 py-4 overflow-y-auto overflow-x-hidden">

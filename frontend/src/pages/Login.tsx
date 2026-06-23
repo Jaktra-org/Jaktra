@@ -45,7 +45,7 @@ export function Login() {
           <div>
             <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
             <p className="text-sm text-slate-500 mt-2">
-              Sign in to your CreditOps AI account
+              Sign in to your Jaktra account
             </p>
           </div>
         </CardHeader>

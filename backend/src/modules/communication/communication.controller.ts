@@ -95,7 +95,7 @@ export class CommunicationController {
       await this.communicationService.send({
         tenantId,
         to,
-        subject: '[Test] CreditOps Communication Configuration',
+        subject: '[Test] Jaktra Communication Configuration',
         html: '<p>This is a test message to verify your configuration is working successfully.</p>',
         channel: 'email'
       });

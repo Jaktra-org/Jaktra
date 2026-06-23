@@ -9,7 +9,7 @@ const pinoLogger = pino({
     ? { target: 'pino-pretty' }
     : undefined,
   base: {
-    service: 'creditops-backend',
+    service: 'jaktra-backend',
     environment: process.env['NODE_ENV'],
   },
   serializers: {

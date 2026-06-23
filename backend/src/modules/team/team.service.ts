@@ -113,11 +113,11 @@ export class TeamService {
     
     try {
       await mailer.sendMail({
-        from: '"CreditOps" <noreply@creditops.com>', // Assuming default from
+        from: '"Jaktra" <noreply@jaktra.com>', // Assuming default from
         to: email,
-        subject: 'You have been invited to join CreditOps',
+        subject: 'You have been invited to join Jaktra',
         html: `
-          <p>You have been invited to join a workspace on CreditOps.</p>
+          <p>You have been invited to join a workspace on Jaktra.</p>
           <p>Click the link below to accept the invitation and set up your account:</p>
           <p><a href="${inviteUrl}">Accept Invitation</a></p>
           <p>This invitation expires in 7 days.</p>

@@ -7,8 +7,8 @@ from api.middleware.auth import verify_service_key
 from api.middleware.logging import LoggingMiddleware
 
 app = FastAPI(
-    title="CreditOps AI-ML Service",
-    description="Agent executor service for CreditOps",
+    title="Jaktra AI-ML Service",
+    description="Agent executor service for Jaktra",
     version="1.0.0",
 )
 

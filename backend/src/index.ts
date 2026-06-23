@@ -19,7 +19,7 @@ const app = createApp({
 });
 
 const server = app.listen(config.PORT, () => {
-  logger.info(`CreditOps backend running on port ${config.PORT} [${config.NODE_ENV}]`);
+  logger.info(`Jaktra backend running on port ${config.PORT} [${config.NODE_ENV}]`);
   logger.info(`Health → http://localhost:${config.PORT}/api/health`);
 });
 

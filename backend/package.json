@@ -1,7 +1,7 @@
 {
-  "name": "creditops-backend",
+  "name": "jaktra-backend",
   "version": "0.1.0",
-  "description": "CreditOps AI — Backend API Server",
+  "description": "Jaktra — Backend API Server",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "db:push": "drizzle-kit push"
   },
   "keywords": [
-    "creditops",
+    "jaktra",
     "accounts-receivable",
     "ai",
     "automation"
