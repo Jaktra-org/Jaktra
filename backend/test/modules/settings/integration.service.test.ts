@@ -289,4 +289,44 @@ describe('IntegrationService', () => {
       expect(mockRedis.set).not.toHaveBeenCalled();
     });
   });
+
+  describe('SendGrid Step Reset Behavior', () => {
+    it('clears step 2 and step 3 saved data when step 1 API key is updated', async () => {
+      mockRepo.saveSendgridIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(sgClient.request).mockResolvedValueOnce([{ statusCode: 200, body: {} }] as any);
+
+      await service.validateAndSaveSendgridKey('tenant_1', {
+        apiKey: 'SG.brand_new_key_123',
+      });
+
+      expect(mockRepo.saveSendgridIntegrationTransaction).toHaveBeenCalledWith(
+        'tenant_1',
+        { senderName: null, senderEmail: null, replyTo: null },
+        expect.objectContaining({
+          clearStep2: true,
+          clearStep3: true,
+        })
+      );
+    });
+
+    it('clears step 3 saved data when step 2 sender details are updated', async () => {
+      mockRepo.saveSendgridIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(sgClient.request).mockResolvedValueOnce([{ statusCode: 200, body: {} }] as any);
+      service.performSendgridIdentityCheck = vi.fn().mockResolvedValue({ senderVerified: true, domainAuthenticated: true });
+
+      await service.validateAndSaveSendgridKey('tenant_1', {
+        apiKey: 'SG.placeholder',
+        senderName: 'New Sender Name',
+        senderEmail: 'new@company.com',
+      });
+
+      expect(mockRepo.saveSendgridIntegrationTransaction).toHaveBeenCalledWith(
+        'tenant_1',
+        { senderName: 'New Sender Name', senderEmail: 'new@company.com', replyTo: undefined },
+        expect.objectContaining({
+          clearStep3: true,
+        })
+      );
+    });
+  });
 });
