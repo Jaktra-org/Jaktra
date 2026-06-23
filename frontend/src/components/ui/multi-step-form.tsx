@@ -9,7 +9,7 @@ import { Progress } from "./progress";
 import { X } from "lucide-react";
 
 const multiStepFormVariants = cva(
-  "flex flex-col bg-[#010102] border border-[#23252a] text-[#f7f8f8] rounded-2xl overflow-hidden shadow-2xl",
+  "flex flex-col bg-[#010102] border border-[#23252a] text-[#f7f8f8] rounded-2xl overflow-hidden shadow-2xl max-h-[88vh]",
   {
     variants: {
       size: {
@@ -92,7 +92,7 @@ const MultiStepForm = React.forwardRef<HTMLDivElement, MultiStepFormProps>(
           </div>
         </CardHeader>
 
-        <CardContent className="p-6 bg-[#0f1011] min-h-[280px]">
+        <CardContent className="p-6 bg-[#0f1011] flex-1 overflow-y-auto min-h-[200px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
