@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { portalService } from '../services/portal';
-import { Loader2, AlertCircle, Calendar, CreditCard, FileText } from 'lucide-react';
+import { Loader2, AlertCircle, Calendar, CreditCard, FileText, Check } from 'lucide-react';
 
 export function DebtorPortal() {
   const { token } = useParams<{ token: string }>();
@@ -468,7 +468,7 @@ export function DebtorPortal() {
             {invoice.paymentStatus === 'Paid' && (
               <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3">
                 <div className="h-5 w-5 bg-[#27a644]/20 text-[#27a644] rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-xs font-bold">✓</span>
+                  <Check className="w-3 h-3" />
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-[#27a644]">Payment Resolved</h4>
@@ -487,7 +487,7 @@ export function DebtorPortal() {
             {invoice.paymentStatus === 'Written Off' && (
               <div className="bg-[#141516] border border-[#23252a] rounded-xl p-4 flex items-start space-x-3">
                 <div className="h-5 w-5 bg-[#23252a] text-[#8a8f98] rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-xs font-bold">✓</span>
+                  <Check className="w-3 h-3" />
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-[#f7f8f8]">Invoice Inactive</h4>
