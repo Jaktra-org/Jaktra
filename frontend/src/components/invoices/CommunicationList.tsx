@@ -58,19 +58,19 @@ export function CommunicationList({ communications }: CommunicationListProps) {
       case 'bulk_ai_agent':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
-            🤖 Bulk AI Agent
+            Bulk AI Agent
           </span>
         );
       case 'invoice_manual':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#5e6ad2]/20 text-[#5e6ad2] border border-[#5e6ad2]/30">
-            ⚡ Invoice Manual
+            Invoice Manual
           </span>
         );
       case 'dispute_agent':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-950/40 text-purple-400 border border-purple-900/50">
-            💬 Dispute Agent
+            Dispute Agent
           </span>
         );
       default:
