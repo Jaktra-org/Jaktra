@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Key, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { settingsService } from '../../services/settings';
 import { getErrorMessage } from '../../utils/error-utils';
 import type { SendgridSetupProgress } from '../../types/api';
@@ -56,17 +56,15 @@ export function SendGridWizardStep1({ progress, refetch, onNext }: Props) {
     return (
       <div className="space-y-4 text-[#f7f8f8]">
         <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
-          <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-            <Key className="w-4 h-4 mr-2 text-[#8a8f98]" />
-            Step 1 of 3: SendGrid API Key
+          <h4 className="text-xs font-bold text-[#f7f8f8]">
+            API Key
           </h4>
           <span className="text-[10px] bg-[#27a644]/10 text-[#27a644] font-semibold px-2.5 py-0.5 rounded-full border border-[#27a644]/20 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Connected
+            Connected
           </span>
         </div>
 
         <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-lg space-y-1.5">
-          <p className="text-xs font-semibold text-[#f7f8f8]">SendGrid API Key</p>
           <p className="text-xs font-mono text-[#8a8f98]">SG.••••••••••••••••••••••••••••••••••</p>
           <p className="text-[11px] text-[#8a8f98] border-t border-[#23252a] pt-2 mt-1">
             Your SendGrid account is connected and verified. You can replace the key at any time.
@@ -81,16 +79,16 @@ export function SendGridWizardStep1({ progress, refetch, onNext }: Props) {
               setErrorMsg('');
               setMode('edit');
             }}
-            className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all"
+            className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all cursor-pointer"
           >
-            Replace API Key
+            Replace Key
           </button>
           <button
             type="button"
             onClick={onNext}
-            className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all shadow-xs"
+            className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
           >
-            Continue to Step 2 →
+            Next
           </button>
         </div>
       </div>
@@ -101,15 +99,22 @@ export function SendGridWizardStep1({ progress, refetch, onNext }: Props) {
   return (
     <div className="space-y-4 text-[#f7f8f8]">
       <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
-        <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-          <Key className="w-4 h-4 mr-2 text-[#8a8f98]" />
-          Step 1 of 3: Save SendGrid API Key
+        <h4 className="text-xs font-bold text-[#f7f8f8]">
+          API Key
         </h4>
       </div>
 
       <p className="text-xs text-[#8a8f98]">
-        Enter your SendGrid API Key to connect your account. Must be a restricted API Key starting with{' '}
-        <code className="text-[#d0d6e0] font-mono">SG.</code> containing <strong>Mail Send</strong> permissions.
+        Enter your SendGrid Key to connect your account. Must be an API Key starting with{' '}
+        <code className="text-[#d0d6e0] font-mono">SG.</code> (Full Access or Restricted with <strong>Mail Send</strong> permissions). You can copy your key from{' '}
+        <a
+          href="https://app.sendgrid.com/settings/api_keys"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#f7f8f8] underline hover:text-white font-medium inline-flex items-center gap-0.5"
+        >
+          SendGrid Settings
+        </a>.
       </p>
 
       {errorMsg && (
@@ -119,7 +124,7 @@ export function SendGridWizardStep1({ progress, refetch, onNext }: Props) {
       )}
 
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-[#8a8f98]">SendGrid API Key</label>
+        <label className="text-xs font-semibold text-[#8a8f98]">API Key</label>
         <div className="relative flex items-center">
           <input
             type={showApiKey ? "text" : "password"}
@@ -133,7 +138,7 @@ export function SendGridWizardStep1({ progress, refetch, onNext }: Props) {
             type="button"
             onClick={() => setShowApiKey(!showApiKey)}
             className="absolute right-3 text-[#8a8f98] hover:text-[#f7f8f8] transition-colors cursor-pointer"
-            title={showApiKey ? "Hide API Key" : "View API Key"}
+            title={showApiKey ? "Hide Key" : "View Key"}
           >
             {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -145,9 +150,9 @@ export function SendGridWizardStep1({ progress, refetch, onNext }: Props) {
           <button
             type="button"
             onClick={() => { setApiKeyInput(''); setErrorMsg(''); setMode('view'); }}
-            className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all"
+            className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all cursor-pointer"
           >
-            ← Cancel
+            Cancel
           </button>
         )}
         <div className="ml-auto">
@@ -166,10 +171,10 @@ export function SendGridWizardStep1({ progress, refetch, onNext }: Props) {
               saveKeyMutation.mutate(key);
             }}
             disabled={saveKeyMutation.isPending}
-            className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center disabled:opacity-40"
+            className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center disabled:opacity-40 cursor-pointer"
           >
             {saveKeyMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
-            {saveKeyMutation.isPending ? 'Validating Key...' : 'Save Key & Continue to Step 2 →'}
+            {saveKeyMutation.isPending ? 'Validating Key...' : 'Save & Next'}
           </button>
         </div>
       </div>
