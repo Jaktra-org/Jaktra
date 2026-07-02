@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Mail, CheckCircle2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { settingsService } from '../../services/settings';
 import { getErrorMessage } from '../../utils/error-utils';
 import type { SendgridSetupProgress } from '../../types/api';
@@ -162,12 +162,11 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
     return (
       <div className="space-y-4 text-[#f7f8f8]">
         <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
-          <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-            <Mail className="w-4 h-4 mr-2 text-[#8a8f98]" />
-            Step 2 of 3: Sender Identity & Optional Reply Forwarding
+          <h4 className="text-xs font-bold text-[#f7f8f8]">
+            Outbound Sender & Forwarding
           </h4>
           <span className="text-[10px] bg-[#27a644]/10 text-[#27a644] font-semibold px-2.5 py-0.5 rounded-full border border-[#27a644]/20 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Completed
+            Completed
           </span>
         </div>
 
@@ -196,35 +195,44 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
             </div>
             {s.replyMode === 'real_mailbox' && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#27a644]/10 text-[#27a644] border border-[#27a644]/20">
-                <CheckCircle2 className="w-3 h-3" /> Verified
+                Verified
               </span>
             )}
           </div>
         </div>
 
         <div className="flex justify-between items-center pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              setSenderName(s.senderName || '');
-              setSenderEmail(s.senderEmail || '');
-              setEnableForwarding(s.replyMode === 'real_mailbox');
-              setForwardingMailbox(s.replyMailboxEmail || s.replyTo || s.senderEmail || '');
-              setOtpInput('');
-              setInfoMsg('');
-              setErrorMsg('');
-              setMode('edit');
-            }}
-            className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all"
-          >
-            Edit
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onBack}
+              className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#8a8f98] hover:text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all cursor-pointer"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSenderName(s.senderName || '');
+                setSenderEmail(s.senderEmail || '');
+                setEnableForwarding(s.replyMode === 'real_mailbox');
+                setForwardingMailbox(s.replyMailboxEmail || s.replyTo || s.senderEmail || '');
+                setOtpInput('');
+                setInfoMsg('');
+                setErrorMsg('');
+                setMode('edit');
+              }}
+              className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all cursor-pointer"
+            >
+              Edit
+            </button>
+          </div>
           <button
             type="button"
             onClick={onNext}
-            className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all shadow-xs"
+            className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
           >
-            Continue to Step 3 →
+            Next
           </button>
         </div>
       </div>
@@ -237,12 +245,11 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
   return (
     <div className="space-y-4 text-[#f7f8f8]">
       <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
-        <h4 className="text-xs font-bold text-[#f7f8f8] flex items-center">
-          <Mail className="w-4 h-4 mr-2 text-[#8a8f98]" />
-          Step 2 of 3: Sender Identity & Optional Reply Forwarding
+        <h4 className="text-xs font-bold text-[#f7f8f8]">
+          Outbound Sender & Forwarding
         </h4>
         <span className="text-[10px] bg-amber-950/40 text-amber-300 font-semibold px-2.5 py-0.5 rounded-full border border-amber-900/50">
-          Step 2 Awaiting Action ⏳
+          Awaiting Action
         </span>
       </div>
 
@@ -286,7 +293,15 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
           </div>
         </div>
         <p className="text-[11px] text-[#8a8f98] italic">
-          * Note: Outbound Sender Email is used for sending outgoing emails and does not require an active receiving inbox.
+          * Note: Outbound Sender Email is used for sending outgoing emails. Create or manage sender identities in{' '}
+          <a
+            href="https://app.sendgrid.com/settings/sender_auth/senders/new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#f7f8f8] underline hover:text-white font-medium inline-flex items-center gap-0.5 not-italic"
+          >
+            SendGrid Sender Authentication
+          </a>.
         </p>
       </div>
 
@@ -365,33 +380,31 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
               </div>
             </div>
 
-            {infoMsg && <p className="text-[11px] text-[#27a644] font-medium bg-[#27a644]/10 p-2 rounded-xl border border-[#27a644]/20">✅ {infoMsg}</p>}
+            {infoMsg && <p className="text-[11px] text-[#27a644] font-medium bg-[#27a644]/10 p-2 rounded-xl border border-[#27a644]/20">{infoMsg}</p>}
           </div>
         )}
       </div>
 
       {/* Navigation */}
       <div className="pt-3 flex justify-between items-center border-t border-[#23252a]">
-        <button
-          type="button"
-          onClick={() => {
-            if (s.isDone) {
-              setSenderName(s.senderName || '');
-              setSenderEmail(s.senderEmail || '');
-              setEnableForwarding(s.replyMode === 'real_mailbox');
-              setForwardingMailbox(s.replyMailboxEmail || s.replyTo || s.senderEmail || '');
-              setOtpInput('');
-              setInfoMsg('');
-              setErrorMsg('');
-              setMode('view');
-            } else {
-              onBack();
-            }
-          }}
-          className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all cursor-pointer"
-        >
-          {s.isDone ? '← Cancel Edit' : '← Back to Step 1'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-3.5 py-1.5 border border-[#34343a] rounded-xl text-[#8a8f98] hover:text-[#f7f8f8] bg-[#18191c] hover:bg-[#23252a] text-xs font-medium transition-all cursor-pointer"
+          >
+            Back
+          </button>
+          {s.isDone && (
+            <button
+              type="button"
+              onClick={() => setMode('view')}
+              className="px-3 py-1.5 border border-transparent rounded-xl text-[#8a8f98] hover:text-[#f7f8f8] text-xs font-medium transition-all cursor-pointer"
+            >
+              Cancel Edit
+            </button>
+          )}
+        </div>
         <button
           type="button"
           onClick={handleSaveAndContinue}
@@ -399,7 +412,7 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
           className="px-4 py-2 bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center disabled:opacity-40 cursor-pointer"
         >
           {saveSenderMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
-          {saveSenderMutation.isPending ? 'Saving...' : 'Save & Continue to Step 3 →'}
+          {saveSenderMutation.isPending ? 'Saving...' : 'Save & Next'}
         </button>
       </div>
     </div>
