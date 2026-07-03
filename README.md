@@ -37,12 +37,16 @@ graph TD
 - **Dead Letter Queue (DLQ)**: Isolates failed communications and halts retry loops on high-consecutive failures.
 - **Idempotency Guard**: Guarantees that only one collection message is dispatched within a 20-hour window per invoice.
 
+---
+
 ### 2. React SPA Frontend (frontend/)
 - **Dashboard**: High-level collection summaries, aging pyramids, and analytics charts using Recharts.
 - **Invoice Portal**: Invoices view, importing from CSV, tracking communication logs, and sending manual overrides.
 - **Agent Controls**: Visibility into active agent execution runs, success metrics, and DLQ reviews.
 - **Team Management**: User role configurations (Admin, Manager, Viewer) and invitations handling.
 - **System Settings**: Configurable email templates, tenant parameters, and payment integration setups.
+
+---
 
 ### 3. FastAPI AI-ML Engine (ai-ml/)
 - **FastAPI Endpoint Routing**: Dedicated endpoints for `/health`, `/generation`, `/risk`, and `/agents`.
