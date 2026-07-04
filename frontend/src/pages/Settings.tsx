@@ -510,7 +510,7 @@ function EmailSettings() {
               <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
                 Custom SMTP Server
                 {smtpProgress?.isActive && (
-                  <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">Active ✓</span>
+                  <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">Active</span>
                 )}
                 {!smtpProgress?.isActive && smtpProgress?.overallStatus === 'active' && (
                   <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#8a8f98] bg-[#8a8f98]/10 px-2 py-0.5 rounded-full border border-[#8a8f98]/20">Ready to Activate</span>
@@ -575,7 +575,7 @@ function EmailSettings() {
                     SendGrid API Integration
                     {isSendgridFullyActive && (
                       <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">
-                        Active ✓
+                        Active
                       </span>
                     )}
                     {isSendgridPartial && (
@@ -1365,9 +1365,9 @@ function SmtpSetupModal({ isOpen, onClose, integration, settings, userEmail }: S
                   {testEmailStatus === 'sending' ? (
                     <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Sending...</>
                   ) : testEmailStatus === 'success' ? (
-                    <><span className="text-[#27a644] font-bold mr-1.5">✓</span> Sent</>
+                    'Sent'
                   ) : testEmailStatus === 'error' ? (
-                    <><span className="text-red-400 font-bold mr-1.5">✕</span> Failed</>
+                    'Failed'
                   ) : (
                     <><Mail className="w-3.5 h-3.5 mr-1.5" /> Send Test</>
                   )}
@@ -1444,12 +1444,7 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
   };
 
   const getStepTitle = () => {
-    switch (wizardStep) {
-      case 1: return "SendGrid Integration — API Key";
-      case 2: return "SendGrid Integration — Sender & Mode";
-      case 3: return "SendGrid Integration — Inbound Webhook";
-      default: return "SendGrid Integration Setup";
-    }
+    return "SendGrid Setup";
   };
 
   const getStepDescription = () => {
