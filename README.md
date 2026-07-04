@@ -36,9 +36,7 @@ graph TD
 - **Payment Gateway Integration**: Custom adapters for Razorpay supporting dynamic payment link generation and automated webhooks validation.
 - **Dead Letter Queue (DLQ)**: Isolates failed communications and halts retry loops on high-consecutive failures.
 - **Idempotency Guard**: Guarantees that only one collection message is dispatched within a 20-hour window per invoice.
-
----
-
+  1
 ### 2. React SPA Frontend (frontend/)
 - **Dashboard**: High-level collection summaries, aging pyramids, and analytics charts using Recharts.
 - **Invoice Portal**: Invoices view, importing from CSV, tracking communication logs, and sending manual overrides.
@@ -46,17 +44,13 @@ graph TD
 - **Team Management**: User role configurations (Admin, Manager, Viewer) and invitations handling.
 - **System Settings**: Configurable email templates, tenant parameters, and payment integration setups.
 
----
-
 ### 3. FastAPI AI-ML Engine (ai-ml/)
 - **FastAPI Endpoint Routing**: Dedicated endpoints for `/health`, `/generation`, `/risk`, and `/agents`.
 - **Structured LLM Generation**: Prompts tailored to a 5-Stage Tone Escalation Matrix (Warm, Firm, Serious, Stern, Legal Stop).
 - **Output Validation**: Structure validators ensure subjects and payment links are formatted correctly.
 - **Security & Redaction**: Prompt injection filtering and automated PII masking on outbound payloads.
 - **Risk Assessment**: Score-based models evaluating likelihood of default to dynamically adjust communication parameters.
-
----
-
+  
 ## The 5-Stage Tone Escalation Matrix
 
 The collection logic follows an incremental escalation matrix designed to maximize cash flow while retaining commercial relationships:
