@@ -30,6 +30,13 @@ export function AppLayout() {
   }, []);
 
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isResizing) return;
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -75,7 +82,7 @@ export function AppLayout() {
     : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
-    <div className="flex h-screen w-full bg-slate-50">
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
       <aside 
         style={{ width: isMobile ? undefined : sidebarWidth }}
         className={`relative flex flex-col border-r border-slate-200 bg-white text-slate-600 z-20 flex-shrink-0 ${isMobile ? 'w-16' : ''} ${!isResizing ? 'transition-all duration-300' : ''}`}
@@ -103,7 +110,7 @@ export function AppLayout() {
                 className={({ isActive }) =>
                   `flex items-center justify-center md:justify-start rounded-md p-2 md:px-3 md:py-2 text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-blue-50 text-blue-700"
+                       ? "bg-blue-50 text-blue-700"
                       : "hover:bg-slate-100 hover:text-slate-900"
                   }`
                 }
@@ -128,7 +135,7 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-hidden flex flex-col bg-slate-50 w-full">
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col bg-slate-50 w-full">
         <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-6 shadow-sm flex-shrink-0">
           <div className="text-sm md:text-base font-semibold text-slate-800">
             {breadcrumb}
@@ -168,7 +175,7 @@ export function AppLayout() {
           </div>
         </header>
         
-        <div className="flex-1 p-4 md:p-6 overflow-auto">
+        <div className="flex-1 min-h-0 p-4 md:p-6 overflow-auto">
           <Outlet />
         </div>
       </main>
