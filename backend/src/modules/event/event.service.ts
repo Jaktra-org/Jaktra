@@ -143,6 +143,42 @@ export class EventService {
   async getFeed(tenantId: string, limit?: number) {
     return this.eventRepo.getTenantFeed(tenantId, limit);
   }
+
+  async listByEntity(
+    tenantId: string,
+    entityType: string,
+    entityId: string,
+    filters: {
+      actionTypes?: ActionType[];
+      sources?: string[];
+      actorId?: string;
+      from?: Date;
+      to?: Date;
+    },
+    page: number,
+    limit: number,
+  ): Promise<{ data: Event[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
+    const { data, total } = await this.eventRepo.findByEntityPaginated(
+      tenantId,
+      entityType,
+      entityId,
+      filters,
+      page,
+      limit
+    );
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
 }
 
 export class EventError extends Error {
