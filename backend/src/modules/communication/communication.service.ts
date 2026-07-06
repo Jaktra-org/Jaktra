@@ -21,7 +21,8 @@ export const createCommunicationSchema = z.object({
 
 export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>;
 
-import type { EventRepository } from '../event/event.repository.js';
+import type { EventService } from '../event/event.service.js';
+import type { ActionType } from '../event/event.action-types.js';
 import type { IntegrationService } from '../settings/integration.service.js';
 import { SendgridProvider } from './providers/sendgrid.provider.js';
 import { SmtpProvider } from './providers/smtp.provider.js';
@@ -40,7 +41,7 @@ export class CommunicationService {
     private communicationRepo: CommunicationRepository,
     private invoiceRepo: InvoiceRepository,
     private integrationService: IntegrationService,
-    private eventRepo?: EventRepository,
+    private eventService?: EventService,
     private dlqRepo?: DlqRepository
   ) { }
 
@@ -115,28 +116,43 @@ export class CommunicationService {
       }
     }
 
-    if (this.eventRepo) {
+    if (this.eventService) {
       const resolvedRunId = runId || rawEvent?.run_id || rawEvent?.runId;
       const isBounceOrDrop = eventType === 'bounced' || eventType === 'dropped';
-      const dbEventType = isBounceOrDrop ? 'halted' : `email_${eventType}`;
       
-      const reason = rawEvent.reason || 'Email bounced or dropped';
+      let actionType: ActionType;
+      let description: string;
+      if (eventType === 'opened') {
+        actionType = 'followup.email_opened';
+        description = 'Follow-up email opened';
+      } else if (eventType === 'clicked') {
+        actionType = 'followup.email_clicked';
+        description = 'Link in follow-up email clicked';
+      } else {
+        actionType = 'followup.bounced';
+        description = `Follow-up email delivery failed (${eventType})`;
+      }
+
       const payload = isBounceOrDrop
         ? {
             reason: eventType === 'dropped' ? 'mail_dropped' : 'mail_bounced',
-            error: reason,
+            error: rawEvent.reason || 'Email bounced or dropped',
             runId: resolvedRunId,
           }
         : { ...rawEvent, runId: resolvedRunId };
 
-      await this.eventRepo.create({
+      await this.eventService.emitEvent(
+        'invoice',
+        invoiceId,
         tenantId,
-        entityType: 'invoice',
-        entityId: invoiceId,
-        eventType: dbEventType,
-        actorName: 'system',
-        source: 'system',
-        payload,
+        actionType,
+        { source: 'webhook' },
+        {
+          description,
+          payload
+        }
+      ).catch((err: any) => {
+        logger.error(`Failed to log ${actionType} event`, err);
       });
     }
   }
@@ -372,19 +388,23 @@ export class CommunicationService {
           }
 
           // 3. Emit halted event with mail_bounced reason
-          if (this.eventRepo) {
-            await this.eventRepo.create({
+          if (this.eventService) {
+            await this.eventService.emitEvent(
+              'invoice',
+              invoiceId,
               tenantId,
-              entityType: 'invoice',
-              entityId: invoiceId,
-              eventType: 'halted',
-              actorName: 'system',
-              source: 'system',
-              payload: {
-                reason: 'mail_bounced',
-                error: 'Recipient email address does not exist',
-                recipient,
-              },
+              'followup.bounced',
+              { source: 'system' },
+              {
+                description: 'Follow-up email bounced (IMAP detection)',
+                payload: {
+                  reason: 'mail_bounced',
+                  error: 'Recipient email address does not exist',
+                  recipient,
+                }
+              }
+            ).catch((err: any) => {
+              logger.error('Failed to log followup.bounced event', err);
             });
           }
 

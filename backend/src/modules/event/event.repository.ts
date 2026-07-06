@@ -60,4 +60,10 @@ export class EventRepository {
     const rows = await dbClient.insert(events).values(data).returning();
     return rows[0]!;
   }
+
+  async createMany(data: NewEvent[], tx?: any): Promise<Event[]> {
+    if (data.length === 0) return [];
+    const dbClient = tx || this.db;
+    return await dbClient.insert(events).values(data).returning();
+  }
 }

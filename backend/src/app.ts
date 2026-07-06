@@ -125,6 +125,7 @@ export function createApp(config: AppConfig): Application {
     // Shared Repositories
     const invoiceRepo = new InvoiceRepository(config.db);
     const eventRepo = new EventRepository(config.db);
+    const eventService = new EventService(eventRepo, invoiceRepo);
     const communicationRepo = new CommunicationRepository(config.db);
     const integrationRepo = new IntegrationRepository(config.db);
     const settingsRepo = new SettingsRepository(config.db);
@@ -134,7 +135,7 @@ export function createApp(config: AppConfig): Application {
 
     // Shared Services
     const integrationService = new IntegrationService(integrationRepo);
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventRepo, dlqRepo);
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventService, dlqRepo);
     
     const gatewayFactory = new PaymentGatewayFactory();
     gatewayFactory.register(new RazorpayAdapter());
@@ -142,7 +143,7 @@ export function createApp(config: AppConfig): Application {
     const paymentService = new PaymentService(paymentRepo, invoiceRepo, integrationService, gatewayFactory, settingsRepo, eventRepo);
     app.locals.paymentService = paymentService;
 
-    const webhookService = new WebhookService(invoiceRepo, eventRepo);
+    const webhookService = new WebhookService(invoiceRepo, eventService);
     const sendgridService = new SendgridWebhookService(communicationService, config.sendgridWebhookPublicKey);
     
     app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, settingsRepo, sendgridService)));
@@ -163,9 +164,7 @@ export function createApp(config: AppConfig): Application {
       const teamService = new TeamService(teamRepo, userRepo);
       app.use('/api/team', createTeamRouter(new TeamController(teamService, teamRepo), authMiddleware));
 
-      const eventService = new EventService(eventRepo, invoiceRepo);
-
-      const invoiceImportService = new InvoiceImportService(invoiceRepo);
+      const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo);
       const triageService = new TriageService();
       app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService), authMiddleware, tenantScoped));
       app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo), authMiddleware, tenantScoped));
@@ -195,7 +194,7 @@ export function createApp(config: AppConfig): Application {
         app.locals.aimlService = aimlService;
 
         const dlqService = new DlqService(dlqRepo);
-        app.use('/api/dlq', createDlqRouter(new DlqController(dlqService), authMiddleware, tenantScoped));
+        app.use('/api/dlq', createDlqRouter(new DlqController(dlqService, eventService), authMiddleware, tenantScoped));
 
         const idempotencyService = new IdempotencyService(communicationRepo);
 

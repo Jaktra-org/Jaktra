@@ -51,11 +51,14 @@ export class InvoiceController {
 
       logger.info(`File import started for tenant ${tenantId} (${req.file.originalname}, ${req.file.size} bytes)`);
 
+      const actor = this.getActorContext(req);
+
       const result = await this.importService.importFromFile(
         req.file.buffer,
         req.file.originalname,
         tenantId,
         duplicateStrategy,
+        actor
       );
 
       logger.info(`CSV import complete: ${result.imported} imported, ${result.updated} updated, ${result.skipped} skipped, ${result.errors.length} errors`);

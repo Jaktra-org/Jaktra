@@ -1,12 +1,12 @@
 import { WebhookEventPayload } from '../../modules/payment/gateway.interface.js';
 import { InvoiceRepository } from '../invoice/invoice.repository.js';
-import { EventRepository } from '../event/event.repository.js';
+import { EventService } from '../event/event.service.js';
 import { logger } from '../../shared/logger.js';
 
 export class WebhookService {
   constructor(
     private invoiceRepo: InvoiceRepository,
-    private eventRepo: EventRepository
+    private eventService: EventService
   ) {}
 
   async handlePaymentCaptured(payload: WebhookEventPayload): Promise<void> {
@@ -32,18 +32,22 @@ export class WebhookService {
       await this.invoiceRepo.updatePaymentStatus(invoice.id, 'Paid', payload.externalRefId);
 
       // Record timeline event
-      await this.eventRepo.create({
-        tenantId: invoice.tenantId,
-        entityType: 'invoice',
-        entityId: invoice.id,
-        eventType: 'payment_received',
-        actorName: 'system',
-        source: 'system',
-        payload: {
-          provider: payload.provider,
-          amount: payload.amount,
-          externalRefId: payload.externalRefId,
+      await this.eventService.emitEvent(
+        'invoice',
+        invoice.id,
+        invoice.tenantId,
+        'payment.received',
+        { source: 'webhook' },
+        {
+          description: `Payment of ${payload.amount} received via ${payload.provider}`,
+          newValues: {
+            provider: payload.provider,
+            amount: payload.amount,
+            externalRefId: payload.externalRefId,
+          }
         }
+      ).catch((err: any) => {
+        logger.error('Failed to log payment.received audit event', err);
       });
 
       logger.info(`Successfully processed payment capture for invoice ${invoice.id} from ${payload.provider}`);
