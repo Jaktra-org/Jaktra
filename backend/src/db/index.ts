@@ -14,7 +14,6 @@ export {
 export {
   userRoleEnum,
   paymentStatusEnum,
-  urgencyTierEnum,
   communicationChannelEnum,
   communicationStatusEnum,
   providerEnum,

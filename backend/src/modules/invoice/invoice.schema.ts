@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { paymentStatusEnum, urgencyTierEnum } from '../../db/schema.js';
+import { paymentStatusEnum } from '../../db/schema.js';
 
 export const createInvoiceSchema = z.object({
   invoiceNo: z.string().min(1, 'Invoice number is required'),
@@ -32,7 +32,7 @@ export const listInvoicesSchema = z.object({
   sort_by: z.enum(['dueDate', 'invoiceAmount', 'createdAt', 'clientName', 'invoiceNo']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
   status: z.union([z.string(), z.array(z.string())]).optional(),
-  urgency_tier: z.union([z.string(), z.array(z.string())]).optional(),
+
   client_name: z.string().optional(),
   days_overdue_min: z.coerce.number().optional(),
   days_overdue_max: z.coerce.number().optional(),

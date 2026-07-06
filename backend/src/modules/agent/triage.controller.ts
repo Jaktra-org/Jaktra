@@ -12,12 +12,6 @@ export class TriageController {
     const tenantId = res.locals.tenantId as string;
     const allInvoices = await this.invoiceRepo.findByTenant(tenantId);
     const result = this.triageService.triageInvoices(allInvoices);
-
-    const updatePromises = result.invoices.map((inv) =>
-      this.invoiceRepo.updateUrgencyTier(inv.id, inv.computedTier),
-    );
-    await Promise.all(updatePromises);
-
     res.status(200).json(result);
   };
 }

@@ -45,15 +45,25 @@ export class AnalyticsRepository {
       baseConditions = and(baseConditions, lte(invoices.createdAt, toDate));
     }
 
+    const computedTierSql = sql<string>`
+      CASE 
+        WHEN (CURRENT_DATE - ${invoices.dueDate}::date) >= 31 THEN 'legal_escalation'
+        WHEN (CURRENT_DATE - ${invoices.dueDate}::date) BETWEEN 22 AND 30 THEN 'stage_4_stern'
+        WHEN (CURRENT_DATE - ${invoices.dueDate}::date) BETWEEN 15 AND 21 THEN 'stage_3_serious'
+        WHEN (CURRENT_DATE - ${invoices.dueDate}::date) BETWEEN 8 AND 14 THEN 'stage_2_firm'
+        ELSE 'stage_1_warm'
+      END
+    `;
+
     const result = await this.db
       .select({
-        tier: invoices.urgencyTier,
+        tier: computedTierSql,
         totalAmount: sql<number>`COALESCE(SUM(${invoices.invoiceAmount}), 0)::float`,
         count: sql<number>`COUNT(*)::int`,
       })
       .from(invoices)
       .where(baseConditions)
-      .groupBy(invoices.urgencyTier);
+      .groupBy(computedTierSql);
 
     return result;
   }
@@ -193,16 +203,26 @@ export class AnalyticsRepository {
       baseConditions = and(baseConditions, lte(invoices.createdAt, toDate));
     }
 
+    const computedTierSql = sql<string>`
+      CASE 
+        WHEN (CURRENT_DATE - ${invoices.dueDate}::date) >= 31 THEN 'legal_escalation'
+        WHEN (CURRENT_DATE - ${invoices.dueDate}::date) BETWEEN 22 AND 30 THEN 'stage_4_stern'
+        WHEN (CURRENT_DATE - ${invoices.dueDate}::date) BETWEEN 15 AND 21 THEN 'stage_3_serious'
+        WHEN (CURRENT_DATE - ${invoices.dueDate}::date) BETWEEN 8 AND 14 THEN 'stage_2_firm'
+        ELSE 'stage_1_warm'
+      END
+    `;
+
     const result = await this.db
       .select({
-        tier: invoices.urgencyTier,
+        tier: computedTierSql,
         totalFollowedUp: sql<number>`COUNT(*)::int`,
         paidAfterFollowUp: sql<number>`SUM(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN 1 ELSE 0 END)::int`,
         avgDaysToPayment: sql<number>`AVG(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN EXTRACT(EPOCH FROM (${invoices.updatedAt} - ${invoices.createdAt})) / 86400 ELSE NULL END)::float`,
       })
       .from(invoices)
       .where(baseConditions)
-      .groupBy(invoices.urgencyTier);
+      .groupBy(computedTierSql);
 
     return result;
   }

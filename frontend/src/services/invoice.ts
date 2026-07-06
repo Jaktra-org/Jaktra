@@ -8,15 +8,13 @@ export const invoiceService = {
     if (params.status && params.status.length > 0) {
       queryParams.status = params.status.join(',');
     }
-    if (params.urgency_tier && params.urgency_tier.length > 0) {
-      queryParams.urgency_tier = params.urgency_tier.join(',');
-    }
+
 
     const response = await api.get('/invoices', { params: queryParams });
     return response.data;
   },
 
-  createInvoice: async (data: Omit<Invoice, 'id' | 'tenantId' | 'paymentStatus' | 'followupCount' | 'createdAt' | 'updatedAt' | 'lastFollowupDate' | 'urgencyTier' | 'daysOverdue' | 'invoiceAmount'> & { invoiceAmount: number | string }) => {
+  createInvoice: async (data: Omit<Invoice, 'id' | 'tenantId' | 'paymentStatus' | 'followupCount' | 'createdAt' | 'updatedAt' | 'lastFollowupDate' | 'daysOverdue' | 'invoiceAmount'> & { invoiceAmount: number | string }) => {
     const response = await api.post('/invoices', data);
     return response.data;
   },

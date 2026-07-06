@@ -42,7 +42,6 @@ export interface Invoice {
   subject?: string | null;
   followupCount: number;
   lastFollowupDate: string | null;
-  urgencyTier: string | null;
   daysOverdue?: number; 
   paymentLink?: {
     url: string;
@@ -68,7 +67,7 @@ export interface ListInvoicesParams {
   sort_by?: 'invoiceNo' | 'clientName' | 'invoiceAmount' | 'dueDate' | 'paymentStatus' | 'followupCount' | 'createdAt';
   order?: 'asc' | 'desc';
   status?: string[];
-  urgency_tier?: string[];
+
   client_name?: string;
   days_overdue_min?: number;
   days_overdue_max?: number;

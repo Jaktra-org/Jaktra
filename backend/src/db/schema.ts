@@ -38,14 +38,6 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 ]);
 
 
-export const urgencyTierEnum = pgEnum('urgency_tier', [
-  'stage_1_warm',
-  'stage_2_firm',
-  'stage_3_serious',
-  'stage_4_stern',
-  'legal_escalation',
-]);
-
 
 export const communicationChannelEnum = pgEnum('communication_channel', [
   'email',
@@ -108,7 +100,6 @@ export const invoices = pgTable(
     paymentStatus: paymentStatusEnum('payment_status').notNull().default('Pending'),
     followupCount: integer('followup_count').notNull().default(0),
     lastFollowupDate: timestamp('last_followup_date', { withTimezone: true }),
-    urgencyTier: urgencyTierEnum('urgency_tier'),
     externalRefId: text('external_ref_id'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

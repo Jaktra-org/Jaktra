@@ -2,7 +2,6 @@ import { eq, and, isNull, desc, asc, ilike, inArray, count, lte, gte } from 'dri
 import { invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Invoice, NewInvoice } from '../../db/index.js';
-import type { UrgencyTier } from '../agent/triage.service.js';
 
 export class InvoiceRepository {
   constructor(private db: DatabaseClient) {}
@@ -31,12 +30,6 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async updateUrgencyTier(invoiceId: string, tier: UrgencyTier): Promise<void> {
-    await this.db
-      .update(invoices)
-      .set({ urgencyTier: tier, updatedAt: new Date() })
-      .where(eq(invoices.id, invoiceId));
-  }
 
   async updateFollowupCount(invoiceId: string, count: number): Promise<void> {
     await this.db
@@ -90,7 +83,6 @@ export class InvoiceRepository {
     sortBy: 'dueDate' | 'invoiceAmount' | 'createdAt' | 'clientName' | 'invoiceNo';
     sortOrder: 'asc' | 'desc';
     status?: string[];
-    urgencyTier?: string[];
     clientName?: string;
     daysOverdueMin?: number;
     daysOverdueMax?: number;
@@ -102,9 +94,6 @@ export class InvoiceRepository {
 
     if (params.status && params.status.length > 0) {
       conditions.push(inArray(invoices.paymentStatus, params.status as any[]));
-    }
-    if (params.urgencyTier && params.urgencyTier.length > 0) {
-      conditions.push(inArray(invoices.urgencyTier, params.urgencyTier as any[]));
     }
     if (params.clientName) {
       conditions.push(ilike(invoices.clientName, `%${params.clientName}%`));

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoiceService } from "../services/invoice";
@@ -31,13 +31,7 @@ import {
   FileText
 } from "lucide-react";
 
-const tierConfig: Record<string, { label: string, color: string }> = {
-  stage_1_warm: { label: 'Warm (Stage 1)', color: 'bg-blue-100 text-blue-800' },
-  stage_2_firm: { label: 'Firm (Stage 2)', color: 'bg-yellow-100 text-yellow-800' },
-  stage_3_serious: { label: 'Serious (Stage 3)', color: 'bg-orange-100 text-orange-800' },
-  stage_4_stern: { label: 'Stern (Stage 4)', color: 'bg-red-100 text-red-800' },
-  legal_escalation: { label: 'Legal Escalation', color: 'bg-rose-900 text-white' },
-};
+
 
 const formatCurrency = (val: string | number) => {
   return Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(val));
@@ -268,11 +262,6 @@ export function InvoiceDetail() {
             }>
               {invoice.paymentStatus}
             </Badge>
-            {invoice.urgencyTier && invoice.paymentStatus !== 'Paid' && (
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${tierConfig[invoice.urgencyTier]?.color || 'bg-slate-100 text-slate-800'}`}>
-                {tierConfig[invoice.urgencyTier]?.label || invoice.urgencyTier}
-              </span>
-            )}
           </div>
           <p className="text-3xl font-light text-slate-900 mt-4">
             {formatCurrency(invoice.invoiceAmount)}

@@ -105,7 +105,6 @@ export class InvoiceController {
         sortBy: params.sort_by as any,
         sortOrder: params.order,
         status: toArray(params.status),
-        urgencyTier: toArray(params.urgency_tier),
         clientName: params.client_name,
         daysOverdueMin: params.days_overdue_min,
         daysOverdueMax: params.days_overdue_max,
@@ -115,15 +114,9 @@ export class InvoiceController {
 
       const dataWithDaysOverdue = result.data.map(inv => {
         const daysOverdue = triageService.computeDaysOverdue(inv.dueDate);
-        const isActionable = triageService.isActionable(inv);
-        let urgencyTier = null;
-        if (isActionable) {
-          urgencyTier = triageService.assignTier(daysOverdue);
-        }
         return { 
           ...inv, 
-          daysOverdue, 
-          urgencyTier 
+          daysOverdue 
         };
       });
 
@@ -154,11 +147,6 @@ export class InvoiceController {
 
       const triageService = new TriageService();
       const daysOverdue = triageService.computeDaysOverdue(invoice.dueDate);
-      const isActionable = triageService.isActionable(invoice);
-      let urgencyTier = null;
-      if (isActionable) {
-        urgencyTier = triageService.assignTier(daysOverdue);
-      }
 
       let paymentLink = null;
       let paymentWarning = null;
@@ -173,7 +161,6 @@ export class InvoiceController {
 
       res.status(200).json({ 
         ...invoice, 
-        urgencyTier,
         daysOverdue,
         paymentLink: paymentLink ? {
           url: paymentLink.paymentUrl,

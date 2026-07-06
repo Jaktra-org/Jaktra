@@ -23,15 +23,6 @@ import {
   AlertCircle
 } from "lucide-react";
 import { getErrorMessage } from "../utils/error-utils";
-
-const tierConfig: Record<string, { label: string, color: string }> = {
-  stage_1_warm: { label: 'Warm (Stage 1)', color: 'bg-blue-100 text-blue-800' },
-  stage_2_firm: { label: 'Firm (Stage 2)', color: 'bg-yellow-100 text-yellow-800' },
-  stage_3_serious: { label: 'Serious (Stage 3)', color: 'bg-orange-100 text-orange-800' },
-  stage_4_stern: { label: 'Stern (Stage 4)', color: 'bg-red-100 text-red-800' },
-  legal_escalation: { label: 'Legal Escalation', color: 'bg-rose-900 text-white' },
-};
-
 export function Invoices() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -83,7 +74,7 @@ export function Invoices() {
   const handleExportCSV = () => {
     if (!data?.data || data.data.length === 0) return;
     
-    const headers = ['Invoice No', 'Client', 'Amount', 'Due Date', 'Status', 'Days Overdue', 'Tier', 'Follow-ups'];
+    const headers = ['Invoice No', 'Client', 'Amount', 'Due Date', 'Status', 'Days Overdue', 'Follow-ups'];
     const rows = data.data.map(inv => [
       inv.invoiceNo,
       `"${inv.clientName}"`, // Quote to handle commas
@@ -91,7 +82,6 @@ export function Invoices() {
       inv.dueDate,
       inv.paymentStatus,
       inv.daysOverdue || 0,
-      inv.urgencyTier || 'N/A',
       inv.followupCount
     ]);
     
@@ -223,9 +213,6 @@ export function Invoices() {
                 <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
                   <div className="flex items-center">Days Overdue</div>
                 </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
-                  <div className="flex items-center">Urgency Tier</div>
-                </th>
                 <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('followupCount')}>
                   <div className="flex items-center">Follow-ups {renderSortIcon('followupCount')}</div>
                 </th>
@@ -234,7 +221,7 @@ export function Invoices() {
             <tbody className="[&_tr:last-child]:border-0">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500">
+                  <td colSpan={7} className="p-8 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
                       <p>Loading invoices...</p>
@@ -243,13 +230,13 @@ export function Invoices() {
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-red-500">
+                  <td colSpan={7} className="p-8 text-center text-red-500">
                     Failed to load invoices. Please try again.
                   </td>
                 </tr>
               ) : !data?.data || data.data.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-500">
+                  <td colSpan={7} className="p-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <FileText className="h-12 w-12 text-slate-300 mb-4" />
                       <p className="text-lg font-medium text-slate-900">No invoices found</p>
@@ -288,15 +275,6 @@ export function Invoices() {
                     <td className="p-4 align-middle">
                       {invoice.daysOverdue ? (
                         <span className="font-medium text-red-600">{invoice.daysOverdue} days</span>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-                    <td className="p-4 align-middle">
-                      {invoice.urgencyTier && invoice.paymentStatus !== 'Paid' ? (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${tierConfig[invoice.urgencyTier]?.color || 'bg-slate-100 text-slate-800'}`}>
-                          {tierConfig[invoice.urgencyTier]?.label || invoice.urgencyTier}
-                        </span>
                       ) : (
                         <span className="text-slate-400">-</span>
                       )}
