@@ -55,8 +55,9 @@ export class EventRepository {
     }));
   }
 
-  async create(data: NewEvent): Promise<Event> {
-    const rows = await this.db.insert(events).values(data).returning();
+  async create(data: NewEvent, tx?: any): Promise<Event> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient.insert(events).values(data).returning();
     return rows[0]!;
   }
 }

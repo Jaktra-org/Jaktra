@@ -4,7 +4,7 @@ import type { DatabaseClient } from '../../db/index.js';
 import type { Invoice, NewInvoice } from '../../db/index.js';
 
 export class InvoiceRepository {
-  constructor(private db: DatabaseClient) {}
+  constructor(public readonly db: DatabaseClient) {}
 
   async findByTenant(tenantId: string): Promise<Invoice[]> {
     return this.db
@@ -38,13 +38,14 @@ export class InvoiceRepository {
       .where(eq(invoices.id, invoiceId));
   }
 
-  async updatePaymentStatus(invoiceId: string, status: 'Pending' | 'Paid' | 'Overdue' | 'Written Off', externalRefId?: string): Promise<void> {
+  async updatePaymentStatus(invoiceId: string, status: 'Pending' | 'Paid' | 'Overdue' | 'Written Off', externalRefId?: string, tx?: any): Promise<void> {
+    const dbClient = tx || this.db;
     const updateData: any = { paymentStatus: status, updatedAt: new Date() };
     if (externalRefId) {
       updateData.externalRefId = externalRefId;
     }
     
-    await this.db
+    await dbClient
       .update(invoices)
       .set(updateData)
       .where(eq(invoices.id, invoiceId));
@@ -66,14 +67,16 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async create(data: NewInvoice): Promise<Invoice> {
-    const rows = await this.db.insert(invoices).values(data).returning();
+  async create(data: NewInvoice, tx?: any): Promise<Invoice> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient.insert(invoices).values(data).returning();
     return rows[0]!;
   }
 
-  async createMany(data: NewInvoice[]): Promise<Invoice[]> {
+  async createMany(data: NewInvoice[], tx?: any): Promise<Invoice[]> {
     if (data.length === 0) return [];
-    return this.db.insert(invoices).values(data).returning();
+    const dbClient = tx || this.db;
+    return dbClient.insert(invoices).values(data).returning();
   }
 
   async findMany(params: {
@@ -138,8 +141,9 @@ export class InvoiceRepository {
     };
   }
 
-  async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>): Promise<Invoice | undefined> {
-    const rows = await this.db
+  async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>, tx?: any): Promise<Invoice | undefined> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient
       .update(invoices)
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
@@ -147,8 +151,9 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async softDelete(invoiceId: string, tenantId: string): Promise<boolean> {
-    const rows = await this.db
+  async softDelete(invoiceId: string, tenantId: string, tx?: any): Promise<boolean> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient
       .update(invoices)
       .set({ deletedAt: new Date() })
       .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
@@ -156,11 +161,24 @@ export class InvoiceRepository {
     return rows.length > 0;
   }
 
-  async upsertByInvoiceNo(data: NewInvoice): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
-    const existing = await this.findByInvoiceNo(data.invoiceNo, data.tenantId);
+  async upsertByInvoiceNo(data: NewInvoice, tx?: any): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
+    const dbClient = tx || this.db;
+    // Find using the same client/transaction
+    const rowsFound = await dbClient
+      .select()
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.invoiceNo, data.invoiceNo),
+          eq(invoices.tenantId, data.tenantId),
+          isNull(invoices.deletedAt),
+        ),
+      )
+      .limit(1);
+    const existing = rowsFound[0];
 
     if (existing) {
-      const rows = await this.db
+      const rows = await dbClient
         .update(invoices)
         .set({
           clientName: data.clientName,
@@ -179,7 +197,7 @@ export class InvoiceRepository {
       return { invoice: rows[0]!, wasUpdated: true };
     }
 
-    const invoice = await this.create(data);
+    const invoice = await this.create(data, dbClient);
     return { invoice, wasUpdated: false };
   }
 }

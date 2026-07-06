@@ -163,9 +163,11 @@ export function createApp(config: AppConfig): Application {
       const teamService = new TeamService(teamRepo, userRepo);
       app.use('/api/team', createTeamRouter(new TeamController(teamService, teamRepo), authMiddleware));
 
+      const eventService = new EventService(eventRepo, invoiceRepo);
+
       const invoiceImportService = new InvoiceImportService(invoiceRepo);
       const triageService = new TriageService();
-      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService), authMiddleware, tenantScoped));
+      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService), authMiddleware, tenantScoped));
       app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo), authMiddleware, tenantScoped));
 
       const analyticsRepo = new AnalyticsRepository(config.db);
@@ -178,7 +180,6 @@ export function createApp(config: AppConfig): Application {
       const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo, config.db);
       app.use('/api/invoices', createReconcilerRouter(new ReconcilerController(reconcilerService), authMiddleware, tenantScoped));
 
-      const eventService = new EventService(eventRepo, invoiceRepo);
       app.use('/api', createEventRouter(new EventController(eventService), authMiddleware, tenantScoped));
 
       app.use('/api/settings/communication', createCommunicationRouter(new CommunicationController(communicationService), authMiddleware, tenantScoped));

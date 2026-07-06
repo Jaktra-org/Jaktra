@@ -40,6 +40,7 @@ export class EventService {
       oldValues?: Record<string, unknown>;
       newValues?: Record<string, unknown>;
       payload?: Record<string, unknown>;
+      tx?: any;
     }
   ): Promise<Event>;
 
@@ -98,7 +99,7 @@ export class EventService {
         newValues: opts?.newValues ?? null,
         eventType,
         payload: opts?.payload ?? null,
-      });
+      }, opts?.tx);
     } else {
       const invoiceId = arg1;
       const eventType = arg2 as EventType;

@@ -12,13 +12,27 @@ import {
 } from './invoice.schema.js';
 import type { PaymentService } from '../payment/payment.service.js';
 import { ValidationError, NotFoundError } from '../../shared/errors/index.js';
+import type { EventService, ActorContext } from '../event/event.service.js';
+import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 
 export class InvoiceController {
   constructor(
     private importService: InvoiceImportService,
     private invoiceRepo: InvoiceRepository,
-    private paymentService?: PaymentService
+    private paymentService?: PaymentService,
+    private eventService?: EventService
   ) {}
+
+  private getActorContext(req: Request): ActorContext {
+    const authReq = req as AuthenticatedRequest;
+    return {
+      source: 'ui',
+      userId: authReq.user.userId,
+      name: authReq.user.name,
+      email: authReq.user.email,
+      role: authReq.user.role,
+    };
+  }
 
   importFromCsv = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -56,10 +70,44 @@ export class InvoiceController {
     try {
       const tenantId = res.locals.tenantId as string;
       const data = createInvoiceSchema.parse(req.body);
-      const result = await this.invoiceRepo.upsertByInvoiceNo({
-        ...data,
-        invoiceAmount: data.invoiceAmount.toString(),
-        tenantId
+      const actor = this.getActorContext(req);
+
+      const result = await this.invoiceRepo.db.transaction(async (tx) => {
+        const upsertResult = await this.invoiceRepo.upsertByInvoiceNo({
+          ...data,
+          invoiceAmount: data.invoiceAmount.toString(),
+          tenantId
+        }, tx);
+
+        if (this.eventService) {
+          if (upsertResult.wasUpdated) {
+            await this.eventService.emitEvent('invoice', upsertResult.invoice.id, tenantId, 'invoice.updated', actor, {
+              description: `Invoice #${upsertResult.invoice.invoiceNo} updated`,
+              newValues: {
+                clientName: upsertResult.invoice.clientName,
+                invoiceAmount: upsertResult.invoice.invoiceAmount,
+                dueDate: upsertResult.invoice.dueDate,
+                contactEmail: upsertResult.invoice.contactEmail,
+                paymentStatus: upsertResult.invoice.paymentStatus
+              },
+              tx
+            });
+          } else {
+            await this.eventService.emitEvent('invoice', upsertResult.invoice.id, tenantId, 'invoice.created', actor, {
+              description: `Invoice #${upsertResult.invoice.invoiceNo} created`,
+              newValues: {
+                invoiceNo: upsertResult.invoice.invoiceNo,
+                clientName: upsertResult.invoice.clientName,
+                invoiceAmount: upsertResult.invoice.invoiceAmount,
+                dueDate: upsertResult.invoice.dueDate,
+                contactEmail: upsertResult.invoice.contactEmail,
+                paymentStatus: upsertResult.invoice.paymentStatus
+              },
+              tx
+            });
+          }
+        }
+        return upsertResult;
       });
       
       if (result.wasUpdated) {
@@ -76,12 +124,34 @@ export class InvoiceController {
     try {
       const tenantId = res.locals.tenantId as string;
       const data = bulkCreateInvoiceSchema.parse(req.body);
+      const actor = this.getActorContext(req);
       const invoicesToInsert = data.invoices.map(inv => ({
         ...inv,
         invoiceAmount: inv.invoiceAmount.toString(),
         tenantId
       }));
-      const created = await this.invoiceRepo.createMany(invoicesToInsert);
+
+      const created = await this.invoiceRepo.db.transaction(async (tx) => {
+        const results = await this.invoiceRepo.createMany(invoicesToInsert, tx);
+        if (this.eventService) {
+          for (const inv of results) {
+            await this.eventService.emitEvent('invoice', inv.id, tenantId, 'invoice.created', actor, {
+              description: `Invoice #${inv.invoiceNo} created`,
+              newValues: {
+                invoiceNo: inv.invoiceNo,
+                clientName: inv.clientName,
+                invoiceAmount: inv.invoiceAmount,
+                dueDate: inv.dueDate,
+                contactEmail: inv.contactEmail,
+                paymentStatus: inv.paymentStatus
+              },
+              tx
+            });
+          }
+        }
+        return results;
+      });
+
       res.status(201).json({ created: created.length, invoices: created });
     } catch (error: any) {
       next(error);
@@ -190,6 +260,7 @@ export class InvoiceController {
       const tenantId = res.locals.tenantId as string;
       const id = req.params.id as string;
       const data = updateInvoiceSchema.parse(req.body);
+      const actor = this.getActorContext(req);
 
       const invoice = await this.invoiceRepo.findById(id);
       if (!invoice || invoice.tenantId !== tenantId) {
@@ -202,11 +273,35 @@ export class InvoiceController {
         updatedData.invoiceAmount = data.invoiceAmount.toString();
       }
 
-      const updated = await this.invoiceRepo.update(id, tenantId, updatedData);
-      if (!updated) {
-        next(new NotFoundError('Invoice not found'));
-        return;
+      const oldValues: Record<string, any> = {};
+      const newValues: Record<string, any> = {};
+      for (const [key, value] of Object.entries(data)) {
+        if (value !== undefined) {
+          const oldVal = (invoice as any)[key];
+          const newVal = value;
+          if (String(oldVal) !== String(newVal)) {
+            oldValues[key] = oldVal;
+            newValues[key] = newVal;
+          }
+        }
       }
+
+      const updated = await this.invoiceRepo.db.transaction(async (tx) => {
+        const updateResult = await this.invoiceRepo.update(id, tenantId, updatedData, tx);
+        if (!updateResult) {
+          throw new NotFoundError('Invoice not found');
+        }
+
+        if (this.eventService && Object.keys(newValues).length > 0) {
+          await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.updated', actor, {
+            description: `Invoice #${invoice.invoiceNo} updated`,
+            oldValues,
+            newValues,
+            tx
+          });
+        }
+        return updateResult;
+      });
       
       if (
         this.paymentService &&
@@ -227,6 +322,7 @@ export class InvoiceController {
       const tenantId = res.locals.tenantId as string;
       const id = req.params.id as string;
       const { paymentStatus } = updateInvoiceStatusSchema.parse(req.body);
+      const actor = this.getActorContext(req);
 
       const invoice = await this.invoiceRepo.findById(id);
       if (!invoice || invoice.tenantId !== tenantId) {
@@ -234,7 +330,17 @@ export class InvoiceController {
         return;
       }
 
-      await this.invoiceRepo.updatePaymentStatus(id, paymentStatus as any);
+      await this.invoiceRepo.db.transaction(async (tx) => {
+        await this.invoiceRepo.updatePaymentStatus(id, paymentStatus as any, undefined, tx);
+        if (this.eventService && invoice.paymentStatus !== paymentStatus) {
+          await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.status_changed', actor, {
+            description: `Status changed to ${paymentStatus}`,
+            oldValues: { paymentStatus: invoice.paymentStatus },
+            newValues: { paymentStatus },
+            tx
+          });
+        }
+      });
       
       if (this.paymentService && paymentStatus === 'Paid') {
         await this.paymentService.cancelActivePaymentLinks(tenantId, id);
@@ -250,6 +356,7 @@ export class InvoiceController {
     try {
       const tenantId = res.locals.tenantId as string;
       const id = req.params.id as string;
+      const actor = this.getActorContext(req);
 
       if (!this.paymentService) {
         next(new ValidationError('Payment service not configured'));
@@ -262,7 +369,18 @@ export class InvoiceController {
         return;
       }
 
-      const paymentLink = await this.paymentService.getOrGeneratePaymentLink(tenantId, id, 'razorpay');
+      const paymentLink = await this.invoiceRepo.db.transaction(async (tx) => {
+        const link = await this.paymentService!.getOrGeneratePaymentLink(tenantId, id, 'razorpay');
+        if (this.eventService) {
+          await this.eventService.emitEvent('invoice', id, tenantId, 'payment.link_generated', actor, {
+            description: `Payment link generated`,
+            newValues: { provider: 'razorpay', url: link },
+            tx
+          });
+        }
+        return link;
+      });
+
       res.status(200).json({ url: paymentLink });
     } catch (error: any) {
       next(error);
@@ -273,12 +391,34 @@ export class InvoiceController {
     try {
       const tenantId = res.locals.tenantId as string;
       const id = req.params.id as string;
+      const actor = this.getActorContext(req);
 
-      const deleted = await this.invoiceRepo.softDelete(id, tenantId);
-      if (!deleted) {
+      const invoice = await this.invoiceRepo.findById(id);
+      if (!invoice || invoice.tenantId !== tenantId) {
         next(new NotFoundError('Invoice not found'));
         return;
       }
+
+      await this.invoiceRepo.db.transaction(async (tx) => {
+        const deleted = await this.invoiceRepo.softDelete(id, tenantId, tx);
+        if (!deleted) {
+          throw new NotFoundError('Invoice not found');
+        }
+        if (this.eventService) {
+          await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.deleted', actor, {
+            description: `Invoice #${invoice.invoiceNo} deleted`,
+            oldValues: {
+              invoiceNo: invoice.invoiceNo,
+              clientName: invoice.clientName,
+              invoiceAmount: invoice.invoiceAmount,
+              dueDate: invoice.dueDate,
+              contactEmail: invoice.contactEmail,
+              paymentStatus: invoice.paymentStatus
+            },
+            tx
+          });
+        }
+      });
 
       res.status(200).json({ message: 'Invoice deleted successfully' });
     } catch (error: any) {
