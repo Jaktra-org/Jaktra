@@ -88,6 +88,7 @@ export class AuthService {
     return {
       userId: user.id,
       tenantId: user.tenantId,
+      name: user.name,
       email: user.email,
       role: user.role,
     };
@@ -126,6 +127,7 @@ export class AuthService {
     const payload: JwtPayload = {
       userId: user.id,
       tenantId: user.tenantId,
+      name: user.name,
       email: user.email,
       role: user.role,
     };
