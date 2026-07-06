@@ -26,50 +26,7 @@ export function TriggerFollowupModal({
   invoice,
   isPending,
 }: TriggerFollowupModalProps) {
-  const computeDaysOverdue = (dueDate: string): number => {
-    const due = new Date(dueDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    due.setHours(0, 0, 0, 0);
-
-    const diffMs = today.getTime() - due.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  };
-
-  const assignTier = (daysOverdue: number): string => {
-    if (daysOverdue >= 31) return 'legal_escalation';
-    if (daysOverdue >= 22) return 'stage_4_stern';
-    if (daysOverdue >= 15) return 'stage_3_serious';
-    if (daysOverdue >= 8) return 'stage_2_firm';
-    return 'stage_1_warm';
-  };
-
-  const isActionable = (): boolean => {
-    if (invoice.paymentStatus === 'Paid') {
-      return false;
-    }
-
-    const daysOverdue = computeDaysOverdue(invoice.dueDate);
-    if (daysOverdue > 0) return true;
-
-    const due = new Date(invoice.dueDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    due.setHours(0, 0, 0, 0);
-    const daysUntilDue = Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilDue <= 7;
-  };
-
-  const getRecommendedTone = (): string | null => {
-    if (!isActionable()) return null;
-    const daysOverdue = computeDaysOverdue(invoice.dueDate);
-    const tier = assignTier(daysOverdue);
-    if (tier === 'legal_escalation') return null;
-    return tier;
-  };
-
-  const recommendedTone = getRecommendedTone();
+  const recommendedTone = invoice.urgencyTier;
   const isRecommendedValid = !!(recommendedTone && recommendedTone in toneLabels);
   const initialTone = isRecommendedValid ? recommendedTone! : "";
   const [selectedTone, setSelectedTone] = useState<string>(initialTone);
@@ -85,9 +42,7 @@ export function TriggerFollowupModal({
       return "Invoice is already paid";
     }
     
-    const daysOverdue = computeDaysOverdue(invoice.dueDate);
-    const tier = assignTier(daysOverdue);
-    if (tier === 'legal_escalation') {
+    if (invoice.daysOverdue !== undefined && invoice.daysOverdue >= 31) {
       return "Invoice has escalated to legal status";
     }
 

@@ -42,6 +42,7 @@ export interface Invoice {
   subject?: string | null;
   followupCount: number;
   lastFollowupDate: string | null;
+  urgencyTier?: string | null;
   daysOverdue?: number; 
   paymentLink?: {
     url: string;

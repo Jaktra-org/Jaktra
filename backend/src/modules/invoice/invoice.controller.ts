@@ -114,9 +114,15 @@ export class InvoiceController {
 
       const dataWithDaysOverdue = result.data.map(inv => {
         const daysOverdue = triageService.computeDaysOverdue(inv.dueDate);
+        const isActionable = triageService.isActionable(inv);
+        let urgencyTier = null;
+        if (isActionable) {
+          urgencyTier = triageService.assignTier(daysOverdue);
+        }
         return { 
           ...inv, 
-          daysOverdue 
+          daysOverdue, 
+          urgencyTier 
         };
       });
 
@@ -147,6 +153,11 @@ export class InvoiceController {
 
       const triageService = new TriageService();
       const daysOverdue = triageService.computeDaysOverdue(invoice.dueDate);
+      const isActionable = triageService.isActionable(invoice);
+      let urgencyTier = null;
+      if (isActionable) {
+        urgencyTier = triageService.assignTier(daysOverdue);
+      }
 
       let paymentLink = null;
       let paymentWarning = null;
@@ -162,6 +173,7 @@ export class InvoiceController {
       res.status(200).json({ 
         ...invoice, 
         daysOverdue,
+        urgencyTier,
         paymentLink: paymentLink ? {
           url: paymentLink.paymentUrl,
           status: paymentLink.status,
