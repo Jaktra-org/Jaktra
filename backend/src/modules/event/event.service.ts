@@ -31,10 +31,12 @@ export class EventService {
   ): Promise<Event> {
     return this.eventRepo.create({
       tenantId: tenantId ?? '',
-      invoiceId,
+      entityType: 'invoice',
+      entityId: invoiceId,
       eventType,
       payload: payload ?? null,
-      actor,
+      actorName: actor,
+      source: actor === 'ai-agent' ? 'agent' : 'system',
     });
   }
 

@@ -34,9 +34,11 @@ export class WebhookService {
       // Record timeline event
       await this.eventRepo.create({
         tenantId: invoice.tenantId,
-        invoiceId: invoice.id,
+        entityType: 'invoice',
+        entityId: invoice.id,
         eventType: 'payment_received',
-        actor: 'system',
+        actorName: 'system',
+        source: 'system',
         payload: {
           provider: payload.provider,
           amount: payload.amount,

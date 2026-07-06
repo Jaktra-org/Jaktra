@@ -131,9 +131,11 @@ export class CommunicationService {
 
       await this.eventRepo.create({
         tenantId,
-        invoiceId,
+        entityType: 'invoice',
+        entityId: invoiceId,
         eventType: dbEventType,
-        actor: 'system',
+        actorName: 'system',
+        source: 'system',
         payload,
       });
     }
@@ -373,9 +375,11 @@ export class CommunicationService {
           if (this.eventRepo) {
             await this.eventRepo.create({
               tenantId,
-              invoiceId,
+              entityType: 'invoice',
+              entityId: invoiceId,
               eventType: 'halted',
-              actor: 'system',
+              actorName: 'system',
+              source: 'system',
               payload: {
                 reason: 'mail_bounced',
                 error: 'Recipient email address does not exist',

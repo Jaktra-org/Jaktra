@@ -525,13 +525,13 @@ export class AgentService {
     const nonInvoiceEvents: typeof events = [];
 
     for (const event of events) {
-      if (!event.invoiceId) {
+      if (!event.entityId) {
         nonInvoiceEvents.push(event);
         continue;
       }
-      const existing = latestEventsMap.get(event.invoiceId);
+      const existing = latestEventsMap.get(event.entityId);
       if (!existing || new Date(event.createdAt) > new Date(existing.createdAt)) {
-        latestEventsMap.set(event.invoiceId, event);
+        latestEventsMap.set(event.entityId, event);
       }
     }
 

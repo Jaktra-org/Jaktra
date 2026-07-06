@@ -210,9 +210,11 @@ export class PaymentService {
         try {
           await this.eventRepo.create({
             tenantId,
-            invoiceId: invoice.id,
+            entityType: 'invoice',
+            entityId: invoice.id,
             eventType: 'payment_webhook_failed',
-            actor: 'system',
+            actorName: 'system',
+            source: 'system',
             payload: {
               reason: validationError,
               provider,

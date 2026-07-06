@@ -162,20 +162,39 @@ export const events = pgTable(
     tenantId: uuid('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
-    invoiceId: uuid('invoice_id')
-      .notNull()
-      .references(() => invoices.id, { onDelete: 'cascade' }),
+    entityType: text('entity_type').notNull().default('invoice'),
+    entityId: uuid('entity_id').notNull(),
+    actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    actorName: text('actor_name'),
+    actorEmail: text('actor_email'),
+    actorRole: text('actor_role'),
+    actionType: text('action_type').notNull().default('legacy.event'),
+    description: text('description'),
+    source: text('source').notNull().default('system'),
+    oldValues: jsonb('old_values'),
+    newValues: jsonb('new_values'),
     eventType: text('event_type').notNull(),
     payload: jsonb('payload'),
-    actor: text('actor').notNull().default('system'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    index('events_tenant_id_idx').on(table.tenantId),
-    index('events_invoice_id_created_at_idx').on(
-      table.invoiceId,
+    index('events_entity_audit_idx').on(
+      table.tenantId,
+      table.entityType,
+      table.entityId,
+      table.createdAt
+    ),
+    index('events_actor_id_idx').on(table.actorId),
+    index('events_action_type_idx').on(
+      table.tenantId,
+      table.actionType,
+      table.createdAt
+    ),
+    index('events_source_idx').on(
+      table.tenantId,
+      table.source,
       table.createdAt
     ),
     index('events_payload_run_id_idx').on(sql`(${table.payload}->>'runId')`),
@@ -364,7 +383,7 @@ export const communicationsRelations = relations(communications, ({ one }) => ({
 
 export const eventsRelations = relations(events, ({ one }) => ({
   invoice: one(invoices, {
-    fields: [events.invoiceId],
+    fields: [events.entityId],
     references: [invoices.id],
   }),
 }));

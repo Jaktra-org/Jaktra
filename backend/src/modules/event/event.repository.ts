@@ -10,7 +10,7 @@ export class EventRepository {
     return this.db
       .select()
       .from(events)
-      .where(eq(events.invoiceId, invoiceId))
+      .where(eq(events.entityId, invoiceId))
       .orderBy(asc(events.createdAt));
   }
 
@@ -20,7 +20,7 @@ export class EventRepository {
       .from(events)
       .where(
         and(
-          eq(events.invoiceId, invoiceId),
+          eq(events.entityId, invoiceId),
           eq(events.eventType, 'email_sent')
         )
       )
@@ -44,7 +44,7 @@ export class EventRepository {
         invoiceNo: invoices.invoiceNo,
       })
       .from(events)
-      .innerJoin(invoices, eq(events.invoiceId, invoices.id))
+      .innerJoin(invoices, eq(events.entityId, invoices.id))
       .where(eq(events.tenantId, tenantId))
       .orderBy(desc(events.createdAt))
       .limit(limit);
