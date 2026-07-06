@@ -5,12 +5,14 @@ export interface ToneSelectorProps extends Omit<React.SelectHTMLAttributes<HTMLS
   value: string;
   onChange: (value: string) => void;
   includeAuto?: boolean;
+  placeholder?: string;
 }
 
 export function ToneSelector({
   value,
   onChange,
   includeAuto = true,
+  placeholder,
   className,
   ...props
 }: ToneSelectorProps) {
@@ -24,6 +26,11 @@ export function ToneSelector({
       )}
       {...props}
     >
+      {placeholder && (
+        <option value="" disabled hidden={value !== ""}>
+          {placeholder}
+        </option>
+      )}
       {includeAuto && (
         <option value="">Auto (Triage Engine)</option>
       )}
