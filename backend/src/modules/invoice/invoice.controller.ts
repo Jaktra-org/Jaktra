@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import type { InvoiceImportService, DuplicateStrategy } from './invoice.service.js';
 import type { InvoiceRepository } from './invoice.repository.js';
 import { logger } from '../../shared/logger.js';
+import { TriageService } from '../agent/triage.service.js';
 import {
   createInvoiceSchema,
   bulkCreateInvoiceSchema,
@@ -110,14 +111,20 @@ export class InvoiceController {
         daysOverdueMax: params.days_overdue_max,
       });
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const triageService = new TriageService();
 
       const dataWithDaysOverdue = result.data.map(inv => {
-        const dueDate = new Date(inv.dueDate);
-        const diffTime = today.getTime() - dueDate.getTime();
-        const daysOverdue = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        return { ...inv, daysOverdue: daysOverdue > 0 ? daysOverdue : 0 };
+        const daysOverdue = triageService.computeDaysOverdue(inv.dueDate);
+        const isActionable = triageService.isActionable(inv);
+        let urgencyTier = null;
+        if (isActionable) {
+          urgencyTier = triageService.assignTier(daysOverdue);
+        }
+        return { 
+          ...inv, 
+          daysOverdue, 
+          urgencyTier 
+        };
       });
 
       res.status(200).json({
@@ -145,11 +152,13 @@ export class InvoiceController {
         return;
       }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const dueDate = new Date(invoice.dueDate);
-      const diffTime = today.getTime() - dueDate.getTime();
-      const daysOverdue = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const triageService = new TriageService();
+      const daysOverdue = triageService.computeDaysOverdue(invoice.dueDate);
+      const isActionable = triageService.isActionable(invoice);
+      let urgencyTier = null;
+      if (isActionable) {
+        urgencyTier = triageService.assignTier(daysOverdue);
+      }
 
       let paymentLink = null;
       let paymentWarning = null;
@@ -164,7 +173,8 @@ export class InvoiceController {
 
       res.status(200).json({ 
         ...invoice, 
-        daysOverdue: daysOverdue > 0 ? daysOverdue : 0,
+        urgencyTier,
+        daysOverdue,
         paymentLink: paymentLink ? {
           url: paymentLink.paymentUrl,
           status: paymentLink.status,
