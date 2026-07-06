@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { AgentService } from './agent.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 import { NotFoundError, ValidationError } from '../../shared/errors/index.js';
+import type { ActorContext } from '../event/event.service.js';
 
 /**
  * Allowed tones for manual override. Maps 1:1 with automatable urgency tiers.
@@ -82,7 +83,15 @@ export class AgentController {
         return;
       }
 
-      const result = await this.agentService.triggerSingleInvoice(invoiceId, tenantId, parsed.data.tone);
+      const actor: ActorContext = {
+        source: 'ui',
+        userId: authReq.user.userId,
+        name: authReq.user.name,
+        email: authReq.user.email,
+        role: authReq.user.role,
+      };
+
+      const result = await this.agentService.triggerSingleInvoice(invoiceId, tenantId, parsed.data.tone, actor);
       res.status(200).json(result);
     } catch (err: unknown) {
       next(err);
