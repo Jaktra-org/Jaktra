@@ -52,6 +52,7 @@ export class EventRepository {
 
     return rows.map((row) => ({
       ...row.event,
+      invoiceId: row.event.entityId,
       invoiceNo: row.invoiceNo,
     }));
   }

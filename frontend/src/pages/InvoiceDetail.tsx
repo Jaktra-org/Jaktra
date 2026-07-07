@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoiceService } from "../services/invoice";
@@ -46,17 +46,80 @@ export function InvoiceDetail() {
   const [activeTab, setActiveTab] = useState<'timeline' | 'emails'>('timeline');
   const [error, setError] = useState<string | null>(null);
 
+  // Timeline Filters & Pagination State
+  const [timelinePage, setTimelinePage] = useState(1);
+  const [timelineSourceFilter, setTimelineSourceFilter] = useState<string>('all');
+  const [timelineCategoryFilter, setTimelineCategoryFilter] = useState<string>('all');
+  const [accumulatedTimeline, setAccumulatedTimeline] = useState<any[]>([]);
+  const [totalTimelineCount, setTotalTimelineCount] = useState(0);
+
   const { data: invoice, isLoading: isInvoiceLoading } = useQuery({
     queryKey: ["invoice", id],
     queryFn: () => invoiceService.getInvoice(id!),
     enabled: !!id,
   });
 
-  const { data: timeline, isLoading: isTimelineLoading } = useQuery({
-    queryKey: ["invoice-timeline", id],
-    queryFn: () => eventService.getInvoiceTimeline(id!),
+  const getActionTypesForCategory = (category: string): string[] | undefined => {
+    switch (category) {
+      case 'status':
+        return ['invoice.status_changed'];
+      case 'emails':
+        return [
+          'followup.triggered',
+          'followup.sent',
+          'followup.skipped',
+          'followup.halted',
+          'followup.email_opened',
+          'followup.email_clicked',
+          'followup.bounced',
+        ];
+      case 'payments':
+        return ['payment.link_generated', 'payment.received'];
+      default:
+        return undefined;
+    }
+  };
+
+  const activeActionTypes = getActionTypesForCategory(timelineCategoryFilter);
+  const activeSources = timelineSourceFilter !== 'all' ? [timelineSourceFilter] : undefined;
+
+  const { data: timelineResponse, isLoading: isTimelineLoading } = useQuery({
+    queryKey: ["invoice-timeline", id, timelinePage, timelineSourceFilter, timelineCategoryFilter],
+    queryFn: () => eventService.getInvoiceTimeline(id!, {
+      page: timelinePage,
+      limit: 10,
+      actionTypes: activeActionTypes,
+      sources: activeSources,
+    }),
     enabled: !!id,
   });
+
+  useEffect(() => {
+    if (timelineResponse?.data) {
+      if (timelinePage === 1) {
+        setAccumulatedTimeline(timelineResponse.data);
+      } else {
+        setAccumulatedTimeline(prev => {
+          const existingIds = new Set(prev.map(e => e.id));
+          const uniqueNew = timelineResponse.data.filter((e: any) => !existingIds.has(e.id));
+          return [...prev, ...uniqueNew];
+        });
+      }
+      setTotalTimelineCount(timelineResponse.pagination.total);
+    }
+  }, [timelineResponse, timelinePage]);
+
+  const handleSourceFilterChange = (source: string) => {
+    setTimelineSourceFilter(source);
+    setTimelinePage(1);
+    setAccumulatedTimeline([]);
+  };
+
+  const handleCategoryFilterChange = (category: string) => {
+    setTimelineCategoryFilter(category);
+    setTimelinePage(1);
+    setAccumulatedTimeline([]);
+  };
 
   const { data: communications, isLoading: isCommsLoading } = useQuery({
     queryKey: ["invoice-communications", id],
@@ -136,90 +199,94 @@ export function InvoiceDetail() {
     );
   }
 
-  const renderEventIcon = (eventType: string) => {
-    switch (eventType) {
-      case 'invoice_created':
-        return <FileText className="w-4 h-4 text-emerald-600" />;
-      case 'email_sent':
-        return <Send className="w-4 h-4 text-blue-600" />;
-      case 'email_opened':
-        return <Mail className="w-4 h-4 text-purple-600" />;
-      case 'payment_received':
-      case 'status_updated':
-        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
-      case 'legal_escalated':
-      case 'dlq_added':
-      case 'halted':
-        return <AlertTriangle className="w-4 h-4 text-red-600" />;
+  const renderEventIcon = (actionOrEventType: string) => {
+    const type = actionOrEventType.toLowerCase();
+    if (type.includes('create') || type.includes('import')) {
+      return <FileText className="w-4 h-4 text-emerald-600" />;
+    }
+    if (type.includes('sent')) {
+      return <Send className="w-4 h-4 text-blue-600" />;
+    }
+    if (type.includes('opened') || type.includes('clicked')) {
+      return <Mail className="w-4 h-4 text-purple-600" />;
+    }
+    if (type.includes('received') || type.includes('status')) {
+      return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+    }
+    if (type.includes('halt') || type.includes('bounce') || type.includes('dlq') || type.includes('error')) {
+      return <AlertTriangle className="w-4 h-4 text-red-600" />;
+    }
+    return <MessageSquare className="w-4 h-4 text-slate-600" />;
+  };
+
+  const getSourceBadge = (source: string) => {
+    switch (source) {
+      case 'ui':
+        return <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Human</span>;
+      case 'agent':
+        return <span className="bg-purple-50 border border-purple-200 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Agent</span>;
+      case 'webhook':
+        return <span className="bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Webhook</span>;
+      case 'system':
       default:
-        return <MessageSquare className="w-4 h-4 text-slate-600" />;
+        return <span className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold">System</span>;
     }
   };
 
-  const renderEventDescription = (eventType: string, payload: any) => {
-    switch (eventType) {
-      case 'invoice_created':
-        return 'Invoice imported or created.';
-      case 'email_sent':
+  const getEventTitle = (event: any) => {
+    if (event.description) return event.description;
+    const action = event.actionType || event.eventType || 'event';
+    return action
+      .replace(/[._]/g, ' ')
+      .split(' ')
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const renderEventDescription = (event: any) => {
+    const payload = event.payload;
+    const type = (event.actionType || event.eventType || '').toLowerCase();
+    
+    if (type.includes('halted') || type.includes('bounced')) {
+      if (payload?.error) {
         return (
           <div>
-            <p>Sent follow-up email.</p>
-            {payload?.subject && <p className="text-xs text-slate-500 mt-1 font-mono bg-slate-50 p-1 rounded">Subject: {payload.subject}</p>}
+            <p className="font-semibold text-red-600">Follow-up failed with error</p>
+            <p className="text-xs text-slate-600 mt-1 bg-red-50 p-2 border border-red-100 rounded font-mono">
+              {getErrorMessage(payload.error)}
+            </p>
           </div>
         );
-      case 'email_opened':
-        return 'Client opened the email.';
-      case 'status_updated':
-        return `Status updated to ${payload?.status || 'Paid'}.`;
-      case 'legal_escalated':
-        return 'Invoice escalated to legal due to aging.';
-      case 'dlq_added':
-        return `Added to Dead Letter Queue: ${payload?.reason || 'Unknown error'}`;
-      case 'halted':
-        if (payload?.error) {
-          return (
-            <div>
-              <p className="font-semibold text-red-600">Follow-up halted due to error</p>
-              <p className="text-xs text-slate-600 mt-1 bg-red-50 p-2 border border-red-100 rounded font-mono">
-                {getErrorMessage(payload.error)}
-              </p>
-            </div>
-          );
-        }
-        if (payload?.reason === 'no_automated_channel') {
-          return (
-            <div>
-              <p className="font-semibold text-slate-800">Follow-up halted</p>
-              <p className="text-xs text-slate-600 mt-1">
-                No automated communication channels configured for the <span className="font-mono bg-slate-100 px-1 rounded">{payload.tier || 'unknown'}</span> tier.
-              </p>
-            </div>
-          );
-        }
-        if (payload?.reason && payload.reason !== 'idempotency_skip') {
-          const isIdempotency = typeof payload.reason === 'string' && (payload.reason.includes('sent ') || payload.reason.includes('ago'));
-          if (isIdempotency) {
-            return (
-              <div>
-                <p className="font-semibold text-slate-800">Follow-up skipped</p>
-                <p className="text-xs text-slate-600 mt-1">
-                  Skipped because a follow-up was recently sent ({payload.reason}).
-                </p>
-              </div>
-            );
-          }
-        }
+      }
+      if (payload?.reason === 'no_automated_channel') {
         return (
           <div>
             <p className="font-semibold text-slate-800">Follow-up halted</p>
             <p className="text-xs text-slate-600 mt-1">
-              Reason: {payload?.reason || 'Unknown reason'}
+              No automated communication channels configured for the <span className="font-mono bg-slate-100 px-1 rounded">{payload.tier || 'unknown'}</span> tier.
             </p>
           </div>
         );
-      default:
-        return eventType.replace('_', ' ');
+      }
     }
+    if (type.includes('skipped')) {
+      return (
+        <div>
+          <p className="font-semibold text-slate-800">Follow-up skipped</p>
+          <p className="text-xs text-slate-600 mt-1">
+            Skipped because a follow-up was recently sent.
+          </p>
+        </div>
+      );
+    }
+    if (payload?.subject) {
+      return (
+        <div>
+          <p className="text-xs text-slate-500 font-mono bg-slate-50 p-1 rounded">Subject: {payload.subject}</p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -460,43 +527,180 @@ export function InvoiceDetail() {
             <CardContent className="pt-6">
               {activeTab === 'timeline' ? (
                 // TIMELINE TAB
-                isTimelineLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                  </div>
-                ) : !timeline || timeline.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
-                    No events recorded for this invoice yet.
-                  </div>
-                ) : (
-                  <div className="relative border-l border-slate-200 ml-3 space-y-8 py-2">
-                    {[...timeline]
-                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                      .map((event) => (
-                      <div key={event.id} className="relative pl-8">
-                        <div className="absolute -left-3.5 top-1 h-7 w-7 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                          {renderEventIcon(event.eventType)}
-                        </div>
-                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-medium text-slate-900 capitalize">
-                              {event.eventType.replace(/_/g, ' ')}
-                            </span>
-                            <span className="text-xs text-slate-500 font-medium">
-                              {new Date(event.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="text-sm text-slate-600 mt-2">
-                            {renderEventDescription(event.eventType, event.payload)}
-                          </div>
-                          <div className="mt-3 text-xs text-slate-400 flex items-center">
-                            <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded capitalize">Actor: {event.actor}</span>
-                          </div>
-                        </div>
+                <div>
+                  {/* Filters Bar */}
+                  <div className="flex flex-col sm:flex-row gap-4 mb-6 pb-6 border-b border-slate-100 justify-between items-start sm:items-center">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Source</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { value: 'all', label: 'All' },
+                          { value: 'ui', label: 'Human' },
+                          { value: 'agent', label: 'Agent' },
+                          { value: 'webhook', label: 'Webhook' },
+                          { value: 'system', label: 'System' },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => handleSourceFilterChange(opt.value)}
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
+                              timelineSourceFilter === opt.value
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Category</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { value: 'all', label: 'All' },
+                          { value: 'status', label: 'Status' },
+                          { value: 'emails', label: 'Emails' },
+                          { value: 'payments', label: 'Payments' },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => handleCategoryFilterChange(opt.value)}
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
+                              timelineCategoryFilter === opt.value
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                )
+
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-xs text-slate-500 font-medium">
+                      Showing {accumulatedTimeline.length} of {totalTimelineCount} events
+                    </span>
+                  </div>
+
+                  {isTimelineLoading && accumulatedTimeline.length === 0 ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                    </div>
+                  ) : accumulatedTimeline.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-sm">
+                      No events recorded matching the criteria.
+                    </div>
+                  ) : (
+                    <div className="relative border-l border-slate-200 ml-3 space-y-6 py-2">
+                      {accumulatedTimeline.map((event) => (
+                        <div key={event.id} className="relative pl-8">
+                          <div className="absolute -left-3.5 top-1.5 h-7 w-7 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                            {renderEventIcon(event.actionType || event.eventType)}
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:shadow-sm transition-all duration-200">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1.5 mb-2">
+                              <span className="font-semibold text-slate-900 text-sm sm:text-base leading-tight">
+                                {getEventTitle(event)}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {getSourceBadge(event.source)}
+                                <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                                  {new Date(event.createdAt).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Event details and payload description */}
+                            {renderEventDescription(event) && (
+                              <div className="text-sm text-slate-600 mt-2 bg-white/50 p-2.5 rounded-lg border border-slate-100">
+                                {renderEventDescription(event)}
+                              </div>
+                            )}
+
+                            {/* Diff Viewer Table */}
+                            {(event.oldValues || event.newValues) && (
+                              <div className="mt-3 border-t border-slate-100 pt-3">
+                                <table className="min-w-full divide-y divide-slate-100 text-xs">
+                                  <thead>
+                                    <tr>
+                                      <th className="text-left font-semibold text-slate-500 py-1 uppercase tracking-wider">Field</th>
+                                      <th className="text-left font-semibold text-slate-500 py-1 uppercase tracking-wider">Before</th>
+                                      <th className="text-left font-semibold text-slate-500 py-1 uppercase tracking-wider">&rarr;</th>
+                                      <th className="text-left font-semibold text-slate-500 py-1 uppercase tracking-wider">After</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {Object.keys({ ...event.oldValues, ...event.newValues }).map((key) => {
+                                      const oldVal = event.oldValues?.[key];
+                                      const newVal = event.newValues?.[key];
+                                      if (oldVal === newVal) return null;
+                                      return (
+                                        <tr key={key} className="hover:bg-slate-100/50">
+                                          <td className="font-semibold text-slate-700 py-1.5 capitalize">{key.replace(/([A-Z])/g, ' $1')}</td>
+                                          <td className="text-slate-500 py-1.5 font-mono max-w-[120px] truncate" title={String(oldVal ?? '-')}>{String(oldVal ?? '-')}</td>
+                                          <td className="text-slate-400 py-1.5">&rarr;</td>
+                                          <td className="text-slate-800 font-semibold py-1.5 font-mono max-w-[120px] truncate" title={String(newVal ?? '-')}>{String(newVal ?? '-')}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {/* Legacy / agent run payload view */}
+                            {!event.oldValues && !event.newValues && event.payload && (
+                              <div className="mt-2 text-xs text-slate-500 bg-slate-100/40 border border-slate-100 rounded-lg p-2.5 space-y-1 font-mono">
+                                {Object.entries(event.payload).map(([k, v]) => {
+                                  if (v === null || v === undefined || k === 'error' || k === 'reason') return null;
+                                  return (
+                                    <div key={k} className="flex gap-2">
+                                      <span className="font-semibold text-slate-600 capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
+                                      <span className="text-slate-700 select-all truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Actor Circle Initials Chip */}
+                            {event.actorName && (
+                              <div className="mt-3 flex items-center">
+                                <div 
+                                  className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full text-xs font-medium cursor-help transition-colors"
+                                  title={`${event.actorName} (${event.actorEmail || ''})`}
+                                >
+                                  <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-800 text-[9px] font-bold flex items-center justify-center">
+                                    {event.actorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                  </span>
+                                  <span>{event.actorName} · <span className="text-[10px] text-slate-500 capitalize">{event.actorRole || 'Member'}</span></span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Load More Button */}
+                  {totalTimelineCount > accumulatedTimeline.length && (
+                    <div className="flex justify-center pt-6 border-t border-slate-100 mt-6">
+                      <button
+                        onClick={() => setTimelinePage(prev => prev + 1)}
+                        disabled={isTimelineLoading}
+                        className="px-4 py-2 border border-slate-200 hover:border-slate-300 text-sm font-semibold rounded-lg bg-white text-slate-700 shadow-sm hover:shadow transition-all disabled:opacity-50 inline-flex items-center gap-2"
+                      >
+                        {isTimelineLoading && <Loader2 className="h-4 w-4 animate-spin text-slate-500" />}
+                        Load More Events
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 // EMAILS TAB
                 isCommsLoading ? (

@@ -54,11 +54,25 @@ export interface Invoice {
 
 export interface InvoiceEvent {
   id: string;
-  invoiceId: string;
-  invoiceNo?: string;
-  eventType: string;
+  tenantId: string;
+  entityType: string;
+  entityId: string;
+  invoiceId: string; 
+  invoiceNo?: string; 
+
+  actorId: string | null;
+  actorName: string | null;
+  actorEmail: string | null;
+  actorRole: string | null;
+
+  actionType: string;
+  eventType: string;    
+  source: 'ui' | 'api' | 'agent' | 'webhook' | 'system';
+  description: string | null;
+  oldValues: Record<string, any> | null;
+  newValues: Record<string, any> | null;
   payload: Record<string, any> | null;
-  actor: string;
+
   createdAt: string;
 }
 

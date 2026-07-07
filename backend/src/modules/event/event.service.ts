@@ -157,7 +157,7 @@ export class EventService {
     },
     page: number,
     limit: number,
-  ): Promise<{ data: Event[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
+  ): Promise<{ data: any[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
     const { data, total } = await this.eventRepo.findByEntityPaginated(
       tenantId,
       entityType,
@@ -169,8 +169,13 @@ export class EventService {
 
     const totalPages = Math.ceil(total / limit);
 
+    const mappedData = data.map((event) => ({
+      ...event,
+      invoiceId: event.entityId,
+    }));
+
     return {
-      data,
+      data: mappedData,
       pagination: {
         total,
         page,
