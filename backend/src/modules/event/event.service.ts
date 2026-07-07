@@ -3,6 +3,7 @@ import { ACTION_TYPES, type ActionType } from './event.action-types.js';
 import type { EventRepository } from './event.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
 import type { Event } from '../../db/index.js';
+import { ValidationError } from '../../shared/errors/index.js';
 
 export type ActorContext =
   | { source: 'ui' | 'api'; userId: string; name: string; email: string; role: string }
@@ -60,7 +61,13 @@ export class EventService {
     arg5?: any,
     arg6?: any
   ): Promise<Event> {
-    if (typeof arg4 === 'object' || arg6 !== undefined || (arg4 === undefined && typeof arg3 === 'string' && arg3.includes('-'))) {
+    if (
+      typeof arg4 === 'object' ||
+      arg6 !== undefined ||
+      (typeof arg4 === 'string' && arg4.includes('.')) ||
+      (typeof arg5 === 'object' && arg5 !== null && 'source' in arg5) ||
+      (arg4 === undefined && typeof arg3 === 'string' && arg3.includes('-'))
+    ) {
       const entityType = arg1;
       const entityId = arg2;
       const tenantId = arg3;
@@ -69,7 +76,11 @@ export class EventService {
       const opts = arg6;
 
       const actionTypeSchema = z.enum(ACTION_TYPES);
-      actionTypeSchema.parse(actionType);
+      try {
+        actionTypeSchema.parse(actionType);
+      } catch (err) {
+        throw new ValidationError(`Invalid action type: ${actionType}`);
+      }
 
       const actorId = actor.source === 'ui' || actor.source === 'api' ? actor.userId : null;
       const actorName = actor.source === 'ui' || actor.source === 'api' ? actor.name : null;
