@@ -21,7 +21,6 @@ import {
   ArrowLeft, 
   Mail, 
   Calendar, 
-  Clock, 
   AlertTriangle,
   Edit,
   CheckCircle2,
@@ -366,13 +365,6 @@ export function InvoiceDetail() {
         </div>
         
         <div className="flex flex-wrap gap-2 md:justify-end">
-          <button
-            onClick={() => document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth' })}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-10 px-4 py-2"
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            History
-          </button>
           
           {user?.role !== 'viewer' && (
             <>
