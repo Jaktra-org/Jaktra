@@ -34,6 +34,32 @@ export class InvoiceController {
     };
   }
 
+  private areValuesEqual(key: string, val1: any, val2: any): boolean {
+    if (val1 === val2) return true;
+    if (val1 === null || val1 === undefined || val2 === null || val2 === undefined) {
+      return val1 === val2;
+    }
+
+    if (key === 'invoiceAmount') {
+      return Number(val1) === Number(val2);
+    }
+
+    if (key === 'dueDate') {
+      const d1 = val1 instanceof Date ? val1 : new Date(val1);
+      const d2 = val2 instanceof Date ? val2 : new Date(val2);
+      if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+        const toDateString = (d: Date) => d.toISOString().split('T')[0];
+        try {
+          return toDateString(d1) === toDateString(d2);
+        } catch (e) {
+          return d1.getTime() === d2.getTime();
+        }
+      }
+    }
+
+    return String(val1) === String(val2);
+  }
+
   importFromCsv = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.file) {
@@ -282,7 +308,7 @@ export class InvoiceController {
         if (value !== undefined) {
           const oldVal = (invoice as any)[key];
           const newVal = value;
-          if (String(oldVal) !== String(newVal)) {
+          if (!this.areValuesEqual(key, oldVal, newVal)) {
             oldValues[key] = oldVal;
             newValues[key] = newVal;
           }
