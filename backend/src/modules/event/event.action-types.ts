@@ -20,6 +20,27 @@ export const ACTION_TYPES = [
   'dlq.cleared',
   'dlq.retried',
 
+  
+  'user.invited',
+  'user.invite_resent',
+  'user.invite_revoked',
+  'user.joined',
+  'user.role_updated',
+  'user.removed',
+
+  'settings.updated',
+  'settings.webhook_token_rotated',
+
+  'integration.connected',
+  'integration.disconnected',
+  'integration.default_email_changed',
+
+  'template.updated',
+
+  'invoice.bulk_imported',
+  'agent.run_triggered',
+  'reconciler.run_triggered',
+
   'legacy.event',
 ] as const;
 
