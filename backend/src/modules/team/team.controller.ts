@@ -177,7 +177,25 @@ export class TeamController {
         return;
       }
 
-      await this.teamService.acceptInvitation(parsed.data.token, parsed.data.password, parsed.data.name);
+      const result = await this.teamService.acceptInvitation(parsed.data.token, parsed.data.password, parsed.data.name);
+
+      if (this.eventService && result) {
+        const actor: ActorContext = {
+          source: 'ui',
+          userId: result.id,
+          name: result.name,
+          email: result.email,
+          role: result.role,
+        };
+        await this.eventService.emitEvent('user', result.id, result.tenantId, 'user.joined', actor, {
+          description: `User ${result.email} accepted invitation and joined the team`,
+          newValues: {
+            email: result.email,
+            role: result.role,
+          },
+        });
+      }
+
       res.status(200).json({ success: true });
     } catch (err: unknown) {
       next(err);

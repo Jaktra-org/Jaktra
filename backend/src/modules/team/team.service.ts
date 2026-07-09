@@ -181,7 +181,7 @@ export class TeamService {
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     const passwordHash = await bcrypt.hash(password, 12);
 
-    await this.teamRepo.client.transaction(async (tx: any) => {
+    return await this.teamRepo.client.transaction(async (tx: any) => {
       const txTeamRepo = new TeamRepository(tx);
       const txUserRepo = new UserRepository(tx);
       const invite = await txTeamRepo.findInvitationByTokenHash(tokenHash, true);
@@ -199,17 +199,26 @@ export class TeamService {
         throw new AuthError('Email is already registered in the system', 409);
       }
 
-      await tx.insert(users).values({
+      const [newUser] = await tx.insert(users).values({
         tenantId: invite.tenantId,
         email: invite.email,
         name,
         passwordHash,
         role: invite.role,
-      });
+      }).returning();
       
       await tx.update(teamInvitations)
         .set({ acceptedAt: new Date() })
         .where(eq(teamInvitations.id, invite.id));
+
+      return {
+        id: newUser.id,
+        tenantId: invite.tenantId,
+        email: invite.email,
+        name,
+        role: invite.role,
+        invitationId: invite.id
+      };
     });
   }
 
