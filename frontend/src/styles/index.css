@@ -57,3 +57,18 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+@keyframes timelineFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-timeline-fade-in {
+  animation: timelineFadeIn 0.25s ease-out forwards;
+}

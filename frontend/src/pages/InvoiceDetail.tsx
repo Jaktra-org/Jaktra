@@ -121,7 +121,6 @@ export function InvoiceDetail() {
   useEffect(() => {
     if (invoice) {
       setTimelinePage(1);
-      setAccumulatedTimeline([]);
     }
   }, [invoice?.updatedAt]);
 
@@ -665,7 +664,7 @@ export function InvoiceDetail() {
                   ) : (
                     <div className="relative border-l border-slate-200 ml-3 space-y-6 py-2">
                       {accumulatedTimeline.map((event) => (
-                        <div key={event.id} className="relative pl-8">
+                        <div key={event.id} className="relative pl-8 animate-timeline-fade-in">
                           <div className="absolute -left-3.5 top-1.5 h-7 w-7 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                             {renderEventIcon(event)}
                           </div>
