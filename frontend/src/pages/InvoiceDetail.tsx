@@ -26,10 +26,15 @@ import {
   CheckCircle2,
   Zap,
   Loader2,
+  Trash2,
+  DollarSign,
+  Clock,
   Send,
-  MessageSquare,
+  Eye,
+  MousePointer,
   FileText,
-  Trash2
+  MessageSquare,
+  RefreshCw
 } from "lucide-react";
 
 
@@ -228,24 +233,54 @@ export function InvoiceDetail() {
     );
   }
 
-  const renderEventIcon = (actionOrEventType: string) => {
-    const type = actionOrEventType.toLowerCase();
+  const renderEventIcon = (event: any) => {
+    const type = (event.actionType || event.eventType || '').toLowerCase();
+    
+    // 1. Paid status or payment received
+    if (type.includes('received') || (event.newValues && event.newValues.paymentStatus === 'Paid')) {
+      return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
+    }
+    
+    // 2. Invoice update changes
+    if (type === 'invoice.updated' && (event.oldValues || event.newValues)) {
+      const changedKeys = Object.keys({ ...event.oldValues, ...event.newValues });
+      
+      // Money change (amount)
+      if (changedKeys.includes('invoiceAmount')) {
+        return <DollarSign className="w-4 h-4 text-emerald-600" />;
+      }
+      
+      // Date change (due date)
+      if (changedKeys.includes('dueDate')) {
+        return <Clock className="w-4 h-4 text-amber-500" />;
+      }
+
+      // Status change
+      if (changedKeys.includes('paymentStatus')) {
+        return <RefreshCw className="w-4 h-4 text-blue-500" />;
+      }
+    }
+
+    // 3. Fallbacks based on action/event types
     if (type.includes('create') || type.includes('import')) {
-      return <FileText className="w-4 h-4 text-emerald-600" />;
+      return <FileText className="w-4 h-4 text-blue-600" />;
     }
     if (type.includes('sent')) {
-      return <Send className="w-4 h-4 text-blue-600" />;
+      return <Send className="w-4 h-4 text-indigo-600" />;
     }
-    if (type.includes('opened') || type.includes('clicked')) {
-      return <Mail className="w-4 h-4 text-purple-600" />;
+    if (type.includes('opened')) {
+      return <Eye className="w-4 h-4 text-purple-600" />;
+    }
+    if (type.includes('clicked')) {
+      return <MousePointer className="w-4 h-4 text-indigo-600" />;
     }
     if (type.includes('received') || type.includes('status')) {
       return <CheckCircle2 className="w-4 h-4 text-green-600" />;
     }
     if (type.includes('halt') || type.includes('bounce') || type.includes('dlq') || type.includes('error')) {
-      return <AlertTriangle className="w-4 h-4 text-red-600" />;
+      return <AlertTriangle className="w-4 h-4 text-rose-600" />;
     }
-    return <MessageSquare className="w-4 h-4 text-slate-600" />;
+    return <MessageSquare className="w-4 h-4 text-slate-500" />;
   };
 
   const getSourceBadge = (source: string) => {
@@ -632,7 +667,7 @@ export function InvoiceDetail() {
                       {accumulatedTimeline.map((event) => (
                         <div key={event.id} className="relative pl-8">
                           <div className="absolute -left-3.5 top-1.5 h-7 w-7 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                            {renderEventIcon(event.actionType || event.eventType)}
+                            {renderEventIcon(event)}
                           </div>
                           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:shadow-sm transition-all duration-200">
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1.5 mb-2">
