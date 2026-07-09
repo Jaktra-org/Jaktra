@@ -4,6 +4,7 @@ import type { TeamService } from './team.service.js';
 import type { TeamRepository } from './team.repository.js';
 import { ValidationError } from '../../shared/errors/index.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
+import type { EventService, ActorContext } from '../event/event.service.js';
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -28,8 +29,20 @@ const sanitizeInvitation = (inv: any) => {
 export class TeamController {
   constructor(
     private readonly teamService: TeamService,
-    private readonly teamRepo: TeamRepository
+    private readonly teamRepo: TeamRepository,
+    private readonly eventService?: EventService
   ) {}
+
+  private getActorContext(req: Request): ActorContext {
+    const authReq = req as AuthenticatedRequest;
+    return {
+      source: 'ui',
+      userId: authReq.user.userId,
+      name: authReq.user.name,
+      email: authReq.user.email,
+      role: authReq.user.role,
+    };
+  }
 
   listMembers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -64,6 +77,17 @@ export class TeamController {
       }
 
       const invite = await this.teamService.inviteMember(tenantId, userId, parsed.data);
+      if (this.eventService) {
+        const actor = this.getActorContext(req);
+        await this.eventService.emitEvent('user', invite.id, tenantId, 'user.invited', actor, {
+          description: `User ${invite.email} invited as ${invite.role}`,
+          newValues: {
+            email: invite.email,
+            role: invite.role,
+            expiresAt: invite.expiresAt,
+          },
+        });
+      }
       res.status(201).json(sanitizeInvitation(invite));
     } catch (err: unknown) {
       next(err);
@@ -75,6 +99,21 @@ export class TeamController {
       const { tenantId } = (req as AuthenticatedRequest).user;
       const inviteId = req.params.id as string;
       const invite = await this.teamService.resendInvitation(tenantId, inviteId);
+      if (this.eventService) {
+        const actor = this.getActorContext(req);
+        await this.eventService.emitEvent('user', invite.id, tenantId, 'user.invite_resent', actor, {
+          description: `Invitation resent to ${invite.email}`,
+          oldValues: {
+            email: invite.email,
+            role: invite.role,
+          },
+          newValues: {
+            email: invite.email,
+            role: invite.role,
+            expiresAt: invite.expiresAt,
+          },
+        });
+      }
       res.status(200).json(sanitizeInvitation(invite));
     } catch (err: unknown) {
       next(err);
@@ -85,7 +124,17 @@ export class TeamController {
     try {
       const { tenantId } = (req as AuthenticatedRequest).user;
       const inviteId = req.params.id as string;
-      await this.teamService.revokeInvitation(tenantId, inviteId);
+      const invite = await this.teamService.revokeInvitation(tenantId, inviteId);
+      if (this.eventService && invite) {
+        const actor = this.getActorContext(req);
+        await this.eventService.emitEvent('user', invite.id, tenantId, 'user.invite_revoked', actor, {
+          description: `Invitation revoked for ${invite.email}`,
+          oldValues: {
+            email: invite.email,
+            role: invite.role,
+          },
+        });
+      }
       res.status(204).send();
     } catch (err: unknown) {
       next(err);

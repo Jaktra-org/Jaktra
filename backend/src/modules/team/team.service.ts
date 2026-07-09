@@ -166,13 +166,14 @@ export class TeamService {
   }
 
   async revokeInvitation(tenantId: string, invitationId: string) {
-    await this.teamRepo.client.transaction(async (tx: any) => {
+    return await this.teamRepo.client.transaction(async (tx: any) => {
       const txTeamRepo = new TeamRepository(tx);
       const invite = await txTeamRepo.findInvitationById(tenantId, invitationId, true);
       if (!invite || invite.acceptedAt || invite.revokedAt) {
         throw new AuthError('Invitation not found or inactive', 404);
       }
       await txTeamRepo.revokeInvitation(tenantId, invitationId);
+      return invite;
     });
   }
 

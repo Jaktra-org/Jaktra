@@ -162,7 +162,7 @@ export function createApp(config: AppConfig): Application {
 
       const teamRepo = new TeamRepository(config.db);
       const teamService = new TeamService(teamRepo, userRepo);
-      app.use('/api/team', createTeamRouter(new TeamController(teamService, teamRepo), authMiddleware));
+      app.use('/api/team', createTeamRouter(new TeamController(teamService, teamRepo, eventService), authMiddleware));
 
       const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo);
       const triageService = new TriageService();
