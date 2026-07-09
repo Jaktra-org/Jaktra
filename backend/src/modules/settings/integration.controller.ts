@@ -3,6 +3,7 @@ import { IntegrationService } from './integration.service.js';
 import { CommunicationService } from '../communication/communication.service.js';
 import { z } from 'zod';
 import { ValidationError } from '../../shared/errors/index.js';
+import type { EventService, ActorContext } from '../event/event.service.js';
 
 const razorpayCredsSchema = z.object({
   keyId: z.string().min(5).max(50).regex(/^rzp_/, 'Key ID must start with rzp_'),
@@ -13,8 +14,20 @@ const razorpayCredsSchema = z.object({
 export class IntegrationController {
   constructor(
     private readonly integrationService: IntegrationService,
-    private readonly communicationService: CommunicationService
+    private readonly communicationService: CommunicationService,
+    private readonly eventService?: EventService
   ) {}
+
+  private getActorContext(req: Request): ActorContext {
+    const user = (req as any).user;
+    return {
+      source: 'ui',
+      userId: user.userId,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+  }
 
   getStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -52,6 +65,13 @@ export class IntegrationController {
       if (!settings?.defaultEmailProvider) {
         await this.communicationService.setDefaultEmailProvider(tenantId, 'sendgrid');
       }
+
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.connected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'sendgrid' },
+      });
 
       res.json({ message: 'SendGrid integration saved successfully' });
     } catch (error) {
@@ -93,6 +113,13 @@ export class IntegrationController {
         }
       }
 
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.disconnected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'sendgrid' },
+      });
+
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -116,6 +143,13 @@ export class IntegrationController {
       if (!settings?.defaultEmailProvider) {
         await this.communicationService.setDefaultEmailProvider(tenantId, 'smtp');
       }
+
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.connected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'smtp', host: req.body?.host ?? null },
+      });
 
       res.json({ message: 'SMTP connection verified and saved successfully' });
     } catch (error) {
@@ -177,6 +211,13 @@ export class IntegrationController {
         }
       }
 
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.disconnected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'smtp' },
+      });
+
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -196,7 +237,15 @@ export class IntegrationController {
       const { keyId, keySecret, webhookSecret } = validationResult.data;
 
       await this.integrationService.validateAndSaveRazorpayKey(tenantId, { keyId, keySecret, webhookSecret });
-      
+
+      // Only log the keyId prefix — never the secret or webhook secret
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.connected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'razorpay', keyIdPrefix: keyId.slice(0, 10) },
+      });
+
       res.json({ message: 'Razorpay integration saved successfully' });
     } catch (error) {
       next(error);
@@ -207,6 +256,14 @@ export class IntegrationController {
     try {
       const tenantId = (req as any).user.tenantId;
       await this.integrationService.deleteRazorpayIntegration(tenantId);
+
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.disconnected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'razorpay' },
+      });
+
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -231,7 +288,19 @@ export class IntegrationController {
         }
       }
 
+      // Capture previous default before changing it
+      const prevSettings = await this.communicationService.getSettings(tenantId);
+      const previousProvider = (prevSettings as any)?.defaultEmailProvider ?? null;
+
       await this.communicationService.setDefaultEmailProvider(tenantId, provider);
+
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.default_provider_changed',
+        actor: this.getActorContext(req),
+        metadata: { from: previousProvider, to: provider ?? null },
+      });
+
       res.json({ message: 'Default provider updated' });
     } catch (error) {
       next(error);
