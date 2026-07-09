@@ -177,7 +177,7 @@ export function createApp(config: AppConfig): Application {
       app.use('/api/settings', createSettingsRouter(new SettingsController(settingsService, eventService), authMiddleware, tenantScoped));
 
       const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo, config.db);
-      app.use('/api/invoices', createReconcilerRouter(new ReconcilerController(reconcilerService), authMiddleware, tenantScoped));
+      app.use('/api/invoices', createReconcilerRouter(new ReconcilerController(reconcilerService, eventService), authMiddleware, tenantScoped));
 
       app.use('/api', createEventRouter(new EventController(eventService), authMiddleware, tenantScoped));
 
@@ -200,7 +200,7 @@ export function createApp(config: AppConfig): Application {
 
         const agentService = new AgentService(agentRepo, aimlService, invoiceRepo, triageService, eventService, dlqService, idempotencyService, paymentService, communicationService, communicationRepo);
         app.locals.agentService = agentService;
-        app.use('/api/agent', createAgentRouter(new AgentController(agentService), authMiddleware, tenantScoped));
+        app.use('/api/agent', createAgentRouter(new AgentController(agentService, eventService), authMiddleware, tenantScoped));
       }
     }
   }

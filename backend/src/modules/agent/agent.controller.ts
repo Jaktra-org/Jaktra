@@ -3,12 +3,9 @@ import { z } from 'zod';
 import type { AgentService } from './agent.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 import { NotFoundError, ValidationError } from '../../shared/errors/index.js';
-import type { ActorContext } from '../event/event.service.js';
+import type { ActorContext, EventService } from '../event/event.service.js';
 
-/**
- * Allowed tones for manual override. Maps 1:1 with automatable urgency tiers.
- * `legal_escalation` is intentionally excluded — it has no automated prompt.
- */
+
 const AUTOMATABLE_TONES = [
   'stage_1_warm',
   'stage_2_firm',
@@ -21,7 +18,21 @@ const ManualTriggerSchema = z.object({
 });
 
 export class AgentController {
-  constructor(private agentService: AgentService) {}
+  constructor(
+    private agentService: AgentService,
+    private eventService?: EventService
+  ) {}
+
+  private getActorContext(req: Request): ActorContext {
+    const authReq = req as AuthenticatedRequest;
+    return {
+      source: 'ui',
+      userId: authReq.user.userId,
+      name: authReq.user.name,
+      email: authReq.user.email,
+      role: authReq.user.role,
+    };
+  }
 
   run = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -35,7 +46,19 @@ export class AgentController {
       }
 
       const run = await this.agentService.triggerRun(tenantId, parsed.data.tone);
-      res.status(202).json(run);  // 202 = Accepted, processing in background
+
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'agent.run_triggered',
+        actor: this.getActorContext(req),
+        metadata: {
+          triggeredBy: 'manual',
+          runId: run.id,
+          ...(parsed.data.tone ? { tone: parsed.data.tone } : {}),
+        },
+      });
+
+      res.status(202).json(run);  
     } catch (err: unknown) {
       next(err);
     }

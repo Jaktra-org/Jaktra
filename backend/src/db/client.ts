@@ -16,9 +16,9 @@ export function createDatabaseClient(options: DatabaseClientOptions) {
     connectionString: options.connectionString,
     statement_timeout: 30000,  
     query_timeout: 30000,
-    connectionTimeoutMillis: process.env['NODE_ENV'] === 'test' ? 15000 : 5000,
+    connectionTimeoutMillis: process.env['NODE_ENV'] === 'test' ? 30000 : 5000,
     idleTimeoutMillis: 30000,
-    max: options.maxConnections ?? (process.env['NODE_ENV'] === 'test' ? 2 : 20),
+    max: options.maxConnections ?? (process.env['NODE_ENV'] === 'test' ? 10 : 20),
   });
 
   const db = drizzle(pool, { schema });

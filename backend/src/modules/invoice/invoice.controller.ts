@@ -89,6 +89,19 @@ export class InvoiceController {
 
       logger.info(`CSV import complete: ${result.imported} imported, ${result.updated} updated, ${result.skipped} skipped, ${result.errors.length} errors`);
 
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'invoice.bulk_imported',
+        actor,
+        metadata: {
+          strategy: duplicateStrategy,
+          imported: result.imported,
+          updated: result.updated,
+          skipped: result.skipped,
+          errors: result.errors.length,
+        },
+      });
+
       res.status(200).json(result);
     } catch (err: unknown) {
       next(err);
