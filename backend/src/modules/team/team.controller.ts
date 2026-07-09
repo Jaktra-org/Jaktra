@@ -145,7 +145,19 @@ export class TeamController {
     try {
       const { tenantId } = (req as AuthenticatedRequest).user;
       const memberId = req.params.id as string;
-      await this.teamService.removeMember(tenantId, memberId, ((req as AuthenticatedRequest).user as any).userId || ((req as AuthenticatedRequest).user as any).sub || 'unknown');
+      const removedUser = await this.teamService.removeMember(tenantId, memberId, ((req as AuthenticatedRequest).user as any).userId || ((req as AuthenticatedRequest).user as any).sub || 'unknown');
+
+      if (this.eventService && removedUser) {
+        const actor = this.getActorContext(req);
+        await this.eventService.emitEvent('user', removedUser.id, tenantId, 'user.removed', actor, {
+          description: `User ${removedUser.email} removed from the team`,
+          oldValues: {
+            email: removedUser.email,
+            role: removedUser.role,
+          },
+        });
+      }
+
       res.status(204).send();
     } catch (err: unknown) {
       next(err);
@@ -162,7 +174,21 @@ export class TeamController {
         return;
       }
 
-      await this.teamService.updateMemberRole(tenantId, memberId, parsed.data.role as 'admin' | 'manager' | 'viewer');
+      const roleUpdate = await this.teamService.updateMemberRole(tenantId, memberId, parsed.data.role as 'admin' | 'manager' | 'viewer');
+
+      if (this.eventService && roleUpdate) {
+        const actor = this.getActorContext(req);
+        await this.eventService.emitEvent('user', roleUpdate.id, tenantId, 'user.role_updated', actor, {
+          description: `Role updated for ${roleUpdate.email} from ${roleUpdate.oldRole} to ${roleUpdate.newRole}`,
+          oldValues: {
+            role: roleUpdate.oldRole,
+          },
+          newValues: {
+            role: roleUpdate.newRole,
+          },
+        });
+      }
+
       res.status(200).json({ success: true });
     } catch (err: unknown) {
       next(err);

@@ -226,7 +226,7 @@ export class TeamService {
     if (userId === removedByUserId) {
       throw new AuthError('You cannot remove yourself from the team', 400);
     }
-    await this.teamRepo.client.transaction(async (tx: any) => {
+    return await this.teamRepo.client.transaction(async (tx: any) => {
       const txTeamRepo = new TeamRepository(tx);
       const txUserRepo = new UserRepository(tx);
       
@@ -242,11 +242,12 @@ export class TeamService {
       }
       
       await txTeamRepo.removeUser(tenantId, userId);
+      return user;
     });
   }
 
   async updateMemberRole(tenantId: string, userId: string, newRole: 'admin' | 'manager' | 'viewer') {
-    await this.teamRepo.client.transaction(async (tx: any) => {
+    return await this.teamRepo.client.transaction(async (tx: any) => {
       const txTeamRepo = new TeamRepository(tx);
       const txUserRepo = new UserRepository(tx);
 
@@ -262,7 +263,14 @@ export class TeamService {
         }
       }
       
+      const oldRole = user.role;
       await txTeamRepo.updateUserRole(tenantId, userId, newRole);
+      return {
+        id: user.id,
+        email: user.email,
+        oldRole,
+        newRole
+      };
     });
   }
 }
