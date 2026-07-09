@@ -59,6 +59,7 @@ export interface InvoiceEvent {
   entityId: string;
   invoiceId: string; 
   invoiceNo?: string; 
+  invoiceDeletedAt?: string | null; 
 
   actorId: string | null;
   actorName: string | null;

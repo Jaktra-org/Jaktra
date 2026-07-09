@@ -187,6 +187,7 @@ export class EventRepository {
         payload: events.payload,
         createdAt: events.createdAt,
         invoiceNo: invoices.invoiceNo,
+        invoiceDeletedAt: invoices.deletedAt,
       })
       .from(events)
       .leftJoin(invoices, and(eq(events.entityType, 'invoice'), eq(events.entityId, invoices.id)))

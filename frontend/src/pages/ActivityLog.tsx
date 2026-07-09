@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { 
   History, Search, Filter, RefreshCw, ArrowRight,
   User, Settings as SettingsIcon, Shield, Zap, FileText, CreditCard,
@@ -470,11 +471,23 @@ export function ActivityLog() {
                       {evt.source.toUpperCase()}
                     </span>
 
-                    {/* Invoice marker */}
-                    {evt.invoiceNo && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                        Invoice: #{evt.invoiceNo}
-                      </span>
+                    {/* Invoice marker: Link if active, red badge if soft-deleted */}
+                    {evt.entityType === 'invoice' && (
+                      evt.invoiceDeletedAt || evt.actionType === 'invoice.deleted' || !evt.invoiceNo ? (
+                        <span 
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-100" 
+                          title="This invoice has been deleted and cannot be viewed."
+                        >
+                          Invoice: #{evt.invoiceNo || 'Deleted'} (Deleted - View Not Available)
+                        </span>
+                      ) : (
+                        <Link 
+                          to={`/invoices/${evt.invoiceId}`}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-200 transition-colors"
+                        >
+                          Invoice: #{evt.invoiceNo} &rarr;
+                        </Link>
+                      )
                     )}
                   </div>
 
@@ -482,8 +495,18 @@ export function ActivityLog() {
                   {renderEventDetails(evt)}
                 </div>
 
-                {/* Arrow hint icon */}
-                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-slate-400 group-hover:translate-x-1 transition-all self-center flex-shrink-0 hidden sm:block" />
+                {/* Arrow link icon: only links if invoice is active */}
+                {evt.entityType === 'invoice' && !evt.invoiceDeletedAt && evt.actionType !== 'invoice.deleted' && evt.invoiceNo ? (
+                  <Link 
+                    to={`/invoices/${evt.invoiceId}`}
+                    className="p-1 hover:bg-slate-100 rounded-lg transition-colors self-center flex-shrink-0 hidden sm:block"
+                    title="View Invoice Detail"
+                  >
+                    <ArrowRight className="h-4 w-4 text-indigo-600 group-hover:text-indigo-800 group-hover:translate-x-1 transition-all" />
+                  </Link>
+                ) : (
+                  <div className="w-6 h-6 flex-shrink-0 hidden sm:block" />
+                )}
               </div>
             ))}
           </div>
