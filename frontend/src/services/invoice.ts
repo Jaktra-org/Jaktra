@@ -49,4 +49,9 @@ export const invoiceService = {
     const response = await api.post(`/invoices/${id}/payment-link`);
     return response.data;
   },
+
+  deleteInvoice: async (id: string) => {
+    const response = await api.delete(`/invoices/${id}`);
+    return response.data;
+  },
 };

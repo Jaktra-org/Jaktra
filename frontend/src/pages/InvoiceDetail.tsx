@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoiceService } from "../services/invoice";
 import { eventService } from "../services/event";
@@ -13,6 +13,7 @@ import { PaymentWarningModal } from "../components/common/PaymentWarningModal";
 import { usePaymentWarning } from "../hooks/usePaymentWarning";
 import { useAuth } from "../contexts/AuthContext";
 import { EditInvoiceModal } from "../components/invoices/EditInvoiceModal";
+import { Modal } from "../components/ui/Modal";
 import { CommunicationList } from "../components/invoices/CommunicationList";
 import { CommunicationStats } from "../components/invoices/CommunicationStats";
 import { getErrorMessage } from "../utils/error-utils";
@@ -28,7 +29,8 @@ import {
   Loader2,
   Send,
   MessageSquare,
-  FileText
+  FileText,
+  Trash2
 } from "lucide-react";
 
 
@@ -41,7 +43,9 @@ export function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timeline' | 'emails'>('timeline');
   const [error, setError] = useState<string | null>(null);
@@ -185,6 +189,24 @@ export function InvoiceDetail() {
   const handleConfirmFollowup = (tone: string) => {
     setIsFollowupModalOpen(false);
     runWithWarningCheck(() => agentMutation.mutate(tone));
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: () => invoiceService.deleteInvoice(id!),
+    onMutate: () => setError(null),
+    onError: (err: any) => {
+      setError(getErrorMessage(err));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-aging"] });
+      navigate('/invoices');
+    }
+  });
+
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
   };
 
   const generateLinkMutation = useMutation({
@@ -361,6 +383,17 @@ export function InvoiceDetail() {
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </button>
+
+              {(user?.role === 'admin' || user?.role === 'manager') && (
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 h-10 px-4 py-2 disabled:opacity-50"
+                >
+                  {deleteMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  Delete
+                </button>
+              )}
 
               {invoice.paymentStatus !== 'Paid' && (
                 <>
@@ -751,6 +784,38 @@ export function InvoiceDetail() {
           onCancel={handlePaymentCancel}
         />
       )}
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Invoice"
+        description="Are you sure you want to delete this invoice?"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            This action cannot be undone. All event logs, metrics, and associated data for Invoice <strong>{invoice.invoiceNo}</strong> will be permanently soft-deleted.
+          </p>
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <button
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-sm font-semibold rounded-lg bg-white text-slate-700 shadow-sm transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                deleteMutation.mutate();
+              }}
+              disabled={deleteMutation.isPending}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-sm font-semibold text-white rounded-lg shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Delete Invoice
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
