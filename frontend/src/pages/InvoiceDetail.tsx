@@ -109,6 +109,14 @@ export function InvoiceDetail() {
     }
   }, [timelineResponse, timelinePage]);
 
+  // Reset timeline to page 1 whenever the invoice data updates (indicates a mutation occurred)
+  useEffect(() => {
+    if (invoice) {
+      setTimelinePage(1);
+      setAccumulatedTimeline([]);
+    }
+  }, [invoice?.updatedAt]);
+
   const handleSourceFilterChange = (source: string) => {
     setTimelineSourceFilter(source);
     setTimelinePage(1);

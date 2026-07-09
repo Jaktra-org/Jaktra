@@ -38,6 +38,7 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
     mutationFn: (data: Parameters<typeof invoiceService.updateInvoice>[1]) => invoiceService.updateInvoice(invoice.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoice", invoice.id] });
+      queryClient.invalidateQueries({ queryKey: ["invoice-timeline", invoice.id] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-aging"] });
