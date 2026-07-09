@@ -58,6 +58,13 @@ export function InvoiceDetail() {
   const [timelinePage, setTimelinePage] = useState(1);
   const [timelineSourceFilter, setTimelineSourceFilter] = useState<string>('all');
   const [timelineCategoryFilter, setTimelineCategoryFilter] = useState<string>('all');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [activeHoverCard, setActiveHoverCard] = useState<{
+    eventId: string;
+    name: string;
+    role: string | null;
+    email: string | null;
+  } | null>(null);
   const [accumulatedTimeline, setAccumulatedTimeline] = useState<any[]>([]);
   const [totalTimelineCount, setTotalTimelineCount] = useState(0);
 
@@ -282,29 +289,362 @@ export function InvoiceDetail() {
     return <MessageSquare className="w-4 h-4 text-slate-500" />;
   };
 
-  const getSourceBadge = (source: string) => {
-    switch (source) {
-      case 'ui':
-        return <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Human</span>;
-      case 'agent':
-        return <span className="bg-purple-50 border border-purple-200 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Agent</span>;
-      case 'webhook':
-        return <span className="bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Webhook</span>;
-      case 'system':
-      default:
-        return <span className="bg-slate-50 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold">System</span>;
+  const formatDateValue = (val: any) => {
+    if (!val) return 'None';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+      const date = new Date(val);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      }
     }
+    return String(val);
   };
 
-  const getEventTitle = (event: any) => {
-    if (event.description) return event.description;
-    const action = event.actionType || event.eventType || 'event';
-    return action
-      .replace(/[._]/g, ' ')
-      .split(' ')
-      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  const getEventIconStyles = (event: any) => {
+    const type = (event.actionType || event.eventType || '').toLowerCase();
+    
+    if (type.includes('received') || (event.newValues && event.newValues.paymentStatus === 'Paid')) {
+      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+    }
+    
+    if (type === 'invoice.updated' && (event.oldValues || event.newValues)) {
+      const changedKeys = Object.keys({ ...event.oldValues, ...event.newValues });
+      if (changedKeys.includes('invoiceAmount')) {
+        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      }
+      if (changedKeys.includes('dueDate')) {
+        return 'bg-amber-50 text-amber-600 border-amber-100';
+      }
+      if (changedKeys.includes('paymentStatus')) {
+        return 'bg-blue-50 text-blue-600 border-blue-100';
+      }
+    }
+
+    if (type.includes('create') || type.includes('import')) {
+      return 'bg-blue-50 text-blue-600 border-blue-100';
+    }
+    if (type.includes('sent') || type.includes('open') || type.includes('click')) {
+      return 'bg-purple-50 text-purple-600 border-purple-100';
+    }
+    if (type.includes('halt') || type.includes('bounce') || type.includes('dlq') || type.includes('error')) {
+      return 'bg-red-50 text-red-600 border-red-100';
+    }
+    
+    return 'bg-slate-50 text-slate-500 border-slate-200';
   };
+
+  const getEventHeading = (event: any) => {
+    const type = (event.actionType || event.eventType || '').toLowerCase();
+    
+    // Build JSX for Actor to clean up name repeats and fold in hover info
+    const renderActor = () => {
+      const displayName = event.actorName || (event.source === 'agent' ? 'AI Agent' : event.source === 'webhook' ? 'Webhook' : 'System');
+      
+      if (!event.actorName) {
+        return <span className="font-semibold text-slate-900">{displayName}</span>;
+      }
+      
+      const isCardOpen = activeHoverCard?.eventId === event.id;
+      const initials = event.actorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+      
+      return (
+        <span 
+          className="relative inline-block"
+          onMouseEnter={() => setActiveHoverCard({
+            eventId: event.id,
+            name: event.actorName,
+            role: event.actorRole,
+            email: event.actorEmail
+          })}
+          onMouseLeave={() => setActiveHoverCard(null)}
+        >
+          <span className="font-bold text-slate-955 border-b border-dotted border-slate-400 hover:text-blue-600 transition-colors cursor-pointer">
+            {event.actorName}
+          </span>
+          
+          {isCardOpen && (
+            <span className="absolute z-50 bottom-full left-0 mb-2 w-60 bg-white border border-slate-200 rounded-xl p-3 shadow-lg text-left block pointer-events-none animate-timeline-fade-in font-sans leading-normal">
+              <span className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                  {initials}
+                </span>
+                <span className="block min-w-0">
+                  <span className="block font-bold text-slate-900 text-xs truncate">{event.actorName}</span>
+                  {event.actorRole && (
+                    <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                      {event.actorRole}
+                    </span>
+                  )}
+                </span>
+              </span>
+              {event.actorEmail && (
+                <span className="block mt-2 pt-1.5 border-t border-slate-100">
+                  <span className="block text-[8px] uppercase font-bold text-slate-400 tracking-wider">Email</span>
+                  <span className="block text-[10px] text-slate-600 font-mono truncate select-all">{event.actorEmail}</span>
+                </span>
+              )}
+            </span>
+          )}
+        </span>
+      );
+    };
+
+    const actor = renderActor();
+
+    // 1. Updates
+    if (type === 'invoice.updated' && (event.oldValues || event.newValues)) {
+      const keys = Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
+      
+      if (keys.length === 1) {
+        const key = keys[0];
+        const oldVal = event.oldValues?.[key];
+        const newVal = event.newValues?.[key];
+        
+        const isFirstTime = oldVal === null || oldVal === undefined || oldVal === '' || String(oldVal).toLowerCase() === 'none';
+        
+        if (key === 'invoiceAmount') {
+          if (isFirstTime) {
+            return (
+              <span>
+                {actor} set the invoice amount to <span className="font-bold text-slate-950 font-mono">{formatCurrency(newVal)}</span>
+              </span>
+            );
+          }
+          return (
+            <span>
+              {actor} changed the invoice amount from <span className="line-through text-slate-400 font-mono">{formatCurrency(oldVal)}</span> to <span className="font-bold text-slate-955 font-mono">{formatCurrency(newVal)}</span>
+            </span>
+          );
+        }
+        
+        if (key === 'dueDate') {
+          if (isFirstTime) {
+            return (
+              <span>
+                {actor} set the due date to <span className="font-bold text-slate-955">{formatDateValue(newVal)}</span>
+              </span>
+            );
+          }
+          return (
+            <span>
+              {actor} pushed the due date from <span className="line-through text-slate-400">{formatDateValue(oldVal)}</span> to <span className="font-bold text-slate-955">{formatDateValue(newVal)}</span>
+            </span>
+          );
+        }
+
+        if (key === 'paymentStatus') {
+          if (newVal === 'Paid') {
+            return (
+              <span>
+                {actor} marked this invoice as <span className="font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-xs border border-emerald-100">Paid</span>
+              </span>
+            );
+          }
+          if (isFirstTime) {
+            return (
+              <span>
+                {actor} set status to <span className="font-bold text-slate-955">{String(newVal)}</span>
+              </span>
+            );
+          }
+          return (
+            <span>
+              {actor} changed status from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span>
+            </span>
+          );
+        }
+        
+        // Sanity-check: Ambiguous "subject" -> "follow-up subject"
+        const displayLabel = key === 'subject' ? 'follow-up subject' : key.replace(/([A-Z])/g, ' $1').toLowerCase();
+        
+        if (isFirstTime) {
+          return (
+            <span>
+              {actor} set the {displayLabel} to <span className="font-bold text-slate-955">{String(newVal ?? '—')}</span>
+            </span>
+          );
+        }
+        return (
+          <span>
+            {actor} updated {displayLabel} from <span className="line-through text-slate-400">{String(oldVal ?? '—')}</span> to <span className="font-bold text-slate-955">{String(newVal ?? '—')}</span>
+          </span>
+        );
+      } else if (keys.length > 1) {
+        return (
+          <span>
+            {actor} updated {keys.length} fields on the invoice
+          </span>
+        );
+      }
+    }
+
+    // 2. Specific Action types
+    if (type === 'invoice.created') {
+      return (
+        <span>
+          {actor} created this invoice for <span className="font-bold text-slate-950 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span>
+        </span>
+      );
+    }
+    if (type === 'invoice.deleted') {
+      return (
+        <span>
+          {actor} deleted this invoice
+        </span>
+      );
+    }
+    if (type === 'invoice.imported' || type === 'invoice.bulk_imported') {
+      return (
+        <span>
+          {actor} imported this invoice
+        </span>
+      );
+    }
+    if (type === 'payment.received') {
+      return (
+        <span>
+          Payment of <span className="font-bold text-emerald-600 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span> received successfully
+        </span>
+      );
+    }
+    if (type === 'payment.link_generated') {
+      return (
+        <span>
+          Payment link generated for <span className="font-semibold text-slate-900">{invoice?.clientName}</span>
+        </span>
+      );
+    }
+    if (type === 'followup.triggered') {
+      const tone = event.payload?.tone || 'default';
+      return (
+        <span>
+          {actor} triggered AI follow-up (tone: <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[11px] border border-slate-200">{tone}</span>)
+        </span>
+      );
+    }
+    if (type === 'followup.sent') {
+      return (
+        <span>
+          AI agent sent follow-up email to <span className="font-semibold text-slate-900">{invoice?.contactEmail}</span>
+        </span>
+      );
+    }
+    if (type === 'followup.skipped') {
+      return (
+        <span>
+          AI follow-up skipped (already contacted recently)
+        </span>
+      );
+    }
+    if (type === 'followup.halted') {
+      return (
+        <span>
+          AI follow-up halted (no active email channel configured)
+        </span>
+      );
+    }
+    if (type === 'followup.email_opened') {
+      return (
+        <span>
+          Client opened follow-up email
+        </span>
+      );
+    }
+    if (type === 'followup.email_clicked') {
+      return (
+        <span>
+          Client clicked payment link in email
+        </span>
+      );
+    }
+    if (type === 'followup.bounced') {
+      return (
+        <span className="text-red-700">
+          Email to {invoice?.contactEmail} bounced
+        </span>
+      );
+    }
+    if (type.startsWith('dlq.')) {
+      return (
+        <span className="text-amber-700">
+          Invoice added to DLQ: {event.description || 'Automation limit reached'}
+        </span>
+      );
+    }
+
+    return <span>{event.description || event.actionType || event.eventType}</span>;
+  };
+
+  const groupTimelineEvents = (events: any[]) => {
+    if (events.length === 0) return [];
+    
+    const grouped: any[] = [];
+    let currentGroup: any[] = [];
+    
+    for (let i = 0; i < events.length; i++) {
+      const evt = events[i];
+      
+      if (currentGroup.length === 0) {
+        currentGroup.push(evt);
+        continue;
+      }
+      
+      const firstEvt = currentGroup[0];
+      
+      // Check grouping suitability
+      const isSameType = (evt.actionType || evt.eventType) === (firstEvt.actionType || firstEvt.eventType);
+      const isUpdate = (evt.actionType || evt.eventType) === 'invoice.updated';
+      const isSameActor = evt.actorId === firstEvt.actorId && evt.actorName === firstEvt.actorName;
+      
+      // Check fields changed
+      const firstKeys = Object.keys({ ...firstEvt.oldValues, ...firstEvt.newValues }).filter(k => firstEvt.oldValues?.[k] !== firstEvt.newValues?.[k]);
+      const evtKeys = Object.keys({ ...evt.oldValues, ...evt.newValues }).filter(k => evt.oldValues?.[k] !== evt.newValues?.[k]);
+      
+      const isSameSingleField = isUpdate && firstKeys.length === 1 && evtKeys.length === 1 && firstKeys[0] === evtKeys[0];
+      
+      // Time difference within 15 minutes
+      const timeDiff = Math.abs(new Date(evt.createdAt).getTime() - new Date(firstEvt.createdAt).getTime());
+      const isWithinTime = timeDiff <= 15 * 60 * 1000;
+      
+      if (isSameType && isUpdate && isSameActor && isSameSingleField && isWithinTime) {
+        currentGroup.push(evt);
+      } else {
+        grouped.push(mergeGroup(currentGroup));
+        currentGroup = [evt];
+      }
+    }
+    
+    if (currentGroup.length > 0) {
+      grouped.push(mergeGroup(currentGroup));
+    }
+    
+    return grouped;
+  };
+
+  const mergeGroup = (group: any[]) => {
+    if (group.length === 1) return group[0];
+    
+    // Sort group chronological ascending to determine transition
+    const sorted = [...group].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    
+    const oldest = sorted[0];
+    const newest = sorted[sorted.length - 1];
+    
+    const fieldKey = Object.keys({ ...oldest.oldValues, ...oldest.newValues }).find(k => oldest.oldValues?.[k] !== oldest.newValues?.[k]) || '';
+    
+    return {
+      ...newest, // keeps the latest metadata
+      oldValues: oldest.oldValues ? { [fieldKey]: oldest.oldValues[fieldKey] } : null,
+      newValues: newest.newValues ? { [fieldKey]: newest.newValues[fieldKey] } : null,
+      isGrouped: true,
+      editsCount: group.length,
+      subEvents: group
+    };
+  };
+
+
+
+
 
   const renderEventDescription = (event: any) => {
     const payload = event.payload;
@@ -662,95 +1002,144 @@ export function InvoiceDetail() {
                       No events recorded matching the criteria.
                     </div>
                   ) : (
-                    <div className="relative border-l border-slate-200 ml-3 space-y-6 py-2">
-                      {accumulatedTimeline.map((event) => (
-                        <div key={event.id} className="relative pl-8 animate-timeline-fade-in">
-                          <div className="absolute -left-3.5 top-1.5 h-7 w-7 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                            {renderEventIcon(event)}
-                          </div>
-                          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:shadow-sm transition-all duration-200">
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1.5 mb-2">
-                              <span className="font-semibold text-slate-900 text-sm sm:text-base leading-tight">
-                                {getEventTitle(event)}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                {getSourceBadge(event.source)}
-                                <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-                                  {new Date(event.createdAt).toLocaleString()}
-                                </span>
+                    <div className="relative border-l border-slate-200 ml-3.5 space-y-4 py-1">
+                      {(() => {
+                        const displayTimeline = groupTimelineEvents(accumulatedTimeline);
+                        const toggleGroup = (id: string) => {
+                          setExpandedGroups(prev => ({ ...prev, [id]: !prev[id] }));
+                        };
+                        return displayTimeline.map((event) => {
+                          const keys = Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
+                          const isExpanded = !!expandedGroups[event.id];
+                          
+                          return (
+                            <div key={event.id} className="relative pl-6 animate-timeline-fade-in">
+                              {/* Color-coded Circular Icon Marker */}
+                              <div className={`absolute -left-3 top-1 h-6 w-6 rounded-full bg-white border flex items-center justify-center shadow-sm ${getEventIconStyles(event)}`}>
+                                {renderEventIcon(event)}
                               </div>
-                            </div>
+                              
+                              {/* Card Content with reduced padding */}
+                              <div className="bg-slate-50/50 rounded-lg p-3 border border-slate-100 hover:bg-slate-50 hover:shadow-sm transition-all duration-150">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+                                  {/* Primary Text */}
+                                  <div className="text-sm text-slate-800 leading-snug">
+                                    {getEventHeading(event)}
+                                    
+                                    {/* Collapsible edit revisions trigger */}
+                                    {event.isGrouped && (
+                                      <button 
+                                        onClick={() => toggleGroup(event.id)}
+                                        className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-full transition-all inline-flex items-center gap-0.5 active:scale-95 cursor-pointer shadow-xs"
+                                      >
+                                        <span>{event.editsCount} edits</span>
+                                        <span>{isExpanded ? '▲' : '▼'}</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Secondary metadata row */}
+                                  <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap self-start sm:self-center">
+                                    {new Date(event.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}, {new Date(event.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                  </div>
+                                </div>
 
-                            {/* Event details and payload description */}
-                            {renderEventDescription(event) && (
-                              <div className="text-sm text-slate-600 mt-2 bg-white/50 p-2.5 rounded-lg border border-slate-100">
-                                {renderEventDescription(event)}
-                              </div>
-                            )}
+                                {/* Collapsible edits expansion panel */}
+                                {event.isGrouped && isExpanded && (
+                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-[11px] text-slate-500">
+                                    <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider mb-1">Edit History ({event.editsCount} revisions)</p>
+                                    {event.subEvents.map((sub: any) => {
+                                      const subKeys = Object.keys({ ...sub.oldValues, ...sub.newValues }).filter(k => sub.oldValues?.[k] !== sub.newValues?.[k]);
+                                      const subKey = subKeys[0];
+                                      const oldV = sub.oldValues?.[subKey];
+                                      const newV = sub.newValues?.[subKey];
+                                      
+                                      const isSubFirstTime = oldV === null || oldV === undefined || oldV === '' || String(oldV).toLowerCase() === 'none';
+                                      
+                                      const formattedOld = subKey === 'invoiceAmount' ? formatCurrency(oldV) : subKey === 'dueDate' ? formatDateValue(oldV) : String(oldV || '—');
+                                      const formattedNew = subKey === 'invoiceAmount' ? formatCurrency(newV) : subKey === 'dueDate' ? formatDateValue(newV) : String(newV || '—');
+                                      
+                                      return (
+                                        <div key={sub.id} className="flex justify-between items-center py-0.5 border-b border-slate-100 last:border-0 font-medium">
+                                          <span className="text-[10px] text-slate-400">
+                                            {new Date(sub.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                          </span>
+                                          {isSubFirstTime ? (
+                                            <span>
+                                              Set to <span className="font-semibold text-slate-800">{formattedNew}</span>
+                                            </span>
+                                          ) : (
+                                            <span>
+                                              Changed from <span className="line-through text-slate-400">{formattedOld}</span> to <span className="font-semibold text-slate-800">{formattedNew}</span>
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
 
-                            {/* Diff Viewer Table */}
-                            {(event.oldValues || event.newValues) && (
-                              <div className="mt-3 border-t border-slate-100 pt-3">
-                                <table className="min-w-full divide-y divide-slate-100 text-xs">
-                                  <thead>
-                                    <tr>
-                                      <th className="text-left font-semibold text-slate-500 py-1 uppercase tracking-wider">Field</th>
-                                      <th className="text-left font-semibold text-slate-500 py-1 uppercase tracking-wider">Before</th>
-                                      <th className="text-left font-semibold text-slate-500 py-1 uppercase tracking-wider">&rarr;</th>
-                                      <th className="text-left font-semibold text-slate-500 py-1 uppercase tracking-wider">After</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-slate-100">
-                                    {Object.keys({ ...event.oldValues, ...event.newValues }).map((key) => {
+                                {/* Diff List for Multi-field changes */}
+                                {keys.length > 1 && !event.isGrouped && (
+                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-xs text-slate-500">
+                                    {keys.map((key) => {
                                       const oldVal = event.oldValues?.[key];
                                       const newVal = event.newValues?.[key];
                                       if (oldVal === newVal) return null;
+                                      
+                                      const isDiffFirstTime = oldVal === null || oldVal === undefined || oldVal === '' || String(oldVal).toLowerCase() === 'none';
+                                      const displayLabel = key === 'subject' ? 'Follow-up Subject' : key.replace(/([A-Z])/g, ' $1');
+                                      
+                                      const formattedOld = key === 'invoiceAmount' ? formatCurrency(oldVal) : key === 'dueDate' ? formatDateValue(oldVal) : String(oldVal ?? '—');
+                                      const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');
                                       return (
-                                        <tr key={key} className="hover:bg-slate-100/50">
-                                          <td className="font-semibold text-slate-700 py-1.5 capitalize">{key.replace(/([A-Z])/g, ' $1')}</td>
-                                          <td className="text-slate-500 py-1.5 font-mono max-w-[120px] truncate" title={String(oldVal ?? '-')}>{String(oldVal ?? '-')}</td>
-                                          <td className="text-slate-400 py-1.5">&rarr;</td>
-                                          <td className="text-slate-800 font-semibold py-1.5 font-mono max-w-[120px] truncate" title={String(newVal ?? '-')}>{String(newVal ?? '-')}</td>
-                                        </tr>
+                                        <div key={key} className="flex justify-between items-center py-0.5 font-medium">
+                                          <span className="capitalize text-slate-500 font-semibold">{displayLabel}</span>
+                                          <span>
+                                            {isDiffFirstTime ? (
+                                              <span>
+                                                Set to <span className="font-semibold text-slate-800 ml-1">{formattedNew}</span>
+                                              </span>
+                                            ) : (
+                                              <span>
+                                                <span className="line-through text-slate-400 mr-1">{formattedOld}</span>
+                                                &rarr;
+                                                <span className="font-semibold text-slate-800 ml-1">{formattedNew}</span>
+                                              </span>
+                                            )}
+                                          </span>
+                                        </div>
                                       );
                                     })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
+                                  </div>
+                                )}
 
-                            {/* Legacy / agent run payload view */}
-                            {!event.oldValues && !event.newValues && event.payload && (
-                              <div className="mt-2 text-xs text-slate-500 bg-slate-100/40 border border-slate-100 rounded-lg p-2.5 space-y-1 font-mono">
-                                {Object.entries(event.payload).map(([k, v]) => {
-                                  if (v === null || v === undefined || k === 'error' || k === 'reason') return null;
-                                  return (
-                                    <div key={k} className="flex gap-2">
-                                      <span className="font-semibold text-slate-600 capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
-                                      <span className="text-slate-700 select-all truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
+                                {/* Payload descriptions if any */}
+                                {renderEventDescription(event) && (
+                                  <div className="text-xs text-slate-500 mt-2 pl-3 border-l-2 border-slate-200 py-0.5">
+                                    {renderEventDescription(event)}
+                                  </div>
+                                )}
 
-                            {/* Actor Circle Initials Chip */}
-                            {event.actorName && (
-                              <div className="mt-3 flex items-center">
-                                <div 
-                                  className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full text-xs font-medium cursor-help transition-colors"
-                                  title={`${event.actorName} (${event.actorEmail || ''})`}
-                                >
-                                  <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-800 text-[9px] font-bold flex items-center justify-center">
-                                    {event.actorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
-                                  </span>
-                                  <span>{event.actorName} · <span className="text-[10px] text-slate-500 capitalize">{event.actorRole || 'Member'}</span></span>
-                                </div>
+                                {/* Legacy/Generic payloads */}
+                                {!event.oldValues && !event.newValues && event.payload && (
+                                  <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-[11px] text-slate-500 font-mono">
+                                    {Object.entries(event.payload).map(([k, v]) => {
+                                      if (v === null || v === undefined || k === 'error' || k === 'reason') return null;
+                                      return (
+                                        <div key={k} className="flex gap-2">
+                                          <span className="font-semibold text-slate-400 capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
+                                          <span className="text-slate-600 select-all truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   )}
 
