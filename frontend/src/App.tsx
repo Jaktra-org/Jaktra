@@ -9,6 +9,7 @@ import { Agent } from "./pages/Agent";
 import { DLQ } from "./pages/DLQ";
 import { Analytics } from "./pages/Analytics";
 import { Settings } from "./pages/Settings";
+import { ActivityLog } from "./pages/ActivityLog";
 import { AcceptInvitation } from "./pages/AcceptInvitation";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -32,6 +33,7 @@ function App() {
           
           <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
             <Route path="/settings" element={<Settings />} />
+            <Route path="/activity-log" element={<ActivityLog />} />
           </Route>
         </Route>
       </Route>
