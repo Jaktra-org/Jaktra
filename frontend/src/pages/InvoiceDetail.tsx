@@ -54,10 +54,8 @@ export function InvoiceDetail() {
   const [activeTab, setActiveTab] = useState<'timeline' | 'emails'>('timeline');
   const [error, setError] = useState<string | null>(null);
 
-  // Timeline Filters & Pagination State
+  // Timeline Pagination State
   const [timelinePage, setTimelinePage] = useState(1);
-  const [timelineSourceFilter, setTimelineSourceFilter] = useState<string>('all');
-  const [timelineCategoryFilter, setTimelineCategoryFilter] = useState<string>('all');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [activeHoverCard, setActiveHoverCard] = useState<{
     eventId: string;
@@ -74,37 +72,11 @@ export function InvoiceDetail() {
     enabled: !!id,
   });
 
-  const getActionTypesForCategory = (category: string): string[] | undefined => {
-    switch (category) {
-      case 'status':
-        return ['invoice.status_changed'];
-      case 'emails':
-        return [
-          'followup.triggered',
-          'followup.sent',
-          'followup.skipped',
-          'followup.halted',
-          'followup.email_opened',
-          'followup.email_clicked',
-          'followup.bounced',
-        ];
-      case 'payments':
-        return ['payment.link_generated', 'payment.received'];
-      default:
-        return undefined;
-    }
-  };
-
-  const activeActionTypes = getActionTypesForCategory(timelineCategoryFilter);
-  const activeSources = timelineSourceFilter !== 'all' ? [timelineSourceFilter] : undefined;
-
   const { data: timelineResponse, isLoading: isTimelineLoading } = useQuery({
-    queryKey: ["invoice-timeline", id, timelinePage, timelineSourceFilter, timelineCategoryFilter],
+    queryKey: ["invoice-timeline", id, timelinePage],
     queryFn: () => eventService.getInvoiceTimeline(id!, {
       page: timelinePage,
       limit: 10,
-      actionTypes: activeActionTypes,
-      sources: activeSources,
     }),
     enabled: !!id,
   });
@@ -130,18 +102,6 @@ export function InvoiceDetail() {
       setTimelinePage(1);
     }
   }, [invoice?.updatedAt]);
-
-  const handleSourceFilterChange = (source: string) => {
-    setTimelineSourceFilter(source);
-    setTimelinePage(1);
-    setAccumulatedTimeline([]);
-  };
-
-  const handleCategoryFilterChange = (category: string) => {
-    setTimelineCategoryFilter(category);
-    setTimelinePage(1);
-    setAccumulatedTimeline([]);
-  };
 
   const { data: communications, isLoading: isCommsLoading } = useQuery({
     queryKey: ["invoice-communications", id],
@@ -935,57 +895,7 @@ export function InvoiceDetail() {
               {activeTab === 'timeline' ? (
                 // TIMELINE TAB
                 <div>
-                  {/* Filters Bar */}
-                  <div className="flex flex-col sm:flex-row gap-4 mb-6 pb-6 border-b border-slate-100 justify-between items-start sm:items-center">
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Source</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[
-                          { value: 'all', label: 'All' },
-                          { value: 'ui', label: 'Human' },
-                          { value: 'agent', label: 'Agent' },
-                          { value: 'webhook', label: 'Webhook' },
-                          { value: 'system', label: 'System' },
-                        ].map((opt) => (
-                          <button
-                            key={opt.value}
-                            onClick={() => handleSourceFilterChange(opt.value)}
-                            className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
-                              timelineSourceFilter === opt.value
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
 
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Category</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[
-                          { value: 'all', label: 'All' },
-                          { value: 'status', label: 'Status' },
-                          { value: 'emails', label: 'Emails' },
-                          { value: 'payments', label: 'Payments' },
-                        ].map((opt) => (
-                          <button
-                            key={opt.value}
-                            onClick={() => handleCategoryFilterChange(opt.value)}
-                            className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
-                              timelineCategoryFilter === opt.value
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
 
                   <div className="flex justify-between items-center mb-6">
                     <span className="text-xs text-slate-500 font-medium">
