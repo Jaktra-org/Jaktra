@@ -1,5 +1,6 @@
 import { Router, RequestHandler } from 'express';
 import { EventController } from './event.controller.js';
+import { requireRole } from '../../middleware/require-role.js';
 
 export function createEventRouter(
   eventController: EventController,
@@ -20,6 +21,14 @@ export function createEventRouter(
     authMiddleware,
     tenantScoped,
     eventController.getFeed,
+  );
+
+  router.get(
+    '/events',
+    authMiddleware,
+    tenantScoped,
+    requireRole('admin', 'manager'),
+    eventController.listAll,
   );
 
   return router;

@@ -125,4 +125,76 @@ export class EventRepository {
 
     return { data, total };
   }
+
+  async findTenantEventsPaginated(
+    tenantId: string,
+    filters: {
+      actionTypes?: ActionType[];
+      sources?: string[];
+      actorId?: string;
+      from?: Date;
+      to?: Date;
+    },
+    page: number,
+    limit: number,
+  ): Promise<{ data: any[]; total: number }> {
+    const conditions = [
+      eq(events.tenantId, tenantId),
+    ];
+
+    if (filters.actionTypes && filters.actionTypes.length > 0) {
+      conditions.push(inArray(events.actionType, filters.actionTypes));
+    }
+    if (filters.sources && filters.sources.length > 0) {
+      conditions.push(inArray(events.source, filters.sources));
+    }
+    if (filters.actorId) {
+      conditions.push(eq(events.actorId, filters.actorId));
+    }
+    if (filters.from) {
+      conditions.push(gte(events.createdAt, filters.from));
+    }
+    if (filters.to) {
+      conditions.push(lte(events.createdAt, filters.to));
+    }
+
+    const whereClause = and(...conditions);
+    const offset = (page - 1) * limit;
+
+    const [countResult] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(events)
+      .where(whereClause);
+
+    const total = Number(countResult?.count ?? 0);
+
+    const data = await this.db
+      .select({
+        id: events.id,
+        tenantId: events.tenantId,
+        entityType: events.entityType,
+        entityId: events.entityId,
+        actorId: events.actorId,
+        actorName: events.actorName,
+        actorEmail: events.actorEmail,
+        actorRole: events.actorRole,
+        actionType: events.actionType,
+        description: events.description,
+        source: events.source,
+        oldValues: events.oldValues,
+        newValues: events.newValues,
+        eventType: events.eventType,
+        payload: events.payload,
+        createdAt: events.createdAt,
+        invoiceNo: invoices.invoiceNo,
+      })
+      .from(events)
+      .leftJoin(invoices, and(eq(events.entityType, 'invoice'), eq(events.entityId, invoices.id)))
+      .where(whereClause)
+      .orderBy(desc(events.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return { data, total };
+  }
 }

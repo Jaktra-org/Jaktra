@@ -195,6 +195,43 @@ export class EventService {
       },
     };
   }
+
+  async listAll(
+    tenantId: string,
+    filters: {
+      actionTypes?: ActionType[];
+      sources?: string[];
+      actorId?: string;
+      from?: Date;
+      to?: Date;
+    },
+    page: number,
+    limit: number,
+  ): Promise<{ data: any[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
+    const { data, total } = await this.eventRepo.findTenantEventsPaginated(
+      tenantId,
+      filters,
+      page,
+      limit
+    );
+
+    const totalPages = Math.ceil(total / limit);
+
+    const mappedData = data.map((event) => ({
+      ...event,
+      invoiceId: event.entityType === 'invoice' ? event.entityId : null,
+    }));
+
+    return {
+      data: mappedData,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
 }
 
 export class EventError extends Error {

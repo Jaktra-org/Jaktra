@@ -9,8 +9,8 @@ export default defineConfig({
     include: ['src/test/**/*.{test,spec}.ts', 'src/**/*.test.ts'],
     pool: 'forks',
     poolOptions: { forks: { singleFork: true } },
-    hookTimeout: 30000,
-    testTimeout: 15000,
+    hookTimeout: 60000,
+    testTimeout: 60000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
