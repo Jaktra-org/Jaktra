@@ -2,7 +2,7 @@ import { eq, asc, desc, sql, and, inArray, gte, lte } from 'drizzle-orm';
 import { events, invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Event, NewEvent } from '../../db/index.js';
-import type { ActionType } from './event.action-types.js';
+import { ACTIVITY_LOG_VISIBLE_ACTIONS, type ActionType } from './event.action-types.js';
 
 export class EventRepository {
   constructor(private db: DatabaseClient) {}
@@ -142,8 +142,14 @@ export class EventRepository {
       eq(events.tenantId, tenantId),
     ];
 
-    if (filters.actionTypes && filters.actionTypes.length > 0) {
-      conditions.push(inArray(events.actionType, filters.actionTypes));
+    const allowedActions = filters.actionTypes && filters.actionTypes.length > 0
+      ? filters.actionTypes.filter(type => ACTIVITY_LOG_VISIBLE_ACTIONS.includes(type))
+      : ACTIVITY_LOG_VISIBLE_ACTIONS;
+
+    if (allowedActions.length > 0) {
+      conditions.push(inArray(events.actionType, allowedActions));
+    } else {
+      conditions.push(sql`1 = 0`);
     }
     if (filters.sources && filters.sources.length > 0) {
       conditions.push(inArray(events.source, filters.sources));

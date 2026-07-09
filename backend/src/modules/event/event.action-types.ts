@@ -45,3 +45,26 @@ export const ACTION_TYPES = [
 ] as const;
 
 export type ActionType = (typeof ACTION_TYPES)[number];
+
+export const ACTIVITY_LOG_VISIBLE_ACTIONS: ActionType[] = [
+  'user.invited',
+  'user.invite_resent',
+  'user.invite_revoked',
+  'user.joined',
+  'user.role_updated',
+  'user.removed',
+
+  'settings.updated',
+  'settings.webhook_token_rotated',
+
+  'integration.connected',
+  'integration.disconnected',
+  'integration.default_email_changed',
+
+  'invoice.bulk_imported',
+  'agent.run_triggered',
+  'reconciler.run_triggered',
+
+  'invoice.deleted',
+  'dlq.cleared',
+];
