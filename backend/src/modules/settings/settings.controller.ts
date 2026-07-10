@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import type { SettingsService } from './settings.service.js';
 import { updateSettingsSchema } from './settings.service.js';
 import { AuthError, NotFoundError, ValidationError } from '../../shared/errors/index.js';
@@ -25,7 +24,7 @@ export class SettingsController {
     };
   }
 
-  getSettings = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  getSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = res.locals.tenantId as string;
       if (!tenantId) {
@@ -45,7 +44,7 @@ export class SettingsController {
     }
   };
 
-  updateSettings = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  updateSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = res.locals.tenantId as string;
       if (!tenantId) {
@@ -64,11 +63,11 @@ export class SettingsController {
 
       if (this.eventService && oldSettings && updated) {
         const actor = this.getActorContext(req);
-        const oldValues: Record<string, any> = {};
-        const newValues: Record<string, any> = {};
+        const oldValues: Record<string, unknown> = {};
+        const newValues: Record<string, unknown> = {};
         for (const key of Object.keys(parseResult.data)) {
-          const oldVal = (oldSettings as any)[key];
-          const newVal = (updated as any)[key];
+          const oldVal = (oldSettings as Record<string, unknown>)[key];
+          const newVal = (updated as Record<string, unknown>)[key];
           if (oldVal !== newVal) {
             oldValues[key] = oldVal;
             newValues[key] = newVal;
@@ -93,7 +92,7 @@ export class SettingsController {
     }
   };
 
-  getIntegrations = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  getIntegrations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = res.locals.tenantId as string;
       if (!tenantId) {
@@ -108,7 +107,7 @@ export class SettingsController {
     }
   };
 
-  rotateWebhookToken = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  rotateWebhookToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = res.locals.tenantId as string;
       if (!tenantId) {

@@ -94,8 +94,9 @@ export class IntegrationService {
     try {
       await sgClient.request(request);
       validationResult = 'valid';
-    } catch (error: any) {
-      const status = error.code || error.response?.statusCode;
+    } catch (error: unknown) {
+      const errObj = error as { code?: string | number; response?: { statusCode?: number } } | null;
+      const status = errObj?.code || errObj?.response?.statusCode;
       errorCode = String(status);
 
       logger.warn(`SendGrid validation failed for tenant ${tenantId}. Status: ${status}`);
@@ -143,7 +144,7 @@ export class IntegrationService {
         authTag: integration.authTag,
         keyVersion: integration.keyVersion,
       }, aadContext);
-    } catch (e) {
+    } catch {
       logger.error(`Decryption failed for tenant ${tenantId} SendGrid integration.`);
       throw IntegrationErrors.CREDENTIAL_INVALID();
     }
@@ -166,7 +167,7 @@ export class IntegrationService {
       
       const payload = JSON.parse(decryptedString);
       return await SmtpConnectionFactory.validatePayload(payload);
-    } catch (e) {
+    } catch {
       logger.error(`Decryption failed for tenant ${tenantId} SMTP integration.`);
       throw IntegrationErrors.CREDENTIAL_INVALID();
     }
@@ -174,7 +175,7 @@ export class IntegrationService {
 
   async validateAndSaveSmtpConfig(tenantId: string, updateData: Partial<SmtpConfig>): Promise<void> {
     const existingIntegration = await this.repo.getIntegration(tenantId, 'smtp');
-    let candidateConfig: any = { payloadVersion: 1, ...updateData };
+    let candidateConfig: Partial<SmtpConfig> & { payloadVersion: number } = { payloadVersion: 1, ...updateData };
 
     if (!existingIntegration) {
       if (!updateData.password) {
@@ -185,7 +186,7 @@ export class IntegrationService {
       try {
         const existingConfig = await this.getDecryptedSmtpConfig(tenantId);
         candidateConfig = { ...existingConfig, ...updateData };
-      } catch (e) {
+      } catch {
         if (!updateData.password) {
           throw new IntegrationError('Existing configuration could not be read, password must be provided', 'INTEGRATION_BAD_REQUEST', 400);
         }
@@ -198,8 +199,8 @@ export class IntegrationService {
     try {
       transporter = await SmtpConnectionFactory.createTransporter(validatedConfig);
       await SmtpConnectionFactory.executeWithTimeout(transporter, () => transporter!.verify(), 15000);
-    } catch (error: any) {
-      logger.warn(`SMTP validation failed for tenant ${tenantId}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.warn(`SMTP validation failed for tenant ${tenantId}: ${error instanceof Error ? error.message : String(error)}`);
       throw new IntegrationError('SMTP validation failed. Please check your host, port, and credentials.', 'INTEGRATION_VALIDATION_FAILED', 400);
     } finally {
       if (transporter) transporter.close();
@@ -236,9 +237,9 @@ export class IntegrationService {
           lastValidationResult: 'valid',
           lastOperationalErrorCode: null,
         });
-      } catch (e: any) {
+      } catch (e: unknown) {
         // Unique constraint violation map to 409
-        if (e.code === '23505') {
+        if (e && typeof e === 'object' && 'code' in e && e.code === '23505') {
           throw new IntegrationError('SMTP settings were changed by another administrator. Current values have been reloaded.', 'INTEGRATION_CONFLICT', 409);
         }
         throw e;
@@ -250,13 +251,18 @@ export class IntegrationService {
     await this.repo.deleteIntegration(tenantId, 'smtp');
   }
 
-  async handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp', error: any): Promise<void> {
+  async handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp', error: unknown): Promise<void> {
+    const err = error as {
+      response?: { statusCode?: number; body?: unknown };
+      responseCode?: number;
+      code?: string | number;
+    };
     if (provider === 'sendgrid') {
-      const status = error.response?.statusCode;
+      const status = err.response?.statusCode;
       if (status === 401) {
         await this.repo.updateValidationStatus(tenantId, provider, 'revoked', String(status));
       } else if (status === 403) {
-        const bodyStr = JSON.stringify(error.response?.body || {});
+        const bodyStr = JSON.stringify(err.response?.body || {});
         if (bodyStr.includes('sender') || bodyStr.includes('identity')) {
           await this.repo.updateValidationStatus(tenantId, provider, 'unverified_sender', String(status));
         } else {
@@ -264,7 +270,7 @@ export class IntegrationService {
         }
       }
     } else if (provider === 'smtp') {
-      const status = error.responseCode || error.code;
+      const status = err.responseCode || err.code;
       if (status === 535) {
          await this.repo.updateValidationStatus(tenantId, provider, 'revoked', 'auth_failed');
       } else {
@@ -296,12 +302,12 @@ export class IntegrationService {
         throw IntegrationErrors.PROVIDER_UNAVAILABLE();
       }
       validationResult = 'valid';
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof IntegrationError) {
         throw error;
       }
       logger.error('validateAndSaveRazorpayKey error:', error);
-      logger.warn(`Razorpay validation failed for tenant ${tenantId}. Error: ${error.message}`);
+      logger.warn(`Razorpay validation failed for tenant ${tenantId}. Error: ${error instanceof Error ? error.message : String(error)}`);
       throw IntegrationErrors.CREDENTIAL_INVALID();
     }
 
@@ -341,7 +347,7 @@ export class IntegrationService {
       }, aadContext);
       
       return JSON.parse(decryptedString);
-    } catch (e) {
+    } catch {
       logger.error(`Decryption failed for tenant ${tenantId} Razorpay integration.`);
       throw IntegrationErrors.CREDENTIAL_INVALID();
     }

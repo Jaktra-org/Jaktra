@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 import { IntegrationService } from './integration.service.js';
 import { CommunicationService } from '../communication/communication.service.js';
 import { DlqService } from '../dlq/dlq.service.js';
@@ -21,7 +22,7 @@ export class IntegrationController {
   ) {}
 
   private getActorContext(req: Request): ActorContext {
-    const user = (req as any).user;
+    const user = (req as AuthenticatedRequest).user;
     return {
       source: 'ui',
       userId: user.userId,
@@ -33,7 +34,7 @@ export class IntegrationController {
 
   getStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const [sendgridStatus, smtpStatus, razorpayStatus] = await Promise.all([
         this.integrationService.getIntegrationStatus(tenantId, 'sendgrid'),
         this.integrationService.getIntegrationStatus(tenantId, 'smtp'),
@@ -52,7 +53,7 @@ export class IntegrationController {
 
   saveSendgridKey = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { apiKey } = req.body;
 
       if (!apiKey || typeof apiKey !== 'string' || apiKey.length > 200) {
@@ -88,7 +89,7 @@ export class IntegrationController {
 
   testSendgridKey = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { to } = req.body;
 
       if (!to || typeof to !== 'string') {
@@ -106,11 +107,11 @@ export class IntegrationController {
 
   disconnectSendgrid = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       await this.integrationService.deleteSendgridIntegration(tenantId);
 
       const settings = await this.communicationService.getSettings(tenantId);
-      if (settings && (settings as any).defaultEmailProvider === 'sendgrid') {
+      if (settings && (settings as { defaultEmailProvider?: string }).defaultEmailProvider === 'sendgrid') {
         // If SMTP is configured and valid, auto-switch to it
         const smtpStatus = await this.integrationService.getIntegrationStatus(tenantId, 'smtp');
         if (smtpStatus.isConfigured && smtpStatus.lastValidationResult === 'valid') {
@@ -135,7 +136,7 @@ export class IntegrationController {
 
   saveSmtpConfig = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
 
       const bodyStr = JSON.stringify(req.body);
       if (bodyStr.length > 5000) {
@@ -171,7 +172,7 @@ export class IntegrationController {
 
   testSmtpConfig = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { to } = req.body;
 
       if (!to || typeof to !== 'string') {
@@ -209,11 +210,11 @@ export class IntegrationController {
 
   disconnectSmtp = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       await this.integrationService.deleteSmtpIntegration(tenantId);
 
       const settings = await this.communicationService.getSettings(tenantId);
-      if (settings && (settings as any).defaultEmailProvider === 'smtp') {
+      if (settings && (settings as { defaultEmailProvider?: string }).defaultEmailProvider === 'smtp') {
         // If SendGrid is configured and valid, auto-switch to it
         const sendgridStatus = await this.integrationService.getIntegrationStatus(tenantId, 'sendgrid');
         if (sendgridStatus.isConfigured && sendgridStatus.lastValidationResult === 'valid') {
@@ -238,7 +239,7 @@ export class IntegrationController {
 
   saveRazorpayKey = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       
       const validationResult = razorpayCredsSchema.safeParse(req.body);
       if (!validationResult.success) {
@@ -266,7 +267,7 @@ export class IntegrationController {
 
   disconnectRazorpay = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       await this.integrationService.deleteRazorpayIntegration(tenantId);
 
       this.eventService?.logEvent({
@@ -284,7 +285,7 @@ export class IntegrationController {
 
   setDefaultProvider = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = (req as any).user.tenantId;
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { provider } = req.body;
 
       if (provider !== 'sendgrid' && provider !== 'smtp' && provider !== null) {
@@ -302,7 +303,7 @@ export class IntegrationController {
 
       // Capture previous default before changing it
       const prevSettings = await this.communicationService.getSettings(tenantId);
-      const previousProvider = (prevSettings as any)?.defaultEmailProvider ?? null;
+      const previousProvider = (prevSettings as { defaultEmailProvider?: string | null } | undefined)?.defaultEmailProvider ?? null;
 
       await this.communicationService.setDefaultEmailProvider(tenantId, provider);
 
