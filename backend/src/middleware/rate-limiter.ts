@@ -137,6 +137,7 @@ export const standardLimiter = rateLimit({
   message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests, please try again later.' } },
   store: new FallbackStore('rl:standard:'),
   passOnStoreError: true,
+  validate: { singleCount: false },
 });
 
 export const authLimiter = rateLimit({
@@ -147,4 +148,5 @@ export const authLimiter = rateLimit({
   message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many authentication attempts, please try again later.' } },
   store: new FallbackStore('rl:auth:'),
   passOnStoreError: true,
+  validate: { singleCount: false },
 });

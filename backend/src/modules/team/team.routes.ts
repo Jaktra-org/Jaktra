@@ -31,13 +31,15 @@ export function createTeamRouter(
   const inviteLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
     max: 10,
-    message: { error: 'Too many invitations sent from this IP, please try again after 15 minutes' }
+    message: { error: 'Too many invitations sent from this IP, please try again after 15 minutes' },
+    validate: { singleCount: false }
   });
 
   const acceptLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, 
     max: 5,
-    message: { error: 'Too many acceptance attempts from this IP, please try again after an hour' }
+    message: { error: 'Too many acceptance attempts from this IP, please try again after an hour' },
+    validate: { singleCount: false }
   });
 
   router.post('/accept-invitation', acceptLimiter, teamController.acceptInvitation);
