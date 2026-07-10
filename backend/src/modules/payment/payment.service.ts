@@ -164,7 +164,7 @@ export class PaymentService {
 
     let resolvedInvoiceId = invoiceId;
     if (!resolvedInvoiceId) {
-      const plinkId = payload?.payment?.entity?.payment_link_id || payload?.payment_link?.entity?.id;
+      const plinkId = payload?.payload?.payment?.entity?.payment_link_id || payload?.payload?.payment_link?.entity?.id;
       if (plinkId) {
         const linkRecord = await this.repo.getActivePaymentLinkByProviderId(tenantId, plinkId, provider);
         if (linkRecord) {

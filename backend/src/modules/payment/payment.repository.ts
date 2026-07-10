@@ -1,9 +1,9 @@
-import type { DatabaseClient } from '../../db/index.js';
+import type { DatabaseOrTransaction } from '../../db/index.js';
 import { paymentWebhookEvents, invoicePaymentLinks, invoices } from '../../db/schema.js';
 import { eq, and, desc } from 'drizzle-orm';
 
 export class PaymentRepository {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseOrTransaction) {}
   async insertWebhookEvent(event: Partial<typeof paymentWebhookEvents.$inferInsert>) {
     const [result] = await this.db.insert(paymentWebhookEvents)
       .values(event as typeof paymentWebhookEvents.$inferInsert)
@@ -25,7 +25,7 @@ export class PaymentRepository {
       .where(eq(paymentWebhookEvents.externalEventId, eventId));
   }
 
-  async getActivePaymentLink(tenantId: string, invoiceId: string, provider: string) {
+  async getActivePaymentLink(tenantId: string, invoiceId: string, provider: "sendgrid" | "smtp" | "razorpay") {
     const results = await this.db.select()
       .from(invoicePaymentLinks)
       .where(and(
@@ -38,7 +38,7 @@ export class PaymentRepository {
     return results[0] || null;
   }
 
-  async getActivePaymentLinkByProviderId(tenantId: string, providerPaymentLinkId: string, provider: string) {
+  async getActivePaymentLinkByProviderId(tenantId: string, providerPaymentLinkId: string, provider: "sendgrid" | "smtp" | "razorpay") {
     const results = await this.db.select()
       .from(invoicePaymentLinks)
       .where(and(
