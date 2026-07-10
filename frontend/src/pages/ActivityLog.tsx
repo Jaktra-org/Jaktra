@@ -520,34 +520,22 @@ export function ActivityLog() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-1 py-2">
-      {/* Premium Header with Gradient */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 text-white shadow-xl border border-slate-800">
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-56 h-56 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-8 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-        
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="inline-flex items-center space-x-2 bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs font-semibold tracking-wide border border-indigo-500/30">
-              <History className="h-3 w-3 mr-1" />
-              Audit Logs
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
-              Global Activity Log
-            </h1>
-            <p className="text-sm md:text-base text-slate-300 max-w-2xl">
-              Track administrative, user, settings, integration, and agent operations across your entire organization.
-            </p>
-          </div>
-          
-          <button 
-            onClick={() => fetchEvents(true)}
-            disabled={loading || refreshing}
-            className="flex items-center justify-center space-x-2 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-white font-medium text-sm px-4 py-2.5 rounded-lg border border-white/20 shadow-sm backdrop-blur-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>{refreshing ? 'Refreshing...' : 'Refresh Feed'}</span>
-          </button>
+      {/* Clean standard page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Activity Log</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Track administrative, user, settings, integration, and agent operations across your entire organization.
+          </p>
         </div>
+        <button 
+          onClick={() => fetchEvents(true)}
+          disabled={loading || refreshing}
+          className="flex items-center justify-center space-x-2 bg-white hover:bg-slate-50 active:scale-95 transition-all text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-lg border border-slate-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed self-start sm:self-center"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          <span>{refreshing ? 'Refreshing...' : 'Refresh Feed'}</span>
+        </button>
       </div>
 
       {/* Control bar / Filtering */}
