@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodSchema } from 'zod';
 
 export function validateBody(schema: ZodSchema) {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -21,7 +21,7 @@ export function validateQuery(schema: ZodSchema) {
       next(parsed.error);
       return;
     }
-    Object.keys(req.query).forEach((k) => delete (req.query as any)[k]);
+    Object.keys(req.query).forEach((k) => delete (req.query as Record<string, unknown>)[k]);
     Object.assign(req.query, parsed.data);
     next();
   };

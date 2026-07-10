@@ -14,7 +14,7 @@ if (redisClient) {
     .then(() => {
       isRedisConnected = true;
     })
-    .catch((err) => {
+    .catch((err: Error) => {
       console.error('Failed to connect to Redis for Rate Limiting, falling back to in-memory:', err.message);
       isRedisConnected = false;
     });
@@ -25,7 +25,7 @@ if (redisClient) {
   redisClient.on('ready', () => {
     isRedisConnected = true;
   });
-  redisClient.on('error', (err) => {
+  redisClient.on('error', (_err: Error) => {
     isRedisConnected = false;
   });
   redisClient.on('end', () => {
@@ -33,8 +33,13 @@ if (redisClient) {
   });
 }
 
+interface RedisStoreWithOptionalMethods extends RedisStore {
+  resetAll?: () => Promise<void>;
+  shutdown?: () => Promise<void>;
+}
+
 class FallbackStore implements Store {
-  private redisStore: RedisStore;
+  private redisStore: RedisStoreWithOptionalMethods;
   private memoryStore: MemoryStore;
 
   constructor(prefix: string) {
@@ -65,8 +70,9 @@ class FallbackStore implements Store {
           timeoutId = setTimeout(() => reject(new Error('Connection timeout')), 2000);
         }),
       ]);
-    } catch (err: any) {
-      console.warn(`Redis rate limit store initialization deferred: ${err.message}. Rate limiting will fall back to memory until Redis is available.`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`Redis rate limit store initialization deferred: ${message}. Rate limiting will fall back to memory until Redis is available.`);
     } finally {
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -79,8 +85,9 @@ class FallbackStore implements Store {
     if (redisClient && isRedisConnected) {
       try {
         return await this.redisStore.increment(key);
-      } catch (err: any) {
-        console.error('Redis rate limit increment failed, falling back to memory store:', err.message);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Redis rate limit increment failed, falling back to memory store:', message);
       }
     }
     return this.memoryStore.increment(key);
@@ -90,8 +97,9 @@ class FallbackStore implements Store {
     if (redisClient && isRedisConnected) {
       try {
         return await this.redisStore.decrement(key);
-      } catch (err: any) {
-        console.error('Redis rate limit decrement failed, falling back to memory store:', err.message);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Redis rate limit decrement failed, falling back to memory store:', message);
       }
     }
     return this.memoryStore.decrement(key);
@@ -101,29 +109,29 @@ class FallbackStore implements Store {
     if (redisClient && isRedisConnected) {
       try {
         return await this.redisStore.resetKey(key);
-      } catch (err: any) {
-        console.error('Redis rate limit resetKey failed, falling back to memory store:', err.message);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Redis rate limit resetKey failed, falling back to memory store:', message);
       }
     }
     return this.memoryStore.resetKey(key);
   }
 
   async resetAll(): Promise<void> {
-    const rStore = this.redisStore as any;
-    if (redisClient && isRedisConnected && typeof rStore.resetAll === 'function') {
+    if (redisClient && isRedisConnected && typeof this.redisStore.resetAll === 'function') {
       try {
-        return await rStore.resetAll();
-      } catch (err: any) {
-        console.error('Redis rate limit resetAll failed, falling back to memory store:', err.message);
+        return await this.redisStore.resetAll();
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Redis rate limit resetAll failed, falling back to memory store:', message);
       }
     }
     return this.memoryStore.resetAll();
   }
 
   async shutdown(): Promise<void> {
-    const rStore = this.redisStore as any;
-    if (typeof rStore.shutdown === 'function') {
-      await rStore.shutdown();
+    if (typeof this.redisStore.shutdown === 'function') {
+      await this.redisStore.shutdown();
     }
     this.memoryStore.shutdown();
   }

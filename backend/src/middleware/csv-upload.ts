@@ -5,7 +5,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const storage = multer.memoryStorage();
 
-function csvFileFilter(_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
+function csvFileFilter(_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback): void {
   const allowedMimes = [
     'text/csv',
     'application/vnd.ms-excel',

@@ -82,7 +82,15 @@ export function errorHandler(
     });
   }
 
-  const errorResponse: any = {
+  const errorResponse: {
+    error: {
+      code: string;
+      message: string;
+      requestId: string;
+      details?: string;
+      stack?: string;
+    };
+  } = {
     error: {
       code: errorCode,
       message: displayMessage,
