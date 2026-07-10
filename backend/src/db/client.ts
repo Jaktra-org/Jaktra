@@ -23,9 +23,11 @@ export function createDatabaseClient(options: DatabaseClientOptions): DrizzleWit
     max: options.maxConnections ?? (process.env['NODE_ENV'] === 'test' ? 10 : 20),
   });
 
-  const db = drizzle(pool, { schema }) as DrizzleWithPool;
+  const db = drizzle(pool, { schema }) as unknown as DrizzleWithPool;
   db.$pool = pool;
   return db;
 }
 
 export type DatabaseClient = ReturnType<typeof createDatabaseClient>;
+export type TransactionClient = Parameters<Parameters<DatabaseClient['transaction']>[0]>[0];
+export type DatabaseOrTransaction = DatabaseClient | TransactionClient;

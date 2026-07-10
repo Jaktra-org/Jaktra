@@ -44,4 +44,4 @@ export type {
 } from './schema.js';
 
 export { createDatabaseClient } from './client.js';
-export type { DatabaseClient, DatabaseClientOptions } from './client.js';
+export type { DatabaseClient, DatabaseClientOptions, DatabaseOrTransaction, TransactionClient } from './client.js';
