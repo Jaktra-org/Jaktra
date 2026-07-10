@@ -416,6 +416,30 @@ export function ActivityLog() {
     const actor = renderActorSection(evt);
     const action = evt.actionType.toLowerCase();
 
+    const renderInvoiceLink = (invoiceNo: string) => {
+      if (!invoiceNo || invoiceNo === 'unknown') {
+        return <span className="font-bold text-slate-950">#unknown</span>;
+      }
+      
+      // If permanently deleted, do not make it clickable (no details page exists)
+      if (evt.actionType === 'invoice.permanently_deleted') {
+        return <span className="font-bold text-slate-950">#{invoiceNo}</span>;
+      }
+
+      const path = evt.invoiceDeletedAt 
+        ? `/invoices/${evt.invoiceId}/trashed` 
+        : `/invoices/${evt.invoiceId}`;
+
+      return (
+        <Link 
+          to={path}
+          className="font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+        >
+          #{invoiceNo}
+        </Link>
+      );
+    };
+
     if (action === 'user.invited') {
       const email = evt.newValues?.email || evt.payload?.email || 'new user';
       const role = evt.newValues?.role || evt.payload?.role || 'member';
@@ -618,11 +642,70 @@ export function ActivityLog() {
       );
     }
 
+    if (action === 'invoice.created') {
+      const invoiceNo = evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      return (
+        <span>
+          {actor} created Invoice {renderInvoiceLink(invoiceNo)}
+        </span>
+      );
+    }
+
+    if (action === 'invoice.updated') {
+      const invoiceNo = evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      return (
+        <span>
+          {actor} updated Invoice {renderInvoiceLink(invoiceNo)}
+        </span>
+      );
+    }
+
+    if (action === 'invoice.imported') {
+      const invoiceNo = evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      return (
+        <span>
+          {actor} imported Invoice {renderInvoiceLink(invoiceNo)} via CSV
+        </span>
+      );
+    }
+
+    if (action === 'invoice.status_changed') {
+      const invoiceNo = evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const status = evt.newValues?.paymentStatus || evt.payload?.paymentStatus || 'unknown';
+      const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1);
+      return (
+        <span>
+          {actor} changed status of Invoice {renderInvoiceLink(invoiceNo)} to <span className="font-semibold text-slate-900">{capitalizedStatus}</span>
+        </span>
+      );
+    }
+
+    if (action === 'payment.link_generated') {
+      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      return (
+        <span>
+          {actor} generated payment link for Invoice {renderInvoiceLink(invoiceNo)}
+        </span>
+      );
+    }
+
+    if (action === 'payment.received') {
+      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const amount = evt.newValues?.amount || evt.payload?.amount || '';
+      const provider = evt.newValues?.provider || evt.payload?.provider || '';
+      const formattedAmount = amount ? formatCurrency(amount) : '';
+      return (
+        <span>
+          {actor} received payment{formattedAmount ? ` of ${formattedAmount}` : ''} for Invoice {renderInvoiceLink(invoiceNo)}{provider ? ` via ${provider}` : ''}
+        </span>
+      );
+    }
+
     if (action === 'invoice.trashed') {
       const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
       return (
         <span>
-          {actor} moved Invoice <span className="font-bold text-slate-950">#{invoiceNo}</span> to Trash
+          {actor} moved Invoice {renderInvoiceLink(invoiceNo)} to Trash
         </span>
       );
     }
@@ -631,7 +714,7 @@ export function ActivityLog() {
       const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
       return (
         <span>
-          {actor} restored Invoice <span className="font-bold text-slate-950">#{invoiceNo}</span> from Trash
+          {actor} restored Invoice {renderInvoiceLink(invoiceNo)} from Trash
         </span>
       );
     }
@@ -640,7 +723,7 @@ export function ActivityLog() {
       const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
       return (
         <span>
-          {actor} permanently deleted Invoice <span className="font-bold text-slate-950">#{invoiceNo}</span>
+          {actor} permanently deleted Invoice {renderInvoiceLink(invoiceNo)}
         </span>
       );
     }
@@ -841,25 +924,7 @@ export function ActivityLog() {
                       {evt.source.toUpperCase()}
                     </span>
 
-                    {/* Invoice marker: Link if active/trashed */}
-                    {evt.entityType === 'invoice' && evt.actionType !== 'invoice.permanently_deleted' && evt.invoiceNo && (
-                      evt.invoiceDeletedAt ? (
-                        <Link 
-                          to={`/invoices/${evt.invoiceId}/trashed`}
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-100 hover:text-amber-800 hover:border-amber-200 transition-colors gap-1"
-                        >
-                          <span>Invoice: #{evt.invoiceNo} (Trashed)</span>
-                          <span>&rarr;</span>
-                        </Link>
-                      ) : (
-                        <Link 
-                          to={`/invoices/${evt.invoiceId}`}
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-200 transition-colors"
-                        >
-                          Invoice: #{evt.invoiceNo} &rarr;
-                        </Link>
-                      )
-                    )}
+
                   </div>
 
                   {/* Expandable/Formatted Metadata Block */}
