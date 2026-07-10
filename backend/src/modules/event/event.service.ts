@@ -139,6 +139,32 @@ export class EventService {
     }
   }
 
+  async logEvent(params: {
+    tenantId: string;
+    eventType: string;
+    actor: ActorContext;
+    metadata?: Record<string, any>;
+    description?: string;
+    entityType?: string;
+    entityId?: string;
+    oldValues?: any;
+    newValues?: any;
+  }): Promise<Event> {
+    return this.emitEvent(
+      params.entityType ?? 'system',
+      params.entityId ?? 'system',
+      params.tenantId,
+      params.eventType as ActionType,
+      params.actor,
+      {
+        description: params.description,
+        oldValues: params.oldValues,
+        newValues: params.newValues,
+        payload: params.metadata,
+      }
+    );
+  }
+
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Event[]> {
     const invoice = await this.invoiceRepo.findById(invoiceId);
     if (!invoice || invoice.tenantId !== tenantId) {

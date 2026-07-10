@@ -46,6 +46,10 @@ export class AgentController {
       }
 
       const run = await this.agentService.triggerRun(tenantId, parsed.data.tone);
+      if (!run) {
+        next(new Error('Failed to trigger agent run'));
+        return;
+      }
 
       this.eventService?.logEvent({
         tenantId,

@@ -239,9 +239,6 @@ export function ActivityLog() {
     return <IconComponent className={`h-5 w-5 ${config.colorClass}`} />;
   };
 
-  const getActionBadgeStyles = (actionType: string) => {
-    return getEventConfig(actionType).badgeStyle;
-  };
 
   const getSourceBadgeStyles = (source: string) => {
     switch (source) {

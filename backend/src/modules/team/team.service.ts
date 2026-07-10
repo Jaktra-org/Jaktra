@@ -60,6 +60,7 @@ export class TeamService {
     }
 
     let invitationId: string;
+    let expiresAt: Date = new Date();
     let rawToken = crypto.randomBytes(32).toString('hex');
 
     await this.teamRepo.client.transaction(async (tx: any) => {
@@ -81,7 +82,7 @@ export class TeamService {
       }
 
       const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-      const expiresAt = new Date();
+      expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
 
       const invitation = await txTeamRepo.createInvitation({
@@ -99,7 +100,7 @@ export class TeamService {
       logger.error(`Failed to send invitation email to ${normalizedEmail}:`, err);
     });
 
-    return { id: invitationId!, email: normalizedEmail, role: input.role };
+    return { id: invitationId!, email: normalizedEmail, role: input.role, expiresAt };
   }
 
   private async sendInvitationEmail(invitationId: string, email: string, rawToken: string) {
