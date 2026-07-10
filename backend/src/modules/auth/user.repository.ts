@@ -1,10 +1,10 @@
 import { eq, and } from 'drizzle-orm';
 import { users, tenants, tenantSettings } from '../../db/index.js';
-import type { DatabaseClient } from '../../db/index.js';
+import type { DatabaseOrTransaction } from '../../db/index.js';
 import type { User, NewUser, Tenant, NewTenant } from '../../db/index.js';
 
 export class UserRepository {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseOrTransaction) {}
 
   async findByEmail(email: string, tenantId: string): Promise<User | undefined> {
     const rows = await this.db

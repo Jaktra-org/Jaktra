@@ -1,11 +1,11 @@
 import { eq, and, desc, sql, count } from 'drizzle-orm';
 
-import type { DatabaseClient } from '../../db/index.js';
+import type { DatabaseOrTransaction } from '../../db/index.js';
 import { tenants, users, teamInvitations } from '../../db/schema.js';
 import type { User, TeamInvitation, NewTeamInvitation } from '../../db/schema.js';
 
 export class TeamRepository {
-  constructor(public readonly client: DatabaseClient) {}
+  constructor(public readonly client: DatabaseOrTransaction) {}
 
   async lockTenant(tenantId: string): Promise<void> {
     await this.client.execute(
