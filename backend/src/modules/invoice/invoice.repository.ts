@@ -225,6 +225,20 @@ export class InvoiceRepository {
     return rows.length > 0;
   }
 
+  async restore(invoiceId: string, tenantId: string, tx?: any): Promise<Invoice | undefined> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient
+      .update(invoices)
+      .set({ deletedAt: null, updatedAt: new Date() })
+      .where(and(
+        eq(invoices.id, invoiceId),
+        eq(invoices.tenantId, tenantId),
+        isNotNull(invoices.deletedAt)
+      ))
+      .returning();
+    return rows[0];
+  }
+
   async upsertByInvoiceNo(data: NewInvoice, tx?: any): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
     const dbClient = tx || this.db;
     // Find using the same client/transaction

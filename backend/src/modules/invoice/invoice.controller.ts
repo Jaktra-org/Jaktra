@@ -541,4 +541,50 @@ export class InvoiceController {
       next(error);
     }
   };
+
+  restore = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = res.locals.tenantId as string;
+      const id = req.params.id as string;
+      const actor = this.getActorContext(req);
+
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
+      if (!invoice || invoice.tenantId !== tenantId) {
+        next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (!invoice.deletedAt) {
+        next(new ValidationError('Invoice is already active'));
+        return;
+      }
+
+      const restored = await this.invoiceRepo.db.transaction(async (tx) => {
+        const result = await this.invoiceRepo.restore(id, tenantId, tx);
+        if (!result) {
+          throw new NotFoundError('Invoice not found');
+        }
+
+        if (this.eventService) {
+          await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.restored', actor, {
+            description: `Invoice #${invoice.invoiceNo} restored from Trash`,
+            newValues: {
+              invoiceNo: invoice.invoiceNo,
+              clientName: invoice.clientName,
+              invoiceAmount: invoice.invoiceAmount,
+              dueDate: invoice.dueDate,
+              contactEmail: invoice.contactEmail,
+              paymentStatus: invoice.paymentStatus
+            },
+            tx
+          });
+        }
+        return result;
+      });
+
+      res.status(200).json(restored);
+    } catch (error: any) {
+      next(error);
+    }
+  };
 }

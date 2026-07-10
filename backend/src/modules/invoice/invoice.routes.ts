@@ -41,6 +41,7 @@ export function createInvoiceRouter(
   router.delete('/:id', validateParam('id'), requireRole('admin', 'manager'), invoiceController.delete);
   router.patch('/:id/status', validateParam('id'), requireRole('admin', 'manager'), invoiceController.updateStatus);
   router.post('/:id/payment-link', validateParam('id'), requireRole('admin', 'manager'), invoiceController.generatePaymentLink);
+  router.post('/:id/restore', validateParam('id'), requireRole('admin', 'manager'), invoiceController.restore);
 
   return router;
 }

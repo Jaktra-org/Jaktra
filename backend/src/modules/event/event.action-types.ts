@@ -5,6 +5,7 @@ export const ACTION_TYPES = [
   'invoice.status_changed',
   'invoice.deleted',
   'invoice.permanently_deleted',
+  'invoice.restored',
 
   'followup.triggered',   
   'followup.sent',        

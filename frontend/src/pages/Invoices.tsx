@@ -22,7 +22,8 @@ import {
   Loader2,
   FileText,
   AlertCircle,
-  Trash2
+  Trash2,
+  RotateCcw
 } from "lucide-react";
 import { getErrorMessage } from "../utils/error-utils";
 export function Invoices() {
@@ -48,6 +49,16 @@ export function Invoices() {
     mutationFn: (id: string) => invoiceService.hardDeleteInvoice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices-trash'] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-aging"] });
+    }
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => invoiceService.restoreInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices-trash'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-aging"] });
     }
@@ -263,8 +274,8 @@ export function Invoices() {
                     <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
                       <div className="flex items-center">Deleted On</div>
                     </th>
-                    {user?.role === 'admin' && (
-                      <th className="h-12 px-4 text-right align-middle font-medium text-slate-500 w-44">
+                    {(user?.role === 'admin' || user?.role === 'manager') && (
+                      <th className="h-12 px-4 text-right align-middle font-medium text-slate-500 w-64">
                         <span>Actions</span>
                       </th>
                     )}
@@ -284,7 +295,7 @@ export function Invoices() {
              <tbody className="[&_tr:last-child]:border-0">
               {isLoading_ ? (
                 <tr>
-                  <td colSpan={isTrashView ? (user?.role === 'admin' ? 7 : 6) : 7} className="p-8 text-center text-slate-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-8 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
                       <p>{isTrashView ? 'Loading trash...' : 'Loading invoices...'}</p>
@@ -293,13 +304,13 @@ export function Invoices() {
                 </tr>
               ) : isError_ ? (
                 <tr>
-                  <td colSpan={isTrashView ? (user?.role === 'admin' ? 7 : 6) : 7} className="p-8 text-center text-red-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-8 text-center text-red-500">
                     Failed to load {isTrashView ? 'trash' : 'invoices'}. Please try again.
                   </td>
                 </tr>
               ) : !activeData?.data || activeData.data.length === 0 ? (
                 <tr>
-                  <td colSpan={isTrashView ? (user?.role === 'admin' ? 7 : 6) : 7} className="p-12 text-center text-slate-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' || user?.role === 'manager' ? 7 : 6) : 7} className="p-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       {isTrashView ? (
                         <>
@@ -350,18 +361,32 @@ export function Invoices() {
                         ? new Date(invoice.deletedAt).toLocaleDateString()
                         : '—'}
                     </td>
-                    {user?.role === 'admin' && (
+                    {(user?.role === 'admin' || user?.role === 'manager') && (
                       <td className="p-4 align-middle text-right" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => {
-                            setInvoiceToDelete(invoice);
-                            setIsConfirmDeleteModalOpen(true);
-                          }}
-                          className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors border border-red-200 bg-white hover:bg-red-50 hover:border-red-300 text-red-600 h-8 px-3 py-1 gap-1"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Delete permanently
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={async () => {
+                              await restoreMutation.mutateAsync(invoice.id);
+                            }}
+                            disabled={restoreMutation.isPending}
+                            className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 h-8 px-3 py-1 gap-1"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Restore
+                          </button>
+                          {user?.role === 'admin' && (
+                            <button
+                              onClick={() => {
+                                setInvoiceToDelete(invoice);
+                                setIsConfirmDeleteModalOpen(true);
+                              }}
+                              className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors border border-red-200 bg-white hover:bg-red-50 hover:border-red-300 text-red-600 h-8 px-3 py-1 gap-1"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete permanently
+                            </button>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
