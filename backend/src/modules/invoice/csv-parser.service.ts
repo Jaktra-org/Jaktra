@@ -114,7 +114,7 @@ function canonicalizeKey(key: string): string {
   return cleanUnderscore;
 }
 
-function parseDateString(val: any): string | null {
+function parseDateString(val: unknown): string | null {
   const formatDate = (date: Date): string | null => {
     if (isNaN(date.getTime())) return null;
     const y = date.getFullYear();
@@ -311,13 +311,13 @@ export function parseExcelBuffer(buffer: Buffer): CsvParseResult {
     return { valid: [], errors: [{ row: 1, errors: ['Worksheet is empty'] }] };
   }
 
-  const rawData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
+  const rawData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: '' });
   const valid: ParsedRow[] = [];
   const errors: RowError[] = [];
 
   for (let i = 0; i < rawData.length; i++) {
     const rawRow = rawData[i]!;
-    const normalizedRow: Record<string, any> = {};
+    const normalizedRow: Record<string, unknown> = {};
     for (const key of Object.keys(rawRow)) {
       const normalizedKey = canonicalizeKey(key);
       normalizedRow[normalizedKey] = rawRow[key];

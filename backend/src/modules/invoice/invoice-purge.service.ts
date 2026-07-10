@@ -68,14 +68,14 @@ export class InvoicePurgeService {
 
               await this.invoiceRepo.hardDelete(invoice.id, tenantId, tx);
             });
-          } catch (err: any) {
-            logger.error(err, `[InvoicePurgeService] Failed to auto-purge invoice ${invoice.id} for tenant ${tenantId}`);
+          } catch (err: unknown) {
+            logger.error(err instanceof Error ? err : new Error(String(err)), `[InvoicePurgeService] Failed to auto-purge invoice ${invoice.id} for tenant ${tenantId}`);
           }
         }
       }
       logger.info('[InvoicePurgeService] Completed daily auto-purge background task');
-    } catch (err: any) {
-      logger.error(err, '[InvoicePurgeService] Auto-purge task failed');
+    } catch (err: unknown) {
+      logger.error(err instanceof Error ? err : new Error(String(err)), '[InvoicePurgeService] Auto-purge task failed');
     }
   }
 }

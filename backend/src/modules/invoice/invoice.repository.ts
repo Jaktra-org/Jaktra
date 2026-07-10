@@ -38,9 +38,9 @@ export class InvoiceRepository {
       .where(eq(invoices.id, invoiceId));
   }
 
-  async updatePaymentStatus(invoiceId: string, status: 'Pending' | 'Paid' | 'Overdue' | 'Written Off', externalRefId?: string, tx?: any): Promise<void> {
+  async updatePaymentStatus(invoiceId: string, status: 'Pending' | 'Paid' | 'Overdue' | 'Written Off', externalRefId?: string, tx?: DatabaseClient): Promise<void> {
     const dbClient = tx || this.db;
-    const updateData: any = { paymentStatus: status, updatedAt: new Date() };
+    const updateData: Record<string, unknown> = { paymentStatus: status, updatedAt: new Date() };
     if (externalRefId) {
       updateData.externalRefId = externalRefId;
     }
@@ -109,13 +109,13 @@ export class InvoiceRepository {
     };
   }
 
-  async create(data: NewInvoice, tx?: any): Promise<Invoice> {
+  async create(data: NewInvoice, tx?: DatabaseClient): Promise<Invoice> {
     const dbClient = tx || this.db;
     const rows = await dbClient.insert(invoices).values(data).returning();
     return rows[0]!;
   }
 
-  async createMany(data: NewInvoice[], tx?: any): Promise<Invoice[]> {
+  async createMany(data: NewInvoice[], tx?: DatabaseClient): Promise<Invoice[]> {
     if (data.length === 0) return [];
     const dbClient = tx || this.db;
     return dbClient.insert(invoices).values(data).returning();
@@ -138,7 +138,7 @@ export class InvoiceRepository {
     ];
 
     if (params.status && params.status.length > 0) {
-      conditions.push(inArray(invoices.paymentStatus, params.status as any[]));
+      conditions.push(inArray(invoices.paymentStatus, params.status as ('Pending' | 'Paid' | 'Overdue' | 'Written Off')[]));
     }
     if (params.clientName) {
       conditions.push(ilike(invoices.clientName, `%${params.clientName}%`));
@@ -183,7 +183,7 @@ export class InvoiceRepository {
     };
   }
 
-  async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>, tx?: any): Promise<Invoice | undefined> {
+  async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>, tx?: DatabaseClient): Promise<Invoice | undefined> {
     const dbClient = tx || this.db;
     const rows = await dbClient
       .update(invoices)
@@ -193,7 +193,7 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async softDelete(invoiceId: string, tenantId: string, tx?: any): Promise<boolean> {
+  async softDelete(invoiceId: string, tenantId: string, tx?: DatabaseClient): Promise<boolean> {
     const dbClient = tx || this.db;
     const rows = await dbClient
       .update(invoices)
@@ -212,7 +212,7 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async hardDelete(invoiceId: string, tenantId: string, tx?: any): Promise<boolean> {
+  async hardDelete(invoiceId: string, tenantId: string, tx?: DatabaseClient): Promise<boolean> {
     const dbClient = tx || this.db;
     const rows = await dbClient
       .delete(invoices)
@@ -225,7 +225,7 @@ export class InvoiceRepository {
     return rows.length > 0;
   }
 
-  async restore(invoiceId: string, tenantId: string, tx?: any): Promise<Invoice | undefined> {
+  async restore(invoiceId: string, tenantId: string, tx?: DatabaseClient): Promise<Invoice | undefined> {
     const dbClient = tx || this.db;
     const rows = await dbClient
       .update(invoices)
@@ -239,7 +239,7 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async upsertByInvoiceNo(data: NewInvoice, tx?: any): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
+  async upsertByInvoiceNo(data: NewInvoice, tx?: DatabaseClient): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
     const dbClient = tx || this.db;
     // Find using the same client/transaction
     const rowsFound = await dbClient

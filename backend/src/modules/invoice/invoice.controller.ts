@@ -38,7 +38,7 @@ export class InvoiceController {
     };
   }
 
-  private areValuesEqual(key: string, val1: any, val2: any): boolean {
+  private areValuesEqual(key: string, val1: unknown, val2: unknown): boolean {
     if (val1 === val2) return true;
     if (val1 === null || val1 === undefined || val2 === null || val2 === undefined) {
       return val1 === val2;
@@ -49,13 +49,13 @@ export class InvoiceController {
     }
 
     if (key === 'dueDate') {
-      const d1 = val1 instanceof Date ? val1 : new Date(val1);
-      const d2 = val2 instanceof Date ? val2 : new Date(val2);
+      const d1 = val1 instanceof Date ? val1 : new Date(val1 as string | number);
+      const d2 = val2 instanceof Date ? val2 : new Date(val2 as string | number);
       if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
-        const toDateString = (d: Date) => d.toISOString().split('T')[0];
+        const toDateString = (d: Date): string => d.toISOString().split('T')[0];
         try {
           return toDateString(d1) === toDateString(d2);
-        } catch (e) {
+        } catch {
           return d1.getTime() === d2.getTime();
         }
       }
@@ -161,7 +161,7 @@ export class InvoiceController {
       } else {
         res.status(201).json(result.invoice);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -199,7 +199,7 @@ export class InvoiceController {
       });
 
       res.status(201).json({ created: created.length, invoices: created });
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -209,7 +209,7 @@ export class InvoiceController {
       const tenantId = res.locals.tenantId as string;
       const params = listInvoicesSchema.parse(req.query);
       
-      const toArray = (val: string | string[] | undefined) => {
+      const toArray = (val: string | string[] | undefined): string[] | undefined => {
         if (!val) return undefined;
         return Array.isArray(val) ? val : val.split(',');
       };
@@ -218,7 +218,7 @@ export class InvoiceController {
         tenantId,
         page: params.page,
         limit: params.limit,
-        sortBy: params.sort_by as any,
+        sortBy: params.sort_by as 'dueDate' | 'invoiceAmount' | 'createdAt' | 'clientName' | 'invoiceNo',
         sortOrder: params.order,
         status: toArray(params.status),
         clientName: params.client_name,
@@ -262,7 +262,7 @@ export class InvoiceController {
           totalPages: Math.ceil(result.total / params.limit),
         }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -272,16 +272,11 @@ export class InvoiceController {
       const tenantId = res.locals.tenantId as string;
       const params = listInvoicesSchema.parse(req.query);
 
-      const toArray = (val: string | string[] | undefined) => {
-        if (!val) return undefined;
-        return Array.isArray(val) ? val : val.split(',');
-      };
-
       const result = await this.invoiceRepo.findTrashed({
         tenantId,
         page: params.page,
         limit: params.limit,
-        sortBy: params.sort_by as any,
+        sortBy: params.sort_by as 'dueDate' | 'invoiceAmount' | 'createdAt' | 'clientName' | 'invoiceNo',
         sortOrder: params.order,
         clientName: params.client_name,
       });
@@ -295,7 +290,7 @@ export class InvoiceController {
           totalPages: Math.ceil(result.total / params.limit),
         }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -317,7 +312,7 @@ export class InvoiceController {
       }
 
       res.status(200).json(invoice);
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -355,8 +350,8 @@ export class InvoiceController {
         if (this.paymentService) {
           paymentLink = await this.paymentService.getLatestPaymentLink(id, tenantId);
         }
-      } catch (e: any) {
-        logger.error('Failed to get payment link for invoice', { error: e });
+      } catch (e: unknown) {
+        logger.error('Failed to get payment link for invoice', { error: e instanceof Error ? e.message : String(e) });
         paymentWarning = 'Failed to fetch latest payment link status';
       }
 
@@ -371,7 +366,7 @@ export class InvoiceController {
         warning: paymentWarning,
         needsManualReview: isBlocked
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -389,16 +384,16 @@ export class InvoiceController {
         return;
       }
 
-      const updatedData: any = { ...data };
+      const updatedData: Record<string, unknown> = { ...data };
       if (data.invoiceAmount !== undefined) {
         updatedData.invoiceAmount = data.invoiceAmount.toString();
       }
 
-      const oldValues: Record<string, any> = {};
-      const newValues: Record<string, any> = {};
+      const oldValues: Record<string, unknown> = {};
+      const newValues: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data)) {
         if (value !== undefined) {
-          const oldVal = (invoice as any)[key];
+          const oldVal = invoice[key as keyof typeof invoice];
           const newVal = value;
           if (!this.areValuesEqual(key, oldVal, newVal)) {
             oldValues[key] = oldVal;
@@ -433,7 +428,7 @@ export class InvoiceController {
       }
 
       res.status(200).json(updated);
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -452,7 +447,7 @@ export class InvoiceController {
       }
 
       await this.invoiceRepo.db.transaction(async (tx) => {
-        await this.invoiceRepo.updatePaymentStatus(id, paymentStatus as any, undefined, tx);
+        await this.invoiceRepo.updatePaymentStatus(id, paymentStatus as 'Pending' | 'Paid' | 'Overdue' | 'Written Off', undefined, tx);
         if (this.eventService && invoice.paymentStatus !== paymentStatus) {
           await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.status_changed', actor, {
             description: `Status changed to ${paymentStatus}`,
@@ -468,7 +463,7 @@ export class InvoiceController {
       }
 
       res.status(200).json({ message: 'Status updated successfully' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -503,7 +498,7 @@ export class InvoiceController {
       });
 
       res.status(200).json({ url: paymentLink });
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -542,7 +537,7 @@ export class InvoiceController {
       });
 
       res.status(200).json({ message: 'Invoice deleted successfully' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -583,7 +578,7 @@ export class InvoiceController {
       });
 
       res.status(200).json({ message: 'Invoice permanently deleted successfully' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
@@ -629,7 +624,7 @@ export class InvoiceController {
       });
 
       res.status(200).json(restored);
-    } catch (error: any) {
+    } catch (error: unknown) {
       next(error);
     }
   };
