@@ -727,15 +727,23 @@ export function ActivityLog() {
                       {evt.source.toUpperCase()}
                     </span>
 
-                    {/* Invoice marker: Link if active, neutral badge if soft-deleted */}
+                    {/* Invoice marker: Link if active/trashed, neutral badge if permanently deleted */}
                     {evt.entityType === 'invoice' && (
-                      evt.invoiceDeletedAt || evt.actionType === 'invoice.deleted' || !evt.invoiceNo ? (
+                      evt.actionType === 'invoice.permanently_deleted' || !evt.invoiceNo ? (
                         <span 
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200" 
-                          title="This invoice has been deleted and cannot be viewed."
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200" 
+                          title="This invoice has been permanently deleted."
                         >
-                          Invoice: #{evt.invoiceNo || 'Deleted'} (Deleted - View Not Available)
+                          Invoice: #{evt.invoiceNo || 'Unknown'} (Permanently Deleted)
                         </span>
+                      ) : evt.invoiceDeletedAt ? (
+                        <Link 
+                          to={`/invoices/${evt.invoiceId}/trashed`}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-100 hover:text-amber-800 hover:border-amber-200 transition-colors gap-1"
+                        >
+                          <span>Invoice: #{evt.invoiceNo} (Trashed)</span>
+                          <span>&rarr;</span>
+                        </Link>
                       ) : (
                         <Link 
                           to={`/invoices/${evt.invoiceId}`}
