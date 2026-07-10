@@ -270,6 +270,8 @@ export const tenantSettings = pgTable('tenant_settings', {
   defaultEmailProvider: defaultEmailProviderEnum('default_email_provider'),
   webhookToken: text('webhook_token').unique(),
   skipPaymentWarning: boolean('skip_payment_warning').notNull().default(false),
+  autoPurgeEnabled: boolean('auto_purge_enabled').notNull().default(false),
+  autoPurgeDays: integer('auto_purge_days').notNull().default(30),
 });
 
 export const tenantIntegrations = pgTable('tenant_integrations', {

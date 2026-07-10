@@ -1,5 +1,7 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import cron from 'node-cron';
+import { InvoicePurgeService } from './modules/invoice/invoice-purge.service.js';
 import { createHealthRouter } from './modules/health/health.routes.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
@@ -129,6 +131,17 @@ export function createApp(config: AppConfig): Application {
     const communicationRepo = new CommunicationRepository(config.db);
     const integrationRepo = new IntegrationRepository(config.db);
     const settingsRepo = new SettingsRepository(config.db);
+    const invoicePurgeService = new InvoicePurgeService(invoiceRepo, settingsRepo, eventService);
+    app.locals.invoicePurgeService = invoicePurgeService;
+
+    // Daily auto-purge task at 2 AM UTC
+    cron.schedule('0 2 * * *', () => {
+      invoicePurgeService.runPurge().catch((err) => {
+        logger.error(err, '[Cron] Auto-purge task execution failed');
+      });
+    }, {
+      timezone: 'UTC'
+    });
     const paymentRepo = new PaymentRepository(config.db);
     const dlqRepo = new DlqRepository(config.db);
     const agentRepo = new AgentRepository(config.db);

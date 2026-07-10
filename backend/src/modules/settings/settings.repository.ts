@@ -78,4 +78,11 @@ export class SettingsRepository {
 
     return newSettings;
   }
+
+  async findAllWithAutoPurgeEnabled(): Promise<TenantSettings[]> {
+    return this.db
+      .select()
+      .from(tenantSettings)
+      .where(eq(tenantSettings.autoPurgeEnabled, true));
+  }
 }

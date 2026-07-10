@@ -14,6 +14,8 @@ export const updateSettingsSchema = z.object({
   scheduleHour: z.number().min(0).max(23).optional(),
   idempotencyWindowHours: z.number().min(0).optional(),
   skipPaymentWarning: z.boolean().optional(),
+  autoPurgeEnabled: z.boolean().optional(),
+  autoPurgeDays: z.number().min(7, { message: "Auto-purge retention period must be at least 7 days" }).optional(),
 });
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

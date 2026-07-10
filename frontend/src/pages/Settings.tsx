@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../services/settings';
 import { authService } from '../services/auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
-import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon } from 'lucide-react';
+import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon, Trash2 } from 'lucide-react';
 import type { TenantSettings } from '../types/api';
 import { getErrorMessage } from '../utils/error-utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -107,6 +107,7 @@ function GeneralSettings() {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Partial<TenantSettings>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
@@ -122,6 +123,9 @@ function GeneralSettings() {
   const mutation = useMutation({
     mutationFn: (newSettings: Partial<TenantSettings>) => settingsService.updateSettings(newSettings),
     onMutate: () => setSaveStatus('saving'),
+    onError: () => {
+      setSaveStatus('idle');
+    },
     onSuccess: () => {
       setSaveStatus('saved');
       queryClient.invalidateQueries({ queryKey: ['settings'] });
@@ -132,6 +136,13 @@ function GeneralSettings() {
   useEffect(() => {
     if (!settings) return;
     
+    if (formData.autoPurgeEnabled && formData.autoPurgeDays !== undefined && formData.autoPurgeDays < 7) {
+      setLocalError("Auto-purge retention period must be at least 7 days");
+      return;
+    } else {
+      setLocalError(null);
+    }
+
     const hasChanges = Object.keys(formData).some(
       key => formData[key as keyof TenantSettings] !== settings[key as keyof TenantSettings]
     );
@@ -226,6 +237,69 @@ function GeneralSettings() {
             <option value="INR">INR (₹)</option>
           </select>
           <p className="text-xs text-slate-500">Multi-currency support is planned for a future update.</p>
+        </div>
+
+        {/* Invoice Trash Retention (Auto-Purge) */}
+        <div className="pt-6 border-t border-slate-200 space-y-4">
+          <div>
+            <h4 className="text-sm font-semibold text-slate-900 flex items-center">
+              <Trash2 className="w-4 h-4 mr-2 text-slate-400" />
+              Invoice Trash Retention
+            </h4>
+            <p className="text-xs text-slate-500 mt-1">Configure automatic permanent deletion of trashed invoices.</p>
+          </div>
+          
+          <div className="flex items-start justify-between gap-6 pt-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-800">Automatic invoice purge</p>
+              <p className="text-xs text-slate-500 mt-0.5 leading-normal">
+                When enabled, Jaktra will automatically and permanently delete invoices that have been in the Trash for more than the specified number of days.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setFormData(prev => ({ 
+                  ...prev, 
+                  autoPurgeEnabled: !prev.autoPurgeEnabled 
+                }));
+              }}
+              className={`flex-shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all duration-200 cursor-pointer shadow-sm ${
+                formData.autoPurgeEnabled
+                  ? 'bg-amber-50 text-amber-700 border-amber-250 hover:bg-amber-100'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {formData.autoPurgeEnabled ? '✓ Auto-Purge Enabled' : 'Auto-Purge Disabled'}
+            </button>
+          </div>
+
+          {formData.autoPurgeEnabled && (
+            <div className="space-y-2 max-w-xs animate-timeline-fade-in pt-2">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                Retention Period (Days)
+              </label>
+              <input
+                type="number"
+                min="7"
+                value={formData.autoPurgeDays || 30}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    autoPurgeDays: isNaN(val) ? 7 : val 
+                  }));
+                }}
+                className={`w-full p-2 border rounded-md text-sm font-medium transition-colors ${
+                  localError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500'
+                }`}
+              />
+              {localError ? (
+                <p className="text-xs text-red-650 font-semibold">{localError}</p>
+              ) : (
+                <p className="text-[10px] text-slate-400 font-medium">Minimum retention is 7 days. Changes are saved automatically.</p>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

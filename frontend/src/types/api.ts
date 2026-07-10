@@ -199,6 +199,8 @@ export interface TenantSettings {
   idempotencyWindowHours: number;
   defaultEmailProvider: 'sendgrid' | 'smtp' | null;
   skipPaymentWarning: boolean;
+  autoPurgeEnabled: boolean;
+  autoPurgeDays: number;
 }
 
 export interface BaseIntegrationStatus {

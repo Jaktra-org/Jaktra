@@ -278,4 +278,18 @@ export class InvoiceRepository {
     const invoice = await this.create(data, dbClient);
     return { invoice, wasUpdated: false };
   }
+
+  async findExpiredTrashed(tenantId: string, cutoffDate: Date, limit: number): Promise<Invoice[]> {
+    return this.db
+      .select()
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.tenantId, tenantId),
+          isNotNull(invoices.deletedAt),
+          lte(invoices.deletedAt, cutoffDate)
+        )
+      )
+      .limit(limit);
+  }
 }

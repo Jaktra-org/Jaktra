@@ -7,7 +7,7 @@ import { ValidationError } from '../../shared/errors/index.js';
 
 export type ActorContext =
   | { source: 'ui' | 'api'; userId: string; name: string; email: string; role: string }
-  | { source: 'agent' | 'webhook' | 'system' };
+  | { source: 'agent' | 'webhook' | 'system'; name?: string; email?: string; role?: string };
 
 export const EVENT_TYPES = [
   'created',
@@ -83,9 +83,9 @@ export class EventService {
       }
 
       const actorId = actor.source === 'ui' || actor.source === 'api' ? actor.userId : null;
-      const actorName = actor.source === 'ui' || actor.source === 'api' ? actor.name : null;
-      const actorEmail = actor.source === 'ui' || actor.source === 'api' ? actor.email : null;
-      const actorRole = actor.source === 'ui' || actor.source === 'api' ? actor.role : null;
+      const actorName = actor.source === 'ui' || actor.source === 'api' ? actor.name : actor.name || null;
+      const actorEmail = actor.source === 'ui' || actor.source === 'api' ? actor.email : actor.email || null;
+      const actorRole = actor.source === 'ui' || actor.source === 'api' ? actor.role : actor.role || null;
 
       let eventType: string = actionType;
       if (actionType === 'followup.sent') eventType = 'email_sent';
