@@ -1,6 +1,6 @@
 
 
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as schema from './schema.js';
 
@@ -11,7 +11,9 @@ export interface DatabaseClientOptions {
   maxConnections?: number;
 }
 
-export function createDatabaseClient(options: DatabaseClientOptions) {
+type DrizzleWithPool = NodePgDatabase<typeof schema> & { $pool: pg.Pool };
+
+export function createDatabaseClient(options: DatabaseClientOptions): DrizzleWithPool {
   const pool = new Pool({
     connectionString: options.connectionString,
     statement_timeout: 30000,  
@@ -21,8 +23,8 @@ export function createDatabaseClient(options: DatabaseClientOptions) {
     max: options.maxConnections ?? (process.env['NODE_ENV'] === 'test' ? 10 : 20),
   });
 
-  const db = drizzle(pool, { schema });
-  (db as any).$pool = pool;
+  const db = drizzle(pool, { schema }) as DrizzleWithPool;
+  db.$pool = pool;
   return db;
 }
 
