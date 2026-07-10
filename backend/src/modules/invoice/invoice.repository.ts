@@ -1,6 +1,6 @@
 import { eq, and, isNull, isNotNull, desc, asc, ilike, inArray, count, lte, gte } from 'drizzle-orm';
 import { invoices } from '../../db/index.js';
-import type { DatabaseClient } from '../../db/index.js';
+import type { DatabaseClient, DatabaseOrTransaction } from '../../db/index.js';
 import type { Invoice, NewInvoice } from '../../db/index.js';
 
 export class InvoiceRepository {
@@ -38,7 +38,7 @@ export class InvoiceRepository {
       .where(eq(invoices.id, invoiceId));
   }
 
-  async updatePaymentStatus(invoiceId: string, status: 'Pending' | 'Paid' | 'Overdue' | 'Written Off', externalRefId?: string, tx?: DatabaseClient): Promise<void> {
+  async updatePaymentStatus(invoiceId: string, status: 'Pending' | 'Paid' | 'Overdue' | 'Written Off', externalRefId?: string, tx?: DatabaseOrTransaction): Promise<void> {
     const dbClient = tx || this.db;
     const updateData: Record<string, unknown> = { paymentStatus: status, updatedAt: new Date() };
     if (externalRefId) {
@@ -109,13 +109,13 @@ export class InvoiceRepository {
     };
   }
 
-  async create(data: NewInvoice, tx?: DatabaseClient): Promise<Invoice> {
+  async create(data: NewInvoice, tx?: DatabaseOrTransaction): Promise<Invoice> {
     const dbClient = tx || this.db;
     const rows = await dbClient.insert(invoices).values(data).returning();
     return rows[0]!;
   }
 
-  async createMany(data: NewInvoice[], tx?: DatabaseClient): Promise<Invoice[]> {
+  async createMany(data: NewInvoice[], tx?: DatabaseOrTransaction): Promise<Invoice[]> {
     if (data.length === 0) return [];
     const dbClient = tx || this.db;
     return dbClient.insert(invoices).values(data).returning();
@@ -183,7 +183,7 @@ export class InvoiceRepository {
     };
   }
 
-  async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>, tx?: DatabaseClient): Promise<Invoice | undefined> {
+  async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>, tx?: DatabaseOrTransaction): Promise<Invoice | undefined> {
     const dbClient = tx || this.db;
     const rows = await dbClient
       .update(invoices)
@@ -193,7 +193,7 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async softDelete(invoiceId: string, tenantId: string, tx?: DatabaseClient): Promise<boolean> {
+  async softDelete(invoiceId: string, tenantId: string, tx?: DatabaseOrTransaction): Promise<boolean> {
     const dbClient = tx || this.db;
     const rows = await dbClient
       .update(invoices)
@@ -212,7 +212,7 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async hardDelete(invoiceId: string, tenantId: string, tx?: DatabaseClient): Promise<boolean> {
+  async hardDelete(invoiceId: string, tenantId: string, tx?: DatabaseOrTransaction): Promise<boolean> {
     const dbClient = tx || this.db;
     const rows = await dbClient
       .delete(invoices)
@@ -225,7 +225,7 @@ export class InvoiceRepository {
     return rows.length > 0;
   }
 
-  async restore(invoiceId: string, tenantId: string, tx?: DatabaseClient): Promise<Invoice | undefined> {
+  async restore(invoiceId: string, tenantId: string, tx?: DatabaseOrTransaction): Promise<Invoice | undefined> {
     const dbClient = tx || this.db;
     const rows = await dbClient
       .update(invoices)
@@ -239,7 +239,7 @@ export class InvoiceRepository {
     return rows[0];
   }
 
-  async upsertByInvoiceNo(data: NewInvoice, tx?: DatabaseClient): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
+  async upsertByInvoiceNo(data: NewInvoice, tx?: DatabaseOrTransaction): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
     const dbClient = tx || this.db;
     // Find using the same client/transaction
     const rowsFound = await dbClient
