@@ -500,4 +500,45 @@ export class InvoiceController {
       next(error);
     }
   };
+
+  permanentDelete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = res.locals.tenantId as string;
+      const id = req.params.id as string;
+      const actor = this.getActorContext(req);
+
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
+      if (!invoice || invoice.tenantId !== tenantId) {
+        next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (!invoice.deletedAt) {
+        next(new ValidationError('Invoice must be moved to Trash first before permanent deletion'));
+        return;
+      }
+
+      await this.invoiceRepo.db.transaction(async (tx) => {
+        if (this.eventService) {
+          await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.permanently_deleted', actor, {
+            description: `Invoice #${invoice.invoiceNo} permanently deleted`,
+            oldValues: {
+              invoiceNo: invoice.invoiceNo,
+              clientName: invoice.clientName,
+              invoiceAmount: invoice.invoiceAmount,
+              dueDate: invoice.dueDate,
+              contactEmail: invoice.contactEmail,
+              paymentStatus: invoice.paymentStatus
+            },
+            tx
+          });
+        }
+        await this.invoiceRepo.hardDelete(id, tenantId, tx);
+      });
+
+      res.status(200).json({ message: 'Invoice permanently deleted successfully' });
+    } catch (error: any) {
+      next(error);
+    }
+  };
 }

@@ -37,6 +37,7 @@ export function createInvoiceRouter(
   router.get('/trash', invoiceController.listTrashed);
   router.get('/:id', validateParam('id'), invoiceController.getById);
   router.patch('/:id', validateParam('id'), requireRole('admin', 'manager'), invoiceController.update);
+  router.delete('/:id/permanent', validateParam('id'), requireRole('admin'), invoiceController.permanentDelete);
   router.delete('/:id', validateParam('id'), requireRole('admin', 'manager'), invoiceController.delete);
   router.patch('/:id/status', validateParam('id'), requireRole('admin', 'manager'), invoiceController.updateStatus);
   router.post('/:id/payment-link', validateParam('id'), requireRole('admin', 'manager'), invoiceController.generatePaymentLink);

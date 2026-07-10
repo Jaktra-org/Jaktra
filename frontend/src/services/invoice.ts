@@ -60,4 +60,9 @@ export const invoiceService = {
     const response = await api.get('/invoices/trash', { params: queryParams });
     return response.data;
   },
+
+  hardDeleteInvoice: async (id: string) => {
+    const response = await api.delete(`/invoices/${id}/permanent`);
+    return response.data;
+  },
 };

@@ -203,6 +203,28 @@ export class InvoiceRepository {
     return rows.length > 0;
   }
 
+  async findByIdIncludingTrashed(invoiceId: string): Promise<Invoice | undefined> {
+    const rows = await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1);
+    return rows[0];
+  }
+
+  async hardDelete(invoiceId: string, tenantId: string, tx?: any): Promise<boolean> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient
+      .delete(invoices)
+      .where(and(
+        eq(invoices.id, invoiceId),
+        eq(invoices.tenantId, tenantId),
+        isNotNull(invoices.deletedAt)
+      ))
+      .returning();
+    return rows.length > 0;
+  }
+
   async upsertByInvoiceNo(data: NewInvoice, tx?: any): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
     const dbClient = tx || this.db;
     // Find using the same client/transaction

@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { invoiceService } from "../services/invoice";
-import type { ListInvoicesParams } from "../types/api";
+import type { ListInvoicesParams, Invoice } from "../types/api";
 import { Card } from "../components/ui/Card";
 import { useAuth } from "../contexts/AuthContext";
 import { Badge } from "../components/ui/Badge";
 import { CreateInvoiceModal } from "../components/invoices/CreateInvoiceModal";
 import { ImportInvoiceModal } from "../components/invoices/ImportInvoiceModal";
+import { ConfirmDestructiveModal } from "../components/common/ConfirmDestructiveModal";
 import { 
   Search, 
   Download, 
@@ -38,6 +39,19 @@ export function Invoices() {
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  
+  const queryClient = useQueryClient();
+  const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+
+  const hardDeleteMutation = useMutation({
+    mutationFn: (id: string) => invoiceService.hardDeleteInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices-trash'] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-aging"] });
+    }
+  });
 
   // Debounce search input
   useEffect(() => {
@@ -245,9 +259,16 @@ export function Invoices() {
                   <div className="flex items-center">Status {renderSortIcon('paymentStatus')}</div>
                 </th>
                 {isTrashView ? (
-                  <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
-                    <div className="flex items-center">Deleted On</div>
-                  </th>
+                  <>
+                    <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
+                      <div className="flex items-center">Deleted On</div>
+                    </th>
+                    {user?.role === 'admin' && (
+                      <th className="h-12 px-4 text-right align-middle font-medium text-slate-500 w-44">
+                        <span>Actions</span>
+                      </th>
+                    )}
+                  </>
                 ) : (
                   <>
                     <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
@@ -260,10 +281,10 @@ export function Invoices() {
                 )}
               </tr>
             </thead>
-            <tbody className="[&_tr:last-child]:border-0">
+             <tbody className="[&_tr:last-child]:border-0">
               {isLoading_ ? (
                 <tr>
-                  <td colSpan={isTrashView ? 6 : 7} className="p-8 text-center text-slate-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' ? 7 : 6) : 7} className="p-8 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
                       <p>{isTrashView ? 'Loading trash...' : 'Loading invoices...'}</p>
@@ -272,13 +293,13 @@ export function Invoices() {
                 </tr>
               ) : isError_ ? (
                 <tr>
-                  <td colSpan={isTrashView ? 6 : 7} className="p-8 text-center text-red-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' ? 7 : 6) : 7} className="p-8 text-center text-red-500">
                     Failed to load {isTrashView ? 'trash' : 'invoices'}. Please try again.
                   </td>
                 </tr>
               ) : !activeData?.data || activeData.data.length === 0 ? (
                 <tr>
-                  <td colSpan={isTrashView ? 6 : 7} className="p-12 text-center text-slate-500">
+                  <td colSpan={isTrashView ? (user?.role === 'admin' ? 7 : 6) : 7} className="p-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       {isTrashView ? (
                         <>
@@ -329,6 +350,20 @@ export function Invoices() {
                         ? new Date(invoice.deletedAt).toLocaleDateString()
                         : '—'}
                     </td>
+                    {user?.role === 'admin' && (
+                      <td className="p-4 align-middle text-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            setInvoiceToDelete(invoice);
+                            setIsConfirmDeleteModalOpen(true);
+                          }}
+                          className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors border border-red-200 bg-white hover:bg-red-50 hover:border-red-300 text-red-600 h-8 px-3 py-1 gap-1"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete permanently
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
@@ -411,6 +446,21 @@ export function Invoices() {
       <ImportInvoiceModal 
         isOpen={isImportModalOpen} 
         onClose={() => setIsImportModalOpen(false)} 
+      />
+      <ConfirmDestructiveModal
+        isOpen={isConfirmDeleteModalOpen}
+        onClose={() => {
+          setIsConfirmDeleteModalOpen(false);
+          setInvoiceToDelete(null);
+        }}
+        onConfirm={async () => {
+          if (invoiceToDelete) {
+            await hardDeleteMutation.mutateAsync(invoiceToDelete.id);
+          }
+        }}
+        invoiceNo={invoiceToDelete?.invoiceNo || ""}
+        clientName={invoiceToDelete?.clientName || ""}
+        amountDisplay={invoiceToDelete ? formatCurrency(invoiceToDelete.invoiceAmount) : ""}
       />
     </div>
   );
