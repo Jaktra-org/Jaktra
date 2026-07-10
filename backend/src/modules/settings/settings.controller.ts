@@ -5,11 +5,13 @@ import { updateSettingsSchema } from './settings.service.js';
 import { AuthError, NotFoundError, ValidationError } from '../../shared/errors/index.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
+import { DlqService } from '../dlq/dlq.service.js';
 
 export class SettingsController {
   constructor(
     private settingsService: SettingsService,
-    private eventService?: EventService
+    private eventService?: EventService,
+    private dlqService?: DlqService
   ) {}
 
   private getActorContext(req: Request): ActorContext {
@@ -79,6 +81,10 @@ export class SettingsController {
             newValues,
           });
         }
+      }
+
+      if (this.dlqService) {
+        await this.dlqService.clearAllFailures(tenantId).catch(() => {});
       }
 
       res.json(updated);

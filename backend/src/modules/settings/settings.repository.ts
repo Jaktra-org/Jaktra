@@ -73,6 +73,7 @@ export class SettingsRepository {
         companyName: tenant?.name || 'Company',
         senderName: adminUser?.name || 'Finance Team',
         senderEmail: adminUser?.email || 'billing@example.com',
+        dlqThreshold: 3,
       })
       .returning();
 

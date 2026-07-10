@@ -14,13 +14,17 @@ import type { PaymentService } from '../payment/payment.service.js';
 import { ValidationError, NotFoundError } from '../../shared/errors/index.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
+import { DlqService } from '../dlq/dlq.service.js';
+import { CommunicationRepository } from '../communication/communication.repository.js';
 
 export class InvoiceController {
   constructor(
     private importService: InvoiceImportService,
     private invoiceRepo: InvoiceRepository,
     private paymentService?: PaymentService,
-    private eventService?: EventService
+    private eventService?: EventService,
+    private dlqService?: DlqService,
+    private communicationRepo?: CommunicationRepository
   ) {}
 
   private getActorContext(req: Request): ActorContext {
@@ -224,6 +228,16 @@ export class InvoiceController {
 
       const triageService = new TriageService();
 
+      let blockedIds = new Set<string>();
+      if (this.dlqService && this.communicationRepo) {
+        const settings = await this.communicationRepo.getSettings(tenantId);
+        const threshold = settings?.dlqThreshold ?? (process.env.DLQ_THRESHOLD ? parseInt(process.env.DLQ_THRESHOLD, 10) : 3);
+        const dlqEntries = await this.dlqService.getDlqEntries(tenantId);
+        blockedIds = new Set(
+          dlqEntries.filter(e => e.consecutiveFailures >= threshold).map(e => e.invoiceId)
+        );
+      }
+
       const dataWithDaysOverdue = result.data.map(inv => {
         const daysOverdue = triageService.computeDaysOverdue(inv.dueDate);
         const isActionable = triageService.isActionable(inv);
@@ -234,7 +248,8 @@ export class InvoiceController {
         return { 
           ...inv, 
           daysOverdue, 
-          urgencyTier 
+          urgencyTier,
+          needsManualReview: blockedIds.has(inv.id)
         };
       });
 
@@ -326,6 +341,14 @@ export class InvoiceController {
         urgencyTier = triageService.assignTier(daysOverdue);
       }
 
+      let isBlocked = false;
+      if (this.dlqService && this.communicationRepo) {
+        const settings = await this.communicationRepo.getSettings(tenantId);
+        const threshold = settings?.dlqThreshold ?? (process.env.DLQ_THRESHOLD ? parseInt(process.env.DLQ_THRESHOLD, 10) : 3);
+        const dlqEntries = await this.dlqService.getDlqEntries(tenantId);
+        isBlocked = dlqEntries.some(e => e.invoiceId === id && e.consecutiveFailures >= threshold);
+      }
+
       let paymentLink = null;
       let paymentWarning = null;
       try {
@@ -339,13 +362,14 @@ export class InvoiceController {
 
       res.status(200).json({ 
         ...invoice, 
-        daysOverdue,
-        urgencyTier,
+        daysOverdue, 
+        urgencyTier, 
         paymentLink: paymentLink ? {
           url: paymentLink.paymentUrl,
           status: paymentLink.status,
         } : null,
-        warning: paymentWarning
+        warning: paymentWarning,
+        needsManualReview: isBlocked
       });
     } catch (error: any) {
       next(error);

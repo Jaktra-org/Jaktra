@@ -18,4 +18,8 @@ export class DlqService {
   async getDlqStats(tenantId: string) {
     return await this.dlqRepo.getStats(tenantId);
   }
+
+  async clearAllFailures(tenantId: string) {
+    return await this.dlqRepo.clearAllEntries(tenantId);
+  }
 }

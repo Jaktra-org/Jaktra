@@ -144,6 +144,7 @@ export function createApp(config: AppConfig): Application {
     });
     const paymentRepo = new PaymentRepository(config.db);
     const dlqRepo = new DlqRepository(config.db);
+    const dlqService = new DlqService(dlqRepo);
     const agentRepo = new AgentRepository(config.db);
 
     // Shared Services
@@ -179,15 +180,15 @@ export function createApp(config: AppConfig): Application {
 
       const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo);
       const triageService = new TriageService();
-      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService), authMiddleware, tenantScoped));
-      app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo), authMiddleware, tenantScoped));
+      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService, dlqService, communicationRepo), authMiddleware, tenantScoped));
+      app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo, dlqService, communicationRepo), authMiddleware, tenantScoped));
 
       const analyticsRepo = new AnalyticsRepository(config.db);
       const analyticsService = new AnalyticsService(analyticsRepo);
       app.use('/api/analytics', createAnalyticsRouter(new AnalyticsController(analyticsService), authMiddleware, tenantScoped));
 
       const settingsService = new SettingsService(settingsRepo);
-      app.use('/api/settings', createSettingsRouter(new SettingsController(settingsService, eventService), authMiddleware, tenantScoped));
+      app.use('/api/settings', createSettingsRouter(new SettingsController(settingsService, eventService, dlqService), authMiddleware, tenantScoped));
 
       const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo, config.db);
       app.use('/api/invoices', createReconcilerRouter(new ReconcilerController(reconcilerService, eventService), authMiddleware, tenantScoped));
@@ -195,7 +196,7 @@ export function createApp(config: AppConfig): Application {
       app.use('/api', createEventRouter(new EventController(eventService), authMiddleware, tenantScoped));
 
       app.use('/api/settings/communication', createCommunicationRouter(new CommunicationController(communicationService), authMiddleware, tenantScoped));
-      app.use('/api/settings/integrations', authMiddleware, tenantScoped, createIntegrationRouter(new IntegrationController(integrationService, communicationService, eventService)));
+      app.use('/api/settings/integrations', authMiddleware, tenantScoped, createIntegrationRouter(new IntegrationController(integrationService, communicationService, eventService, dlqService)));
       
       app.locals.authMiddleware = authMiddleware;
       app.locals.authService = authService;
@@ -206,7 +207,6 @@ export function createApp(config: AppConfig): Application {
         app.use('/api/aiml', createAimlRouter(new AimlController(aimlService), authMiddleware));
         app.locals.aimlService = aimlService;
 
-        const dlqService = new DlqService(dlqRepo);
         app.use('/api/dlq', createDlqRouter(new DlqController(dlqService, eventService), authMiddleware, tenantScoped));
 
         const idempotencyService = new IdempotencyService(communicationRepo);

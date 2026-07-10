@@ -31,12 +31,14 @@ const NOT_YET_DUE_THRESHOLD_DAYS = 7;
 export interface TriagedInvoice extends Invoice {
   daysOverdue: number;
   computedTier: UrgencyTier;
+  needsManualReview?: boolean;
 }
 
 export interface TriageResult {
   invoices: TriagedInvoice[];
   total: number;
   tierCounts: Record<UrgencyTier, number>;
+  needsManualReview: TriagedInvoice[];
 }
 
 export class TriageService {
@@ -75,7 +77,7 @@ export class TriageService {
     return daysUntilDue <= NOT_YET_DUE_THRESHOLD_DAYS;
   }
 
-  triageInvoices(invoices: Invoice[]): TriageResult {
+  triageInvoices(invoices: Invoice[], dlqBlockedIds: Set<string> = new Set()): TriageResult {
     const tierCounts: Record<UrgencyTier, number> = {
       stage_1_warm: 0,
       stage_2_firm: 0,
@@ -84,16 +86,33 @@ export class TriageService {
       legal_escalation: 0,
     };
 
-    const triaged: TriagedInvoice[] = invoices
-      .filter((inv) => this.isActionable(inv))
-      .map((inv) => {
-        const daysOverdue = this.computeDaysOverdue(inv.dueDate);
-        const computedTier = this.assignTier(daysOverdue);
-        tierCounts[computedTier]++;
-        return { ...inv, daysOverdue, computedTier };
-      })
-      .sort((a, b) => b.daysOverdue - a.daysOverdue || Number(b.invoiceAmount) - Number(a.invoiceAmount));
+    const actionable = invoices.filter((inv) => this.isActionable(inv));
+    const active: TriagedInvoice[] = [];
+    const blocked: TriagedInvoice[] = [];
 
-    return { invoices: triaged, total: triaged.length, tierCounts };
+    for (const inv of actionable) {
+      const daysOverdue = this.computeDaysOverdue(inv.dueDate);
+      const computedTier = this.assignTier(daysOverdue);
+      const isBlocked = dlqBlockedIds.has(inv.id);
+
+      const triagedInvoice: TriagedInvoice = {
+        ...inv,
+        daysOverdue,
+        computedTier,
+        needsManualReview: isBlocked,
+      };
+
+      if (isBlocked) {
+        blocked.push(triagedInvoice);
+      } else {
+        tierCounts[computedTier]++;
+        active.push(triagedInvoice);
+      }
+    }
+
+    active.sort((a, b) => b.daysOverdue - a.daysOverdue || Number(b.invoiceAmount) - Number(a.invoiceAmount));
+    blocked.sort((a, b) => b.daysOverdue - a.daysOverdue || Number(b.invoiceAmount) - Number(a.invoiceAmount));
+
+    return { invoices: active, total: active.length, tierCounts, needsManualReview: blocked };
   }
 }

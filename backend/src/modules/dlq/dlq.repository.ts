@@ -96,4 +96,11 @@ export class DlqRepository {
       critical: Number(result[0]?.critical || 0),
     };
   }
+
+  async clearAllEntries(tenantId: string) {
+    return await this.db
+      .delete(dlqEntries)
+      .where(eq(dlqEntries.tenantId, tenantId))
+      .returning();
+  }
 }

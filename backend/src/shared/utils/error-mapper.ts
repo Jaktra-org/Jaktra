@@ -28,6 +28,21 @@ export function mapErrorToDisplayMessage(error: unknown): string {
     return 'Email service unavailable';
   }
 
+  // Email validation, recipient validation, and delivery bounces (safe to show directly)
+  if (
+    errMsg.includes('Recipient domain') ||
+    errMsg.includes('recipient email') ||
+    errMsg.includes('mailbox') ||
+    errMsg.includes('Mailbox') ||
+    errMsg.includes('bounced') ||
+    errMsg.includes('bounce') ||
+    errMsg.includes('does not exist') ||
+    errMsg.includes('Delivery failed') ||
+    errMsg.includes('MX records')
+  ) {
+    return errMsg;
+  }
+
   // Network / Connection
   if (errMsg.includes('fetch failed') || errMsg.includes('TypeError: fetch failed')) {
     return 'Unable to connect to service';

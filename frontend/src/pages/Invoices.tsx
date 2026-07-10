@@ -349,12 +349,19 @@ export function Invoices() {
                       {new Date(invoice.dueDate).toLocaleDateString()}
                     </td>
                     <td className="p-4 align-middle">
-                      <Badge variant={
-                        invoice.paymentStatus === 'Paid' ? 'success' :
-                        invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
-                      }>
-                        {invoice.paymentStatus}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant={
+                          invoice.paymentStatus === 'Paid' ? 'success' :
+                          invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
+                        }>
+                          {invoice.paymentStatus}
+                        </Badge>
+                        {invoice.needsManualReview && (
+                          <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200" title="Blocked due to DLQ failures">
+                            Manual Review
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 align-middle text-slate-400 text-sm">
                       {invoice.deletedAt
@@ -412,12 +419,19 @@ export function Invoices() {
                       {new Date(invoice.dueDate).toLocaleDateString()}
                     </td>
                     <td className="p-4 align-middle">
-                      <Badge variant={
-                        invoice.paymentStatus === 'Paid' ? 'success' : 
-                        invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
-                      }>
-                        {invoice.paymentStatus}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant={
+                          invoice.paymentStatus === 'Paid' ? 'success' : 
+                          invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
+                        }>
+                          {invoice.paymentStatus}
+                        </Badge>
+                        {invoice.needsManualReview && (
+                          <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200" title="Blocked due to DLQ failures">
+                            Manual Review
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 align-middle">
                       {invoice.daysOverdue ? (

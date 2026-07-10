@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { IntegrationService } from './integration.service.js';
 import { CommunicationService } from '../communication/communication.service.js';
+import { DlqService } from '../dlq/dlq.service.js';
 import { z } from 'zod';
 import { ValidationError } from '../../shared/errors/index.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
@@ -15,7 +16,8 @@ export class IntegrationController {
   constructor(
     private readonly integrationService: IntegrationService,
     private readonly communicationService: CommunicationService,
-    private readonly eventService?: EventService
+    private readonly eventService?: EventService,
+    private readonly dlqService?: DlqService
   ) {}
 
   private getActorContext(req: Request): ActorContext {
@@ -59,6 +61,11 @@ export class IntegrationController {
       }
 
       await this.integrationService.validateAndSaveSendgridKey(tenantId, apiKey);
+
+      // Clear DLQ entries on recovery / credentials update
+      if (this.dlqService) {
+        await this.dlqService.clearAllFailures(tenantId).catch(() => {});
+      }
 
       // Auto-select as default if no provider is currently set
       const settings = await this.communicationService.getSettings(tenantId);
@@ -137,6 +144,11 @@ export class IntegrationController {
       }
 
       await this.integrationService.validateAndSaveSmtpConfig(tenantId, req.body);
+
+      // Clear DLQ entries on recovery / credentials update
+      if (this.dlqService) {
+        await this.dlqService.clearAllFailures(tenantId).catch(() => {});
+      }
 
       // Auto-select as default if no provider is currently set
       const settings = await this.communicationService.getSettings(tenantId);

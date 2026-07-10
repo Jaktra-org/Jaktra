@@ -49,8 +49,17 @@ export class AgentService {
   async triggerRun(tenantId: string, toneOverride?: UrgencyTier) {
     await this.assertEmailConfigured(tenantId);
 
+    const settings = await this.communicationRepo.getSettings(tenantId);
+    const threshold = settings?.dlqThreshold ?? (process.env.DLQ_THRESHOLD ? parseInt(process.env.DLQ_THRESHOLD, 10) : 3);
+    const dlqEntries = await this.dlqService.getDlqEntries(tenantId);
+    const dlqBlockedIds = new Set(
+      dlqEntries
+        .filter((e) => e.consecutiveFailures >= threshold)
+        .map((e) => e.invoiceId)
+    );
+
     const invoices = await this.invoiceRepo.findByTenant(tenantId);
-    const triaged = this.triageService.triageInvoices(invoices);
+    const triaged = this.triageService.triageInvoices(invoices, dlqBlockedIds);
 
     const run = await this.agentRepo.createRun({
       tenantId,

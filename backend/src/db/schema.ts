@@ -272,6 +272,7 @@ export const tenantSettings = pgTable('tenant_settings', {
   skipPaymentWarning: boolean('skip_payment_warning').notNull().default(false),
   autoPurgeEnabled: boolean('auto_purge_enabled').notNull().default(false),
   autoPurgeDays: integer('auto_purge_days').notNull().default(30),
+  dlqThreshold: integer('dlq_threshold').notNull().default(3),
 });
 
 export const tenantIntegrations = pgTable('tenant_integrations', {

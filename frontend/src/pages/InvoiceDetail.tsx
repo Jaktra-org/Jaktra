@@ -715,17 +715,37 @@ export function InvoiceDetail() {
         </div>
       )}
 
+      {invoice.needsManualReview && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm">Needs Manual Review</h3>
+            <p className="text-sm mt-1">
+              This invoice is currently in the Dead Letter Queue due to multiple consecutive automated delivery failures.
+              Automated follow-ups are halted. Please check the recipient email address or provider settings, then manually retry or dismiss the DLQ entry to resume automated processing.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-3 mb-2">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">{invoice.invoiceNo}</h1>
-            <Badge variant={
-              invoice.paymentStatus === 'Paid' ? 'success' : 
-              invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
-            }>
-              {invoice.paymentStatus}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <Badge variant={
+                invoice.paymentStatus === 'Paid' ? 'success' : 
+                invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
+              }>
+                {invoice.paymentStatus}
+              </Badge>
+              {invoice.needsManualReview && (
+                <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200">
+                  Needs Manual Review
+                </Badge>
+              )}
+            </div>
           </div>
           <p className="text-3xl font-light text-slate-900 mt-4">
             {formatCurrency(invoice.invoiceAmount)}

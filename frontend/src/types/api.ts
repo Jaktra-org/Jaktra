@@ -51,6 +51,7 @@ export interface Invoice {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
+  needsManualReview?: boolean;
 }
 
 export interface InvoiceEvent {
