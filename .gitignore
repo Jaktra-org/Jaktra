@@ -98,3 +98,7 @@ ai-ml/outputs/
 implementation_plan/
 backend/src/test
 ai-ml/test
+
+
+tests/e2e/playwright-report/
+tests/e2e/test-results/

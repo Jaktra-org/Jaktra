@@ -1,0 +1,13 @@
+{
+  "name": "jaktra-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Jaktra isolated E2E integration test suite",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "typescript": "^5.0.0"
+  }
+}

@@ -23,8 +23,9 @@ lerna-debug.log*
 
 # Test & Coverage
 coverage/
+playwright-report/
+test-results/
 
-# IDE
 .vscode/*
 !.vscode/extensions.json
 .idea/
