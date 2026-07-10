@@ -193,7 +193,7 @@ export class AgentService {
             followupCount: inv.followupCount,
             channel,
             paymentLink,
-            invoiceSubject: ('subject' in inv ? (inv as Record<string, unknown>).subject as string : undefined) ?? undefined,
+            invoiceSubject: ('subject' in inv ? (inv as unknown as Record<string, unknown>).subject as string : undefined) ?? undefined,
           });
 
           // Generation failed — record in DLQ and move on
