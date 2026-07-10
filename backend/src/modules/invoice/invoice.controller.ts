@@ -480,8 +480,8 @@ export class InvoiceController {
           throw new NotFoundError('Invoice not found');
         }
         if (this.eventService) {
-          await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.deleted', actor, {
-            description: `Invoice #${invoice.invoiceNo} deleted`,
+          await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.trashed', actor, {
+            description: `Invoice #${invoice.invoiceNo} moved to Trash`,
             oldValues: {
               invoiceNo: invoice.invoiceNo,
               clientName: invoice.clientName,

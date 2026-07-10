@@ -34,7 +34,9 @@ import {
   MousePointer,
   FileText,
   MessageSquare,
-  RefreshCw
+  RefreshCw,
+  RotateCcw,
+  XCircle
 } from "lucide-react";
 
 
@@ -226,6 +228,15 @@ export function InvoiceDetail() {
         return <RefreshCw className="w-4 h-4 text-blue-500" />;
       }
     }
+    if (type === 'invoice.trashed') {
+      return <Trash2 className="w-4 h-4 text-amber-500" />;
+    }
+    if (type === 'invoice.restored') {
+      return <RotateCcw className="w-4 h-4 text-emerald-600" />;
+    }
+    if (type === 'invoice.permanently_deleted') {
+      return <XCircle className="w-4 h-4 text-rose-600" />;
+    }
 
     // 3. Fallbacks based on action/event types
     if (type.includes('create') || type.includes('import')) {
@@ -278,6 +289,15 @@ export function InvoiceDetail() {
       if (changedKeys.includes('paymentStatus')) {
         return 'bg-blue-50 text-blue-600 border-blue-100';
       }
+    }
+    if (type === 'invoice.trashed') {
+      return 'bg-amber-50 text-amber-600 border-amber-100';
+    }
+    if (type === 'invoice.restored') {
+      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+    }
+    if (type === 'invoice.permanently_deleted') {
+      return 'bg-red-50 text-red-600 border-red-100';
     }
 
     if (type.includes('create') || type.includes('import')) {
@@ -446,10 +466,24 @@ export function InvoiceDetail() {
         </span>
       );
     }
-    if (type === 'invoice.deleted') {
+    if (type === 'invoice.trashed') {
       return (
         <span>
-          {actor} deleted this invoice
+          {actor} moved this invoice to Trash
+        </span>
+      );
+    }
+    if (type === 'invoice.restored') {
+      return (
+        <span>
+          {actor} restored this invoice from Trash
+        </span>
+      );
+    }
+    if (type === 'invoice.permanently_deleted') {
+      return (
+        <span>
+          {actor} permanently deleted this invoice
         </span>
       );
     }

@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { 
   History, Search, Filter, RefreshCw, ArrowRight,
   Settings as SettingsIcon, Shield, Zap, FileText, CreditCard,
-  AlertTriangle, Play, CheckCircle2, XCircle, ShieldAlert, Calendar
+  AlertTriangle, Play, CheckCircle2, XCircle, ShieldAlert, Calendar,
+  Trash2, RotateCcw
 } from "lucide-react";
 import { eventService } from "../services/event";
 import type { InvoiceEvent } from "../types/api";
@@ -14,7 +15,9 @@ const categoryActionTypeMap: Record<string, string[]> = {
     'invoice.imported',
     'invoice.updated',
     'invoice.status_changed',
-    'invoice.deleted',
+    'invoice.trashed',
+    'invoice.restored',
+    'invoice.permanently_deleted',
     'invoice.bulk_imported',
     'payment.link_generated',
     'payment.received'
@@ -63,7 +66,9 @@ const eventCategoryMap: {
   { prefix: 'integration.', icon: Zap, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
   { prefix: 'payment.received', icon: CheckCircle2, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
   { prefix: 'payment.', icon: CreditCard, colorClass: 'text-cyan-600', badgeStyle: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
-  { prefix: 'invoice.deleted', icon: XCircle, colorClass: 'text-rose-600', badgeStyle: 'bg-rose-50 text-rose-700 border-rose-100' },
+  { prefix: 'invoice.trashed', icon: Trash2, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
+  { prefix: 'invoice.restored', icon: RotateCcw, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  { prefix: 'invoice.permanently_deleted', icon: XCircle, colorClass: 'text-rose-600', badgeStyle: 'bg-rose-50 text-rose-700 border-rose-100' },
   { prefix: 'invoice.', icon: FileText, colorClass: 'text-blue-600', badgeStyle: 'bg-blue-50 text-blue-700 border-blue-100' },
   { prefix: 'dlq.', icon: AlertTriangle, colorClass: 'text-amber-500', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
   { prefix: 'agent.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
@@ -247,8 +252,8 @@ export function ActivityLog() {
     const hasChanges = (event.oldValues && Object.keys(event.oldValues).length > 0) || 
                        (event.newValues && Object.keys(event.newValues).length > 0);
 
-    // Keep detail box for invoice.deleted as it displays client, amount, status details not in the title
-    if (event.actionType === 'invoice.deleted' && event.oldValues) {
+    // Keep detail box for invoice.trashed and invoice.permanently_deleted as they display snapshot details not in the title
+    if ((event.actionType === 'invoice.trashed' || event.actionType === 'invoice.permanently_deleted') && event.oldValues) {
       const vals = event.oldValues;
       const formattedFields = [
         vals.invoiceNo ? { label: "Invoice No", value: vals.invoiceNo } : null,
@@ -262,7 +267,7 @@ export function ActivityLog() {
       if (formattedFields.length > 0) {
         return (
           <div className="mt-3 text-xs bg-slate-50/50 p-3 rounded-lg border border-slate-100 text-slate-600 space-y-1.5 pl-3 border-l-2 border-slate-300">
-            <div className="font-bold text-slate-700 mb-1 uppercase text-[10px] tracking-wider">Deleted Invoice Details:</div>
+            <div className="font-bold text-slate-700 mb-1 uppercase text-[10px] tracking-wider">Invoice Details Snapshot:</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-medium">
               {formattedFields.map((f, i) => (
                 <div key={i} className="flex justify-between sm:justify-start gap-2 py-0.5 border-b border-slate-100 last:border-0 sm:border-0">
@@ -494,11 +499,29 @@ export function ActivityLog() {
       );
     }
 
-    if (action === 'invoice.deleted') {
+    if (action === 'invoice.trashed') {
       const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
       return (
         <span>
-          {actor} deleted Invoice <span className="font-bold text-slate-950">#{invoiceNo}</span>
+          {actor} moved Invoice <span className="font-bold text-slate-950">#{invoiceNo}</span> to Trash
+        </span>
+      );
+    }
+
+    if (action === 'invoice.restored') {
+      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      return (
+        <span>
+          {actor} restored Invoice <span className="font-bold text-slate-950">#{invoiceNo}</span> from Trash
+        </span>
+      );
+    }
+
+    if (action === 'invoice.permanently_deleted') {
+      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      return (
+        <span>
+          {actor} permanently deleted Invoice <span className="font-bold text-slate-950">#{invoiceNo}</span>
         </span>
       );
     }

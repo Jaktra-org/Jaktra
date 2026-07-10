@@ -3,7 +3,7 @@ export const ACTION_TYPES = [
   'invoice.imported',   
   'invoice.updated',
   'invoice.status_changed',
-  'invoice.deleted',
+  'invoice.trashed',
   'invoice.permanently_deleted',
   'invoice.restored',
 
@@ -67,6 +67,8 @@ export const ACTIVITY_LOG_VISIBLE_ACTIONS: ActionType[] = [
   'agent.run_triggered',
   'reconciler.run_triggered',
 
-  'invoice.deleted',
+  'invoice.trashed',
+  'invoice.restored',
+  'invoice.permanently_deleted',
   'dlq.cleared',
 ];
