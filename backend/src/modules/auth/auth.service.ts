@@ -136,7 +136,8 @@ export class AuthService {
   }
 
   private stripHash(user: User): Omit<User, 'passwordHash'> {
-    const { passwordHash: _, ...safe } = user;
-    return safe;
+    const safe = { ...user } as Partial<User>;
+    delete safe.passwordHash;
+    return safe as Omit<User, 'passwordHash'>;
   }
 }
