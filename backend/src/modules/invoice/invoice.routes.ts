@@ -34,6 +34,7 @@ export function createInvoiceRouter(
     invoiceController.importFromCsv,
   );
 
+  router.get('/trash', invoiceController.listTrashed);
   router.get('/:id', validateParam('id'), invoiceController.getById);
   router.patch('/:id', validateParam('id'), requireRole('admin', 'manager'), invoiceController.update);
   router.delete('/:id', validateParam('id'), requireRole('admin', 'manager'), invoiceController.delete);

@@ -1,4 +1,4 @@
-import { eq, and, isNull, desc, asc, ilike, inArray, count, lte, gte } from 'drizzle-orm';
+import { eq, and, isNull, isNotNull, desc, asc, ilike, inArray, count, lte, gte } from 'drizzle-orm';
 import { invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Invoice, NewInvoice } from '../../db/index.js';
@@ -65,6 +65,48 @@ export class InvoiceRepository {
       .limit(1);
 
     return rows[0];
+  }
+
+  async findTrashed(params: {
+    tenantId: string;
+    page: number;
+    limit: number;
+    sortBy: 'dueDate' | 'invoiceAmount' | 'createdAt' | 'clientName' | 'invoiceNo';
+    sortOrder: 'asc' | 'desc';
+    clientName?: string;
+  }): Promise<{ data: Invoice[]; total: number }> {
+    const conditions = [
+      eq(invoices.tenantId, params.tenantId),
+      isNotNull(invoices.deletedAt),
+    ];
+
+    if (params.clientName) {
+      conditions.push(ilike(invoices.clientName, `%${params.clientName}%`));
+    }
+
+    const whereClause = and(...conditions);
+
+    const [totalRow] = await this.db
+      .select({ count: count() })
+      .from(invoices)
+      .where(whereClause);
+
+    const data = await this.db
+      .select()
+      .from(invoices)
+      .where(whereClause)
+      .orderBy(
+        params.sortOrder === 'asc'
+          ? asc(invoices[params.sortBy])
+          : desc(invoices[params.sortBy])
+      )
+      .limit(params.limit)
+      .offset((params.page - 1) * params.limit);
+
+    return {
+      data,
+      total: Number(totalRow?.count || 0),
+    };
   }
 
   async create(data: NewInvoice, tx?: any): Promise<Invoice> {

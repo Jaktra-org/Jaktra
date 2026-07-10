@@ -54,4 +54,10 @@ export const invoiceService = {
     const response = await api.delete(`/invoices/${id}`);
     return response.data;
   },
+
+  getTrashedInvoices: async (params: Omit<ListInvoicesParams, 'status'> = {}): Promise<PaginatedResponse<Invoice>> => {
+    const queryParams: Record<string, any> = { ...params };
+    const response = await api.get('/invoices/trash', { params: queryParams });
+    return response.data;
+  },
 };

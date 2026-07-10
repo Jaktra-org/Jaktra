@@ -252,6 +252,39 @@ export class InvoiceController {
     }
   };
 
+  listTrashed = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = res.locals.tenantId as string;
+      const params = listInvoicesSchema.parse(req.query);
+
+      const toArray = (val: string | string[] | undefined) => {
+        if (!val) return undefined;
+        return Array.isArray(val) ? val : val.split(',');
+      };
+
+      const result = await this.invoiceRepo.findTrashed({
+        tenantId,
+        page: params.page,
+        limit: params.limit,
+        sortBy: params.sort_by as any,
+        sortOrder: params.order,
+        clientName: params.client_name,
+      });
+
+      res.status(200).json({
+        data: result.data,
+        pagination: {
+          total: result.total,
+          page: params.page,
+          limit: params.limit,
+          totalPages: Math.ceil(result.total / params.limit),
+        }
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  };
+
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = res.locals.tenantId as string;

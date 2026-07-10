@@ -20,7 +20,8 @@ import {
   ArrowDown,
   Loader2,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from "lucide-react";
 import { getErrorMessage } from "../utils/error-utils";
 export function Invoices() {
@@ -32,6 +33,7 @@ export function Invoices() {
     sort_by: 'createdAt',
     order: 'desc'
   });
+  const [isTrashView, setIsTrashView] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -52,7 +54,20 @@ export function Invoices() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['invoices', params],
     queryFn: () => invoiceService.getInvoices(params),
+    enabled: !isTrashView,
   });
+
+  const { data: trashData, isLoading: isTrashLoading, isError: isTrashError, error: trashError } = useQuery({
+    queryKey: ['invoices-trash', params],
+    queryFn: () => invoiceService.getTrashedInvoices(params),
+    enabled: isTrashView,
+  });
+
+  // Unified display data depending on which tab is active
+  const activeData = isTrashView ? trashData : data;
+  const isLoading_ = isTrashView ? isTrashLoading : isLoading;
+  const isError_ = isTrashView ? isTrashError : isError;
+  const error_ = isTrashView ? trashError : error;
 
   const handleSort = (field: ListInvoicesParams['sort_by']) => {
     setParams(prev => ({
@@ -64,6 +79,7 @@ export function Invoices() {
   };
 
   const handleStatusFilter = (status: string) => {
+    setIsTrashView(false);
     setParams(prev => ({
       ...prev,
       page: 1,
@@ -71,11 +87,16 @@ export function Invoices() {
     }));
   };
 
+  const handleTrashTab = () => {
+    setIsTrashView(true);
+    setParams(prev => ({ ...prev, page: 1, status: undefined }));
+  };
+
   const handleExportCSV = () => {
-    if (!data?.data || data.data.length === 0) return;
+    if (!activeData?.data || activeData.data.length === 0) return;
     
     const headers = ['Invoice No', 'Client', 'Amount', 'Due Date', 'Status', 'Days Overdue', 'Follow-ups'];
-    const rows = data.data.map(inv => [
+    const rows = activeData!.data.map(inv => [
       inv.invoiceNo,
       `"${inv.clientName}"`, // Quote to handle commas
       inv.invoiceAmount,
@@ -100,7 +121,7 @@ export function Invoices() {
     document.body.removeChild(link);
   };
 
-  const currentStatus = params.status?.[0] || 'All';
+  const currentStatus = isTrashView ? 'Trash' : (params.status?.[0] || 'All');
 
   const formatCurrency = (val: string | number) => {
     return Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(val));
@@ -120,15 +141,17 @@ export function Invoices() {
           <p className="text-sm text-slate-500">Manage your collection portfolio and track aging accounts.</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button
-            onClick={handleExportCSV}
-            disabled={!data?.data || data.data.length === 0}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-10 px-4 py-2"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </button>
-          {user?.role !== 'viewer' && (
+          {!isTrashView && (
+            <button
+              onClick={handleExportCSV}
+              disabled={!activeData?.data || activeData.data.length === 0}
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-10 px-4 py-2"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </button>
+          )}
+          {user?.role !== 'viewer' && !isTrashView && (
             <>
               <button
                 onClick={() => setIsImportModalOpen(true)}
@@ -149,12 +172,12 @@ export function Invoices() {
         </div>
       </div>
 
-      {isError && (
+      {isError_ && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
           <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="font-medium">Failed to load invoices</h4>
-            <p className="text-sm mt-1">{getErrorMessage(error)}</p>
+            <p className="text-sm mt-1">{getErrorMessage(error_)}</p>
           </div>
         </div>
       )}
@@ -168,7 +191,7 @@ export function Invoices() {
                 key={status}
                 onClick={() => handleStatusFilter(status)}
                 className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${
-                  currentStatus === status
+                  !isTrashView && currentStatus === status
                     ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
@@ -176,6 +199,17 @@ export function Invoices() {
                 {status}
               </button>
             ))}
+            <button
+              onClick={handleTrashTab}
+              className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all flex items-center gap-1.5 ${
+                isTrashView
+                  ? 'bg-white text-amber-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Trash
+            </button>
           </div>
 
           <div className="relative w-full sm:w-72">
@@ -210,42 +244,95 @@ export function Invoices() {
                 <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('paymentStatus')}>
                   <div className="flex items-center">Status {renderSortIcon('paymentStatus')}</div>
                 </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
-                  <div className="flex items-center">Days Overdue</div>
-                </th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('followupCount')}>
-                  <div className="flex items-center">Follow-ups {renderSortIcon('followupCount')}</div>
-                </th>
+                {isTrashView ? (
+                  <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
+                    <div className="flex items-center">Deleted On</div>
+                  </th>
+                ) : (
+                  <>
+                    <th className="h-12 px-4 text-left align-middle font-medium text-slate-500">
+                      <div className="flex items-center">Days Overdue</div>
+                    </th>
+                    <th className="h-12 px-4 text-left align-middle font-medium text-slate-500 cursor-pointer select-none hover:text-slate-900" onClick={() => handleSort('followupCount')}>
+                      <div className="flex items-center">Follow-ups {renderSortIcon('followupCount')}</div>
+                    </th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody className="[&_tr:last-child]:border-0">
-              {isLoading ? (
+              {isLoading_ ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-500">
+                  <td colSpan={isTrashView ? 6 : 7} className="p-8 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-                      <p>Loading invoices...</p>
+                      <p>{isTrashView ? 'Loading trash...' : 'Loading invoices...'}</p>
                     </div>
                   </td>
                 </tr>
-              ) : isError ? (
+              ) : isError_ ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-red-500">
-                    Failed to load invoices. Please try again.
+                  <td colSpan={isTrashView ? 6 : 7} className="p-8 text-center text-red-500">
+                    Failed to load {isTrashView ? 'trash' : 'invoices'}. Please try again.
                   </td>
                 </tr>
-              ) : !data?.data || data.data.length === 0 ? (
+              ) : !activeData?.data || activeData.data.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-slate-500">
+                  <td colSpan={isTrashView ? 6 : 7} className="p-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
-                      <FileText className="h-12 w-12 text-slate-300 mb-4" />
-                      <p className="text-lg font-medium text-slate-900">No invoices found</p>
-                      <p className="text-sm">Adjust your filters or add a new invoice to get started.</p>
+                      {isTrashView ? (
+                        <>
+                          <Trash2 className="h-12 w-12 text-slate-300 mb-4" />
+                          <p className="text-lg font-medium text-slate-900">Trash is empty</p>
+                          <p className="text-sm">Deleted invoices will appear here.</p>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-12 w-12 text-slate-300 mb-4" />
+                          <p className="text-lg font-medium text-slate-900">No invoices found</p>
+                          <p className="text-sm">Adjust your filters or add a new invoice to get started.</p>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
+              ) : isTrashView ? (
+                activeData!.data.map((invoice) => (
+                  <tr
+                    key={invoice.id}
+                    onClick={() => navigate(`/invoices/${invoice.id}/trashed`)}
+                    className="border-b transition-colors hover:bg-amber-50/60 cursor-pointer opacity-75"
+                  >
+                    <td className="p-4 align-middle font-medium text-slate-500">
+                      {invoice.invoiceNo}
+                    </td>
+                    <td className="p-4 align-middle">
+                      <div className="font-medium text-slate-600">{invoice.clientName}</div>
+                      <div className="text-xs text-slate-400">{invoice.contactEmail}</div>
+                    </td>
+                    <td className="p-4 align-middle text-slate-500">
+                      {formatCurrency(invoice.invoiceAmount)}
+                    </td>
+                    <td className="p-4 align-middle text-slate-400">
+                      {new Date(invoice.dueDate).toLocaleDateString()}
+                    </td>
+                    <td className="p-4 align-middle">
+                      <Badge variant={
+                        invoice.paymentStatus === 'Paid' ? 'success' :
+                        invoice.paymentStatus === 'Overdue' ? 'danger' : 'warning'
+                      }>
+                        {invoice.paymentStatus}
+                      </Badge>
+                    </td>
+                    <td className="p-4 align-middle text-slate-400 text-sm">
+                      {invoice.deletedAt
+                        ? new Date(invoice.deletedAt).toLocaleDateString()
+                        : '—'}
+                    </td>
+                  </tr>
+                ))
               ) : (
-                data.data.map((invoice) => (
+                activeData!.data.map((invoice) => (
                   <tr 
                     key={invoice.id} 
                     onClick={() => navigate(`/invoices/${invoice.id}`)}
@@ -290,10 +377,10 @@ export function Invoices() {
         </div>
 
         {/* Pagination */}
-        {data && data.pagination.totalPages > 0 && (
+        {activeData && activeData.pagination.totalPages > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/50">
             <div className="text-sm text-slate-500">
-              Showing <span className="font-medium">{(params.page! - 1) * params.limit! + 1}</span> to <span className="font-medium">{Math.min(params.page! * params.limit!, data.pagination.total)}</span> of <span className="font-medium">{data.pagination.total}</span> results
+              Showing <span className="font-medium">{(params.page! - 1) * params.limit! + 1}</span> to <span className="font-medium">{Math.min(params.page! * params.limit!, activeData.pagination.total)}</span> of <span className="font-medium">{activeData.pagination.total}</span> results
             </div>
             <div className="flex space-x-2">
               <button
@@ -305,8 +392,8 @@ export function Invoices() {
                 <span className="sr-only">Previous page</span>
               </button>
               <button
-                onClick={() => setParams(prev => ({ ...prev, page: Math.min(data.pagination.totalPages, (prev.page || 1) + 1) }))}
-                disabled={params.page === data.pagination.totalPages}
+                onClick={() => setParams(prev => ({ ...prev, page: Math.min(activeData!.pagination.totalPages, (prev.page || 1) + 1) }))}
+                disabled={params.page === activeData!.pagination.totalPages}
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-8 w-8 p-0"
               >
                 <ChevronRight className="h-4 w-4" />

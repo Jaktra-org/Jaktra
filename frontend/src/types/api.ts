@@ -50,6 +50,7 @@ export interface Invoice {
   } | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
 }
 
 export interface InvoiceEvent {
