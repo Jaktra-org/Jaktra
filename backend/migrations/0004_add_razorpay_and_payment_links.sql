@@ -1,0 +1,1 @@
+-- Empty placeholder for missing migration 0004

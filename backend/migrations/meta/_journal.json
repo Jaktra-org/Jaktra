@@ -50,6 +50,34 @@
       "when": 1782075129719,
       "tag": "0006_add_run_id_index",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782075130000,
+      "tag": "0007_add_tenant_id_to_comm_events_dlq",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782075140000,
+      "tag": "0008_add_webhook_token_to_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782075150000,
+      "tag": "0009_add_skip_payment_warning",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782075160000,
+      "tag": "0010_add_invoice_subject",
+      "breakpoints": true
     }
   ]
 }

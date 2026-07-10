@@ -680,17 +680,6 @@
         "Written Off"
       ]
     },
-    "public.urgency_tier": {
-      "name": "urgency_tier",
-      "schema": "public",
-      "values": [
-        "stage_1_warm",
-        "stage_2_firm",
-        "stage_3_serious",
-        "stage_4_stern",
-        "legal_escalation"
-      ]
-    },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
@@ -698,6 +687,45 @@
         "admin",
         "manager",
         "viewer"
+      ]
+    },
+    "public.integration_provider": {
+      "name": "integration_provider",
+      "schema": "public",
+      "values": [
+        "sendgrid",
+        "smtp",
+        "razorpay"
+      ]
+    },
+    "public.payment_link_status": {
+      "name": "payment_link_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "paid",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "public.default_email_provider": {
+      "name": "default_email_provider",
+      "schema": "public",
+      "values": [
+        "sendgrid",
+        "smtp"
+      ]
+    },
+    "public.validation_result": {
+      "name": "validation_result",
+      "schema": "public",
+      "values": [
+        "valid",
+        "invalid",
+        "revoked",
+        "insufficient_scope",
+        "unverified_sender",
+        "unknown"
       ]
     }
   },

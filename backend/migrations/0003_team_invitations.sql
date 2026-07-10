@@ -1,14 +1,4 @@
-DO $$ BEGIN
- DO  BEGIN
- CREATE TYPE  AS ENUM();
-EXCEPTION
- WHEN duplicate_object THEN null;
-END ;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
-
-CREATE TABLE IF NOT EXISTS  (
+CREATE TABLE IF NOT EXISTS "team_invitations" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"tenant_id" uuid NOT NULL,
 	"email" text NOT NULL,
@@ -37,5 +27,5 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
-CREATE UNIQUE INDEX IF NOT EXISTS  ON "team_invitations" USING btree ("token_hash");
-CREATE UNIQUE INDEX IF NOT EXISTS  ON "team_invitations" USING btree ("tenant_id", "email") WHERE accepted_at IS NULL AND revoked_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS "team_invitations_token_hash_idx" ON "team_invitations" USING btree ("token_hash");
+CREATE UNIQUE INDEX IF NOT EXISTS "team_invitations_tenant_id_email_idx" ON "team_invitations" USING btree ("tenant_id", "email") WHERE accepted_at IS NULL AND revoked_at IS NULL;
