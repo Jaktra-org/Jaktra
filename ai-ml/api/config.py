@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     # Service
     SERVICE_HOST: str = "0.0.0.0"
     SERVICE_PORT: int = 8000
-    SERVICE_KEY: str = Field(alias="SERVICE_KEY", default="suresh-service-key-9876")
+    SERVICE_KEY: str = Field(alias="SERVICE_KEY")
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "json"  # "json" or "text"
 
