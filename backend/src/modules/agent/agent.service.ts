@@ -46,7 +46,7 @@ export class AgentService {
     }
   }
 
-  async triggerRun(tenantId: string, toneOverride?: UrgencyTier) {
+  async triggerRun(tenantId: string, toneOverride?: UrgencyTier): Promise<Awaited<ReturnType<AgentRepository['updateRun']>> | Awaited<ReturnType<AgentRepository['createRun']>>> {
     await this.assertEmailConfigured(tenantId);
 
     const settings = await this.communicationRepo.getSettings(tenantId);
@@ -143,16 +143,17 @@ export class AgentService {
         let paymentLink = undefined;
         try {
           paymentLink = await this.paymentService.getOrGeneratePaymentLink(tenantId, inv.id, 'razorpay');
-        } catch (e: any) {
-          logger.warn(`Could not generate payment link for invoice ${inv.id} - ${e.message}`);
+        } catch (e: unknown) {
+          logger.warn(`Could not generate payment link for invoice ${inv.id} - ${e instanceof Error ? e.message : String(e)}`);
         }
 
         for (const channel of channels) {
           if (channel === 'email') {
             try {
               await this.communicationService.validateRecipientEmail(inv.contactEmail);
-            } catch (validationErr: any) {
+            } catch (validationErr: unknown) {
               errorsCount++;
+              const validationErrMsg = validationErr instanceof Error ? validationErr.message : String(validationErr);
               await this.communicationRepo.create({
                 tenantId,
                 invoiceId: inv.id,
@@ -161,7 +162,7 @@ export class AgentService {
                 body: 'Recipient email domain is invalid or does not exist.',
                 status: 'failed',
                 sentAt: null,
-                error: validationErr.message,
+                error: validationErrMsg,
               });
               await this.eventService.emitEvent(
                 'invoice',
@@ -171,10 +172,10 @@ export class AgentService {
                 { source: 'agent' },
                 {
                   description: `Follow-up halted: recipient email is invalid`,
-                  payload: { reason: 'mail_invalid', error: validationErr.message, channel, runId }
+                  payload: { reason: 'mail_invalid', error: validationErrMsg, channel, runId }
                 }
               ).catch(err => logger.error('Failed to log followup.halted event', err));
-              await this.dlqService.recordFailure(inv.id, tenantId, validationErr.message).catch(() => { });
+              await this.dlqService.recordFailure(inv.id, tenantId, validationErrMsg).catch(() => { });
               continue;
             }
           }
@@ -185,14 +186,14 @@ export class AgentService {
             clientName: inv.clientName,
             contactEmail: inv.contactEmail,
             invoiceAmount: inv.invoiceAmount.toString(),
-            currency: (inv as any).currency ?? 'INR',
+            currency: inv.currency ?? 'INR',
             dueDate: inv.dueDate,
             daysOverdue: inv.daysOverdue,
             urgencyTier: effectiveTier,
             followupCount: inv.followupCount,
             channel,
             paymentLink,
-            invoiceSubject: (inv as any).subject ?? undefined,
+            invoiceSubject: ('subject' in inv ? (inv as Record<string, unknown>).subject as string : undefined) ?? undefined,
           });
 
           // Generation failed — record in DLQ and move on
@@ -234,8 +235,8 @@ export class AgentService {
               channel: channel as 'email',
               invoiceId: inv.id,
             });
-          } catch (sendErr: any) {
-            sendError = sendErr?.message ?? String(sendErr);
+          } catch (sendErr: unknown) {
+            sendError = sendErr instanceof Error ? sendErr.message : String(sendErr);
             logger.warn(`Email send failed for invoice ${inv.id}: ${sendError}`);
           }
 
@@ -336,7 +337,7 @@ export class AgentService {
     });
   }
 
-  async triggerSingleInvoice(invoiceId: string, tenantId: string, toneOverride?: UrgencyTier, actorContext?: ActorContext) {
+  async triggerSingleInvoice(invoiceId: string, tenantId: string, toneOverride?: UrgencyTier, actorContext?: ActorContext): Promise<unknown> {
     await this.assertEmailConfigured(tenantId);
 
     const invoice = await this.invoiceRepo.findById(invoiceId);
@@ -393,8 +394,8 @@ export class AgentService {
       let paymentLink = undefined;
       try {
         paymentLink = await this.paymentService.getOrGeneratePaymentLink(tenantId, invoice.id, 'razorpay');
-      } catch (e: any) {
-        logger.warn(`Could not generate payment link for invoice ${invoice.id} - ${e.message}`);
+      } catch (e: unknown) {
+        logger.warn(`Could not generate payment link for invoice ${invoice.id} - ${e instanceof Error ? e.message : String(e)}`);
       }
 
       const results = [];
@@ -402,7 +403,8 @@ export class AgentService {
         if (channel === 'email') {
           try {
             await this.communicationService.validateRecipientEmail(invoice.contactEmail);
-          } catch (validationErr: any) {
+          } catch (validationErr: unknown) {
+            const validationErrMsg = validationErr instanceof Error ? validationErr.message : String(validationErr);
             await this.communicationRepo.create({
               tenantId,
               invoiceId: invoice.id,
@@ -411,7 +413,7 @@ export class AgentService {
               body: 'Recipient email domain is invalid or does not exist.',
               status: 'failed',
               sentAt: null,
-              error: validationErr.message,
+              error: validationErrMsg,
             });
             await this.eventService.emitEvent(
               'invoice',
@@ -421,17 +423,17 @@ export class AgentService {
               { source: 'agent' },
               {
                 description: `Follow-up halted: recipient email is invalid`,
-                payload: { reason: 'mail_invalid', error: validationErr.message, channel }
+                payload: { reason: 'mail_invalid', error: validationErrMsg, channel }
               }
             ).catch(err => logger.error('Failed to log followup.halted event', err));
-            await this.dlqService.recordFailure(invoice.id, tenantId, validationErr.message).catch(() => { });
+            await this.dlqService.recordFailure(invoice.id, tenantId, validationErrMsg).catch(() => { });
 
             results.push({
               invoiceId: invoice.id,
               channel,
               emailGenerated: false,
               emailSent: false,
-              error: validationErr.message,
+              error: validationErrMsg,
             });
             continue;
           }
@@ -443,14 +445,14 @@ export class AgentService {
           clientName: invoice.clientName,
           contactEmail: invoice.contactEmail,
           invoiceAmount: invoice.invoiceAmount.toString(),
-          currency: (invoice as any).currency ?? 'INR',
+          currency: invoice.currency ?? 'INR',
           dueDate: invoice.dueDate,
           daysOverdue,
           urgencyTier,
           followupCount: invoice.followupCount,
           channel,
           paymentLink,
-          invoiceSubject: (invoice as any).subject ?? undefined,
+          invoiceSubject: ('subject' in invoice ? (invoice as Record<string, unknown>).subject as string : undefined) ?? undefined,
         });
 
         if (resp.error || !resp.emailGenerated) {
@@ -491,8 +493,8 @@ export class AgentService {
             channel: channel as 'email',
             invoiceId: invoice.id,
           });
-        } catch (sendErr: any) {
-          sendError = sendErr?.message ?? String(sendErr);
+        } catch (sendErr: unknown) {
+          sendError = sendErr instanceof Error ? sendErr.message : String(sendErr);
           logger.warn(`Email send failed for invoice ${invoice.id}: ${sendError}`);
         }
 
@@ -584,11 +586,11 @@ export class AgentService {
     return channelMatrix[tier] || ['email'];
   }
 
-  async getRuns(tenantId: string) {
+  async getRuns(tenantId: string): Promise<Awaited<ReturnType<AgentRepository['getRuns']>>> {
     return this.agentRepo.getRuns(tenantId);
   }
 
-  async getRunDetails(runId: string, tenantId: string) {
+  async getRunDetails(runId: string, tenantId: string): Promise<null | (Awaited<ReturnType<AgentRepository['getRunById']>> & { events: Awaited<ReturnType<EventService['findByRunId']>> })> {
     const run = await this.agentRepo.getRunById(runId, tenantId);
     if (!run) return null;
 

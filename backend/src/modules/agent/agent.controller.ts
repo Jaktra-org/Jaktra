@@ -80,7 +80,7 @@ export class AgentController {
     }
   };
 
-  getRunDetails = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  getRunDetails = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const authReq = req as AuthenticatedRequest;
       const tenantId = authReq.user.tenantId;
@@ -98,7 +98,7 @@ export class AgentController {
     }
   };
 
-  runInvoice = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  runInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const authReq = req as AuthenticatedRequest;
       const tenantId = authReq.user.tenantId;

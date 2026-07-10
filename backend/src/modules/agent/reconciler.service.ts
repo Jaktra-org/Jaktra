@@ -49,7 +49,7 @@ export class ReconcilerService {
     return {
       checked: await this.invoiceRepo.countByTenant(tenantId),
       mismatches: mismatches.rows.length,
-      corrections: mismatches.rows.map((m: any) => ({
+      corrections: mismatches.rows.map((m: Record<string, unknown>) => ({
         invoiceId: m.invoice_id as string,
         invoiceNo: m.invoice_no as string,
         oldFollowupCount: Number(m.old_followup_count),

@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { ReconcilerController } from './reconciler.controller.js';
 import { requireRole } from '../../middleware/require-role.js';
 
 export function createReconcilerRouter(
   reconcilerController: ReconcilerController,
-  authRequired: any,
-  tenantScoped: any
+  authRequired: RequestHandler,
+  tenantScoped: RequestHandler
 ): Router {
   const router = Router();
 
