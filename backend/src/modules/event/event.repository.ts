@@ -1,6 +1,6 @@
 import { eq, asc, desc, sql, and, inArray, gte, lte } from 'drizzle-orm';
 import { events, invoices } from '../../db/index.js';
-import type { DatabaseClient } from '../../db/index.js';
+import type { DatabaseClient, DatabaseOrTransaction } from '../../db/index.js';
 import type { Event, NewEvent } from '../../db/index.js';
 import { ACTIVITY_LOG_VISIBLE_ACTIONS, type ActionType } from './event.action-types.js';
 
@@ -57,13 +57,13 @@ export class EventRepository {
     }));
   }
 
-  async create(data: NewEvent, tx?: DatabaseClient): Promise<Event> {
+  async create(data: NewEvent, tx?: DatabaseOrTransaction): Promise<Event> {
     const dbClient = tx || this.db;
     const rows = await dbClient.insert(events).values(data).returning();
     return rows[0]!;
   }
 
-  async createMany(data: NewEvent[], tx?: DatabaseClient): Promise<Event[]> {
+  async createMany(data: NewEvent[], tx?: DatabaseOrTransaction): Promise<Event[]> {
     if (data.length === 0) return [];
     const dbClient = tx || this.db;
     return await dbClient.insert(events).values(data).returning();

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ACTION_TYPES, type ActionType } from './event.action-types.js';
 import type { EventRepository } from './event.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
-import type { Event } from '../../db/index.js';
+import type { Event, DatabaseOrTransaction } from '../../db/index.js';
 import { ValidationError } from '../../shared/errors/index.js';
 
 export type ActorContext =
@@ -41,7 +41,7 @@ export class EventService {
       oldValues?: Record<string, unknown>;
       newValues?: Record<string, unknown>;
       payload?: Record<string, unknown>;
-      tx?: unknown;
+      tx?: DatabaseOrTransaction;
     }
   ): Promise<Event>;
 
@@ -70,10 +70,16 @@ export class EventService {
     ) {
       const entityType = arg1;
       const entityId = arg2;
-      const tenantId = arg3;
+      const tenantId = arg3 as string;
       const actionType = arg4 as ActionType;
       const actor = arg5 as ActorContext;
-      const opts = arg6;
+      const opts = arg6 as {
+        description?: string;
+        oldValues?: Record<string, unknown>;
+        newValues?: Record<string, unknown>;
+        payload?: Record<string, unknown>;
+        tx?: DatabaseOrTransaction;
+      } | undefined;
 
       const actionTypeSchema = z.enum(ACTION_TYPES);
       try {
@@ -114,9 +120,9 @@ export class EventService {
     } else {
       const invoiceId = arg1;
       const eventType = arg2 as EventType;
-      const payload = arg3;
-      const actor = arg4 ?? 'system';
-      const tenantId = arg5 ?? '';
+      const payload = arg3 as Record<string, unknown> | undefined;
+      const actor = (arg4 as string | undefined) ?? 'system';
+      const tenantId = (arg5 as string | undefined) ?? '';
 
       let actionType: ActionType = 'legacy.event';
       if (eventType === 'email_sent') actionType = 'followup.sent';
