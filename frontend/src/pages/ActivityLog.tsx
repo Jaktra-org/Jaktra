@@ -9,6 +9,21 @@ import {
 import { eventService } from "../services/event";
 import type { InvoiceEvent } from "../types/api";
 
+export const formatCurrency = (val: string | number) => {
+  return Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(Number(val));
+};
+
+export const formatDateValue = (val: any) => {
+  if (!val) return 'None';
+  const date = new Date(val);
+  if (isNaN(date.getTime())) return String(val);
+  const day = date.getDate();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
+
 const categoryActionTypeMap: Record<string, string[]> = {
   invoices: [
     'invoice.created',
@@ -759,15 +774,25 @@ export function ActivityLog() {
                   {renderEventDetails(evt)}
                 </div>
 
-                {/* Arrow link icon: only links if invoice is active */}
-                {evt.entityType === 'invoice' && !evt.invoiceDeletedAt && evt.actionType !== 'invoice.deleted' && evt.invoiceNo ? (
-                  <Link 
-                    to={`/invoices/${evt.invoiceId}`}
-                    className="p-1 hover:bg-slate-100 rounded-lg transition-colors self-center flex-shrink-0 hidden sm:block"
-                    title="View Invoice Detail"
-                  >
-                    <ArrowRight className="h-4 w-4 text-indigo-600 group-hover:text-indigo-800 group-hover:translate-x-1 transition-all" />
-                  </Link>
+                {/* Arrow link icon: links active to /invoices/:id, trashed to /invoices/:id/trashed, none for permanent deleted */}
+                {evt.entityType === 'invoice' && evt.actionType !== 'invoice.permanently_deleted' && evt.invoiceNo ? (
+                  evt.invoiceDeletedAt ? (
+                    <Link 
+                      to={`/invoices/${evt.invoiceId}/trashed`}
+                      className="p-1 hover:bg-slate-100 rounded-lg transition-colors self-center flex-shrink-0 hidden sm:block"
+                      title="View Trashed Invoice Detail"
+                    >
+                      <ArrowRight className="h-4 w-4 text-amber-600 group-hover:text-amber-800 group-hover:translate-x-1 transition-all" />
+                    </Link>
+                  ) : (
+                    <Link 
+                      to={`/invoices/${evt.invoiceId}`}
+                      className="p-1 hover:bg-slate-100 rounded-lg transition-colors self-center flex-shrink-0 hidden sm:block"
+                      title="View Invoice Detail"
+                    >
+                      <ArrowRight className="h-4 w-4 text-indigo-600 group-hover:text-indigo-800 group-hover:translate-x-1 transition-all" />
+                    </Link>
+                  )
                 ) : (
                   <div className="w-6 h-6 flex-shrink-0 hidden sm:block" />
                 )}
