@@ -1,4 +1,4 @@
-import { eq, and, isNull, gte, lte, sql } from 'drizzle-orm';
+import { eq, and, isNull, gte, lte, sql, type SQL } from 'drizzle-orm';
 import { invoices, agentRuns, communications } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 
@@ -141,7 +141,7 @@ export class AnalyticsRepository {
       .from(invoices)
       .where(baseConditions);
 
-    let runConditions: any = eq(agentRuns.tenantId, tenantId);
+    let runConditions: SQL | undefined = eq(agentRuns.tenantId, tenantId);
     if (fromDate) {
       runConditions = and(runConditions, gte(agentRuns.startTime, fromDate));
     }
@@ -228,7 +228,7 @@ export class AnalyticsRepository {
   }
 
   async getEmailVolume(tenantId: string, fromDate?: Date, toDate?: Date) {
-    let runConditions: any = eq(agentRuns.tenantId, tenantId);
+    let runConditions: SQL | undefined = eq(agentRuns.tenantId, tenantId);
     if (fromDate) {
       runConditions = and(runConditions, gte(agentRuns.startTime, fromDate));
     }
