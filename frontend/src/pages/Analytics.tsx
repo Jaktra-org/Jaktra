@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '../services/analytics';
+import { settingsService } from '../services/settings';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { TrendingUp, DollarSign, Clock, AlertCircle, Loader2, Construction, Send, Zap, LayoutDashboard, MailOpen, MousePointerClick } from 'lucide-react';
@@ -147,6 +148,7 @@ function AgentPerformanceTab() {
   const { data: tierData, isLoading: isTierLoading } = useQuery({ queryKey: ['tier-effectiveness'], queryFn: () => analyticsService.getTierEffectiveness() });
   const { data: channelData, isLoading: isChannelLoading } = useQuery({ queryKey: ['channel-breakdown'], queryFn: () => analyticsService.getChannelBreakdown() });
   const { data: commStats, isLoading: isCommStatsLoading } = useQuery({ queryKey: ['comm-stats'], queryFn: () => analyticsService.getCommunicationStats() });
+  const { data: settings, isLoading: isSettingsLoading } = useQuery({ queryKey: ['tenant-settings'], queryFn: settingsService.getSettings });
 
   const formatPercentage = (val: number) => `${val}%`;
 
@@ -171,7 +173,7 @@ function AgentPerformanceTab() {
     fill: d.channel === 'email' ? '#3b82f6' : d.channel === 'sms' ? '#f59e0b' : '#22c55e'
   }));
 
-  const isLoading = isAgentLoading || isEmailVolLoading || isTierLoading || isChannelLoading || isCommStatsLoading;
+  const isLoading = isAgentLoading || isEmailVolLoading || isTierLoading || isChannelLoading || isCommStatsLoading || isSettingsLoading;
 
   const isDataEmpty = !isLoading && 
     (agentData?.totalRuns === 0 || agentData?.totalRuns === undefined) && 
@@ -189,15 +191,21 @@ function AgentPerformanceTab() {
     );
   }
 
+  const showOpenClick = settings?.defaultEmailProvider !== 'smtp';
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className={`grid grid-cols-2 ${showOpenClick ? 'md:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-4 lg:grid-cols-4'} gap-4`}>
         <MetricCard title="Total Runs" value={agentData?.totalRuns} loading={isLoading} icon={<Zap className="w-4 h-4 text-blue-500" />} />
         <MetricCard title="Invoices Processed" value={agentData?.invoicesProcessed} loading={isLoading} icon={<LayoutDashboard className="w-4 h-4 text-emerald-500" />} />
         <MetricCard title="Emails Sent" value={agentData?.emailsSent} loading={isLoading} icon={<Send className="w-4 h-4 text-blue-500" />} />
         <MetricCard title="Error Rate" value={agentData?.errorRate} loading={isLoading} formatter={formatPercentage} icon={<AlertCircle className="w-4 h-4 text-red-500" />} valueColor="text-red-600" />
-        <MetricCard title="Open Rate" value={commStats?.openRate} loading={isLoading} formatter={formatPercentage} icon={<MailOpen className="w-4 h-4 text-purple-500" />} />
-        <MetricCard title="Click Rate" value={commStats?.clickRate} loading={isLoading} formatter={formatPercentage} icon={<MousePointerClick className="w-4 h-4 text-indigo-500" />} />
+        {showOpenClick && (
+          <>
+            <MetricCard title="Open Rate" value={commStats?.openRate} loading={isLoading} formatter={formatPercentage} icon={<MailOpen className="w-4 h-4 text-purple-500" />} />
+            <MetricCard title="Click Rate" value={commStats?.clickRate} loading={isLoading} formatter={formatPercentage} icon={<MousePointerClick className="w-4 h-4 text-indigo-500" />} />
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

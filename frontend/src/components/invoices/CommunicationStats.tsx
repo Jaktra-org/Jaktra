@@ -3,9 +3,10 @@ import { Mail, MousePointerClick, Send, CheckCircle } from 'lucide-react';
 
 interface CommunicationStatsProps {
   communications: Communication[];
+  defaultEmailProvider?: 'sendgrid' | 'smtp' | null;
 }
 
-export function CommunicationStats({ communications }: CommunicationStatsProps) {
+export function CommunicationStats({ communications, defaultEmailProvider }: CommunicationStatsProps) {
   if (communications.length === 0) return null;
 
   const total = communications.length;
@@ -17,8 +18,10 @@ export function CommunicationStats({ communications }: CommunicationStatsProps) 
   const openRate = delivered > 0 ? Math.round((opened / delivered) * 100) : 0;
   const clickRate = delivered > 0 ? Math.round((clicked / delivered) * 100) : 0;
 
+  const showOpenClick = defaultEmailProvider !== 'smtp';
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+    <div className={`grid grid-cols-2 ${showOpenClick ? 'md:grid-cols-4' : 'md:grid-cols-2'} gap-4 mb-6 bg-white p-4 rounded-lg border border-slate-200 shadow-sm`}>
       <div className="flex flex-col">
         <span className="text-sm text-slate-500 flex items-center mb-1">
           <Send className="w-4 h-4 mr-1.5 text-slate-400" /> Total Sent
@@ -36,25 +39,29 @@ export function CommunicationStats({ communications }: CommunicationStatsProps) 
         </div>
       </div>
       
-      <div className="flex flex-col border-l border-slate-100 pl-4">
-        <span className="text-sm text-slate-500 flex items-center mb-1">
-          <Mail className="w-4 h-4 mr-1.5 text-blue-500" /> Opened
-        </span>
-        <div className="flex items-baseline space-x-2">
-          <span className="text-2xl font-bold text-slate-900">{opened}</span>
-          <span className="text-sm font-medium text-slate-400">{openRate}%</span>
-        </div>
-      </div>
-      
-      <div className="flex flex-col border-l border-slate-100 pl-4">
-        <span className="text-sm text-slate-500 flex items-center mb-1">
-          <MousePointerClick className="w-4 h-4 mr-1.5 text-indigo-500" /> Clicked
-        </span>
-        <div className="flex items-baseline space-x-2">
-          <span className="text-2xl font-bold text-slate-900">{clicked}</span>
-          <span className="text-sm font-medium text-slate-400">{clickRate}%</span>
-        </div>
-      </div>
+      {showOpenClick && (
+        <>
+          <div className="flex flex-col border-l border-slate-100 pl-4">
+            <span className="text-sm text-slate-500 flex items-center mb-1">
+              <Mail className="w-4 h-4 mr-1.5 text-blue-500" /> Opened
+            </span>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-2xl font-bold text-slate-900">{opened}</span>
+              <span className="text-sm font-medium text-slate-400">{openRate}%</span>
+            </div>
+          </div>
+          
+          <div className="flex flex-col border-l border-slate-100 pl-4">
+            <span className="text-sm text-slate-500 flex items-center mb-1">
+              <MousePointerClick className="w-4 h-4 mr-1.5 text-indigo-500" /> Clicked
+            </span>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-2xl font-bold text-slate-900">{clicked}</span>
+              <span className="text-sm font-medium text-slate-400">{clickRate}%</span>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

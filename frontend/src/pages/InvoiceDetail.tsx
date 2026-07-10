@@ -1112,7 +1112,10 @@ export function InvoiceDetail() {
                   </div>
                 ) : (
                   <div>
-                    <CommunicationStats communications={communications || []} />
+                    <CommunicationStats 
+                      communications={communications || []} 
+                      defaultEmailProvider={settings?.defaultEmailProvider} 
+                    />
                     <CommunicationList communications={communications || []} />
                   </div>
                 )
