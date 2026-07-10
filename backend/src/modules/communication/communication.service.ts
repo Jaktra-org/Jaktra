@@ -45,7 +45,7 @@ export class CommunicationService {
     private dlqRepo?: DlqRepository
   ) { }
 
-  async listByInvoice(invoiceId: string, tenantId: string): Promise<any[]> {
+  async listByInvoice(invoiceId: string, tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['findByInvoiceId']>>> {
     const invoice = await this.invoiceRepo.findById(invoiceId);
     if (!invoice || invoice.tenantId !== tenantId) {
       throw new CommunicationError('Invoice not found', 404);
@@ -77,7 +77,7 @@ export class CommunicationService {
     invoiceId: string,
     eventType: 'opened' | 'clicked' | 'bounced' | 'dropped',
     timestamp: Date,
-    rawEvent: any,
+    rawEvent: Record<string, unknown>,
     runId?: string
   ): Promise<void> {
     if (eventType === 'opened') {
@@ -151,8 +151,8 @@ export class CommunicationService {
           description,
           payload
         }
-      ).catch((err: any) => {
-        logger.error(`Failed to log ${actionType} event`, err);
+      ).catch((err: unknown) => {
+        logger.error(`Failed to log ${actionType} event`, err instanceof Error ? err : String(err));
       });
     }
   }
@@ -167,8 +167,8 @@ export class CommunicationService {
       if (!mx || mx.length === 0) {
         throw new CommunicationError(`Recipient domain '${domain}' has no valid mail servers (MX records). Delivery will fail.`, 400);
       }
-    } catch (err: any) {
-      throw new CommunicationError(`Recipient domain '${domain}' is unreachable or invalid: ${err.message}`, 400);
+    } catch (err: unknown) {
+      throw new CommunicationError(`Recipient domain '${domain}' is unreachable or invalid: ${err instanceof Error ? err.message : String(err)}`, 400);
     }
   }
 
@@ -196,7 +196,7 @@ export class CommunicationService {
     };
     const replyTo = settings.replyTo ? { email: settings.replyTo } : undefined;
 
-    const defaultProvider = (settings as any).defaultEmailProvider;
+    const defaultProvider = (settings as { defaultEmailProvider?: string }).defaultEmailProvider;
     if (!defaultProvider) {
       throw new CommunicationError('EMAIL_PROVIDER_NOT_CONFIGURED', 400);
     }
@@ -223,10 +223,10 @@ export class CommunicationService {
       } else {
         throw new CommunicationError(`Unsupported default email provider: ${defaultProvider}`, 400);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof CommunicationError) throw error;
 
-      await this.integrationService.handleDeliveryError(tenantId, defaultProvider, error);
+      await this.integrationService.handleDeliveryError(tenantId, defaultProvider, error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
@@ -241,11 +241,11 @@ export class CommunicationService {
   }
 
 
-  async getSettings(tenantId: string) {
+  async getSettings(tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['getSettings']>>> {
     return await this.communicationRepo.getSettings(tenantId);
   }
 
-  async updateSettings(tenantId: string, senderName: string, senderEmail: string, replyTo?: string, idempotencyWindowHours: number = 20) {
+  async updateSettings(tenantId: string, senderName: string, senderEmail: string, replyTo?: string, idempotencyWindowHours: number = 20): Promise<Awaited<ReturnType<CommunicationRepository['upsertSettings']>>> {
     return await this.communicationRepo.upsertSettings(tenantId, {
       senderName,
       senderEmail,
@@ -275,7 +275,7 @@ export class CommunicationService {
       let buffer = '';
       let foundBounce = false;
 
-      const sendCmd = (tag: string, cmd: string) => {
+      const sendCmd = (tag: string, cmd: string): void => {
         logger.debug(`[IMAP] Sent: ${tag} ${cmd}`);
         socket.write(`${tag} ${cmd}\r\n`);
       };
@@ -403,8 +403,8 @@ export class CommunicationService {
                   recipient,
                 }
               }
-            ).catch((err: any) => {
-              logger.error('Failed to log followup.bounced event', err);
+            ).catch((err: unknown) => {
+              logger.error('Failed to log followup.bounced event', err instanceof Error ? err : String(err));
             });
           }
 
@@ -421,8 +421,8 @@ export class CommunicationService {
           // Stop polling
           return;
         }
-      } catch (err: any) {
-        logger.error(`[IMAP] Error checking bounce on attempt ${attempt}: ${err.message}`);
+      } catch (err: unknown) {
+        logger.error(`[IMAP] Error checking bounce on attempt ${attempt}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 

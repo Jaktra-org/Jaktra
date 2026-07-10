@@ -74,17 +74,17 @@ export class SmtpConnectionFactory {
 
     try {
       records4 = await dns.resolve4(host);
-    } catch (e: any) {
-      if (e.code !== 'ENODATA' && e.code !== 'ENOTFOUND') {
-        throw new ExternalServiceError(`DNS resolution failed for ${host}: ${e.message}`);
+    } catch (e: unknown) {
+      if ((e as { code?: string }).code !== 'ENODATA' && (e as { code?: string }).code !== 'ENOTFOUND') {
+        throw new ExternalServiceError(`DNS resolution failed for ${host}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
     try {
       records6 = await dns.resolve6(host);
-    } catch (e: any) {
-      if (e.code !== 'ENODATA' && e.code !== 'ENOTFOUND') {
-        throw new ExternalServiceError(`DNS resolution failed for ${host}: ${e.message}`);
+    } catch (e: unknown) {
+      if ((e as { code?: string }).code !== 'ENODATA' && (e as { code?: string }).code !== 'ENOTFOUND') {
+        throw new ExternalServiceError(`DNS resolution failed for ${host}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

@@ -60,7 +60,7 @@ export class CommunicationController {
     }
   };
 
-  updateSettings = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  updateSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const authReq = req as AuthenticatedRequest;
       const tenantId = authReq.user.tenantId;
@@ -79,7 +79,7 @@ export class CommunicationController {
     }
   };
 
-  testCommunication = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  testCommunication = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const authReq = req as AuthenticatedRequest;
       const tenantId = authReq.user.tenantId;

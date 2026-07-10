@@ -42,7 +42,7 @@ export class SmtpProvider {
         transporter,
         () => transporter!.sendMail(msg),
         30000 // 30s overall timeout
-      ) as any;
+      ) as { rejected?: string[] };
 
       if (info && info.rejected && info.rejected.length > 0) {
         throw new ValidationError(`SMTP server synchronously rejected recipients: ${info.rejected.join(', ')}`);
@@ -50,8 +50,8 @@ export class SmtpProvider {
 
       logger.info(`[LIVE] Email sent successfully to ${to} from ${from.email} via SMTP`);
       return true;
-    } catch (error: any) {
-      logger.error(`[LIVE] Failed to send email via SMTP to ${to}: ${error.message}`);
+    } catch (error: unknown) {
+      logger.error(`[LIVE] Failed to send email via SMTP to ${to}: ${error instanceof Error ? error.message : String(error)}`);
       throw error; 
     } finally {
       if (transporter) {

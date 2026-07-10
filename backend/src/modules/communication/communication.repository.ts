@@ -8,7 +8,7 @@ import { tenantSettings, type TenantSettings, type NewTenantSettings } from '../
 export class CommunicationRepository {
   constructor(private db: DatabaseClient) {}
 
-  async findByInvoiceId(invoiceId: string): Promise<any[]> {
+  async findByInvoiceId(invoiceId: string): Promise<(Pick<Communication, 'id' | 'invoiceId' | 'tenantId' | 'channel' | 'subject' | 'body' | 'status' | 'sentAt' | 'openedAt' | 'clickedAt' | 'error' | 'createdAt'> & { recipient: string | null; errorMsg: string | null })[]> {
     const rows = await this.db
       .select({
         id: communications.id,
