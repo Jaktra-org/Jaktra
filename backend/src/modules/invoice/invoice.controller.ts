@@ -285,6 +285,28 @@ export class InvoiceController {
     }
   };
 
+  getTrashed = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = res.locals.tenantId as string;
+      const id = req.params.id as string;
+
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
+      if (!invoice || invoice.tenantId !== tenantId) {
+        next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (!invoice.deletedAt) {
+        next(new NotFoundError('Invoice not found in Trash'));
+        return;
+      }
+
+      res.status(200).json(invoice);
+    } catch (error: any) {
+      next(error);
+    }
+  };
+
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = res.locals.tenantId as string;

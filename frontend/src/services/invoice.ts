@@ -70,4 +70,9 @@ export const invoiceService = {
     const response = await api.post(`/invoices/${id}/restore`);
     return response.data;
   },
+
+  getTrashedInvoice: async (id: string): Promise<Invoice> => {
+    const response = await api.get(`/invoices/${id}/trashed`);
+    return response.data;
+  },
 };

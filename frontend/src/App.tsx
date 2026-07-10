@@ -5,6 +5,7 @@ import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { Invoices } from "./pages/Invoices";
 import { InvoiceDetail } from "./pages/InvoiceDetail";
+import { TrashedInvoiceDetail } from "./pages/TrashedInvoiceDetail";
 import { Agent } from "./pages/Agent";
 import { DLQ } from "./pages/DLQ";
 import { Analytics } from "./pages/Analytics";
@@ -26,6 +27,7 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/invoices" element={<Invoices />} />
+          <Route path="/invoices/:id/trashed" element={<TrashedInvoiceDetail />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route path="/agent" element={<Agent />} />
           <Route path="/analytics" element={<Analytics />} />
