@@ -833,11 +833,6 @@ export function ActivityLog() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 items-center text-xs">
-                    {/* Action badge */}
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border ${getActionBadgeStyles(evt.actionType)}`}>
-                      {evt.actionType}
-                    </span>
-
                     {/* Source badge with descriptive tooltip */}
                     <span 
                       className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border cursor-default ${getSourceBadgeStyles(evt.source)}`}
