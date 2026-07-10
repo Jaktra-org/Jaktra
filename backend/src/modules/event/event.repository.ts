@@ -57,13 +57,13 @@ export class EventRepository {
     }));
   }
 
-  async create(data: NewEvent, tx?: any): Promise<Event> {
+  async create(data: NewEvent, tx?: DatabaseClient): Promise<Event> {
     const dbClient = tx || this.db;
     const rows = await dbClient.insert(events).values(data).returning();
     return rows[0]!;
   }
 
-  async createMany(data: NewEvent[], tx?: any): Promise<Event[]> {
+  async createMany(data: NewEvent[], tx?: DatabaseClient): Promise<Event[]> {
     if (data.length === 0) return [];
     const dbClient = tx || this.db;
     return await dbClient.insert(events).values(data).returning();
@@ -137,7 +137,7 @@ export class EventRepository {
     },
     page: number,
     limit: number,
-  ): Promise<{ data: any[]; total: number }> {
+  ): Promise<{ data: (typeof import('../../db/schema.js').events.$inferSelect & { invoiceNo: string | null; invoiceDeletedAt: Date | null })[]; total: number }> {
     const conditions = [
       eq(events.tenantId, tenantId),
     ];

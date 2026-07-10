@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { EventService } from './event.service.js';
+import { type ActionType } from './event.action-types.js';
 
 export class EventController {
   constructor(private eventService: EventService) {}
@@ -14,7 +15,7 @@ export class EventController {
       const limit = req.query.limit ? Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10))) : 25;
       
       const actionTypes = req.query.action_types
-        ? (req.query.action_types as string).split(',').filter(Boolean) as any[]
+        ? (req.query.action_types as string).split(',').filter(Boolean) as ActionType[]
         : undefined;
         
       const sources = req.query.sources
@@ -58,7 +59,7 @@ export class EventController {
       const limit = req.query.limit ? Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10))) : 25;
       
       const actionTypes = req.query.action_types
-        ? (req.query.action_types as string).split(',').filter(Boolean) as any[]
+        ? (req.query.action_types as string).split(',').filter(Boolean) as ActionType[]
         : undefined;
         
       const sources = req.query.sources

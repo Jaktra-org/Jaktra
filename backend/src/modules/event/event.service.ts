@@ -41,7 +41,7 @@ export class EventService {
       oldValues?: Record<string, unknown>;
       newValues?: Record<string, unknown>;
       payload?: Record<string, unknown>;
-      tx?: any;
+      tx?: unknown;
     }
   ): Promise<Event>;
 
@@ -56,10 +56,10 @@ export class EventService {
   async emitEvent(
     arg1: string,
     arg2: string,
-    arg3?: any,
-    arg4?: any,
-    arg5?: any,
-    arg6?: any
+    arg3?: unknown,
+    arg4?: unknown,
+    arg5?: unknown,
+    arg6?: unknown
   ): Promise<Event> {
     if (
       typeof arg4 === 'object' ||
@@ -78,7 +78,7 @@ export class EventService {
       const actionTypeSchema = z.enum(ACTION_TYPES);
       try {
         actionTypeSchema.parse(actionType);
-      } catch (err) {
+      } catch {
         throw new ValidationError(`Invalid action type: ${actionType}`);
       }
 
@@ -143,12 +143,12 @@ export class EventService {
     tenantId: string;
     eventType: string;
     actor: ActorContext;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     description?: string;
     entityType?: string;
     entityId?: string;
-    oldValues?: any;
-    newValues?: any;
+    oldValues?: Record<string, unknown>;
+    newValues?: Record<string, unknown>;
   }): Promise<Event> {
     return this.emitEvent(
       params.entityType ?? 'system',
@@ -194,7 +194,7 @@ export class EventService {
     },
     page: number,
     limit: number,
-  ): Promise<{ data: any[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
+  ): Promise<{ data: (Event & { invoiceId: string })[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
     const { data, total } = await this.eventRepo.findByEntityPaginated(
       tenantId,
       entityType,
@@ -233,7 +233,7 @@ export class EventService {
     },
     page: number,
     limit: number,
-  ): Promise<{ data: any[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
+  ): Promise<{ data: (Awaited<ReturnType<EventRepository['findTenantEventsPaginated']>>['data'][number] & { invoiceId: string | null })[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
     const { data, total } = await this.eventRepo.findTenantEventsPaginated(
       tenantId,
       filters,
