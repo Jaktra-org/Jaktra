@@ -18,50 +18,52 @@ const pinoLogger = pino({
   }
 });
 
-function getMetadata(obj?: any): any {
+type LogArg = string | Record<string, unknown> | Error | object;
+
+function getMetadata(obj?: Record<string, unknown> | object): Record<string, unknown> {
   const store = loggerStorage.getStore();
   const requestId = store?.requestId;
   
-  if (!requestId) return obj || {};
+  if (!requestId) return (obj as Record<string, unknown>) || {};
   if (!obj) return { requestId };
-  return { requestId, ...obj };
+  return { requestId, ...(obj as Record<string, unknown>) };
 }
 
 export const logger = {
-  info: (arg1: any, ...args: any[]): void => {
+  info: (arg1: LogArg, ...args: unknown[]): void => {
     if (typeof arg1 === 'string') {
       pinoLogger.info(getMetadata(), arg1, ...args);
     } else {
-      pinoLogger.info(getMetadata(arg1), ...args);
+      pinoLogger.info(getMetadata(arg1 as Record<string, unknown>), ...(args as [string?, ...unknown[]]));
     }
   },
-  warn: (arg1: any, ...args: any[]): void => {
+  warn: (arg1: LogArg, ...args: unknown[]): void => {
     if (typeof arg1 === 'string') {
       pinoLogger.warn(getMetadata(), arg1, ...args);
     } else {
-      pinoLogger.warn(getMetadata(arg1), ...args);
+      pinoLogger.warn(getMetadata(arg1 as Record<string, unknown>), ...(args as [string?, ...unknown[]]));
     }
   },
-  error: (arg1: any, ...args: any[]): void => {
+  error: (arg1: LogArg, ...args: unknown[]): void => {
     if (typeof arg1 === 'string') {
       const errorObj = args[0];
       if (errorObj instanceof Error) {
         pinoLogger.error(getMetadata({ err: errorObj }), arg1, ...args.slice(1));
       } else if (errorObj && typeof errorObj === 'object') {
-        pinoLogger.error(getMetadata(errorObj), arg1, ...args.slice(1));
+        pinoLogger.error(getMetadata(errorObj as Record<string, unknown>), arg1, ...args.slice(1));
       } else {
         pinoLogger.error(getMetadata(), arg1, ...args);
       }
     } else {
-      pinoLogger.error(getMetadata(arg1), ...args);
+      pinoLogger.error(getMetadata(arg1 as Record<string, unknown>), ...(args as [string?, ...unknown[]]));
     }
   },
-  debug: (arg1: any, ...args: any[]): void => {
+  debug: (arg1: LogArg, ...args: unknown[]): void => {
     if (typeof arg1 === 'string') {
       pinoLogger.debug(getMetadata(), arg1, ...args);
     } else {
-      pinoLogger.debug(getMetadata(arg1), ...args);
+      pinoLogger.debug(getMetadata(arg1 as Record<string, unknown>), ...(args as [string?, ...unknown[]]));
     }
   },
-  child: (bindings: any) => pinoLogger.child(bindings),
+  child: (bindings: Record<string, unknown>) => pinoLogger.child(bindings),
 };

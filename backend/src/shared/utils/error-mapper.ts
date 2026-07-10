@@ -55,7 +55,7 @@ export function mapErrorToDisplayMessage(error: unknown): string {
   }
 
   // Axios
-  if (errMsg.includes('AxiosError') || (error as any).isAxiosError) {
+  if (errMsg.includes('AxiosError') || (typeof error === 'object' && error !== null && 'isAxiosError' in error)) {
     return 'Service unavailable';
   }
 

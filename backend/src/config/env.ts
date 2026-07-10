@@ -36,7 +36,7 @@ const schema = z.object({
   }, { message: "ENCRYPTION_KEY must be a valid base64 string exactly 32 bytes long." }),
 });
 
-function parseConfig() {
+function parseConfig(): z.infer<typeof schema> {
   const result = schema.safeParse(process.env);
 
   if (!result.success) {

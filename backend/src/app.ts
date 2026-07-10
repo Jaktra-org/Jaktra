@@ -73,7 +73,6 @@ import { PaymentGatewayFactory } from './modules/payment/gateway.factory.js';
 import { RazorpayAdapter } from './modules/payment/adapters/razorpay.adapter.js';
 import { WebhookService } from './modules/webhook/webhook.service.js';
 import { SendgridWebhookService } from './modules/webhook/providers/sendgrid.webhook.js';
-import { SendgridProvider } from './modules/communication/providers/sendgrid.provider.js';
 import { standardLimiter, authLimiter } from './middleware/rate-limiter.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { requestId } from './middleware/request-id.js';
