@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
   History, Search, Filter, RefreshCw, ArrowRight,
-  User, Settings as SettingsIcon, Shield, Zap, FileText, CreditCard,
+  Settings as SettingsIcon, Shield, Zap, FileText, CreditCard,
   AlertTriangle, Play, CheckCircle2, XCircle, ShieldAlert, Calendar
 } from "lucide-react";
 import { eventService } from "../services/event";
@@ -52,6 +52,30 @@ const categoryActionTypeMap: Record<string, string[]> = {
   ]
 };
 
+const eventCategoryMap: {
+  prefix: string;
+  icon: any;
+  colorClass: string;
+  badgeStyle: string;
+}[] = [
+  { prefix: 'user.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
+  { prefix: 'settings.', icon: SettingsIcon, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
+  { prefix: 'integration.', icon: Zap, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  { prefix: 'payment.received', icon: CheckCircle2, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  { prefix: 'payment.', icon: CreditCard, colorClass: 'text-cyan-600', badgeStyle: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
+  { prefix: 'invoice.deleted', icon: XCircle, colorClass: 'text-rose-600', badgeStyle: 'bg-rose-50 text-rose-700 border-rose-100' },
+  { prefix: 'invoice.', icon: FileText, colorClass: 'text-blue-600', badgeStyle: 'bg-blue-50 text-blue-700 border-blue-100' },
+  { prefix: 'dlq.', icon: AlertTriangle, colorClass: 'text-amber-500', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
+  { prefix: 'agent.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+  { prefix: 'reconciler.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+];
+
+const getEventConfig = (actionType: string) => {
+  const cfg = eventCategoryMap.find(m => actionType.startsWith(m.prefix));
+  if (cfg) return cfg;
+  return { icon: History, colorClass: 'text-slate-500', badgeStyle: 'bg-slate-50 text-slate-700 border-slate-100' };
+};
+
 export function ActivityLog() {
   const [events, setEvents] = useState<InvoiceEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +87,12 @@ export function ActivityLog() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSource, setSelectedSource] = useState("all");
   const [selectedDateRange, setSelectedDateRange] = useState("all");
+  const [activeHoverCard, setActiveHoverCard] = useState<{
+    eventId: string;
+    name: string;
+    role: string | null;
+    email: string | null;
+  } | null>(null);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -144,27 +174,37 @@ export function ActivityLog() {
     );
   });
 
+  const formatCurrency = (val: any) => {
+    const amount = Number(val);
+    if (isNaN(amount)) return '₹0.00';
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+    }).format(amount);
+  };
+
+  const formatDateValue = (val: any) => {
+    if (!val) return '—';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+      const date = new Date(val);
+      if (!isNaN(date.getTime())) {
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'short' });
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+      }
+    }
+    return String(val);
+  };
+
   const getEventIcon = (actionType: string) => {
-    if (actionType.startsWith('user.')) return <Shield className="h-5 w-5 text-violet-600" />;
-    if (actionType.startsWith('settings.')) return <SettingsIcon className="h-5 w-5 text-amber-600" />;
-    if (actionType.startsWith('integration.')) return <Zap className="h-5 w-5 text-emerald-600" />;
-    if (actionType.startsWith('payment.received')) return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
-    if (actionType.startsWith('payment.')) return <CreditCard className="h-5 w-5 text-cyan-600" />;
-    if (actionType.startsWith('invoice.deleted')) return <XCircle className="h-5 w-5 text-rose-600" />;
-    if (actionType.startsWith('invoice.')) return <FileText className="h-5 w-5 text-blue-600" />;
-    if (actionType.startsWith('dlq.')) return <AlertTriangle className="h-5 w-5 text-amber-500" />;
-    if (actionType.endsWith('.run_triggered')) return <Play className="h-5 w-5 text-indigo-600" />;
-    return <History className="h-5 w-5 text-slate-500" />;
+    const config = getEventConfig(actionType);
+    const IconComponent = config.icon;
+    return <IconComponent className={`h-5 w-5 ${config.colorClass}`} />;
   };
 
   const getActionBadgeStyles = (actionType: string) => {
-    if (actionType.startsWith('user.')) return 'bg-violet-50 text-violet-700 border-violet-100';
-    if (actionType.startsWith('settings.')) return 'bg-amber-50 text-amber-700 border-amber-100';
-    if (actionType.startsWith('integration.')) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-    if (actionType.startsWith('invoice.')) return 'bg-blue-50 text-blue-700 border-blue-100';
-    if (actionType.startsWith('payment.')) return 'bg-cyan-50 text-cyan-700 border-cyan-100';
-    if (actionType.startsWith('followup.')) return 'bg-rose-50 text-rose-700 border-rose-100';
-    return 'bg-slate-50 text-slate-700 border-slate-100';
+    return getEventConfig(actionType).badgeStyle;
   };
 
   const getSourceBadgeStyles = (source: string) => {
@@ -182,6 +222,21 @@ export function ActivityLog() {
     }
   };
 
+  const getSourceTooltip = (source: string) => {
+    switch (source.toLowerCase()) {
+      case 'ui':
+        return 'Triggered manually via the dashboard console';
+      case 'agent':
+        return 'Executed automatically by the AI agent system';
+      case 'webhook':
+        return 'Triggered by an external webhook integration';
+      case 'api':
+        return 'Triggered via the integrations or developer API';
+      default:
+        return 'Executed by the Jaktra system automated service';
+    }
+  };
+
   const renderEventDetails = (event: InvoiceEvent) => {
     const formatVal = (v: any) => {
       if (v === null || v === undefined) return "None";
@@ -192,6 +247,36 @@ export function ActivityLog() {
     const hasChanges = (event.oldValues && Object.keys(event.oldValues).length > 0) || 
                        (event.newValues && Object.keys(event.newValues).length > 0);
 
+    // Keep detail box for invoice.deleted as it displays client, amount, status details not in the title
+    if (event.actionType === 'invoice.deleted' && event.oldValues) {
+      const vals = event.oldValues;
+      const formattedFields = [
+        vals.invoiceNo ? { label: "Invoice No", value: vals.invoiceNo } : null,
+        vals.clientName ? { label: "Client", value: vals.clientName } : null,
+        vals.contactEmail ? { label: "Contact Email", value: vals.contactEmail } : null,
+        vals.invoiceAmount !== undefined ? { label: "Amount", value: formatCurrency(vals.invoiceAmount) } : null,
+        vals.dueDate ? { label: "Due Date", value: formatDateValue(vals.dueDate) } : null,
+        vals.paymentStatus ? { label: "Status", value: vals.paymentStatus } : null,
+      ].filter(Boolean) as { label: string; value: string }[];
+
+      if (formattedFields.length > 0) {
+        return (
+          <div className="mt-3 text-xs bg-slate-50/50 p-3 rounded-lg border border-slate-100 text-slate-600 space-y-1.5 pl-3 border-l-2 border-slate-300">
+            <div className="font-bold text-slate-700 mb-1 uppercase text-[10px] tracking-wider">Deleted Invoice Details:</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-medium">
+              {formattedFields.map((f, i) => (
+                <div key={i} className="flex justify-between sm:justify-start gap-2 py-0.5 border-b border-slate-100 last:border-0 sm:border-0">
+                  <span className="text-slate-400 font-semibold">{f.label}:</span>
+                  <span className="text-slate-700 font-bold">{f.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+    }
+
+    // Keep detail box for settings.updated to list all changed settings keys/values
     if (event.actionType === 'settings.updated' && hasChanges) {
       const keys = Object.keys({ ...event.oldValues, ...event.newValues });
       return (
@@ -209,6 +294,7 @@ export function ActivityLog() {
       );
     }
 
+    // Keep detail box for user.role_updated to show role transition
     if (event.actionType === 'user.role_updated' && hasChanges) {
       return (
         <div className="mt-3 text-xs flex items-center space-x-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100 font-mono">
@@ -220,57 +306,216 @@ export function ActivityLog() {
       );
     }
 
-    if (hasChanges) {
-      return (
-        <div className="mt-3 text-xs bg-slate-50 p-3 rounded-lg border border-slate-100 font-mono text-slate-600 space-y-1">
-          {event.oldValues && Object.keys(event.oldValues).length > 0 && (
-            <div>
-              <span className="font-bold text-slate-700">Previous: </span>
-              <span>{JSON.stringify(event.oldValues)}</span>
-            </div>
-          )}
-          {event.newValues && Object.keys(event.newValues).length > 0 && (
-            <div>
-              <span className="font-bold text-slate-700">New Values: </span>
-              <span className="text-slate-800">{JSON.stringify(event.newValues)}</span>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (event.payload && Object.keys(event.payload).length > 0) {
-      return (
-        <div className="mt-3 text-xs bg-slate-50 p-3 rounded-lg border border-slate-100 font-mono text-slate-600">
-          <span className="font-bold text-slate-700">Details: </span>
-          <span>{JSON.stringify(event.payload)}</span>
-        </div>
-      );
-    }
-
+    // All other events are title-only because their description includes all variables
     return null;
   };
 
-  const getActorDescription = (evt: InvoiceEvent) => {
-    if (evt.actorName) {
-      return (
-        <span className="inline-flex items-center space-x-1">
-          <User className="h-3 w-3 text-slate-400" />
-          <span className="font-semibold text-slate-700">{evt.actorName}</span>
-          {evt.actorEmail && <span className="text-slate-400 text-xs">({evt.actorEmail})</span>}
-          {evt.actorRole && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-800 ml-1">
-              {evt.actorRole}
+  const renderActorSection = (evt: InvoiceEvent) => {
+    const displayName = evt.actorName || (evt.source === 'agent' ? 'AI Agent' : evt.source === 'webhook' ? 'Webhook' : 'System');
+    
+    if (!evt.actorName) {
+      return <span className="font-semibold text-slate-900">{displayName}</span>;
+    }
+
+    const isCardOpen = activeHoverCard?.eventId === evt.id;
+    const initials = evt.actorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+
+    return (
+      <span 
+        className="relative inline-block mr-1"
+        onMouseEnter={() => setActiveHoverCard({
+          eventId: evt.id,
+          name: evt.actorName || '',
+          role: evt.actorRole,
+          email: evt.actorEmail
+        })}
+        onMouseLeave={() => setActiveHoverCard(null)}
+      >
+        <span className="font-bold text-slate-950 border-b border-dotted border-slate-400 hover:text-indigo-600 transition-colors cursor-pointer">
+          {evt.actorName}
+        </span>
+        
+        {/* Hover card */}
+        {isCardOpen && (
+          <span className="absolute z-50 bottom-full left-0 mb-2 w-60 bg-white border border-slate-200 rounded-xl p-3 shadow-lg text-left block pointer-events-none animate-timeline-fade-in font-sans leading-normal">
+            <span className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                {initials}
+              </span>
+              <span className="block min-w-0">
+                <span className="block font-bold text-slate-900 text-xs truncate">{evt.actorName}</span>
+                {evt.actorRole && (
+                  <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                    {evt.actorRole}
+                  </span>
+                )}
+              </span>
             </span>
-          )}
+            {evt.actorEmail && (
+              <span className="block mt-2 pt-1.5 border-t border-slate-100">
+                <span className="block text-[8px] uppercase font-bold text-slate-400 tracking-wider">Email</span>
+                <span className="block text-[10px] text-slate-600 font-mono truncate select-all">{evt.actorEmail}</span>
+              </span>
+            )}
+          </span>
+        )}
+      </span>
+    );
+  };
+
+  const renderActivitySentence = (evt: InvoiceEvent) => {
+    const actor = renderActorSection(evt);
+    const action = evt.actionType.toLowerCase();
+
+    if (action === 'user.invited') {
+      const email = evt.newValues?.email || evt.payload?.email || 'new user';
+      const role = evt.newValues?.role || evt.payload?.role || 'member';
+      const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+      return (
+        <span>
+          {actor} invited <span className="font-semibold text-slate-900">{email}</span> as <span className="font-bold text-slate-950">{capitalizedRole}</span>
         </span>
       );
     }
-    
-    // Fallback for system / agent
-    if (evt.source === 'agent') return <span className="font-semibold text-slate-700">AI agent</span>;
-    if (evt.source === 'webhook') return <span className="font-semibold text-slate-700">External Webhook</span>;
-    return <span className="font-semibold text-slate-700">System event</span>;
+
+    if (action === 'user.invite_resent') {
+      const email = evt.newValues?.email || evt.payload?.email || 'user';
+      return (
+        <span>
+          {actor} resent the team invitation to <span className="font-semibold text-slate-900">{email}</span>
+        </span>
+      );
+    }
+
+    if (action === 'user.invite_revoked') {
+      const email = evt.newValues?.email || evt.payload?.email || 'user';
+      return (
+        <span>
+          {actor} revoked the team invitation for <span className="font-semibold text-slate-900">{email}</span>
+        </span>
+      );
+    }
+
+    if (action === 'user.joined') {
+      return (
+        <span>
+          {actor} joined the organization
+        </span>
+      );
+    }
+
+    if (action === 'user.role_updated') {
+      const targetName = evt.newValues?.name || evt.payload?.name || 'user';
+      const role = evt.newValues?.role || evt.payload?.role || '';
+      const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+      return (
+        <span>
+          {actor} updated the role of <span className="font-semibold text-slate-900">{targetName}</span> to <span className="font-bold text-slate-950">{capitalizedRole}</span>
+        </span>
+      );
+    }
+
+    if (action === 'user.removed') {
+      const targetName = evt.newValues?.name || evt.payload?.name || 'user';
+      return (
+        <span>
+          {actor} removed <span className="font-semibold text-slate-900">{targetName}</span> from the organization
+        </span>
+      );
+    }
+
+    if (action === 'settings.updated') {
+      return (
+        <span>
+          {actor} updated organization settings
+        </span>
+      );
+    }
+
+    if (action === 'settings.webhook_token_rotated') {
+      return (
+        <span>
+          {actor} rotated the webhook signature token
+        </span>
+      );
+    }
+
+    if (action === 'integration.connected') {
+      const provider = evt.payload?.provider || evt.newValues?.provider || 'service';
+      const capitalizedProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
+      return (
+        <span>
+          {actor} connected <span className="font-bold text-slate-950">{capitalizedProvider}</span> integration
+        </span>
+      );
+    }
+
+    if (action === 'integration.disconnected') {
+      const provider = evt.payload?.provider || evt.oldValues?.provider || 'service';
+      const capitalizedProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
+      return (
+        <span>
+          {actor} disconnected <span className="font-bold text-slate-950">{capitalizedProvider}</span> integration
+        </span>
+      );
+    }
+
+    if (action === 'integration.default_email_changed') {
+      const email = evt.newValues?.email || evt.payload?.email || '';
+      return (
+        <span>
+          {actor} changed default billing notification email to <span className="font-semibold text-slate-900">{email}</span>
+        </span>
+      );
+    }
+
+    if (action === 'invoice.bulk_imported') {
+      const count = evt.payload?.count || evt.newValues?.count || 'multiple';
+      return (
+        <span>
+          {actor} bulk-imported <span className="font-bold text-slate-955">{count}</span> invoices
+        </span>
+      );
+    }
+
+    if (action === 'agent.run_triggered') {
+      return (
+        <span>
+          {actor} triggered automated AI agent run
+        </span>
+      );
+    }
+
+    if (action === 'reconciler.run_triggered') {
+      return (
+        <span>
+          {actor} triggered payment reconciliation run
+        </span>
+      );
+    }
+
+    if (action === 'invoice.deleted') {
+      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      return (
+        <span>
+          {actor} deleted Invoice <span className="font-bold text-slate-950">#{invoiceNo}</span>
+        </span>
+      );
+    }
+
+    if (action === 'dlq.cleared') {
+      return (
+        <span>
+          {actor} cleared all dead-letter queue (DLQ) alerts
+        </span>
+      );
+    }
+
+    return (
+      <span>
+        {actor} executed <span className="font-semibold text-slate-950">{evt.description || evt.actionType}</span>
+      </span>
+    );
   };
 
   return (
@@ -442,13 +687,10 @@ export function ActivityLog() {
                   {getEventIcon(evt.actionType)}
                 </div>
 
-                {/* Event Info */}
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                    <div className="text-sm text-slate-800">
-                      {getActorDescription(evt)}
-                      <span className="text-slate-500 font-medium"> executed </span>
-                      <span className="font-semibold text-slate-950">{evt.description || evt.actionType}</span>
+                    <div className="text-sm text-slate-800 leading-snug">
+                      {renderActivitySentence(evt)}
                     </div>
                     <div className="text-xs text-slate-400 whitespace-nowrap self-start sm:self-center font-medium">
                       {new Date(evt.createdAt).toLocaleString(undefined, { 
@@ -466,16 +708,19 @@ export function ActivityLog() {
                       {evt.actionType}
                     </span>
 
-                    {/* Source badge */}
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${getSourceBadgeStyles(evt.source)}`}>
+                    {/* Source badge with descriptive tooltip */}
+                    <span 
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border cursor-default ${getSourceBadgeStyles(evt.source)}`}
+                      title={getSourceTooltip(evt.source)}
+                    >
                       {evt.source.toUpperCase()}
                     </span>
 
-                    {/* Invoice marker: Link if active, red badge if soft-deleted */}
+                    {/* Invoice marker: Link if active, neutral badge if soft-deleted */}
                     {evt.entityType === 'invoice' && (
                       evt.invoiceDeletedAt || evt.actionType === 'invoice.deleted' || !evt.invoiceNo ? (
                         <span 
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-100" 
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200" 
                           title="This invoice has been deleted and cannot be viewed."
                         >
                           Invoice: #{evt.invoiceNo || 'Deleted'} (Deleted - View Not Available)
