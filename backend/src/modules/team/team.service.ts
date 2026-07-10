@@ -7,8 +7,9 @@ import { AuthError, ValidationError } from '../../shared/errors/index.js';
 import { logger } from '../../shared/logger.js';
 import { config } from '../../config/env.js';
 
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { users, teamInvitations } from '../../db/schema.js';
+import type { DatabaseClient } from '../../db/index.js';
 
 export interface InviteInput {
   email: string;
@@ -61,9 +62,9 @@ export class TeamService {
 
     let invitationId: string;
     let expiresAt: Date = new Date();
-    let rawToken = crypto.randomBytes(32).toString('hex');
+    const rawToken = crypto.randomBytes(32).toString('hex');
 
-    await this.teamRepo.client.transaction(async (tx: any) => {
+    await this.teamRepo.client.transaction(async (tx: DatabaseClient) => {
       const txTeamRepo = new TeamRepository(tx);
       
       await txTeamRepo.lockTenant(tenantId);
@@ -125,16 +126,16 @@ export class TeamService {
         `,
       });
       await this.teamRepo.updateInvitationDeliveryStatus(invitationId, 'sent');
-    } catch (error: any) {
+    } catch (error: unknown) {
       await this.teamRepo.updateInvitationDeliveryStatus(invitationId, 'failed', 'Delivery failed');
       throw error;
     }
   }
 
   async resendInvitation(tenantId: string, invitationId: string) {
-    let newInvite: any;
+    let newInvite: Awaited<ReturnType<TeamRepository['createInvitation']>>;
     let rawToken: string = '';
-    await this.teamRepo.client.transaction(async (tx: any) => {
+    await this.teamRepo.client.transaction(async (tx: DatabaseClient) => {
       const txTeamRepo = new TeamRepository(tx);
       const invite = await txTeamRepo.findInvitationById(tenantId, invitationId, true);
       if (!invite || invite.acceptedAt || invite.revokedAt) {
@@ -167,7 +168,7 @@ export class TeamService {
   }
 
   async revokeInvitation(tenantId: string, invitationId: string) {
-    return await this.teamRepo.client.transaction(async (tx: any) => {
+    return await this.teamRepo.client.transaction(async (tx: DatabaseClient) => {
       const txTeamRepo = new TeamRepository(tx);
       const invite = await txTeamRepo.findInvitationById(tenantId, invitationId, true);
       if (!invite || invite.acceptedAt || invite.revokedAt) {
@@ -182,7 +183,7 @@ export class TeamService {
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     const passwordHash = await bcrypt.hash(password, 12);
 
-    return await this.teamRepo.client.transaction(async (tx: any) => {
+    return await this.teamRepo.client.transaction(async (tx: DatabaseClient) => {
       const txTeamRepo = new TeamRepository(tx);
       const txUserRepo = new UserRepository(tx);
       const invite = await txTeamRepo.findInvitationByTokenHash(tokenHash, true);
@@ -227,7 +228,7 @@ export class TeamService {
     if (userId === removedByUserId) {
       throw new AuthError('You cannot remove yourself from the team', 400);
     }
-    return await this.teamRepo.client.transaction(async (tx: any) => {
+    return await this.teamRepo.client.transaction(async (tx: DatabaseClient) => {
       const txTeamRepo = new TeamRepository(tx);
       const txUserRepo = new UserRepository(tx);
       
@@ -248,7 +249,7 @@ export class TeamService {
   }
 
   async updateMemberRole(tenantId: string, userId: string, newRole: 'admin' | 'manager' | 'viewer') {
-    return await this.teamRepo.client.transaction(async (tx: any) => {
+    return await this.teamRepo.client.transaction(async (tx: DatabaseClient) => {
       const txTeamRepo = new TeamRepository(tx);
       const txUserRepo = new UserRepository(tx);
 

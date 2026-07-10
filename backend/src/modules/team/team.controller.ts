@@ -21,8 +21,10 @@ const acceptInviteSchema = z.object({
   name: z.string().min(1).max(100),
 });
 
-const sanitizeInvitation = (inv: any) => {
-  const { tokenHash, deliveryError, ...safe } = inv;
+const sanitizeInvitation = (inv: Record<string, unknown>) => {
+  const safe = { ...inv };
+  delete safe.tokenHash;
+  delete safe.deliveryError;
   return safe;
 };
 
@@ -49,7 +51,8 @@ export class TeamController {
       const { tenantId } = (req as AuthenticatedRequest).user;
       const members = await this.teamRepo.listActiveMembers(tenantId);
       res.status(200).json(members.map(m => {
-        const { passwordHash, ...safe } = m;
+        const safe = { ...m } as Partial<typeof m>;
+        delete safe.passwordHash;
         return safe;
       }));
     } catch (err: unknown) {
@@ -145,7 +148,7 @@ export class TeamController {
     try {
       const { tenantId } = (req as AuthenticatedRequest).user;
       const memberId = req.params.id as string;
-      const removedUser = await this.teamService.removeMember(tenantId, memberId, ((req as AuthenticatedRequest).user as any).userId || ((req as AuthenticatedRequest).user as any).sub || 'unknown');
+      const removedUser = await this.teamService.removeMember(tenantId, memberId, (req as AuthenticatedRequest).user.userId || 'unknown');
 
       if (this.eventService && removedUser) {
         const actor = this.getActorContext(req);
