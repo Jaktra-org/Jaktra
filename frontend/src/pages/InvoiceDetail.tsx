@@ -434,8 +434,8 @@ export function InvoiceDetail() {
           );
         }
         
-        // Sanity-check: Ambiguous "subject" -> "follow-up subject"
-        const displayLabel = key === 'subject' ? 'follow-up subject' : key.replace(/([A-Z])/g, ' $1').toLowerCase();
+        // Sanity-check: Ambiguous "subject" -> "invoice description"
+        const displayLabel = key === 'subject' ? 'invoice description' : key.replace(/([A-Z])/g, ' $1').toLowerCase();
         
         if (isFirstTime) {
           return (
@@ -953,7 +953,10 @@ export function InvoiceDetail() {
                           setExpandedGroups(prev => ({ ...prev, [id]: !prev[id] }));
                         };
                         return displayTimeline.map((event) => {
-                          const keys = Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
+                          const type = (event.actionType || event.eventType || '').toLowerCase();
+                          const keys = (type === 'invoice.trashed' || type === 'invoice.restored')
+                            ? []
+                            : Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
                           const isExpanded = !!expandedGroups[event.id];
                           
                           return (
@@ -1032,7 +1035,7 @@ export function InvoiceDetail() {
                                       if (oldVal === newVal) return null;
                                       
                                       const isDiffFirstTime = oldVal === null || oldVal === undefined || oldVal === '' || String(oldVal).toLowerCase() === 'none';
-                                      const displayLabel = key === 'subject' ? 'Follow-up Subject' : key.replace(/([A-Z])/g, ' $1');
+                                      const displayLabel = key === 'subject' ? 'Invoice Description' : key.replace(/([A-Z])/g, ' $1');
                                       
                                       const formattedOld = key === 'invoiceAmount' ? formatCurrency(oldVal) : key === 'dueDate' ? formatDateValue(oldVal) : String(oldVal ?? '—');
                                       const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');

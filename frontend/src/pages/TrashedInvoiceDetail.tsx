@@ -299,7 +299,7 @@ export function TrashedInvoiceDetail() {
           }
           return <span>{actor} changed status from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span></span>;
         }
-        const displayLabel = key === 'subject' ? 'follow-up subject' : key.replace(/([A-Z])/g, ' $1').toLowerCase();
+        const displayLabel = key === 'subject' ? 'invoice description' : key.replace(/([A-Z])/g, ' $1').toLowerCase();
         if (isFirstTime) {
           return <span>{actor} set the {displayLabel} to <span className="font-bold text-slate-955">{String(newVal ?? '—')}</span></span>;
         }
@@ -677,7 +677,10 @@ export function TrashedInvoiceDetail() {
                           setExpandedGroups(prev => ({ ...prev, [id]: !prev[id] }));
                         };
                         return displayTimeline.map((event) => {
-                          const keys = Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
+                          const type = (event.actionType || event.eventType || '').toLowerCase();
+                          const keys = (type === 'invoice.trashed' || type === 'invoice.restored')
+                            ? []
+                            : Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
                           const isExpanded = !!expandedGroups[event.id];
                           
                           return (
@@ -741,7 +744,7 @@ export function TrashedInvoiceDetail() {
                                       const newVal = event.newValues?.[key];
                                       if (oldVal === newVal) return null;
                                       const isDiffFirstTime = oldVal === null || oldVal === undefined || oldVal === '' || String(oldVal).toLowerCase() === 'none';
-                                      const displayLabel = key === 'subject' ? 'Follow-up Subject' : key.replace(/([A-Z])/g, ' $1');
+                                      const displayLabel = key === 'subject' ? 'Invoice Description' : key.replace(/([A-Z])/g, ' $1');
                                       const formattedOld = key === 'invoiceAmount' ? formatCurrency(oldVal) : key === 'dueDate' ? formatDateValue(oldVal) : String(oldVal ?? '—');
                                       const formattedNew = key === 'invoiceAmount' ? formatCurrency(newVal) : key === 'dueDate' ? formatDateValue(newVal) : String(newVal ?? '—');
                                       return (
