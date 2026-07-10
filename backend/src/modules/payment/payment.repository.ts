@@ -6,7 +6,7 @@ export class PaymentRepository {
   constructor(private db: DatabaseClient) {}
   async insertWebhookEvent(event: Partial<typeof paymentWebhookEvents.$inferInsert>) {
     const [result] = await this.db.insert(paymentWebhookEvents)
-      .values(event as any)
+      .values(event as typeof paymentWebhookEvents.$inferInsert)
       .onConflictDoUpdate({
         target: [paymentWebhookEvents.tenantId, paymentWebhookEvents.provider, paymentWebhookEvents.externalEventId],
         set: { 
@@ -31,7 +31,7 @@ export class PaymentRepository {
       .where(and(
         eq(invoicePaymentLinks.tenantId, tenantId),
         eq(invoicePaymentLinks.invoiceId, invoiceId),
-        eq(invoicePaymentLinks.provider, provider as any),
+        eq(invoicePaymentLinks.provider, provider),
         eq(invoicePaymentLinks.status, 'active')
       ))
       .limit(1);
@@ -44,7 +44,7 @@ export class PaymentRepository {
       .where(and(
         eq(invoicePaymentLinks.tenantId, tenantId),
         eq(invoicePaymentLinks.providerPaymentLinkId, providerPaymentLinkId),
-        eq(invoicePaymentLinks.provider, provider as any),
+        eq(invoicePaymentLinks.provider, provider),
         eq(invoicePaymentLinks.status, 'active')
       ))
       .limit(1);

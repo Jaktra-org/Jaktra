@@ -5,7 +5,7 @@ export interface WebhookEventPayload {
   currency: string;
   status: 'captured' | 'failed' | 'other';
   externalRefId?: string;
-  rawEvent: any;
+  rawEvent: Record<string, unknown>;
 }
 
 export interface IPaymentGateway {

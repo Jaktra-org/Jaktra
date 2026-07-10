@@ -46,8 +46,8 @@ export class WebhookService {
             externalRefId: payload.externalRefId,
           }
         }
-      ).catch((err: any) => {
-        logger.error('Failed to log payment.received audit event', err);
+      ).catch((err: unknown) => {
+        logger.error('Failed to log payment.received audit event', err instanceof Error ? err : String(err));
       });
 
       logger.info(`Successfully processed payment capture for invoice ${invoice.id} from ${payload.provider}`);

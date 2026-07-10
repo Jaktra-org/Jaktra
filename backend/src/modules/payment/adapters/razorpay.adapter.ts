@@ -100,7 +100,7 @@ export class RazorpayAdapter implements IPaymentGateway {
       throw new ExternalServiceError('Failed to generate Razorpay payment link', `Razorpay API error: ${response.status} ${errorBody}`);
     }
 
-    const data = await response.json() as any;
+    const data = await response.json() as { short_url: string; id: string; order_id: string };
     return {
       paymentUrl: data.short_url,
       providerPaymentLinkId: data.id,

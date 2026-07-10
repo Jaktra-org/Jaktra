@@ -8,6 +8,25 @@ import type { SettingsRepository } from '../settings/settings.repository.js';
 import type { EventRepository } from '../event/event.repository.js';
 import { NotFoundError, ValidationError, AuthError } from '../../shared/errors/index.js';
 
+interface RazorpayWebhookPayload {
+  event_id?: string;
+  'x-razorpay-event-id'?: string;
+  payload?: {
+    payment?: {
+      entity?: {
+        email?: string;
+        contact?: string;
+        payment_link_id?: string;
+      };
+    };
+    payment_link?: {
+      entity?: {
+        id?: string;
+      };
+    };
+  };
+}
+
 export class PaymentService {
   constructor(
     private readonly repo: PaymentRepository,
@@ -57,8 +76,10 @@ export class PaymentService {
               amount: String(invoice.invoiceAmount),
               currency: invoice.currency,
             });
-          } catch (e: any) {
-            if (e.code !== '23505') logger.error('Failed to save fallback link', { error: e });
+          } catch (e: unknown) {
+            if (e && typeof e === 'object' && 'code' in e && e.code !== '23505') {
+              logger.error('Failed to save fallback link', { error: e });
+            }
           }
           return settings.paymentLink;
         }
@@ -77,8 +98,8 @@ export class PaymentService {
           currency: invoice.currency,
         });
         return newLink.paymentUrl;
-      } catch (err: any) {
-        if (err.code === '23505') {
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'code' in err && err.code === '23505') {
           logger.warn(`Concurrent link generation for invoice ${invoiceId}. Re-fetching active link.`);
           const activeLink = await this.repo.getActivePaymentLink(tenantId, invoiceId, provider);
           if (activeLink) return activeLink.paymentUrl;
@@ -99,7 +120,7 @@ export class PaymentService {
     await this.repo.cancelActiveLinks(tenantId, invoiceId);
   }
 
-  async processPaymentCaptured(tenantId: string, provider: 'razorpay', payload: any, rawBody: Buffer, signature: string) {
+  async processPaymentCaptured(tenantId: string, provider: 'razorpay', payload: RazorpayWebhookPayload, rawBody: Buffer, signature: string) {
     const adapter = this.gatewayFactory.getAdapter(provider);
     if (!adapter) throw new ValidationError(`Provider ${provider} not registered`);
 
@@ -129,8 +150,8 @@ export class PaymentService {
             status: 'ignored',
             rawPayload: sanitizedPayload,
           });
-        } catch (e: any) {
-          if (e.code === '23505') return { status: 'ignored' };
+        } catch (e: unknown) {
+          if (e && typeof e === 'object' && 'code' in e && e.code === '23505') return { status: 'ignored' };
         }
       }
       return { status: 'ignored' };
@@ -168,8 +189,8 @@ export class PaymentService {
         status: 'pending',
         rawPayload: sanitizedPayload,
       });
-    } catch (e: any) {
-      if (e.code === '23505') {
+    } catch (e: unknown) {
+      if (e && typeof e === 'object' && 'code' in e && e.code === '23505') {
         return { status: 'ignored' };
       }
       throw e;

@@ -3,6 +3,15 @@ import { CommunicationService } from '../../communication/communication.service.
 import { logger } from '../../../shared/logger.js';
 import { ForbiddenError, ValidationError } from '../../../shared/errors/index.js';
 
+interface SendgridEvent extends Record<string, unknown> {
+  event?: string;
+  communication_id?: string;
+  invoice_id?: string;
+  tenant_id?: string;
+  run_id?: string;
+  timestamp?: number;
+}
+
 export class SendgridWebhookService {
   private eventWebhook: EventWebhook;
 
@@ -37,12 +46,10 @@ export class SendgridWebhookService {
       throw new ForbiddenError('Missing SendGrid webhook signature headers');
     }
 
-    let events: any[] = [];
+    let events: SendgridEvent[] = [];
     try {
-      events = JSON.parse(rawBody.toString('utf8'));
-      if (!Array.isArray(events)) {
-        events = [events]; 
-      }
+      const parsed = JSON.parse(rawBody.toString('utf8'));
+      events = Array.isArray(parsed) ? parsed : [parsed];
     } catch (error) {
       logger.error('Failed to parse SendGrid webhook payload', { error });
       throw new ValidationError('Invalid JSON payload');

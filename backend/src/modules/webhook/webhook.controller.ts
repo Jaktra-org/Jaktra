@@ -16,7 +16,7 @@ export class WebhookController {
     private sendgridService?: SendgridWebhookService
   ) {}
 
-  handleSendgrid = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  handleSendgrid = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!this.sendgridService) {
       next(new AppError({
         statusCode: 501,
@@ -60,7 +60,7 @@ export class WebhookController {
     }
   };
 
-  handlePayment = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  handlePayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const webhookToken = req.params.webhookToken as string;
     const provider = req.params.provider as string;
     
@@ -97,17 +97,18 @@ export class WebhookController {
       let payload;
       try {
         payload = JSON.parse(rawBody.toString('utf8'));
-      } catch (e) {
+      } catch {
         next(new ValidationError('Invalid JSON body'));
         return;
       }
 
-      const result = await this.paymentService.processPaymentCaptured(tenantId as string, provider as any, payload, rawBody, signature as string);
+      const result = await this.paymentService.processPaymentCaptured(tenantId as string, provider as 'razorpay', payload, rawBody, signature as string);
       res.status(200).json(result);
-    } catch (error: any) {
-      logger.warn(`Failed to process payment capture webhook: ${error.message || String(error)}`);
-      if (error.message === 'Invalid signature' || error.message?.includes('not registered')) {
-        next(new AuthError('Payment capture webhook verification failed', 401, error.message));
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.warn(`Failed to process payment capture webhook: ${errMsg}`);
+      if (errMsg === 'Invalid signature' || errMsg.includes('not registered')) {
+        next(new AuthError('Payment capture webhook verification failed', 401, errMsg));
         return;
       }
       next(error);
