@@ -96,6 +96,22 @@ const getEventConfig = (actionType: string) => {
   return { icon: History, colorClass: 'text-slate-500', badgeStyle: 'bg-slate-50 text-slate-700 border-slate-100' };
 };
 
+const settingsKeyNames: Record<string, string> = {
+  companyName: 'organization name',
+  senderName: 'sender name',
+  senderEmail: 'sender email',
+  replyTo: 'reply-to email',
+  paymentLink: 'default payment link',
+  bankDetails: 'bank details',
+  timezone: 'timezone',
+  scheduleHour: 'daily run time',
+  idempotencyWindowHours: 'idempotency window',
+  defaultEmailProvider: 'default email provider',
+  skipPaymentWarning: 'skip payment warning',
+  autoPurgeEnabled: 'auto-purge status',
+  autoPurgeDays: 'auto-purge window',
+};
+
 export function ActivityLog() {
   const [events, setEvents] = useState<InvoiceEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -298,18 +314,31 @@ export function ActivityLog() {
 
     // Keep detail box for settings.updated to list all changed settings keys/values
     if (event.actionType === 'settings.updated' && hasChanges) {
-      const keys = Object.keys({ ...event.oldValues, ...event.newValues });
+      const oldVals = event.oldValues || {};
+      const newVals = event.newValues || {};
+      const keys = Object.keys({ ...oldVals, ...newVals }).filter(key => key !== 'updatedAt' && key !== 'tenantId');
+      
+      // Hide the details box for single-field settings updates as the sentence already conveys everything
+      if (keys.length <= 1) {
+        return null;
+      }
+
       return (
-        <div className="mt-3 text-xs space-y-1 bg-slate-50 p-3 rounded-lg border border-slate-100 font-mono text-slate-600">
-          <div className="font-semibold text-slate-700 mb-1">Changed Settings:</div>
-          {keys.map(key => (
-            <div key={key} className="flex flex-wrap items-center gap-1">
-              <span className="font-bold text-slate-800">{key}:</span>
-              <span className="line-through text-red-500 bg-red-50 px-1.5 py-0.5 rounded text-[10px]">{formatVal(event.oldValues?.[key])}</span>
-              <span>&rarr;</span>
-              <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold text-[10px]">{formatVal(event.newValues?.[key])}</span>
-            </div>
-          ))}
+        <div className="mt-3 text-xs space-y-1.5 bg-slate-50/50 p-3 rounded-lg border border-slate-100 pl-3 border-l-2 border-amber-500/80">
+          <div className="font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider font-sans">Changed Settings Details:</div>
+          <div className="grid grid-cols-1 gap-2 font-medium">
+            {keys.map(key => {
+              const label = settingsKeyNames[key] || key;
+              return (
+                <div key={key} className="flex flex-wrap items-center gap-1.5 text-slate-600 font-sans">
+                  <span className="text-slate-400 font-semibold">{label}:</span>
+                  <span className="line-through text-red-500 bg-red-50 px-1.5 py-0.5 rounded text-[10px] font-mono">{formatVal(oldVals[key])}</span>
+                  <span className="text-slate-400">&rarr;</span>
+                  <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold text-[10px] font-mono">{formatVal(newVals[key])}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       );
     }
@@ -445,6 +474,81 @@ export function ActivityLog() {
     }
 
     if (action === 'settings.updated') {
+      const oldVals = evt.oldValues || {};
+      const newVals = evt.newValues || {};
+      const keys = Object.keys({ ...oldVals, ...newVals }).filter(key => key !== 'updatedAt' && key !== 'tenantId');
+
+      if (keys.length === 1) {
+        const key = keys[0];
+        const oldVal = oldVals[key];
+        const newVal = newVals[key];
+
+        if (key === 'autoPurgeEnabled') {
+          const enabled = newVal === true || newVal === 'true';
+          return <span>{actor} {enabled ? 'enabled' : 'disabled'} auto-purge</span>;
+        }
+        if (key === 'autoPurgeDays') {
+          return <span>{actor} changed auto-purge window from <span className="font-semibold text-slate-900">{oldVal ?? 30}</span> to <span className="font-bold text-slate-950">{newVal ?? 30}</span> days</span>;
+        }
+        if (key === 'companyName') {
+          return <span>{actor} changed organization name to <span className="font-bold text-slate-955">"{newVal}"</span></span>;
+        }
+        if (key === 'senderName') {
+          return <span>{actor} updated the sender name to <span className="font-bold text-slate-955">"{newVal}"</span></span>;
+        }
+        if (key === 'senderEmail') {
+          return <span>{actor} updated the sender email to <span className="font-semibold text-slate-900">{newVal}</span></span>;
+        }
+        if (key === 'replyTo') {
+          if (!newVal) {
+            return <span>{actor} removed the reply-to email</span>;
+          }
+          return <span>{actor} changed the reply-to email to <span className="font-semibold text-slate-900">{newVal}</span></span>;
+        }
+        if (key === 'paymentLink') {
+          if (!newVal) {
+            return <span>{actor} removed the default payment link</span>;
+          }
+          return <span>{actor} changed the default payment link to <span className="font-semibold text-slate-900">{newVal}</span></span>;
+        }
+        if (key === 'bankDetails') {
+          return <span>{actor} updated organizational bank details</span>;
+        }
+        if (key === 'timezone') {
+          return <span>{actor} changed the timezone to <span className="font-semibold text-slate-900">{newVal}</span></span>;
+        }
+        if (key === 'scheduleHour') {
+          return <span>{actor} changed the daily run time</span>;
+        }
+        if (key === 'idempotencyWindowHours') {
+          return <span>{actor} changed the idempotency window to <span className="font-semibold text-slate-900">{newVal}</span> hours</span>;
+        }
+        if (key === 'defaultEmailProvider') {
+          const providerName = String(newVal).toUpperCase();
+          return <span>{actor} changed default email provider to <span className="font-bold text-slate-955">{providerName}</span></span>;
+        }
+        if (key === 'skipPaymentWarning') {
+          const skip = newVal === true || newVal === 'true';
+          return <span>{actor} {skip ? 'enabled' : 'disabled'} skip payment warning</span>;
+        }
+
+        // Fallback for single unknown key
+        const label = settingsKeyNames[key] || key;
+        return (
+          <span>
+            {actor} updated setting <span className="font-semibold text-slate-900">{label}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span>
+          </span>
+        );
+      } else if (keys.length > 1) {
+        const keyNames = keys.map(k => settingsKeyNames[k] || k);
+        return (
+          <span>
+            {actor} updated {keys.length} settings: <span className="font-semibold text-slate-900">{keyNames.join(', ')}</span>
+          </span>
+        );
+      }
+
+      // Default fallback if no keys changed
       return (
         <span>
           {actor} updated organization settings
