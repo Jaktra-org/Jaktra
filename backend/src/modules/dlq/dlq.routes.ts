@@ -1,12 +1,12 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { DlqController } from './dlq.controller.js';
 import { requireRole } from '../../middleware/require-role.js';
 import { validateParam } from '../../middleware/validate-param.js';
 
 export function createDlqRouter(
   dlqController: DlqController,
-  authRequired: any,
-  tenantScoped: any
+  authRequired: RequestHandler,
+  tenantScoped: RequestHandler
 ): Router {
   const router = Router();
 

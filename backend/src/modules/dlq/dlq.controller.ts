@@ -48,8 +48,8 @@ export class DlqController {
       if (this.eventService) {
         await this.eventService.emitEvent('invoice', invoice_id, tenantId, 'dlq.cleared', actor, {
           description: `Dead Letter Queue entry cleared manually`,
-        }).catch((err: any) => {
-          logger.error('Failed to log dlq.cleared event', err);
+        }).catch((err: unknown) => {
+          logger.error('Failed to log dlq.cleared event', err instanceof Error ? err : String(err));
         });
       }
 
