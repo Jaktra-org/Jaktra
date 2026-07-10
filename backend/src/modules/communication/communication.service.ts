@@ -85,7 +85,7 @@ export class CommunicationService {
     } else if (eventType === 'clicked') {
       await this.communicationRepo.updateClickedAt(communicationId, timestamp);
     } else if (eventType === 'bounced' || eventType === 'dropped') {
-      const reason = rawEvent.reason || 'Email bounced or dropped';
+      const reason = (rawEvent.reason as string | undefined) || 'Email bounced or dropped';
       await this.communicationRepo.markFailed(communicationId, reason);
 
       // Decrement the followupCount on the invoice
@@ -196,7 +196,7 @@ export class CommunicationService {
     };
     const replyTo = settings.replyTo ? { email: settings.replyTo } : undefined;
 
-    const defaultProvider = (settings as { defaultEmailProvider?: string }).defaultEmailProvider;
+    const defaultProvider = (settings as { defaultEmailProvider?: 'sendgrid' | 'smtp' }).defaultEmailProvider;
     if (!defaultProvider) {
       throw new CommunicationError('EMAIL_PROVIDER_NOT_CONFIGURED', 400);
     }
