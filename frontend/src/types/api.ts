@@ -4,12 +4,28 @@ export interface User {
   name: string;
   email: string;
   role: "admin" | "manager" | "viewer";
+  mfaEnabled: boolean;
   created_at: string;
 }
 
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+export interface MfaPendingResponse {
+  mfaPending: true;
+  mfaPendingToken: string;
+}
+
+export type LoginResponse = AuthResponse | MfaPendingResponse;
+
+export interface MfaSetupInitiateResponse {
+  qrCodeDataUrl: string;
+}
+
+export interface MfaSetupConfirmResponse {
+  backupCodes: string[];
 }
 
 export interface ApiError {

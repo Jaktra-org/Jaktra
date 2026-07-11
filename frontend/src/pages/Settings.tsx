@@ -9,6 +9,7 @@ import { getErrorMessage } from '../utils/error-utils';
 import { useAuth } from '../contexts/AuthContext';
 import { TeamSettings } from './Settings/TeamSettings';
 import { IntegrationsTab } from './Settings/IntegrationsTab';
+import { MfaSetup } from './Settings/MfaSetup';
 
 export function Settings() {
   const { user } = useAuth();
@@ -996,60 +997,71 @@ function ProfileSettings() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Profile Settings</CardTitle>
-            <CardDescription>Manage your personal profile and display settings.</CardDescription>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Profile Settings</CardTitle>
+              <CardDescription>Manage your personal profile and display settings.</CardDescription>
+            </div>
+            <div className="flex items-center h-8">
+              {saveStatus === 'saving' && <span className="text-sm text-slate-500 flex items-center"><Loader2 className="w-3 h-3 animate-spin mr-2" /> Saving...</span>}
+              {saveStatus === 'saved' && <span className="text-sm text-emerald-600 flex items-center"><Save className="w-3 h-3 mr-2" /> Saved</span>}
+            </div>
           </div>
-          <div className="flex items-center h-8">
-            {saveStatus === 'saving' && <span className="text-sm text-slate-500 flex items-center"><Loader2 className="w-3 h-3 animate-spin mr-2" /> Saving...</span>}
-            {saveStatus === 'saved' && <span className="text-sm text-emerald-600 flex items-center"><Save className="w-3 h-3 mr-2" /> Saved</span>}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Email Address</label>
-            <input
-              type="email"
-              value={user?.email || ''}
-              disabled
-              className="w-full p-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed"
-            />
-            <p className="text-xs text-slate-500">Your email address is managed by your administrator and cannot be changed.</p>
-          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Email Address</label>
+              <input
+                type="email"
+                value={user?.email || ''}
+                disabled
+                className="w-full p-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed"
+              />
+              <p className="text-xs text-slate-500">Your email address is managed by your administrator and cannot be changed.</p>
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Display Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g. John Doe"
-              required
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Display Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. John Doe"
+                required
+              />
+            </div>
 
-          {errorMessage && (
-            <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
-          )}
+            {errorMessage && (
+              <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
+            )}
 
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={saveStatus === 'saving' || name.trim() === user?.name}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
-            >
-              {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Changes
-            </button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={saveStatus === 'saving' || name.trim() === user?.name}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+              >
+                {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+      
+      <MfaSetup
+        mfaEnabled={user?.mfaEnabled ?? false}
+        onMfaChange={(enabled) => {
+          if (user) {
+            updateUser({ ...user, mfaEnabled: enabled });
+          }
+        }}
+      />
+    </div>
   );
 }
