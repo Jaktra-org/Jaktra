@@ -46,9 +46,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("auth_token");
-      if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
-        authEvents.dispatchEvent(new Event("unauthorized"));
+      const url = error.config?.url || "";
+      const isMfaValidation =
+        url.includes("/auth/mfa/confirm") ||
+        url.includes("/auth/mfa/verify") ||
+        (url.includes("/auth/mfa") && error.config?.method?.toLowerCase() === "delete");
+
+      if (!isMfaValidation) {
+        localStorage.removeItem("auth_token");
+        if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+          authEvents.dispatchEvent(new Event("unauthorized"));
+        }
       }
     }
     return Promise.reject(error);

@@ -171,7 +171,9 @@ export class AuthService {
     const currentStep = Math.floor(Date.now() / 1000 / 30);
     const verifyResult = await totp.verify(totpCode, {
       secret,
-      afterTimeStep: user.mfaLastUsedStep ?? -1,
+      ...(user.mfaLastUsedStep !== null && user.mfaLastUsedStep !== undefined
+        ? { afterTimeStep: user.mfaLastUsedStep }
+        : {}),
     });
     const isValid = verifyResult.valid;
 
@@ -237,7 +239,9 @@ export class AuthService {
 
     const verifyResult = await totp.verify(code, {
       secret,
-      afterTimeStep: user.mfaLastUsedStep ?? -1,
+      ...(user.mfaLastUsedStep !== null && user.mfaLastUsedStep !== undefined
+        ? { afterTimeStep: user.mfaLastUsedStep }
+        : {}),
     });
     const totpValid = verifyResult.valid;
 
@@ -294,7 +298,9 @@ export class AuthService {
 
     const verifyResult = await totp.verify(totpCode, {
       secret,
-      afterTimeStep: user.mfaLastUsedStep ?? -1,
+      ...(user.mfaLastUsedStep !== null && user.mfaLastUsedStep !== undefined
+        ? { afterTimeStep: user.mfaLastUsedStep }
+        : {}),
     });
     const isValid = verifyResult.valid;
 
