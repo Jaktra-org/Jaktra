@@ -17,6 +17,23 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+});
+
+const mfaVerifySchema = z.object({
+  mfaPendingToken: z.string().min(1),
+  code: z.string().min(1),
+});
+
+const mfaConfirmSchema = z.object({
+  code: z.string().length(6),
+});
+
+const mfaDisableSchema = z.object({
+  code: z.string().length(6),
+});
+
 export class AuthController {
   constructor(private authService: AuthService) {}
 
@@ -91,9 +108,65 @@ export class AuthController {
       next(err);
     }
   };
+
+
+  mfaVerify = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = mfaVerifySchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      const result = await this.authService.verifyMfaCode(
+        parsed.data.mfaPendingToken,
+        parsed.data.code,
+      );
+      res.status(200).json(result);
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  mfaSetupInitiate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { userId } = (req as AuthenticatedRequest).user;
+      const result = await this.authService.initiateMfaSetup(userId);
+      res.status(200).json(result);
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  mfaSetupConfirm = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = mfaConfirmSchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      const { userId } = (req as AuthenticatedRequest).user;
+      const result = await this.authService.confirmMfaSetup(userId, parsed.data.code);
+      res.status(200).json(result);
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  mfaDisable = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = mfaDisableSchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      const { userId } = (req as AuthenticatedRequest).user;
+      await this.authService.disableMfa(userId, parsed.data.code);
+      res.status(204).send();
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
 }
-
-const updateProfileSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-});
-

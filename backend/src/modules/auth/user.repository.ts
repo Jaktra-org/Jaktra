@@ -50,6 +50,52 @@ export class UserRepository {
     return updated;
   }
 
+
+  async updateMfaFields(
+    id: string,
+    data: Partial<Pick<
+      NewUser,
+      | 'mfaEnabled'
+      | 'mfaSecret'
+      | 'mfaSecretIv'
+      | 'mfaSecretAuthTag'
+      | 'mfaSecretKeyVersion'
+      | 'mfaBackupCodes'
+      | 'mfaLastUsedStep'
+    >>,
+  ): Promise<User | undefined> {
+    const [updated] = await this.db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
+  }
+
+
+  async findByIdWithTenantSettings(userId: string): Promise<{
+    user: User;
+    mfaRequired: boolean;
+  } | undefined> {
+    const rows = await this.db
+      .select({
+        user: users,
+        mfaRequired: tenantSettings.mfaRequired,
+      })
+      .from(users)
+      .leftJoin(tenantSettings, eq(users.tenantId, tenantSettings.tenantId))
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) return undefined;
+
+    return {
+      user: row.user,
+      mfaRequired: row.mfaRequired ?? false,
+    };
+  }
+
   async tenantExists(tenantId: string): Promise<boolean> {
     const rows = await this.db
       .select({ id: tenants.id })

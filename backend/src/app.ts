@@ -1,4 +1,5 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
+import { config as envConfig } from './config/index.js';
 import cors from 'cors';
 import cron from 'node-cron';
 import { InvoicePurgeService } from './modules/invoice/invoice-purge.service.js';
@@ -34,6 +35,7 @@ import { createTeamRouter } from './modules/team/team.routes.js';
 import { TeamController } from './modules/team/team.controller.js';
 
 import { UserRepository } from './modules/auth/user.repository.js';
+import { LockoutService } from './modules/auth/lockout.service.js';
 import { TenantRepository } from './modules/tenant/tenant.repository.js';
 import { InvoiceRepository } from './modules/invoice/invoice.repository.js';
 import { CommunicationRepository } from './modules/communication/communication.repository.js';
@@ -74,6 +76,7 @@ import { RazorpayAdapter } from './modules/payment/adapters/razorpay.adapter.js'
 import { WebhookService } from './modules/webhook/webhook.service.js';
 import { SendgridWebhookService } from './modules/webhook/providers/sendgrid.webhook.js';
 import { standardLimiter, authLimiter } from './middleware/rate-limiter.js';
+import { createClient as createRedisClient, type RedisClientType } from 'redis';
 import { requestLogger } from './middleware/request-logger.js';
 import { requestId } from './middleware/request-id.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -164,7 +167,18 @@ export function createApp(config: AppConfig): Application {
     if (config.jwtSecret) {
       const userRepo = new UserRepository(config.db);
       const tenantRepo = new TenantRepository(config.db);
-      const authService = new AuthService(userRepo, config.jwtSecret, config.jwtExpiresIn ?? '7d');
+
+      const lockoutRedis = envConfig.REDIS_URL && process.env['NODE_ENV'] !== 'test'
+        ? createRedisClient({ url: envConfig.REDIS_URL })
+        : null;
+      if (lockoutRedis) {
+        lockoutRedis.connect().catch((err: Error) => {
+          logger.error(err, '[LockoutService] Redis connect failed — lockout tracking will be skipped (fail-open)');
+        });
+      }
+      const lockoutService = new LockoutService(lockoutRedis as unknown as RedisClientType | null, eventRepo);
+
+      const authService = new AuthService(userRepo, config.jwtSecret, config.jwtExpiresIn ?? '7d', lockoutService, eventRepo);
       const tenantService = new TenantService(tenantRepo);
       const authMiddleware = createAuthMiddleware(authService);
       

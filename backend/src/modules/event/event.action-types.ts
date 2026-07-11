@@ -43,6 +43,10 @@ export const ACTION_TYPES = [
   'agent.run_triggered',
   'reconciler.run_triggered',
 
+  'auth.account_locked',
+  'auth.mfa_enabled',
+  'auth.mfa_disabled',
+
   'legacy.event',
 ] as const;
 
@@ -71,4 +75,8 @@ export const ACTIVITY_LOG_VISIBLE_ACTIONS: ActionType[] = [
   'invoice.restored',
   'invoice.permanently_deleted',
   'dlq.cleared',
+
+  'auth.account_locked',
+  'auth.mfa_enabled',
+  'auth.mfa_disabled',
 ];

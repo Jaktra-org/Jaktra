@@ -27,6 +27,11 @@ const schema = z.object({
 
   REDIS_URL: z.string().url().optional(),
 
+  AUTH_LOCKOUT_THRESHOLD: z.coerce.number().int().positive().default(5),
+  AUTH_LOCKOUT_BASE_MINUTES: z.coerce.number().int().positive().default(15),
+  AUTH_LOCKOUT_MAX_MINUTES: z.coerce.number().int().positive().default(1440),
+  AUTH_MFA_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+
   ENCRYPTION_KEY: z.string().refine((val) => {
     try {
       return Buffer.from(val, 'base64').length === 32;

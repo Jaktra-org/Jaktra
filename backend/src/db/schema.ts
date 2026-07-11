@@ -76,9 +76,15 @@ export const users = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    mfaEnabled: boolean('mfa_enabled').notNull().default(false),
+    mfaSecret: text('mfa_secret'),                         // AES-256-GCM ciphertext
+    mfaSecretIv: text('mfa_secret_iv'),
+    mfaSecretAuthTag: text('mfa_secret_auth_tag'),
+    mfaSecretKeyVersion: integer('mfa_secret_key_version'),
+    mfaBackupCodes: text('mfa_backup_codes'),              // JSON array of bcrypt-hashed codes
+    mfaLastUsedStep: integer('mfa_last_used_step'),
   },
   (table) => [
-
     uniqueIndex('users_email_tenant_id_uniq').on(table.email, table.tenantId),
   ]
 );
@@ -273,6 +279,7 @@ export const tenantSettings = pgTable('tenant_settings', {
   autoPurgeEnabled: boolean('auto_purge_enabled').notNull().default(false),
   autoPurgeDays: integer('auto_purge_days').notNull().default(30),
   dlqThreshold: integer('dlq_threshold').notNull().default(3),
+  mfaRequired: boolean('mfa_required').notNull().default(false),
 });
 
 export const tenantIntegrations = pgTable('tenant_integrations', {
