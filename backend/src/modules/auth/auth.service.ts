@@ -274,7 +274,7 @@ export class AuthService {
     }
 
     await this.lockoutService.recordMfaFailure(userId);
-    throw new AuthError('Invalid email or password', 401);
+    throw new AuthError('Invalid verification code', 401);
   }
 
   async disableMfa(userId: string, totpCode: string): Promise<void> {
