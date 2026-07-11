@@ -66,7 +66,7 @@ export class PaymentService {
         const settings = await this.settingsRepo.getSettings(tenantId);
         if (settings?.paymentLink) {
           try {
-            await this.repo.insertPaymentLink({
+            await this.repo.insertPaymentLinkFallback({
               tenantId,
               invoiceId,
               provider,
@@ -77,9 +77,9 @@ export class PaymentService {
               currency: invoice.currency,
             });
           } catch (e: unknown) {
-            if (e && typeof e === 'object' && 'code' in e && e.code !== '23505') {
-              logger.error('Failed to save fallback link', { error: e });
-            }
+            // Non-fatal: log all unexpected errors (23505 conflicts are already
+            // handled gracefully at the DB level via onConflictDoNothing).
+            logger.error('Failed to save fallback payment link', { error: e, tenantId, invoiceId });
           }
           return settings.paymentLink;
         }

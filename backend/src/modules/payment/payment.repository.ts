@@ -68,6 +68,19 @@ export class PaymentRepository {
     return result;
   }
 
+  /**
+   * Inserts a fallback (tenant-level) payment link.
+   * Uses ON CONFLICT DO NOTHING so an already-active link for the same
+   * (tenantId, invoiceId, provider) causes a silent no-op rather than a
+   * 23505 exception that could abort a surrounding transaction.
+   */
+  async insertPaymentLinkFallback(link: typeof invoicePaymentLinks.$inferInsert): Promise<void> {
+    await this.db
+      .insert(invoicePaymentLinks)
+      .values(link)
+      .onConflictDoNothing();
+  }
+
   async updatePaymentLinkStatus(id: string, status: 'active' | 'paid' | 'expired' | 'cancelled') {
     const [result] = await this.db.update(invoicePaymentLinks)
       .set({ status, updatedAt: new Date() })
