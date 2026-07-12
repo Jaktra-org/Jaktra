@@ -12,6 +12,8 @@ import type { JwtPayload } from '../../shared/types/auth.js';
 import type { User } from '../../db/index.js';
 import { AuthError, ForbiddenError } from '../../shared/errors/index.js';
 import { encrypt, decrypt } from '../../shared/encryption.js';
+import { EmailVerificationService } from './email-verification.service.js';
+import { PlatformMailer } from '../platform-mail/platform-mailer.js';
 
 // V1 LIMITATION: No self-service MFA recovery flow exists.
 // If a user loses both their authenticator device AND all backup codes, an admin
@@ -66,26 +68,67 @@ export class AuthService {
     private jwtExpiresIn: string,
     private lockoutService: LockoutService,
     private eventRepo: EventRepository,
+    private emailVerificationService: EmailVerificationService,
+    private platformMailer: PlatformMailer,
   ) {}
 
-  async onboard(input: OnboardInput): Promise<AuthResult> {
+  async onboard(input: OnboardInput): Promise<{ pendingVerification: true }> {
     const normalizedEmail = input.email.toLowerCase().trim();
     const existing = await this.userRepo.findFirstByEmail(normalizedEmail);
     if (existing) {
-      throw new AuthError('Email already registered', 409);
+      throw new AuthError('an account with this email may already exist — try logging in or resetting your password', 409);
     }
 
     const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
 
-    const slug = input.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const code = await this.emailVerificationService.storePendingRegistration(
+      normalizedEmail,
+      {
+        name: input.name,
+        email: normalizedEmail,
+        passwordHash,
+        companyName: input.companyName,
+      }
+    );
+
+    const emailResult = await this.platformMailer.sendOtpEmail(normalizedEmail, code);
+    if (!emailResult.success) {
+      if (process.env.NODE_ENV !== 'production' && emailResult.error === 'Platform SMTP not configured') {
+        // Log skipped warning in non-production environments
+      } else {
+        throw new AuthError(`Failed to send verification email: ${emailResult.error}`, 500);
+      }
+    }
+
+    return { pendingVerification: true };
+  }
+
+  async verifyEmail(email: string, code: string): Promise<AuthResult> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const pending = await this.emailVerificationService.verifyOtp(normalizedEmail, code);
+
+    const slug = pending.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
     const { user } = await this.userRepo.createTenantWithAdmin(
-      { name: input.companyName, slug },
-      { name: input.name, email: normalizedEmail, passwordHash, role: 'admin' }
+      { name: pending.companyName, slug },
+      { name: pending.name, email: normalizedEmail, passwordHash: pending.passwordHash, role: 'admin', emailVerified: true }
     );
 
     const token = this.signToken(user);
     return { user: this.stripSensitive(user), token };
+  }
+
+  async resendVerification(email: string): Promise<void> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const code = await this.emailVerificationService.resendOtp(normalizedEmail);
+    const emailResult = await this.platformMailer.sendOtpEmail(normalizedEmail, code);
+    if (!emailResult.success) {
+      if (process.env.NODE_ENV !== 'production' && emailResult.error === 'Platform SMTP not configured') {
+        // Log skipped warning in non-production environments
+      } else {
+        throw new AuthError(`Failed to send verification email: ${emailResult.error}`, 500);
+      }
+    }
   }
 
 
@@ -106,6 +149,10 @@ export class AuthService {
       throw new AuthError('Invalid email or password', 401);
     }
     await this.lockoutService.clearFailures(normalizedEmail);
+
+    if (user.emailVerified === false) {
+      throw new AuthError('please verify your email before logging in', 403);
+    }
 
     if (user.role === 'admin' && !user.mfaEnabled) {
       const withSettings = await this.userRepo.findByIdWithTenantSettings(user.id);

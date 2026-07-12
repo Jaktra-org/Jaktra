@@ -34,6 +34,15 @@ const mfaDisableSchema = z.object({
   code: z.string().length(6),
 });
 
+const verifyEmailSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6),
+});
+
+const resendVerificationSchema = z.object({
+  email: z.string().email(),
+});
+
 export class AuthController {
   constructor(private authService: AuthService) {}
 
@@ -165,6 +174,36 @@ export class AuthController {
       const { userId } = (req as AuthenticatedRequest).user;
       await this.authService.disableMfa(userId, parsed.data.code);
       res.status(204).send();
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = verifyEmailSchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      const result = await this.authService.verifyEmail(parsed.data.email, parsed.data.code);
+      res.status(200).json(result);
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  resendVerification = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = resendVerificationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      await this.authService.resendVerification(parsed.data.email);
+      res.status(200).json({ success: true, message: 'Verification code resent successfully' });
     } catch (err: unknown) {
       next(err);
     }

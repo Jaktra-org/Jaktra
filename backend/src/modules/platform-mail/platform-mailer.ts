@@ -97,4 +97,32 @@ export class PlatformMailer {
       };
     }
   }
+
+  async sendOtpEmail(to: string, code: string): Promise<EmailSendResult> {
+    try {
+      const provider = await this.getProvider();
+      if (!provider) {
+        return { success: false, error: 'Platform SMTP not configured' };
+      }
+      
+      const message: EmailMessage = {
+        to,
+        from: { name: 'Jaktra', email: 'noreply@jaktra.com' },
+        subject: 'Verify your email address',
+        html: `
+          <p>Thank you for registering on Jaktra.</p>
+          <p>Please enter the following 6-digit code to verify your email address:</p>
+          <h2>${code}</h2>
+          <p>This verification code expires in 10 minutes.</p>
+        `,
+      };
+
+      return await provider.send(message);
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
 }

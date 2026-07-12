@@ -8,6 +8,10 @@ export function createAuthRouter(
   const router = Router();
 
   router.post('/onboard', authController.onboard);
+  // @deprecated Use /register instead. Kept for backward compatibility.
+  router.post('/register', authController.onboard);
+  router.post('/verify-email', authController.verifyEmail);
+  router.post('/resend-verification', authController.resendVerification);
   router.post('/login', authController.login);
   router.post('/refresh', authController.refresh);
 

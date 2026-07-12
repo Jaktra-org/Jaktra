@@ -163,6 +163,7 @@ export class TeamService {
         name,
         passwordHash,
         role: invite.role,
+        emailVerified: true,
       }).returning();
       
       await tx.update(teamInvitations)

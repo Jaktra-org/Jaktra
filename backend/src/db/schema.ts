@@ -83,6 +83,7 @@ export const users = pgTable(
     mfaSecretKeyVersion: integer('mfa_secret_key_version'),
     mfaBackupCodes: text('mfa_backup_codes'),              // JSON array of bcrypt-hashed codes
     mfaLastUsedStep: integer('mfa_last_used_step'),
+    emailVerified: boolean('email_verified').notNull().default(false),
   },
   (table) => [
     uniqueIndex('users_email_tenant_id_uniq').on(table.email, table.tenantId),
