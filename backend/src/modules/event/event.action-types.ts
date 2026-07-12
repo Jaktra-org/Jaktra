@@ -35,7 +35,7 @@ export const ACTION_TYPES = [
 
   'integration.connected',
   'integration.disconnected',
-  'integration.default_email_changed',
+  'integration.default_provider_changed',
 
   'template.updated',
 
@@ -66,7 +66,7 @@ export const ACTIVITY_LOG_VISIBLE_ACTIONS: ActionType[] = [
 
   'integration.connected',
   'integration.disconnected',
-  'integration.default_email_changed',
+  'integration.default_provider_changed',
 
   'invoice.bulk_imported',
   'agent.run_triggered',

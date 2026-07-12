@@ -245,7 +245,7 @@ export class AuthService {
       mfaLastUsedStep: currentStep,
     });
 
-    this.emitMfaEvent(user.tenantId, userId, user.email, 'auth.mfa_enabled', 'MFA enabled by user.').catch(() => {/* swallow */});
+    this.emitMfaEvent(user.tenantId, userId, user.email, user.name, 'auth.mfa_enabled', 'MFA enabled by user.').catch(() => {/* swallow */});
 
     return { backupCodes: plainCodes };
   }
@@ -370,7 +370,7 @@ export class AuthService {
       mfaLastUsedStep: null,
     });
 
-    this.emitMfaEvent(user.tenantId, userId, user.email, 'auth.mfa_disabled', 'MFA disabled by user.').catch(() => {/* swallow */});
+    this.emitMfaEvent(user.tenantId, userId, user.email, user.name, 'auth.mfa_disabled', 'MFA disabled by user.').catch(() => {/* swallow */});
   }
 
 
@@ -474,6 +474,7 @@ export class AuthService {
     tenantId: string,
     userId: string,
     email: string,
+    name: string,
     actionType: 'auth.mfa_enabled' | 'auth.mfa_disabled',
     description: string,
   ): Promise<void> {
@@ -482,7 +483,7 @@ export class AuthService {
       entityType: 'user',
       entityId: userId,
       actorId: userId,
-      actorName: null,
+      actorName: name,
       actorEmail: email,
       actorRole: null,
       actionType,
@@ -600,7 +601,7 @@ export class AuthService {
       entityType: 'user',
       entityId: user.id,
       actorId: user.id,
-      actorName: null,
+      actorName: user.name,
       actorEmail: user.email,
       actorRole: null,
       actionType: 'auth.password_reset',

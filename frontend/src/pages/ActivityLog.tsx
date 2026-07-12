@@ -43,7 +43,11 @@ const categoryActionTypeMap: Record<string, string[]> = {
     'user.invite_revoked',
     'user.joined',
     'user.role_updated',
-    'user.removed'
+    'user.removed',
+    'auth.mfa_enabled',
+    'auth.mfa_disabled',
+    'auth.password_reset',
+    'auth.account_locked'
   ],
   settings: [
     'settings.updated',
@@ -52,7 +56,7 @@ const categoryActionTypeMap: Record<string, string[]> = {
   integrations: [
     'integration.connected',
     'integration.disconnected',
-    'integration.default_email_changed'
+    'integration.default_provider_changed'
   ],
   operational: [
     'followup.triggered',
@@ -77,6 +81,7 @@ const eventCategoryMap: {
   badgeStyle: string;
 }[] = [
   { prefix: 'user.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
+  { prefix: 'auth.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
   { prefix: 'settings.', icon: SettingsIcon, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
   { prefix: 'integration.', icon: Zap, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
   { prefix: 'payment.received', icon: CheckCircle2, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
@@ -586,7 +591,7 @@ export function ActivityLog() {
     }
 
     if (action === 'integration.connected') {
-      const provider = evt.payload?.provider || evt.newValues?.provider || 'service';
+      const provider = evt.payload?.provider || evt.payload?.integration || evt.newValues?.provider || 'service';
       const capitalizedProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
       return (
         <span>
@@ -596,7 +601,7 @@ export function ActivityLog() {
     }
 
     if (action === 'integration.disconnected') {
-      const provider = evt.payload?.provider || evt.oldValues?.provider || 'service';
+      const provider = evt.payload?.provider || evt.payload?.integration || evt.oldValues?.provider || 'service';
       const capitalizedProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
       return (
         <span>
@@ -605,11 +610,45 @@ export function ActivityLog() {
       );
     }
 
-    if (action === 'integration.default_email_changed') {
-      const email = evt.newValues?.email || evt.payload?.email || '';
+    if (action === 'integration.default_provider_changed') {
+      const provider = evt.payload?.to || evt.newValues?.to || 'None';
+      const providerName = provider === 'None' ? 'None' : provider.toUpperCase();
       return (
         <span>
-          {actor} changed default billing notification email to <span className="font-semibold text-slate-900">{email}</span>
+          {actor} changed default email provider to <span className="font-bold text-slate-950">{providerName}</span>
+        </span>
+      );
+    }
+
+    if (action === 'auth.mfa_enabled') {
+      return (
+        <span>
+          {actor} enabled Multi-Factor Authentication (MFA)
+        </span>
+      );
+    }
+
+    if (action === 'auth.mfa_disabled') {
+      return (
+        <span>
+          {actor} disabled Multi-Factor Authentication (MFA)
+        </span>
+      );
+    }
+
+    if (action === 'auth.password_reset') {
+      return (
+        <span>
+          {actor} reset password successfully
+        </span>
+      );
+    }
+
+    if (action === 'auth.account_locked') {
+      const email = evt.payload?.email || evt.actorEmail || 'unknown';
+      return (
+        <span>
+          System locked account <span className="font-semibold text-slate-900">{email}</span> due to repeated failed login attempts
         </span>
       );
     }
