@@ -1,6 +1,7 @@
 import { api } from "./api";
 import type {
   AuthResponse,
+  RegisterResponse,
   LoginResponse,
   MfaSetupInitiateResponse,
   MfaSetupConfirmResponse,
@@ -39,19 +40,35 @@ export const authService = {
     return response.data;
   },
 
-  async onboard(data: Record<string, string>): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>("/auth/onboard", data);
-    if (response.data.token) {
-      localStorage.setItem("auth_token", response.data.token);
+  async onboard(data: Record<string, string>): Promise<AuthResponse | RegisterResponse> {
+    const response = await api.post<AuthResponse | RegisterResponse>("/auth/onboard", data);
+    const result = response.data;
+    if ("token" in result && result.token) {
+      localStorage.setItem("auth_token", result.token);
     }
-    return response.data;
+    return result;
   },
 
-  async register(data: Record<string, string>): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>("/auth/register", data);
-    if (response.data.token) {
-      localStorage.setItem("auth_token", response.data.token);
+  async register(data: Record<string, string>): Promise<AuthResponse | RegisterResponse> {
+    const response = await api.post<AuthResponse | RegisterResponse>("/auth/register", data);
+    const result = response.data;
+    if ("token" in result && result.token) {
+      localStorage.setItem("auth_token", result.token);
     }
+    return result;
+  },
+
+  async verifyEmail(email: string, code: string): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>("/auth/verify-email", { email, code });
+    const result = response.data;
+    if (result.token) {
+      localStorage.setItem("auth_token", result.token);
+    }
+    return result;
+  },
+
+  async resendVerification(email: string): Promise<{ success: boolean; message: string }> {
+    const response = await api.post<{ success: boolean; message: string }>("/auth/resend-verification", { email });
     return response.data;
   },
 

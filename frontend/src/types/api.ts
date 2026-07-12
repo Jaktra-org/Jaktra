@@ -13,6 +13,10 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface RegisterResponse {
+  pendingVerification: boolean;
+}
+
 export interface MfaPendingResponse {
   mfaPending: true;
   mfaPendingToken: string;
