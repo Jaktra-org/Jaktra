@@ -443,6 +443,9 @@ function EmailSettings() {
               placeholder="support@acme.com"
             />
             <p className="text-xs text-slate-500">If left blank, replies will go to the Sender Email.</p>
+            <p className="text-[11px] text-blue-600 bg-blue-50 p-2 rounded border border-blue-100 mt-2">
+              <strong>Notice:</strong> When automatic reply capture is active, replies are temporarily routed to tracking sub-addresses (e.g. <code>reply+invoice_id@replies.domain.com</code>) to link customer emails back to their invoices.
+            </p>
           </div>
         </CardContent>
       </Card>

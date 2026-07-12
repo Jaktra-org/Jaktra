@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Bot, BarChart3, AlertTriangle, Settings, LogOut, History } from "lucide-react";
+import { LayoutDashboard, FileText, Bot, BarChart3, AlertTriangle, Settings, LogOut, History, MessageSquare } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 export function AppLayout() {
@@ -20,6 +20,7 @@ export function AppLayout() {
     { label: "Agent", path: "/agent", icon: Bot },
     { label: "Analytics", path: "/analytics", icon: BarChart3 },
     { label: "DLQ", path: "/dlq", icon: AlertTriangle },
+    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Disputes", path: "/disputes", icon: MessageSquare }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Activity Log", path: "/activity-log", icon: History }] : []),
     ...(user?.role !== 'viewer' ? [{ label: "Settings", path: "/settings", icon: Settings }] : []),
   ];

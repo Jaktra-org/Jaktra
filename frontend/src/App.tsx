@@ -12,6 +12,7 @@ import { DLQ } from "./pages/DLQ";
 import { Analytics } from "./pages/Analytics";
 import { Settings } from "./pages/Settings";
 import { ActivityLog } from "./pages/ActivityLog";
+import { Disputes } from "./pages/Disputes";
 import { AcceptInvitation } from "./pages/AcceptInvitation";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -37,6 +38,7 @@ function App() {
           <Route path="/dlq" element={<DLQ />} />
           
           <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
+            <Route path="/disputes" element={<Disputes />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/activity-log" element={<ActivityLog />} />
           </Route>
