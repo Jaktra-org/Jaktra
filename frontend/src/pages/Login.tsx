@@ -123,15 +123,25 @@ export function Login() {
                   placeholder="you@company.com"
                   disabled={isLoading}
                 />
-                <Input
-                  label="Password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  disabled={isLoading}
-                />
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    disabled={isLoading}
+                  />
+                  <div className="text-right mt-1.5">
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-500"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                </div>
               </div>
               <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
                 Sign in

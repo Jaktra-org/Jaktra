@@ -3,6 +3,7 @@ import { AppLayout } from "./layouts/AppLayout";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { Invoices } from "./pages/Invoices";
 import { InvoiceDetail } from "./pages/InvoiceDetail";
 import { TrashedInvoiceDetail } from "./pages/TrashedInvoiceDetail";
@@ -20,7 +21,9 @@ function App() {
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/invite" element={<AcceptInvitation />} />
+
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>

@@ -102,4 +102,28 @@ export const authService = {
   async mfaDisable(code: string): Promise<void> {
     await api.delete("/auth/mfa", { data: { code } });
   },
+
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    const response = await api.post<{ success: boolean; message: string }>("/auth/forgot-password", { email });
+    return response.data;
+  },
+
+  async resetPasswordVerify(email: string, code: string): Promise<{ resetToken: string }> {
+    const response = await api.post<{ resetToken: string }>("/auth/reset-password/verify", { email, code });
+    return response.data;
+  },
+
+  async resetPasswordConfirm(resetToken: string, newPassword: string): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>("/auth/reset-password/confirm", { resetToken, newPassword });
+    const result = response.data;
+    if (result.token) {
+      localStorage.setItem("auth_token", result.token);
+    }
+    return result;
+  },
+
+  async resetPasswordResend(email: string): Promise<{ success: boolean; message: string }> {
+    const response = await api.post<{ success: boolean; message: string }>("/auth/reset-password/resend", { email });
+    return response.data;
+  },
 };
