@@ -6,8 +6,6 @@ import { CommunicationError } from '../../shared/errors/index.js';
 import * as dns from 'dns/promises';
 import { logger } from '../../shared/logger.js';
 import type { DlqRepository } from '../dlq/dlq.repository.js';
-import tls from 'tls';
-import type { SmtpConfig } from './providers/smtp.factory.js';
 
 export const createCommunicationSchema = z.object({
   invoiceId: z.string().uuid(),
@@ -23,9 +21,8 @@ export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>
 
 import type { EventService } from '../event/event.service.js';
 import type { ActionType } from '../event/event.action-types.js';
-import type { IntegrationService } from '../settings/integration.service.js';
-import { SendgridProvider } from './providers/sendgrid.provider.js';
-import { SmtpProvider } from './providers/smtp.provider.js';
+import { TenantMailer } from './tenant-mailer.js';
+import type { EmailMessage } from '../../shared/email/index.js';
 
 export interface SendCommunicationOptions {
   tenantId: string;
@@ -38,11 +35,11 @@ export interface SendCommunicationOptions {
 
 export class CommunicationService {
   constructor(
-    private communicationRepo: CommunicationRepository,
-    private invoiceRepo: InvoiceRepository,
-    private integrationService: IntegrationService,
-    private eventService?: EventService,
-    private dlqRepo?: DlqRepository
+    private readonly communicationRepo: CommunicationRepository,
+    private readonly invoiceRepo: InvoiceRepository,
+    private readonly tenantMailer: TenantMailer,
+    private readonly eventService?: EventService,
+    private readonly dlqRepo?: DlqRepository
   ) { }
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['findByInvoiceId']>>> {
@@ -88,7 +85,6 @@ export class CommunicationService {
       const reason = (rawEvent.reason as string | undefined) || 'Email bounced or dropped';
       await this.communicationRepo.markFailed(communicationId, reason);
 
-      // Decrement the followupCount on the invoice
       try {
         const invoice = await this.invoiceRepo.findById(invoiceId);
         if (invoice) {
@@ -101,7 +97,6 @@ export class CommunicationService {
         logger.error(`Failed to update followupCount on bounce for invoice ${invoiceId}`, err);
       }
 
-      // Record in the Dead Letter Queue (DLQ)
       if (this.dlqRepo) {
         try {
           await this.dlqRepo.recordFailure(
@@ -182,7 +177,6 @@ export class CommunicationService {
       );
     }
 
-    // Validate email domain MX records synchronously to catch typos/non-existent domains
     await this.validateRecipientEmail(to);
 
     const settings = await this.communicationRepo.getSettings(tenantId);
@@ -190,45 +184,20 @@ export class CommunicationService {
       throw new CommunicationError('Communication settings not configured for this tenant', 400);
     }
 
-    const from = {
-      name: settings.senderName,
-      email: settings.senderEmail,
+    const message: EmailMessage = {
+      to,
+      from: { name: settings.senderName, email: settings.senderEmail },
+      replyTo: settings.replyTo || undefined,
+      subject,
+      html,
     };
-    const replyTo = settings.replyTo ? { email: settings.replyTo } : undefined;
 
-    const defaultProvider = (settings as { defaultEmailProvider?: 'sendgrid' | 'smtp' }).defaultEmailProvider;
-    if (!defaultProvider) {
-      throw new CommunicationError('EMAIL_PROVIDER_NOT_CONFIGURED', 400);
+    const result = await this.tenantMailer.sendCollectionEmail(tenantId, message, { invoiceId });
+    if (!result.success) {
+      throw new CommunicationError(result.error || 'Email sending failed', 500);
     }
 
-    try {
-      if (defaultProvider === 'sendgrid') {
-        const apiKey = await this.integrationService.getDecryptedSendgridKey(tenantId);
-        const provider = new SendgridProvider(apiKey);
-        await provider.sendEmail(to, from, replyTo, subject, html);
-        return true;
-      } else if (defaultProvider === 'smtp') {
-        const smtpConfig = await this.integrationService.getDecryptedSmtpConfig(tenantId);
-        const provider = new SmtpProvider(smtpConfig);
-        await provider.sendEmail(to, from, replyTo, subject, html);
-
-        // Start background polling for bounces if invoiceId is provided
-        if (invoiceId) {
-          this.startSmtpBouncePolling(tenantId, invoiceId, to, smtpConfig).catch((err) => {
-            logger.error(`Error in background SMTP bounce polling for invoice ${invoiceId}:`, err);
-          });
-        }
-
-        return true;
-      } else {
-        throw new CommunicationError(`Unsupported default email provider: ${defaultProvider}`, 400);
-      }
-    } catch (error: unknown) {
-      if (error instanceof CommunicationError) throw error;
-
-      await this.integrationService.handleDeliveryError(tenantId, defaultProvider, error instanceof Error ? error : new Error(String(error)));
-      throw error;
-    }
+    return true;
   }
 
   async testConnection(tenantId: string, to: string): Promise<boolean> {
@@ -239,7 +208,6 @@ export class CommunicationService {
       html: '<p>Your email integration is working correctly.</p>',
     });
   }
-
 
   async getSettings(tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['getSettings']>>> {
     return await this.communicationRepo.getSettings(tenantId);
@@ -257,185 +225,4 @@ export class CommunicationService {
   async setDefaultEmailProvider(tenantId: string, provider: 'sendgrid' | 'smtp' | null): Promise<void> {
     await this.communicationRepo.setDefaultEmailProvider(tenantId, provider);
   }
-
-  private async checkImapForBounce(smtpConfig: SmtpConfig, recipient: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      const host = getImapHost(smtpConfig.host);
-      const port = 993; // standard IMAP over TLS port
-      const username = smtpConfig.username;
-      const password = smtpConfig.password;
-
-      const socket = tls.connect(port, host, { rejectUnauthorized: false }, () => {
-        logger.debug(`[IMAP] Connected to ${host}:${port} for bounce check`);
-      });
-
-      socket.setTimeout(10000); // 10s socket timeout
-
-      let commandStep = 0;
-      let buffer = '';
-      let foundBounce = false;
-
-      const sendCmd = (tag: string, cmd: string): void => {
-        logger.debug(`[IMAP] Sent: ${tag} ${cmd}`);
-        socket.write(`${tag} ${cmd}\r\n`);
-      };
-
-      socket.on('data', (data) => {
-        buffer += data.toString('utf8');
-
-        // Process responses line-by-line
-        while (buffer.includes('\r\n')) {
-          const lineEnd = buffer.indexOf('\r\n');
-          const line = buffer.substring(0, lineEnd);
-          buffer = buffer.substring(lineEnd + 2);
-
-          logger.debug(`[IMAP] Received: ${line}`);
-
-          if (commandStep === 0 && line.includes('* OK')) {
-            commandStep = 1;
-            sendCmd('A1', `LOGIN "${username}" "${password}"`);
-          } else if (commandStep === 1 && line.startsWith('A1 ')) {
-            if (line.includes('OK')) {
-              commandStep = 2;
-              sendCmd('A2', 'SELECT INBOX');
-            } else {
-              socket.destroy();
-              reject(new Error(`IMAP Login failed: ${line}`));
-              return;
-            }
-          } else if (commandStep === 2 && line.startsWith('A2 ')) {
-            if (line.includes('OK')) {
-              commandStep = 3;
-              // Search for bounces of this recipient
-              sendCmd('A3', `SEARCH FROM "mailer-daemon" TEXT "${recipient}"`);
-            } else {
-              socket.destroy();
-              reject(new Error(`IMAP SELECT INBOX failed: ${line}`));
-              return;
-            }
-          } else if (commandStep === 3) {
-            if (line.startsWith('* SEARCH')) {
-              const ids = line.replace('* SEARCH', '').trim();
-              if (ids.length > 0) {
-                foundBounce = true;
-              }
-            } else if (line.startsWith('A3 ')) {
-              commandStep = 4;
-              sendCmd('A4', 'LOGOUT');
-            }
-          } else if (commandStep === 4 && line.startsWith('A4 ')) {
-            socket.destroy();
-            resolve(foundBounce);
-            return;
-          }
-        }
-      });
-
-      socket.on('timeout', () => {
-        socket.destroy();
-        reject(new Error('IMAP connection timed out'));
-      });
-
-      socket.on('error', (err) => {
-        socket.destroy();
-        reject(err);
-      });
-
-      socket.on('close', () => {
-        resolve(foundBounce);
-      });
-    });
-  }
-
-  private async startSmtpBouncePolling(
-    tenantId: string,
-    invoiceId: string,
-    recipient: string,
-    smtpConfig: SmtpConfig
-  ): Promise<void> {
-    const maxPolls = 8; // 8 * 15 seconds = 2 minutes
-    const pollIntervalMs = 15000;
-
-    logger.info(`[IMAP] Starting SMTP bounce polling for invoice ${invoiceId} / recipient ${recipient}`);
-
-    for (let attempt = 1; attempt <= maxPolls; attempt++) {
-      // Wait for interval
-      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-
-      logger.debug(`[IMAP] Checking for bounce. Attempt ${attempt}/${maxPolls}`);
-      try {
-        const isBounced = await this.checkImapForBounce(smtpConfig, recipient);
-        if (isBounced) {
-          logger.warn(`[IMAP] Asynchronous bounce detected for invoice ${invoiceId} recipient ${recipient}`);
-
-          // 1. Mark latest sent communication as failed
-          const comms = await this.communicationRepo.findByInvoiceId(invoiceId);
-          const latestSent = comms.find((c) => c.status === 'sent');
-          if (latestSent) {
-            await this.communicationRepo.markFailed(
-              latestSent.id,
-              'Email bounced: Recipient mailbox does not exist'
-            );
-          }
-
-          // 2. Decrement invoice followupCount
-          const invoice = await this.invoiceRepo.findById(invoiceId);
-          if (invoice) {
-            const newCount = Math.max(0, invoice.followupCount - 1);
-            await this.invoiceRepo.update(invoiceId, tenantId, {
-              followupCount: newCount,
-            });
-          }
-
-          // 3. Emit halted event with mail_bounced reason
-          if (this.eventService) {
-            await this.eventService.emitEvent(
-              'invoice',
-              invoiceId,
-              tenantId,
-              'followup.bounced',
-              { source: 'system' },
-              {
-                description: 'Follow-up email bounced (IMAP detection)',
-                payload: {
-                  reason: 'mail_bounced',
-                  error: 'Recipient email address does not exist',
-                  recipient,
-                }
-              }
-            ).catch((err: unknown) => {
-              logger.error('Failed to log followup.bounced event', err instanceof Error ? err : String(err));
-            });
-          }
-
-          // 4. Record failure in DLQ
-          if (this.dlqRepo) {
-            await this.dlqRepo.recordFailure(
-              invoiceId,
-              tenantId,
-              'Delivery failed: Mailbox does not exist (bounced)',
-              `Recipient email address ${recipient} is invalid or non-existent.`
-            );
-          }
-
-          // Stop polling
-          return;
-        }
-      } catch (err: unknown) {
-        logger.error(`[IMAP] Error checking bounce on attempt ${attempt}: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    }
-
-    logger.info(`[IMAP] Finished SMTP bounce polling for invoice ${invoiceId} / recipient ${recipient} with no bounce detected.`);
-  }
 }
-
-function getImapHost(smtpHost: string): string {
-  const host = smtpHost.toLowerCase();
-  if (host.includes('gmail.com')) return 'imap.gmail.com';
-  if (host.includes('yahoo.com')) return 'imap.mail.yahoo.com';
-  if (host.includes('outlook.com') || host.includes('office365.com')) return 'outlook.office365.com';
-  return smtpHost.replace(/^smtp\./i, 'imap.');
-}
-
-

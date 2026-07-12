@@ -182,8 +182,15 @@ export class IntegrationController {
 
 
       const config = await this.integrationService.getDecryptedSmtpConfig(tenantId);
-      const { SmtpProvider } = await import('../communication/providers/smtp.provider.js');
-      const provider = new SmtpProvider(config);
+      const { createEmailProvider } = await import('../../shared/email/email-provider.factory.js');
+      const provider = createEmailProvider({
+        kind: 'smtp',
+        host: config.host,
+        port: config.port,
+        user: config.username,
+        password: config.password,
+        secure: config.securityMode === 'implicit_tls'
+      });
       const settings = await this.communicationService.getSettings(tenantId);
       
       if (!settings || !settings.senderEmail) {
@@ -192,15 +199,19 @@ export class IntegrationController {
       }
 
       const from = { name: settings.senderName, email: settings.senderEmail };
-      const replyTo = settings.replyTo ? { email: settings.replyTo } : undefined;
+      const replyTo = settings.replyTo || undefined;
 
-      await provider.sendEmail(
+      const result = await provider.send({
         to,
         from,
         replyTo,
-        'Integration Test',
-        '<p>Your SMTP integration is working correctly.</p>'
-      );
+        subject: 'Integration Test',
+        html: '<p>Your SMTP integration is working correctly.</p>'
+      });
+
+      if (!result.success) {
+        throw new ValidationError(result.error || 'SMTP validation failed');
+      }
 
       res.json({ message: 'Test email accepted by SMTP server' });
     } catch (error) {

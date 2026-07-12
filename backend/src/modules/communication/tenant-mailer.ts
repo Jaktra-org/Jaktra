@@ -12,6 +12,7 @@ import type { DlqRepository } from '../dlq/dlq.repository.js';
 
 export interface TenantEmailConfigResolver {
   resolve(tenantId: string): Promise<ResolvedEmailConfig>;
+  handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp', error: Error): Promise<void>;
 }
 
 export class DbTenantEmailConfigResolver implements TenantEmailConfigResolver {
@@ -48,6 +49,10 @@ export class DbTenantEmailConfigResolver implements TenantEmailConfigResolver {
       throw new CommunicationError(`Unsupported default email provider: ${defaultProvider}`, 400);
     }
   }
+
+  async handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp', error: Error): Promise<void> {
+    await this.integrationService.handleDeliveryError(tenantId, provider, error);
+  }
 }
 
 export class TenantMailer {
@@ -55,7 +60,6 @@ export class TenantMailer {
     private readonly configResolver: TenantEmailConfigResolver,
     private readonly communicationRepo: CommunicationRepository,
     private readonly invoiceRepo: InvoiceRepository,
-    private readonly integrationService: IntegrationService,
     private readonly eventService?: EventService,
     private readonly dlqRepo?: DlqRepository
   ) {}
@@ -99,7 +103,7 @@ export class TenantMailer {
 
       if (!result.success) {
         // Delegate tracking of validation and operational errors to IntegrationService
-        await this.integrationService.handleDeliveryError(
+        await this.configResolver.handleDeliveryError(
           tenantId,
           defaultProvider,
           new Error(result.error || 'Email sending failed')
@@ -109,7 +113,7 @@ export class TenantMailer {
       return result;
     } catch (error: unknown) {
       if (!(error instanceof CommunicationError)) {
-        await this.integrationService.handleDeliveryError(
+        await this.configResolver.handleDeliveryError(
           tenantId,
           defaultProvider,
           error instanceof Error ? error : new Error(String(error))

@@ -1,11 +1,11 @@
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
 import { TeamRepository } from './team.repository.js';
 import { UserRepository } from '../auth/user.repository.js';
-import { AuthError, ValidationError } from '../../shared/errors/index.js';
+import { AuthError } from '../../shared/errors/index.js';
 import { logger } from '../../shared/logger.js';
 import { config } from '../../config/env.js';
+import { PlatformMailer } from '../platform-mail/platform-mailer.js';
 
 import { eq } from 'drizzle-orm';
 import { users, teamInvitations } from '../../db/schema.js';
@@ -16,40 +16,11 @@ export interface InviteInput {
 }
 
 export class TeamService {
-  private mailTransporter: nodemailer.Transporter | null = null;
-
   constructor(
     private readonly teamRepo: TeamRepository,
-    private readonly userRepo: UserRepository
+    private readonly userRepo: UserRepository,
+    private readonly platformMailer: PlatformMailer
   ) {}
-
-  private get transporter() {
-    if (this.mailTransporter) return this.mailTransporter;
-
-    if (!process.env.PLATFORM_SMTP_URL) {
-      if (process.env.NODE_ENV === 'production') {
-        throw new ValidationError('PLATFORM_SMTP_URL must be configured in production');
-      }
-      logger.warn('PLATFORM_SMTP_URL is not set. Emails will be skipped.');
-      return null;
-    }
-    
-    const url = new URL(process.env.PLATFORM_SMTP_URL);
-    this.mailTransporter = nodemailer.createTransport({
-      host: url.hostname,
-      port: Number(url.port) || 587,
-      secure: url.protocol === 'smtps:',
-      auth: {
-        user: decodeURIComponent(url.username),
-        pass: decodeURIComponent(url.password),
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 5000,
-      socketTimeout: 10000,
-    });
-    
-    return this.mailTransporter;
-  }
 
   async inviteMember(tenantId: string, invitedByUserId: string, input: InviteInput) {
     const normalizedEmail = input.email.trim().toLowerCase();
@@ -104,29 +75,17 @@ export class TeamService {
   }
 
   private async sendInvitationEmail(invitationId: string, email: string, rawToken: string) {
-    const mailer = this.transporter;
-    if (!mailer) {
-      await this.teamRepo.updateInvitationDeliveryStatus(invitationId, 'failed', 'Platform SMTP not configured');
-      return;
-    }
-
     const inviteUrl = `${config.FRONTEND_URL}/invite#token=${rawToken}`;
     
     try {
-      await mailer.sendMail({
-        from: '"Jaktra" <noreply@jaktra.com>', // Assuming default from
-        to: email,
-        subject: 'You have been invited to join Jaktra',
-        html: `
-          <p>You have been invited to join a workspace on Jaktra.</p>
-          <p>Click the link below to accept the invitation and set up your account:</p>
-          <p><a href="${inviteUrl}">Accept Invitation</a></p>
-          <p>This invitation expires in 7 days.</p>
-        `,
-      });
-      await this.teamRepo.updateInvitationDeliveryStatus(invitationId, 'sent');
+      const result = await this.platformMailer.sendTeamInviteEmail(email, inviteUrl);
+      if (result.success) {
+        await this.teamRepo.updateInvitationDeliveryStatus(invitationId, 'sent');
+      } else {
+        await this.teamRepo.updateInvitationDeliveryStatus(invitationId, 'failed', result.error || 'Delivery failed');
+      }
     } catch (error: unknown) {
-      await this.teamRepo.updateInvitationDeliveryStatus(invitationId, 'failed', 'Delivery failed');
+      await this.teamRepo.updateInvitationDeliveryStatus(invitationId, 'failed', error instanceof Error ? error.message : 'Delivery failed');
       throw error;
     }
   }

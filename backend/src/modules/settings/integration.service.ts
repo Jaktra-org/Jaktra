@@ -4,7 +4,7 @@ import { encrypt, decrypt } from '../../shared/encryption.js';
 import { IntegrationErrors, IntegrationError } from './integration.errors.js';
 import { logger } from '../../shared/logger.js';
 import type { TenantIntegration } from '../../db/index.js';
-import { SmtpConnectionFactory, SmtpConfig } from '../communication/providers/smtp.factory.js';
+import { SmtpConnectionFactory, SmtpConfig } from '../../shared/email/providers/smtp-email.provider.js';
 
 export class IntegrationService {
   constructor(private readonly repo: IntegrationRepository) {}

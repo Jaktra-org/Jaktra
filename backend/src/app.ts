@@ -82,6 +82,8 @@ import { requestId } from './middleware/request-id.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { NotFoundError } from './shared/errors/index.js';
 import * as Sentry from '@sentry/node';
+import { EnvPlatformEmailConfigResolver, PlatformMailer } from './modules/platform-mail/platform-mailer.js';
+import { DbTenantEmailConfigResolver, TenantMailer } from './modules/communication/tenant-mailer.js';
 
 export interface AppConfig {
   corsOrigins: string[];
@@ -151,7 +153,15 @@ export function createApp(config: AppConfig): Application {
 
     // Shared Services
     const integrationService = new IntegrationService(integrationRepo);
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, integrationService, eventService, dlqRepo);
+
+    // Platform & Tenant Mailers
+    const platformEmailConfigResolver = new EnvPlatformEmailConfigResolver();
+    const platformMailer = new PlatformMailer(platformEmailConfigResolver);
+
+    const tenantEmailConfigResolver = new DbTenantEmailConfigResolver(integrationService, communicationRepo);
+    const tenantMailer = new TenantMailer(tenantEmailConfigResolver, communicationRepo, invoiceRepo, eventService, dlqRepo);
+
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, tenantMailer, eventService, dlqRepo);
     
     const gatewayFactory = new PaymentGatewayFactory();
     gatewayFactory.register(new RazorpayAdapter());
@@ -188,7 +198,7 @@ export function createApp(config: AppConfig): Application {
       app.use('/api/tenants', createTenantRouter(new TenantController(tenantService), authMiddleware));
 
       const teamRepo = new TeamRepository(config.db);
-      const teamService = new TeamService(teamRepo, userRepo);
+      const teamService = new TeamService(teamRepo, userRepo, platformMailer);
       app.use('/api/team', createTeamRouter(new TeamController(teamService, teamRepo, eventService), authMiddleware));
 
       const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo);
