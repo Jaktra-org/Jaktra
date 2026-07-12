@@ -1,6 +1,6 @@
 # Jaktra
 
-An enterprise-grade accounts receivable automation platform that replaces manual collection workflows with intelligent, multi-channel agents. It orchestrates communication cycles from initial reminders to payment reconciliation.
+An enterprise-grade accounts receivable automation platform that replaces manual collection workflows with intelligent, automated multi-channel follow-up generation. It orchestrates communication cycles from initial reminders to payment reconciliation.
 
 ## System Architecture
 
