@@ -15,7 +15,13 @@ export function createAuthRouter(
   router.post('/login', authController.login);
   router.post('/refresh', authController.refresh);
 
+  router.post('/forgot-password', authController.forgotPassword);
+  router.post('/reset-password/verify', authController.resetPasswordVerify);
+  router.post('/reset-password/confirm', authController.resetPasswordConfirm);
+  router.post('/reset-password/resend', authController.resetPasswordResend);
+
   router.post('/mfa/verify', authController.mfaVerify);
+
 
   router.get('/me', authMiddleware, authController.getMe);
   router.patch('/profile', authMiddleware, authController.updateProfile);

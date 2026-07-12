@@ -46,6 +46,7 @@ export const ACTION_TYPES = [
   'auth.account_locked',
   'auth.mfa_enabled',
   'auth.mfa_disabled',
+  'auth.password_reset',
 
   'legacy.event',
 ] as const;
@@ -79,4 +80,5 @@ export const ACTIVITY_LOG_VISIBLE_ACTIONS: ActionType[] = [
   'auth.account_locked',
   'auth.mfa_enabled',
   'auth.mfa_disabled',
+  'auth.password_reset',
 ];

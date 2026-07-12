@@ -125,4 +125,34 @@ export class PlatformMailer {
       };
     }
   }
+
+  async sendPasswordResetOtpEmail(to: string, code: string): Promise<EmailSendResult> {
+    try {
+      const provider = await this.getProvider();
+      if (!provider) {
+        return { success: false, error: 'Platform SMTP not configured' };
+      }
+      
+      const message: EmailMessage = {
+        to,
+        from: { name: 'Jaktra', email: 'noreply@jaktra.com' },
+        subject: 'Reset your Jaktra password',
+        html: `
+          <p>You have requested to reset your password on Jaktra.</p>
+          <p>Please enter the following 6-digit code to reset your password:</p>
+          <h2>${code}</h2>
+          <p>This password reset code expires in 10 minutes.</p>
+          <p>If you did not request a password reset, you can safely ignore this email.</p>
+        `,
+      };
+
+      return await provider.send(message);
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
 }
+

@@ -85,6 +85,8 @@ import * as Sentry from '@sentry/node';
 import { EnvPlatformEmailConfigResolver, PlatformMailer } from './modules/platform-mail/platform-mailer.js';
 import { DbTenantEmailConfigResolver, TenantMailer } from './modules/communication/tenant-mailer.js';
 import { EmailVerificationService } from './modules/auth/email-verification.service.js';
+import { OtpService } from './modules/auth/otp.service.js';
+
 
 export interface AppConfig {
   corsOrigins: string[];
@@ -188,7 +190,8 @@ export function createApp(config: AppConfig): Application {
         });
       }
       const lockoutService = new LockoutService(lockoutRedis as unknown as RedisClientType | null, eventRepo);
-      const emailVerificationService = new EmailVerificationService(lockoutRedis as unknown as RedisClientType | null);
+      const otpService = new OtpService(lockoutRedis as unknown as RedisClientType | null);
+      const emailVerificationService = new EmailVerificationService(lockoutRedis as unknown as RedisClientType | null, otpService);
 
       const authService = new AuthService(
         userRepo,
@@ -197,8 +200,11 @@ export function createApp(config: AppConfig): Application {
         lockoutService,
         eventRepo,
         emailVerificationService,
-        platformMailer
+        platformMailer,
+        lockoutRedis as unknown as RedisClientType | null,
+        otpService
       );
+
       const tenantService = new TenantService(tenantRepo);
       const authMiddleware = createAuthMiddleware(authService);
       

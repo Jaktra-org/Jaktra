@@ -5,6 +5,7 @@ import { TOTP, NobleCryptoPlugin, ScureBase32Plugin } from 'otplib';
 const totp = new TOTP({ crypto: new NobleCryptoPlugin(), base32: new ScureBase32Plugin() });
 import QRCode from 'qrcode';
 import type { StringValue } from 'ms';
+import type { RedisClientType } from 'redis';
 import type { UserRepository } from './user.repository.js';
 import type { LockoutService } from './lockout.service.js';
 import type { EventRepository } from '../event/event.repository.js';
@@ -14,6 +15,7 @@ import { AuthError, ForbiddenError } from '../../shared/errors/index.js';
 import { encrypt, decrypt } from '../../shared/encryption.js';
 import { EmailVerificationService } from './email-verification.service.js';
 import { PlatformMailer } from '../platform-mail/platform-mailer.js';
+import { OtpService } from './otp.service.js';
 
 // V1 LIMITATION: No self-service MFA recovery flow exists.
 // If a user loses both their authenticator device AND all backup codes, an admin
@@ -22,12 +24,12 @@ import { PlatformMailer } from '../platform-mail/platform-mailer.js';
 //     mfa_secret_auth_tag=NULL, mfa_secret_key_version=NULL,
 //     mfa_backup_codes=NULL, mfa_last_used_step=NULL WHERE id = '<userId>';
 // A future v2 should add an admin API endpoint: DELETE /api/team/:userId/mfa
-
+ 
 const SALT_ROUNDS = 12;
 const MFA_BACKUP_CODE_COUNT = 8;
 const MFA_PENDING_EXPIRES = '5m';
 const mfaAad = (userId: string) => `user:${userId}`;
-
+ 
 export interface OnboardInput {
   name: string;
   email: string;
@@ -54,7 +56,6 @@ export interface MfaPendingResult {
 
 export interface MfaSetupInitiateResult {
   qrCodeDataUrl: string;
-
 }
 
 export interface MfaSetupConfirmResult {
@@ -70,7 +71,10 @@ export class AuthService {
     private eventRepo: EventRepository,
     private emailVerificationService: EmailVerificationService,
     private platformMailer: PlatformMailer,
+    private readonly redis: RedisClientType | null,
+    private readonly otpService: OtpService
   ) {}
+
 
   async onboard(input: OnboardInput): Promise<{ pendingVerification: true }> {
     const normalizedEmail = input.email.toLowerCase().trim();
@@ -490,4 +494,132 @@ export class AuthService {
       payload: null,
     });
   }
+
+  private async processForgotPasswordRequest(email: string): Promise<void> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await this.userRepo.findFirstByEmail(normalizedEmail);
+
+    if (!user) {
+      // Sleep to prevent timing-based user enumeration
+      await new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * 100));
+      return;
+    }
+
+    // Rate limiting
+    await this.otpService.checkRateLimit(normalizedEmail, 'password_reset_resend');
+
+    // Store OTP in Redis
+    const code = await this.otpService.storeOtp(
+      normalizedEmail,
+      'password_reset_otp',
+      { userId: user.id },
+      600
+    );
+
+    // Update rate limits
+    await this.otpService.incrementRateLimit(normalizedEmail, 'password_reset_resend');
+
+    // Send email
+    const emailResult = await this.platformMailer.sendPasswordResetOtpEmail(normalizedEmail, code);
+    if (!emailResult.success) {
+      if (process.env.NODE_ENV !== 'production' && emailResult.error === 'Platform SMTP not configured') {
+        // Log skipped warning in non-production
+      } else {
+        throw new AuthError(`Failed to send password reset email: ${emailResult.error}`, 500);
+      }
+    }
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    await this.processForgotPasswordRequest(email);
+  }
+
+  async resendForgotPasswordOtp(email: string): Promise<void> {
+    await this.processForgotPasswordRequest(email);
+  }
+
+  async verifyForgotPasswordOtp(email: string, code: string): Promise<{ resetToken: string }> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Verify OTP using shared OtpService
+    const otpData = await this.otpService.verifyOtp(normalizedEmail, 'password_reset_otp', code);
+
+    // Issue short-lived reset token (JWT)
+    const resetToken = jwt.sign(
+      {
+        purpose: 'password_reset',
+        userId: otpData.userId,
+        jti: crypto.randomUUID(),
+      },
+      this.jwtSecret,
+      { expiresIn: '10m' }
+    );
+
+    return { resetToken };
+  }
+
+  async confirmForgotPassword(resetToken: string, newPassword: string): Promise<AuthResult> {
+    let payload: PasswordResetJwtPayload;
+    try {
+      payload = jwt.verify(resetToken, this.jwtSecret) as PasswordResetJwtPayload;
+    } catch {
+      throw new AuthError('Invalid or expired reset token, please request a new one', 400);
+    }
+
+    if (!payload || payload.purpose !== 'password_reset' || !payload.userId || !payload.jti) {
+      throw new AuthError('Invalid or expired reset token, please request a new one', 400);
+    }
+
+    // SECURITY NOTE: if Redis is unavailable, one-time-use enforcement on
+    // the reset token is skipped (fail-open). The token remains valid for its
+    // full 10-minute window and could be replayed if this happens.
+    if (this.redis && this.redis.isOpen) {
+      const isUsed = await this.redis.get(`password_reset_token_used:${payload.jti}`);
+      if (isUsed) {
+        throw new AuthError('Reset token has already been used', 400);
+      }
+      // Invalidate the token for its 10-minute maximum lifetime
+      await this.redis.set(`password_reset_token_used:${payload.jti}`, '1', { EX: 600 });
+    }
+
+    const user = await this.userRepo.findById(payload.userId);
+    if (!user) {
+      throw new AuthError('User not found', 404);
+    }
+
+    // Hash and update password
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await this.userRepo.update(user.id, { passwordHash });
+
+    // Clear failed login lockout attempts
+    await this.lockoutService.clearFailures(user.email);
+
+    // Log audit event
+    await this.eventRepo.create({
+      tenantId: user.tenantId,
+      entityType: 'user',
+      entityId: user.id,
+      actorId: user.id,
+      actorName: null,
+      actorEmail: user.email,
+      actorRole: null,
+      actionType: 'auth.password_reset',
+      description: 'Password reset successfully.',
+      source: 'ui',
+      oldValues: null,
+      newValues: null,
+      eventType: 'auth.password_reset',
+      payload: null,
+    });
+
+    // Auto-login: issue fresh auth token
+    const token = this.signToken(user);
+    return { user: this.stripSensitive(user), token };
+  }
+}
+
+interface PasswordResetJwtPayload {
+  purpose: string;
+  userId: string;
+  jti: string;
 }

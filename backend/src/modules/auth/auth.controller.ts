@@ -5,11 +5,13 @@ import { AuthError, ValidationError } from '../../shared/errors/index.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 
 
+export const passwordSchema = z.string().min(8).max(100);
+
 const onboardSchema = z.object({
   name: z.string().min(1),
   companyName: z.string().min(1),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: passwordSchema,
 });
 
 const loginSchema = z.object({
@@ -42,6 +44,25 @@ const verifyEmailSchema = z.object({
 const resendVerificationSchema = z.object({
   email: z.string().email(),
 });
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordVerifySchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6),
+});
+
+const resetPasswordConfirmSchema = z.object({
+  resetToken: z.string().min(1),
+  newPassword: passwordSchema,
+});
+
+const resetPasswordResendSchema = z.object({
+  email: z.string().email(),
+});
+
 
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -204,6 +225,78 @@ export class AuthController {
     try {
       await this.authService.resendVerification(parsed.data.email);
       res.status(200).json({ success: true, message: 'Verification code resent successfully' });
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = forgotPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      await this.authService.forgotPassword(parsed.data.email);
+      res.status(200).json({
+        success: true,
+        message: 'If an account exists with this email, a reset code has been sent',
+      });
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  resetPasswordVerify = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = resetPasswordVerifySchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      const result = await this.authService.verifyForgotPasswordOtp(
+        parsed.data.email,
+        parsed.data.code,
+      );
+      res.status(200).json(result);
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  resetPasswordConfirm = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = resetPasswordConfirmSchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      const result = await this.authService.confirmForgotPassword(
+        parsed.data.resetToken,
+        parsed.data.newPassword,
+      );
+      res.status(200).json(result);
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
+  resetPasswordResend = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const parsed = resetPasswordResendSchema.safeParse(req.body);
+    if (!parsed.success) {
+      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      return;
+    }
+
+    try {
+      await this.authService.resendForgotPasswordOtp(parsed.data.email);
+      res.status(200).json({
+        success: true,
+        message: 'If an account exists with this email, a reset code has been sent',
+      });
     } catch (err: unknown) {
       next(err);
     }
