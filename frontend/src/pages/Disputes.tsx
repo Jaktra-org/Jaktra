@@ -89,9 +89,7 @@ export function Disputes() {
   // Determine if automatic reply capture is active (inbound_parse_active must be true)
   const isReplyCaptureActive = settings?.inboundParseActive === true;
 
-  // Separate matched vs unmatched disputes
-  const matchedDisputes = disputes?.filter(d => d.invoiceId !== null) || [];
-  const unmatchedReplies = disputes?.filter(d => d.invoiceId === null) || [];
+  const pendingDisputes = disputes || [];
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -135,13 +133,13 @@ export function Disputes() {
 
       {/* Main Review Section */}
       <div className="space-y-8">
-        {/* 1. Pending Disputes (Matched Invoices) */}
+        {/* Pending Disputes */}
         <div>
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600 mr-2"></span>
-            Pending Disputes ({matchedDisputes.length})
+            Pending Disputes ({pendingDisputes.length})
           </h3>
-          {matchedDisputes.length === 0 ? (
+          {pendingDisputes.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-lg p-8 text-center text-slate-500">
               <CheckCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <p className="font-medium">No pending disputes needing review.</p>
@@ -149,7 +147,7 @@ export function Disputes() {
             </div>
           ) : (
             <div className="space-y-4">
-              {matchedDisputes.map(item => (
+              {pendingDisputes.map(item => (
                 <DisputeCard 
                   key={item.id}
                   item={item}
@@ -170,37 +168,6 @@ export function Disputes() {
             </div>
           )}
         </div>
-
-        {/* 2. Unmatched Inbound Emails */}
-        {unmatchedReplies.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2"></span>
-              Unmatched Inbound Emails ({unmatchedReplies.length})
-            </h3>
-            <div className="space-y-4">
-              {unmatchedReplies.map(item => (
-                <DisputeCard 
-                  key={item.id}
-                  item={item}
-                  isExpanded={expandedId === item.id}
-                  isEditing={editingId === item.id}
-                  draftResponse={draftResponse}
-                  setDraftResponse={setDraftResponse}
-                  onToggleExpand={() => toggleExpand(item.id)}
-                  onStartEdit={() => handleStartEdit(item)}
-                  onCancelEdit={handleCancelEdit}
-                  onSaveAndApprove={() => handleSaveAndApprove(item.id)}
-                  onDirectApprove={() => handleDirectApprove(item)}
-                  onDiscard={() => handleDiscard(item.id)}
-                  approvePending={approveMutation.isPending}
-                  discardPending={discardMutation.isPending}
-                  unmatched={true}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -232,7 +199,6 @@ function DisputeCard({
   onDiscard,
   approvePending,
   discardPending,
-  unmatched = false,
 }: {
   item: InboundEmailReview;
   isExpanded: boolean;
@@ -247,7 +213,6 @@ function DisputeCard({
   onDiscard: () => void;
   approvePending: boolean;
   discardPending: boolean;
-  unmatched?: boolean;
 }) {
   const cfg = classificationConfigs[item.classification] || classificationConfigs.unclear;
   const isConfidenceLow = Number(item.confidence) < 0.5;
@@ -269,7 +234,7 @@ function DisputeCard({
             </span>
           </div>
           <h4 className="text-sm font-medium text-slate-700 line-clamp-1">{item.subject}</h4>
-          {!unmatched && item.invoiceNo && (
+          {item.invoiceNo && (
             <div className="flex items-center space-x-2 text-xs pt-1">
               <span className="text-slate-400">Invoice:</span>
               <a 
@@ -281,11 +246,6 @@ function DisputeCard({
                 <ExternalLink className="w-3 h-3 ml-0.5" />
               </a>
             </div>
-          )}
-          {unmatched && (
-            <span className="inline-block text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-semibold mt-1">
-              Unmatched Inbound
-            </span>
           )}
         </div>
 
