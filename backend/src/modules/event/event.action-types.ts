@@ -48,6 +48,10 @@ export const ACTION_TYPES = [
   'auth.mfa_disabled',
   'auth.password_reset',
 
+  'dispute.received',
+  'dispute.approved',
+  'dispute.discarded',
+
   'legacy.event',
 ] as const;
 
@@ -81,4 +85,7 @@ export const ACTIVITY_LOG_VISIBLE_ACTIONS: ActionType[] = [
   'auth.mfa_enabled',
   'auth.mfa_disabled',
   'auth.password_reset',
+  'dispute.received',
+  'dispute.approved',
+  'dispute.discarded',
 ];

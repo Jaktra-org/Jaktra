@@ -29,6 +29,13 @@ export const validationResultEnum = pgEnum('validation_result', [
   'valid', 'invalid', 'revoked', 'insufficient_scope', 'unverified_sender', 'unknown'
 ]);
 
+export const inboundEmailStatusEnum = pgEnum('inbound_email_status', [
+  'pending_review',
+  'approved',
+  'discarded',
+]);
+
+
 
 export const paymentStatusEnum = pgEnum('payment_status', [
   'Pending',
@@ -281,6 +288,7 @@ export const tenantSettings = pgTable('tenant_settings', {
   autoPurgeDays: integer('auto_purge_days').notNull().default(30),
   dlqThreshold: integer('dlq_threshold').notNull().default(3),
   mfaRequired: boolean('mfa_required').notNull().default(false),
+  inboundParseActive: boolean('inbound_parse_active').notNull().default(false),
 });
 
 export const tenantIntegrations = pgTable('tenant_integrations', {
@@ -356,6 +364,7 @@ export const tenantsRelations = relations(tenants, ({ many, one }) => ({
     references: [tenantSettings.tenantId],
   }),
   integrations: many(tenantIntegrations),
+  inboundEmails: many(inboundEmails),
 }));
 
 export const tenantIntegrationsRelations = relations(tenantIntegrations, ({ one }) => ({
@@ -383,6 +392,7 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
     fields: [invoices.id],
     references: [dlqEntries.invoiceId],
   }),
+  inboundEmails: many(inboundEmails),
 }));
 
 export const communicationsRelations = relations(communications, ({ one }) => ({
@@ -463,5 +473,53 @@ export const teamInvitations = pgTable('team_invitations', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const inboundEmails = pgTable('inbound_emails', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  invoiceId: uuid('invoice_id')
+    .references(() => invoices.id, { onDelete: 'set null' }),
+  sender: text('sender').notNull(),
+  subject: text('subject'),
+  body: text('body'),
+  classification: text('classification'),
+  confidence: numeric('confidence', { precision: 4, scale: 3 }),
+  suggestedResponse: text('suggested_response'),
+  reasoning: text('reasoning'),
+  status: inboundEmailStatusEnum('status').notNull().default('pending_review'),
+  reviewedBy: uuid('reviewed_by')
+    .references(() => users.id, { onDelete: 'set null' }),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => [
+  index('inbound_emails_tenant_id_status_idx').on(table.tenantId, table.status),
+  index('inbound_emails_invoice_id_idx').on(table.invoiceId),
+]);
+
+export const inboundEmailsRelations = relations(inboundEmails, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [inboundEmails.tenantId],
+    references: [tenants.id],
+  }),
+  invoice: one(invoices, {
+    fields: [inboundEmails.invoiceId],
+    references: [invoices.id],
+  }),
+  reviewer: one(users, {
+    fields: [inboundEmails.reviewedBy],
+    references: [users.id],
+  }),
+}));
+
 export type TeamInvitation = typeof teamInvitations.$inferSelect;
 export type NewTeamInvitation = typeof teamInvitations.$inferInsert;
+
+export type InboundEmail = typeof inboundEmails.$inferSelect;
+export type NewInboundEmail = typeof inboundEmails.$inferInsert;
+

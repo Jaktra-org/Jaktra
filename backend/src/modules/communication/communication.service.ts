@@ -6,6 +6,7 @@ import { CommunicationError } from '../../shared/errors/index.js';
 import * as dns from 'dns/promises';
 import { logger } from '../../shared/logger.js';
 import type { DlqRepository } from '../dlq/dlq.repository.js';
+import { config } from '../../config/index.js';
 
 export const createCommunicationSchema = z.object({
   invoiceId: z.string().uuid(),
@@ -184,10 +185,15 @@ export class CommunicationService {
       throw new CommunicationError('Communication settings not configured for this tenant', 400);
     }
 
+    let customReplyTo = settings.replyTo || undefined;
+    if (config.INBOUND_PARSE_DOMAIN && invoiceId) {
+      customReplyTo = `reply+${invoiceId}@${config.INBOUND_PARSE_DOMAIN}`;
+    }
+
     const message: EmailMessage = {
       to,
       from: { name: settings.senderName, email: settings.senderEmail },
-      replyTo: settings.replyTo || undefined,
+      replyTo: customReplyTo,
       subject,
       html,
     };

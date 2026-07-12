@@ -9,6 +9,7 @@ export {
   tenantSettings,
   tenantIntegrations,
   teamInvitations,
+  inboundEmails,
 } from './schema.js';
 
 export {
@@ -18,6 +19,7 @@ export {
   communicationStatusEnum,
   providerEnum,
   validationResultEnum,
+  inboundEmailStatusEnum,
 } from './schema.js';
 
 export type {
@@ -41,6 +43,8 @@ export type {
   NewTenantIntegration,
   TeamInvitation,
   NewTeamInvitation,
+  InboundEmail,
+  NewInboundEmail,
 } from './schema.js';
 
 export { createDatabaseClient } from './client.js';

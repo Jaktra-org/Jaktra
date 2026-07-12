@@ -21,6 +21,8 @@ const schema = z.object({
   SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+  SENDGRID_INBOUND_PARSE_SECRET: z.string().optional(),
+  INBOUND_PARSE_DOMAIN: z.string().optional(),
 
   AI_ML_SERVICE_URL: z.string().url().optional(),
   AI_ML_SERVICE_KEY: z.string().optional(),

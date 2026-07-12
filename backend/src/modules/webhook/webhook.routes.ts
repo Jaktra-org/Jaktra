@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import express from 'express';
+import multer from 'multer';
 import { WebhookController } from './webhook.controller.js';
 
 export function createWebhookRouter(
@@ -7,11 +8,17 @@ export function createWebhookRouter(
 ): Router {
   const router = Router();
 
-  // SendGrid Email Webhooks
   router.post(
     '/sendgrid',
     express.raw({ type: 'application/json' }),
     webhookController.handleSendgrid
+  );
+
+  const upload = multer();
+  router.post(
+    '/sendgrid/inbound/:secretToken',
+    upload.any(),
+    webhookController.handleSendgridInbound
   );
 
   // Payment Gateways

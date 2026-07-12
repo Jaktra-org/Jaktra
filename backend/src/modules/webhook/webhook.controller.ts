@@ -6,6 +6,9 @@ import type { SendgridWebhookService } from './providers/sendgrid.webhook.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
 import type { PaymentService } from '../payment/payment.service.js';
 import { AppError, AuthError, ValidationError, NotFoundError, ForbiddenError } from '../../shared/errors/index.js';
+import type { DisputeService } from '../dispute/dispute.service.js';
+import { timingSafeCompare } from '../dispute/dispute.service.js';
+import { config } from '../../config/index.js';
 
 export class WebhookController {
   constructor(
@@ -13,7 +16,8 @@ export class WebhookController {
     private webhookService: WebhookService,
     private paymentService: PaymentService,
     private settingsRepo: SettingsRepository,
-    private sendgridService?: SendgridWebhookService
+    private sendgridService?: SendgridWebhookService,
+    private disputeService?: DisputeService
   ) {}
 
   handleSendgrid = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -58,6 +62,37 @@ export class WebhookController {
       }
       next(error);
     }
+  };
+
+  handleSendgridInbound = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const secretToken = req.params.secretToken as string;
+    const configuredSecret = config.SENDGRID_INBOUND_PARSE_SECRET;
+
+    if (!configuredSecret || !timingSafeCompare(secretToken, configuredSecret)) {
+      logger.warn('SendGrid inbound parse webhook received with missing or invalid secret token — ignoring');
+      res.status(200).json({ status: 'ignored', reason: 'invalid_secret' });
+      return;
+    }
+
+    if (!this.disputeService) {
+      logger.error('DisputeService not configured on WebhookController');
+      res.status(200).json({ status: 'ignored', reason: 'service_not_configured' });
+      return;
+    }
+
+    const { from, to, subject, text, html } = req.body;
+
+    this.disputeService.processInboundEmail({
+      from: from || '',
+      to: to || '',
+      subject: subject || '',
+      text: text || undefined,
+      html: html || undefined,
+    }).catch((err) => {
+      logger.error('Failed to process inbound email in background:', err);
+    });
+
+    res.status(200).json({ status: 'success' });
   };
 
   handlePayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

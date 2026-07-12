@@ -33,6 +33,10 @@ import { createWebhookRouter } from './modules/webhook/webhook.routes.js';
 import { WebhookController } from './modules/webhook/webhook.controller.js';
 import { createTeamRouter } from './modules/team/team.routes.js';
 import { TeamController } from './modules/team/team.controller.js';
+import { DisputeRepository } from './modules/dispute/dispute.repository.js';
+import { DisputeService } from './modules/dispute/dispute.service.js';
+import { DisputeController } from './modules/dispute/dispute.controller.js';
+import { createDisputeRouter } from './modules/dispute/dispute.routes.js';
 
 import { UserRepository } from './modules/auth/user.repository.js';
 import { LockoutService } from './modules/auth/lockout.service.js';
@@ -172,10 +176,27 @@ export function createApp(config: AppConfig): Application {
     const paymentService = new PaymentService(paymentRepo, invoiceRepo, integrationService, gatewayFactory, settingsRepo, eventRepo);
     app.locals.paymentService = paymentService;
 
+    const aimlService = new AimlService({
+      baseUrl: config.aimlServiceUrl || 'http://localhost:8000',
+      serviceKey: config.aimlServiceKey,
+    });
+    app.locals.aimlService = aimlService;
+
+    const disputeRepo = new DisputeRepository(config.db);
+    const disputeService = new DisputeService(
+      disputeRepo,
+      aimlService,
+      config.db,
+      communicationRepo,
+      communicationService,
+      eventService
+    );
+    const disputeController = new DisputeController(disputeService);
+
     const webhookService = new WebhookService(invoiceRepo, eventService);
     const sendgridService = new SendgridWebhookService(communicationService, config.sendgridWebhookPublicKey);
     
-    app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, settingsRepo, sendgridService)));
+    app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, settingsRepo, sendgridService, disputeService)));
 
     if (config.jwtSecret) {
       const userRepo = new UserRepository(config.db);
@@ -242,9 +263,9 @@ export function createApp(config: AppConfig): Application {
       app.locals.tenantScoped = tenantScoped;
 
       if (config.aimlServiceUrl) {
-        const aimlService = new AimlService({ baseUrl: config.aimlServiceUrl, serviceKey: config.aimlServiceKey });
         app.use('/api/aiml', createAimlRouter(new AimlController(aimlService), authMiddleware));
-        app.locals.aimlService = aimlService;
+
+        app.use('/api/disputes', createDisputeRouter(disputeController, authMiddleware, tenantScoped));
 
         app.use('/api/dlq', createDlqRouter(new DlqController(dlqService, eventService), authMiddleware, tenantScoped));
 

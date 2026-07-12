@@ -21,6 +21,9 @@ const app = createApp({
 const server = app.listen(config.PORT, () => {
   logger.info(`Jaktra backend running on port ${config.PORT} [${config.NODE_ENV}]`);
   logger.info(`Health → http://localhost:${config.PORT}/api/health`);
+  if (!config.SENDGRID_INBOUND_PARSE_SECRET) {
+    logger.warn('WARNING: SENDGRID_INBOUND_PARSE_SECRET is not configured. SendGrid inbound parse webhooks will fail validation checks.');
+  }
 });
 
 function shutdown(signal: string): void {

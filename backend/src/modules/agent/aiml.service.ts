@@ -132,6 +132,43 @@ export class AimlService {
     };
   }
 
+  async analyzeDispute(request: {
+    inboundText: string;
+    invoiceId: string;
+    invoiceNo: string;
+    clientName: string;
+    invoiceAmount: string;
+    dueDate: string;
+    priorCommunications?: any[];
+  }): Promise<{
+    classification: 'dispute' | 'question' | 'payment_promise' | 'unclear';
+    confidence: number;
+    suggestedResponse: string;
+    reasoning: string;
+  }> {
+    const payload = {
+      inbound_text: request.inboundText,
+      invoice_id: request.invoiceId,
+      invoice_no: request.invoiceNo,
+      client_name: request.clientName,
+      invoice_amount: request.invoiceAmount,
+      due_date: request.dueDate,
+      prior_communications: request.priorCommunications || null,
+    };
+    const raw = await this.request<{
+      classification: string;
+      confidence: number;
+      suggested_response: string;
+      reasoning: string;
+    }>('POST', '/agents/dispute', payload);
+    return {
+      classification: raw.classification as any,
+      confidence: raw.confidence,
+      suggestedResponse: raw.suggested_response,
+      reasoning: raw.reasoning,
+    };
+  }
+
   async triggerBatchRun(request: BatchRunRequest): Promise<BatchRunResponse> {
     return this.request<BatchRunResponse>('POST', '/batch-run', request);
   }

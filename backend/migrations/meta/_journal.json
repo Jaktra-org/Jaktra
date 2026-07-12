@@ -92,6 +92,13 @@
       "when": 1783791410000,
       "tag": "0012_add_email_verified",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1783802700000,
+      "tag": "0013_add_inbound_emails",
+      "breakpoints": true
     }
   ]
 }
