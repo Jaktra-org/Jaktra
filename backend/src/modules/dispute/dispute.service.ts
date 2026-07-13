@@ -1,14 +1,13 @@
 import crypto from 'crypto';
-import { eq, and, isNull, inArray } from 'drizzle-orm';
-import { inboundEmails, invoices, tenantSettings } from '../../db/index.js';
+import { eq, and, isNull } from 'drizzle-orm';
+import { invoices, tenantSettings } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
-import type { DisputeRepository } from './dispute.repository.js';
+import type { DisputeRepository, PendingDisputeItem } from './dispute.repository.js';
 import type { AimlService } from '../agent/aiml.service.js';
 import type { CommunicationService } from '../communication/communication.service.js';
 import type { CommunicationRepository } from '../communication/communication.repository.js';
-import type { EventService } from '../event/event.service.js';
+import type { EventService, ActorContext } from '../event/event.service.js';
 import { logger } from '../../shared/logger.js';
-import { config } from '../../config/index.js';
 
 export function timingSafeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -35,7 +34,7 @@ export class DisputeService {
     private readonly communicationRepo: CommunicationRepository,
     private readonly communicationService: CommunicationService,
     private readonly eventService?: EventService
-  ) {}
+  ) { }
 
   // NOTE (v1 limitation): No rate limiting exists on inbound processing volume per tenant/sender.
   async processInboundEmail(params: {
@@ -161,13 +160,13 @@ export class DisputeService {
   }
 
   async listPending(tenantId: string, params: { page: number; limit: number }): Promise<{
-    data: any[];
+    data: PendingDisputeItem[];
     pagination: { total: number; page: number; limit: number; totalPages: number };
   }> {
     return this.disputeRepo.listPending(tenantId, params);
   }
 
-  async approveDispute(id: string, tenantId: string, approvedBody: string, actor: any): Promise<void> {
+  async approveDispute(id: string, tenantId: string, approvedBody: string, actor: ActorContext): Promise<void> {
     const dispute = await this.disputeRepo.findById(id);
     if (!dispute || dispute.tenantId !== tenantId) {
       throw new Error('Dispute review item not found');
@@ -195,7 +194,7 @@ export class DisputeService {
     await this.disputeRepo.update(id, {
       status: 'approved',
       suggestedResponse: approvedBody,
-      reviewedBy: actor.userId,
+      reviewedBy: ('userId' in actor && actor.userId) || null,
       reviewedAt: new Date(),
     });
 
@@ -216,7 +215,7 @@ export class DisputeService {
     }
   }
 
-  async discardDispute(id: string, tenantId: string, actor: any): Promise<void> {
+  async discardDispute(id: string, tenantId: string, actor: ActorContext): Promise<void> {
     const dispute = await this.disputeRepo.findById(id);
     if (!dispute || dispute.tenantId !== tenantId) {
       throw new Error('Dispute review item not found');
@@ -229,7 +228,7 @@ export class DisputeService {
     // Update status to discarded
     await this.disputeRepo.update(id, {
       status: 'discarded',
-      reviewedBy: actor.userId,
+      reviewedBy: ('userId' in actor && actor.userId) || null,
       reviewedAt: new Date(),
     });
 

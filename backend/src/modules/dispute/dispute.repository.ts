@@ -1,13 +1,30 @@
-import { eq, and, desc, asc, count } from 'drizzle-orm';
+import { eq, and, asc, count } from 'drizzle-orm';
 import { inboundEmails, invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { InboundEmail, NewInboundEmail } from '../../db/index.js';
 
+export interface PendingDisputeItem {
+  id: string;
+  tenantId: string;
+  invoiceId: string | null;
+  sender: string;
+  subject: string | null;
+  body: string | null;
+  classification: string | null;
+  confidence: string | null;
+  suggestedResponse: string | null;
+  reasoning: string | null;
+  status: 'pending_review' | 'approved' | 'discarded';
+  createdAt: Date;
+  invoiceNo: string | null;
+  clientName: string | null;
+}
+
 export class DisputeRepository {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseClient) { }
 
   async listPending(tenantId: string, params: { page: number; limit: number }): Promise<{
-    data: any[];
+    data: PendingDisputeItem[];
     pagination: { total: number; page: number; limit: number; totalPages: number };
   }> {
     const offset = (params.page - 1) * params.limit;

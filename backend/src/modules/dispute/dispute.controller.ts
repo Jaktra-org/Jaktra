@@ -3,6 +3,7 @@ import type { DisputeService } from './dispute.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 import { z } from 'zod';
 import { ValidationError } from '../../shared/errors/index.js';
+import type { ActorContext } from '../event/event.service.js';
 
 const ApproveSchema = z.object({
   suggestedResponse: z.string().min(1, 'Response body cannot be empty'),
@@ -14,9 +15,9 @@ const ListDisputesSchema = z.object({
 });
 
 export class DisputeController {
-  constructor(private readonly disputeService: DisputeService) {}
+  constructor(private readonly disputeService: DisputeService) { }
 
-  private getActorContext(req: Request) {
+  private getActorContext(req: Request): ActorContext {
     const authReq = req as AuthenticatedRequest;
     return {
       source: 'ui' as const,
