@@ -11,18 +11,18 @@ export type DateRange = z.infer<typeof DateRangeSchema>;
 export class AnalyticsService {
   constructor(private analyticsRepo: AnalyticsRepository) {}
 
-  private parseDateRange(query: DateRange) {
+  private parseDateRange(query: DateRange): { fromDate: Date | undefined; toDate: Date | undefined } {
     const fromDate = query.from ? new Date(query.from) : undefined;
     const toDate = query.to ? new Date(query.to) : undefined;
     return { fromDate, toDate };
   }
 
-  async getSummary(tenantId: string, query: DateRange) {
+  async getSummary(tenantId: string, query: DateRange): Promise<{ totalReceivable: number; totalCollected: number; totalOverdue: number; invoiceCount: number } | undefined> {
     const { fromDate, toDate } = this.parseDateRange(query);
     return this.analyticsRepo.getSummary(tenantId, fromDate, toDate);
   }
 
-  async getAging(tenantId: string, query: DateRange) {
+  async getAging(tenantId: string, query: DateRange): Promise<Array<{ tier: string; totalAmount: number; count: number }>> {
     const { fromDate, toDate } = this.parseDateRange(query);
     const breakdown = await this.analyticsRepo.getAgingBreakdown(tenantId, fromDate, toDate);
     
@@ -47,9 +47,9 @@ export class AnalyticsService {
     return result;
   }
 
-  async getDso(tenantId: string, query: DateRange) {
+  async getDso(tenantId: string, query: DateRange): Promise<{ dso: number; daysInPeriod: number; metrics: { totalCreditSales: number; totalReceivable: number } }> {
     const { fromDate, toDate } = this.parseDateRange(query);
-    const metrics = await this.analyticsRepo.getDsoMetrics(tenantId, fromDate, toDate);
+    const metrics = await this.analyticsRepo.getDsoMetrics(tenantId, fromDate, toDate) || { totalCreditSales: 0, totalReceivable: 0 };
     
     let days = 30; // Default to 30 days if no range provided
     if (fromDate && toDate) {
@@ -73,9 +73,9 @@ export class AnalyticsService {
     };
   }
 
-  async getCollectionRate(tenantId: string, query: DateRange) {
+  async getCollectionRate(tenantId: string, query: DateRange): Promise<{ totalInvoices: number; paidInvoices: number; totalAmount: number; paidAmount: number; collectionRateByCount: number; collectionRateByAmount: number }> {
     const { fromDate, toDate } = this.parseDateRange(query);
-    const data = await this.analyticsRepo.getCollectionRate(tenantId, fromDate, toDate);
+    const data = await this.analyticsRepo.getCollectionRate(tenantId, fromDate, toDate) || { totalInvoices: 0, paidInvoices: 0, totalAmount: 0, paidAmount: 0 };
     
     let collectionRateByCount = 0;
     let collectionRateByAmount = 0;
@@ -94,7 +94,7 @@ export class AnalyticsService {
     };
   }
 
-  async getAgentPerformance(tenantId: string, query: DateRange) {
+  async getAgentPerformance(tenantId: string, query: DateRange): Promise<{ totalRuns: number; invoicesProcessed: number; emailsSent: number; automationYield: number; errorRate: number; successRate: number; avgDaysToPayment: number }> {
     const { fromDate, toDate } = this.parseDateRange(query);
     const data = await this.analyticsRepo.getAgentPerformance(tenantId, fromDate, toDate);
     
@@ -124,7 +124,7 @@ export class AnalyticsService {
     };
   }
 
-  async getChannelBreakdown(tenantId: string, query: DateRange) {
+  async getChannelBreakdown(tenantId: string, query: DateRange): Promise<Array<{ channel: string; count: number }>> {
     const { fromDate, toDate } = this.parseDateRange(query);
     const data = await this.analyticsRepo.getChannelBreakdown(tenantId, fromDate, toDate);
     
@@ -140,7 +140,7 @@ export class AnalyticsService {
     return result;
   }
 
-  async getTierEffectiveness(tenantId: string, query: DateRange) {
+  async getTierEffectiveness(tenantId: string, query: DateRange): Promise<Array<{ tier: string; avgDaysToPayment: number; successRate: number }>> {
     const { fromDate, toDate } = this.parseDateRange(query);
     const data = await this.analyticsRepo.getTierEffectiveness(tenantId, fromDate, toDate);
     
@@ -168,12 +168,12 @@ export class AnalyticsService {
     return result;
   }
 
-  async getEmailVolume(tenantId: string, query: DateRange) {
+  async getEmailVolume(tenantId: string, query: DateRange): Promise<Array<{ date: string; emailsSent: number }>> {
     const { fromDate, toDate } = this.parseDateRange(query);
     return this.analyticsRepo.getEmailVolume(tenantId, fromDate, toDate);
   }
 
-  async getCommunicationStats(tenantId: string, query: DateRange) {
+  async getCommunicationStats(tenantId: string, query: DateRange): Promise<{ totalSent: number; totalOpened: number; totalClicked: number; openRate: number; clickRate: number }> {
     const { fromDate, toDate } = this.parseDateRange(query);
     const data = await this.analyticsRepo.getCommunicationStats(tenantId, fromDate, toDate);
     

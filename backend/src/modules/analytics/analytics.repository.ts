@@ -5,7 +5,7 @@ import type { DatabaseClient } from '../../db/index.js';
 export class AnalyticsRepository {
   constructor(private db: DatabaseClient) {}
 
-  async getSummary(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getSummary(tenantId: string, fromDate?: Date, toDate?: Date): Promise<{ totalReceivable: number; totalCollected: number; totalOverdue: number; invoiceCount: number } | undefined> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt)
@@ -31,7 +31,7 @@ export class AnalyticsRepository {
     return result[0];
   }
 
-  async getAgingBreakdown(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getAgingBreakdown(tenantId: string, fromDate?: Date, toDate?: Date): Promise<Array<{ tier: string; totalAmount: number; count: number }>> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt),
@@ -68,7 +68,7 @@ export class AnalyticsRepository {
     return result;
   }
 
-  async getDsoMetrics(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getDsoMetrics(tenantId: string, fromDate?: Date, toDate?: Date): Promise<{ totalCreditSales: number; totalReceivable: number } | undefined> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt)
@@ -92,7 +92,7 @@ export class AnalyticsRepository {
     return result[0];
   }
 
-  async getCollectionRate(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getCollectionRate(tenantId: string, fromDate?: Date, toDate?: Date): Promise<{ totalInvoices: number; paidInvoices: number; totalAmount: number; paidAmount: number } | undefined> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt)
@@ -118,7 +118,10 @@ export class AnalyticsRepository {
     return result[0];
   }
 
-  async getAgentPerformance(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getAgentPerformance(tenantId: string, fromDate?: Date, toDate?: Date): Promise<{
+    successData: { totalFollowedUp: number; paidAfterFollowUp: number; avgDaysToPayment: number | null };
+    runData: { totalRuns: number; invoicesProcessed: number; emailsSent: number; errors: number };
+  }> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt),
@@ -165,7 +168,7 @@ export class AnalyticsRepository {
     };
   }
 
-  async getChannelBreakdown(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getChannelBreakdown(tenantId: string, fromDate?: Date, toDate?: Date): Promise<Array<{ channel: string | null; count: number }>> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt)
@@ -190,7 +193,7 @@ export class AnalyticsRepository {
     return result;
   }
 
-  async getTierEffectiveness(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getTierEffectiveness(tenantId: string, fromDate?: Date, toDate?: Date): Promise<Array<{ tier: string; totalFollowedUp: number; paidAfterFollowUp: number; avgDaysToPayment: number | null }>> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt),
@@ -227,7 +230,7 @@ export class AnalyticsRepository {
     return result;
   }
 
-  async getEmailVolume(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getEmailVolume(tenantId: string, fromDate?: Date, toDate?: Date): Promise<Array<{ date: string; emailsSent: number }>> {
     let runConditions: SQL | undefined = eq(agentRuns.tenantId, tenantId);
     if (fromDate) {
       runConditions = and(runConditions, gte(agentRuns.startTime, fromDate));
@@ -249,7 +252,7 @@ export class AnalyticsRepository {
     return result;
   }
 
-  async getCommunicationStats(tenantId: string, fromDate?: Date, toDate?: Date) {
+  async getCommunicationStats(tenantId: string, fromDate?: Date, toDate?: Date): Promise<{ totalSent: number; totalOpened: number; totalClicked: number }> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt)
