@@ -9,6 +9,7 @@ import { AppError, AuthError, ValidationError, NotFoundError, ForbiddenError } f
 import type { DisputeService } from '../dispute/dispute.service.js';
 import { timingSafeCompare, extractEmail } from '../dispute/dispute.service.js';
 import { config } from '../../config/index.js';
+import type { RedisClientType } from 'redis';
 
 export class WebhookController {
   constructor(
@@ -18,7 +19,7 @@ export class WebhookController {
     private settingsRepo: SettingsRepository,
     private sendgridService?: SendgridWebhookService,
     private disputeService?: DisputeService,
-    private redisClient?: any
+    private redisClient?: RedisClientType | null
   ) {}
 
   handleSendgrid = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -65,7 +66,7 @@ export class WebhookController {
     }
   };
 
-  handleSendgridInbound = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  handleSendgridInbound = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const secretToken = req.params.secretToken as string;
     const configuredSecret = config.SENDGRID_INBOUND_PARSE_SECRET;
 

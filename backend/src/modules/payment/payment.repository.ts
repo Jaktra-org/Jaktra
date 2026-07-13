@@ -1,15 +1,16 @@
 import type { DatabaseOrTransaction } from '../../db/index.js';
 import { paymentWebhookEvents, invoicePaymentLinks, invoices } from '../../db/schema.js';
+import type { PaymentWebhookEvent, InvoicePaymentLink } from '../../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 
 export class PaymentRepository {
-  constructor(private db: DatabaseOrTransaction) {}
-  async insertWebhookEvent(event: Partial<typeof paymentWebhookEvents.$inferInsert>) {
+  constructor(private db: DatabaseOrTransaction) { }
+  async insertWebhookEvent(event: Partial<typeof paymentWebhookEvents.$inferInsert>): Promise<PaymentWebhookEvent> {
     const [result] = await this.db.insert(paymentWebhookEvents)
       .values(event as typeof paymentWebhookEvents.$inferInsert)
       .onConflictDoUpdate({
         target: [paymentWebhookEvents.tenantId, paymentWebhookEvents.provider, paymentWebhookEvents.externalEventId],
-        set: { 
+        set: {
           status: 'pending',
           rawPayload: event.rawPayload,
           receivedAt: new Date()
@@ -19,13 +20,13 @@ export class PaymentRepository {
     return result;
   }
 
-  async updateWebhookEventStatus(eventId: string, status: 'processed' | 'ignored' | 'error') {
+  async updateWebhookEventStatus(eventId: string, status: 'processed' | 'ignored' | 'error'): Promise<void> {
     await this.db.update(paymentWebhookEvents)
       .set({ status, processedAt: new Date() })
       .where(eq(paymentWebhookEvents.externalEventId, eventId));
   }
 
-  async getActivePaymentLink(tenantId: string, invoiceId: string, provider: "sendgrid" | "smtp" | "razorpay") {
+  async getActivePaymentLink(tenantId: string, invoiceId: string, provider: "sendgrid" | "smtp" | "razorpay"): Promise<InvoicePaymentLink | null> {
     const results = await this.db.select()
       .from(invoicePaymentLinks)
       .where(and(
@@ -38,7 +39,7 @@ export class PaymentRepository {
     return results[0] || null;
   }
 
-  async getActivePaymentLinkByProviderId(tenantId: string, providerPaymentLinkId: string, provider: "sendgrid" | "smtp" | "razorpay") {
+  async getActivePaymentLinkByProviderId(tenantId: string, providerPaymentLinkId: string, provider: "sendgrid" | "smtp" | "razorpay"): Promise<InvoicePaymentLink | null> {
     const results = await this.db.select()
       .from(invoicePaymentLinks)
       .where(and(
@@ -51,7 +52,7 @@ export class PaymentRepository {
     return results[0] || null;
   }
 
-  async getLatestPaymentLink(invoiceId: string, tenantId: string) {
+  async getLatestPaymentLink(invoiceId: string, tenantId: string): Promise<InvoicePaymentLink | null> {
     const results = await this.db.select()
       .from(invoicePaymentLinks)
       .where(and(
@@ -63,7 +64,7 @@ export class PaymentRepository {
     return results[0] || null;
   }
 
-  async insertPaymentLink(link: typeof invoicePaymentLinks.$inferInsert) {
+  async insertPaymentLink(link: typeof invoicePaymentLinks.$inferInsert): Promise<InvoicePaymentLink> {
     const [result] = await this.db.insert(invoicePaymentLinks).values(link).returning();
     return result;
   }
@@ -81,7 +82,7 @@ export class PaymentRepository {
       .onConflictDoNothing();
   }
 
-  async updatePaymentLinkStatus(id: string, status: 'active' | 'paid' | 'expired' | 'cancelled') {
+  async updatePaymentLinkStatus(id: string, status: 'active' | 'paid' | 'expired' | 'cancelled'): Promise<InvoicePaymentLink> {
     const [result] = await this.db.update(invoicePaymentLinks)
       .set({ status, updatedAt: new Date() })
       .where(eq(invoicePaymentLinks.id, id))
@@ -89,7 +90,7 @@ export class PaymentRepository {
     return result;
   }
 
-  async cancelActiveLinks(tenantId: string, invoiceId: string) {
+  async cancelActiveLinks(tenantId: string, invoiceId: string): Promise<void> {
     await this.db.update(invoicePaymentLinks)
       .set({ status: 'cancelled', updatedAt: new Date() })
       .where(and(
@@ -99,7 +100,7 @@ export class PaymentRepository {
       ));
   }
 
-  async resolveSuccessfulPayment(tenantId: string, invoiceId: string, activeLinkId: string | undefined, eventId: string) {
+  async resolveSuccessfulPayment(tenantId: string, invoiceId: string, activeLinkId: string | undefined, eventId: string): Promise<{ status: 'processed' | 'ignored' }> {
     return await this.db.transaction(async (tx) => {
       const existingInvoice = await tx.select()
         .from(invoices)
@@ -117,17 +118,17 @@ export class PaymentRepository {
       await tx.update(invoices)
         .set({ paymentStatus: 'Paid', updatedAt: new Date() })
         .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)));
-      
+
       if (activeLinkId) {
         await tx.update(invoicePaymentLinks)
           .set({ status: 'paid', updatedAt: new Date() })
           .where(and(eq(invoicePaymentLinks.id, activeLinkId), eq(invoicePaymentLinks.tenantId, tenantId)));
       }
-      
+
       await tx.update(paymentWebhookEvents)
         .set({ status: 'processed', processedAt: new Date() })
         .where(and(eq(paymentWebhookEvents.externalEventId, eventId), eq(paymentWebhookEvents.tenantId, tenantId)));
-        
+
       return { status: 'processed' };
     });
   }

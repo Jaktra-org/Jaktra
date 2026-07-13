@@ -7,6 +7,7 @@ import { logger } from '../../shared/logger.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
 import type { EventRepository } from '../event/event.repository.js';
 import { NotFoundError, ValidationError, AuthError } from '../../shared/errors/index.js';
+import type { InvoicePaymentLink } from '../../db/index.js';
 
 interface RazorpayWebhookPayload {
   event_id?: string;
@@ -35,9 +36,9 @@ export class PaymentService {
     private readonly gatewayFactory: PaymentGatewayFactory,
     private readonly settingsRepo: SettingsRepository,
     private readonly eventRepo: EventRepository
-  ) {}
+  ) { }
 
-  async getOrGeneratePaymentLink(tenantId: string, invoiceId: string, provider: 'razorpay') {
+  async getOrGeneratePaymentLink(tenantId: string, invoiceId: string, provider: 'razorpay'): Promise<string> {
     try {
       const existingLink = await this.repo.getActivePaymentLink(tenantId, invoiceId, provider);
       if (existingLink) {
@@ -112,15 +113,15 @@ export class PaymentService {
     }
   }
 
-  async getLatestPaymentLink(invoiceId: string, tenantId: string) {
+  async getLatestPaymentLink(invoiceId: string, tenantId: string): Promise<InvoicePaymentLink | null> {
     return this.repo.getLatestPaymentLink(invoiceId, tenantId);
   }
 
-  async cancelActivePaymentLinks(tenantId: string, invoiceId: string) {
+  async cancelActivePaymentLinks(tenantId: string, invoiceId: string): Promise<void> {
     await this.repo.cancelActiveLinks(tenantId, invoiceId);
   }
 
-  async processPaymentCaptured(tenantId: string, provider: 'razorpay', payload: RazorpayWebhookPayload, rawBody: Buffer, signature: string) {
+  async processPaymentCaptured(tenantId: string, provider: 'razorpay', payload: RazorpayWebhookPayload, rawBody: Buffer, signature: string): Promise<{ status: 'processed' | 'ignored' | 'error'; message?: string }> {
     const adapter = this.gatewayFactory.getAdapter(provider);
     if (!adapter) throw new ValidationError(`Provider ${provider} not registered`);
 
@@ -226,7 +227,7 @@ export class PaymentService {
     if (validationError) {
       logger.error(`Webhook validation failed: ${validationError} for event ${finalEventId}`);
       await this.repo.updateWebhookEventStatus(finalEventId, 'error');
-      
+
       if (invoice) {
         try {
           await this.eventRepo.create({
