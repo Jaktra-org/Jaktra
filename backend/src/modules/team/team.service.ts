@@ -8,7 +8,7 @@ import { config } from '../../config/env.js';
 import { PlatformMailer } from '../platform-mail/platform-mailer.js';
 
 import { eq } from 'drizzle-orm';
-import { users, teamInvitations } from '../../db/schema.js';
+import { users, teamInvitations, type User, type TeamInvitation } from '../../db/schema.js';
 
 export interface InviteInput {
   email: string;
@@ -22,7 +22,7 @@ export class TeamService {
     private readonly platformMailer: PlatformMailer
   ) {}
 
-  async inviteMember(tenantId: string, invitedByUserId: string, input: InviteInput) {
+  async inviteMember(tenantId: string, invitedByUserId: string, input: InviteInput): Promise<{ id: string; email: string; role: 'admin' | 'manager' | 'viewer'; expiresAt: Date }> {
     const normalizedEmail = input.email.trim().toLowerCase();
     
     const existingUser = await this.userRepo.findFirstByEmail(normalizedEmail);
@@ -74,7 +74,7 @@ export class TeamService {
     return { id: invitationId!, email: normalizedEmail, role: input.role, expiresAt };
   }
 
-  private async sendInvitationEmail(invitationId: string, email: string, rawToken: string) {
+  private async sendInvitationEmail(invitationId: string, email: string, rawToken: string): Promise<void> {
     const inviteUrl = `${config.FRONTEND_URL}/invite#token=${rawToken}`;
     
     try {
@@ -90,7 +90,7 @@ export class TeamService {
     }
   }
 
-  async resendInvitation(tenantId: string, invitationId: string) {
+  async resendInvitation(tenantId: string, invitationId: string): Promise<TeamInvitation> {
     let rawToken = '';
     const newInvite = await this.teamRepo.client.transaction(async (tx) => {
       const txTeamRepo = new TeamRepository(tx);
@@ -124,7 +124,7 @@ export class TeamService {
     return newInvite;
   }
 
-  async revokeInvitation(tenantId: string, invitationId: string) {
+  async revokeInvitation(tenantId: string, invitationId: string): Promise<TeamInvitation> {
     return await this.teamRepo.client.transaction(async (tx) => {
       const txTeamRepo = new TeamRepository(tx);
       const invite = await txTeamRepo.findInvitationById(tenantId, invitationId, true);
@@ -136,7 +136,7 @@ export class TeamService {
     });
   }
 
-  async acceptInvitation(rawToken: string, password: string, name: string) {
+  async acceptInvitation(rawToken: string, password: string, name: string): Promise<{ id: string; tenantId: string; email: string; name: string; role: 'admin' | 'manager' | 'viewer'; invitationId: string }> {
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     const passwordHash = await bcrypt.hash(password, 12);
     return await this.teamRepo.client.transaction(async (tx) => {
@@ -181,7 +181,7 @@ export class TeamService {
     });
   }
 
-  async removeMember(tenantId: string, userId: string, removedByUserId: string) {
+  async removeMember(tenantId: string, userId: string, removedByUserId: string): Promise<User> {
     if (userId === removedByUserId) {
       throw new AuthError('You cannot remove yourself from the team', 400);
     }
@@ -205,7 +205,7 @@ export class TeamService {
     });
   }
 
-  async updateMemberRole(tenantId: string, userId: string, newRole: 'admin' | 'manager' | 'viewer') {
+  async updateMemberRole(tenantId: string, userId: string, newRole: 'admin' | 'manager' | 'viewer'): Promise<{ id: string; email: string; oldRole: 'admin' | 'manager' | 'viewer'; newRole: 'admin' | 'manager' | 'viewer' }> {
     return await this.teamRepo.client.transaction(async (tx) => {
       const txTeamRepo = new TeamRepository(tx);
       const txUserRepo = new UserRepository(tx);

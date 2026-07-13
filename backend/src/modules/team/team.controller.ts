@@ -21,7 +21,7 @@ const acceptInviteSchema = z.object({
   name: z.string().min(1).max(100),
 });
 
-const sanitizeInvitation = (inv: Record<string, unknown>) => {
+const sanitizeInvitation = (inv: Record<string, unknown>): Record<string, unknown> => {
   const safe = { ...inv };
   delete safe.tokenHash;
   delete safe.deliveryError;
