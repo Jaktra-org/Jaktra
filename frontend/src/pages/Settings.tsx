@@ -349,6 +349,7 @@ function EmailSettings() {
     onSuccess: () => {
       setSaveStatus('saved');
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['sendgrid-health'] });
       setTimeout(() => setSaveStatus('idle'), 2000);
     },
   });
@@ -380,9 +381,30 @@ function EmailSettings() {
     }
   }, [formData, settings]);
 
-  const handleChange = (field: keyof TenantSettings, value: string) => {
+  const handleChange = (field: keyof TenantSettings, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  const { data: inboundStatus, refetch: refetchInboundStatus } = useQuery({
+    queryKey: ['inboundVerificationStatus'],
+    queryFn: settingsService.getInboundVerificationStatus,
+  });
+
+  const startTestMutation = useMutation({
+    mutationFn: settingsService.startInboundVerificationTest,
+    onSuccess: () => {
+      refetchInboundStatus();
+    },
+  });
+
+  useEffect(() => {
+    if (inboundStatus?.latestTest?.status === 'pending') {
+      const interval = setInterval(() => {
+        refetchInboundStatus();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [inboundStatus, refetchInboundStatus]);
 
   if (isLoading) {
     return (
@@ -446,6 +468,70 @@ function EmailSettings() {
             <p className="text-[11px] text-blue-600 bg-blue-50 p-2 rounded border border-blue-100 mt-2">
               <strong>Notice:</strong> When automatic reply capture is active, replies are temporarily routed to tracking sub-addresses (e.g. <code>reply+invoice_id@replies.domain.com</code>) to link customer emails back to their invoices.
             </p>
+          </div>
+
+          <div className="space-y-4 pt-4 border-t border-slate-100">
+            <h5 className="text-sm font-semibold text-slate-800">Inbound Reply Capture Configuration</h5>
+            <p className="text-xs text-slate-500">
+              Dispute capture allows Jaktra to automatically intercept and process replies to your collection emails using AI.
+            </p>
+            
+            {settings?.defaultEmailProvider !== 'sendgrid' ? (
+              <div className="text-[11px] text-amber-600 bg-amber-50 p-3 rounded border border-amber-100">
+                <strong>SMTP Active:</strong> Inbound reply capture is not supported for Custom SMTP. Switch to SendGrid as your Default Email Provider to enable this.
+              </div>
+            ) : (
+              <div className="bg-slate-50 p-4 rounded-md border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-600">Verification Status:</span>
+                  {inboundStatus?.hasRealCapture ? (
+                    <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold flex items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1.5"></span>
+                      Verified (Real capture active)
+                    </span>
+                  ) : inboundStatus?.dnsVerifiedAt ? (
+                    <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold flex items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1.5"></span>
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-semibold flex items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>
+                      Not Verified
+                    </span>
+                  )}
+                </div>
+
+                {inboundStatus?.dnsVerifiedAt && (
+                  <p className="text-[11px] text-slate-500">
+                    Last verified: {new Date(inboundStatus.dnsVerifiedAt).toLocaleString()}
+                  </p>
+                )}
+
+                <div className="pt-2 flex items-center space-x-3">
+                  {inboundStatus?.latestTest?.status === 'pending' ? (
+                    <div className="flex items-center text-xs text-amber-800 bg-amber-50 px-3 py-1.5 rounded border border-amber-200">
+                      <span className="animate-pulse mr-2 w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                      <span>Waiting for reply to test email... Check your inbox!</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startTestMutation.mutate()}
+                      disabled={startTestMutation.isPending}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors"
+                    >
+                      {startTestMutation.isPending ? 'Sending Test...' : 'Run Verification Test'}
+                    </button>
+                  )}
+                  {inboundStatus?.latestTest?.status === 'expired' && (
+                    <span className="text-[11px] text-red-500">Test expired. Please try running it again.</span>
+                  )}
+                  {inboundStatus?.latestTest?.status === 'failed' && (
+                    <span className="text-[11px] text-red-500">Test failed. Please check setup.</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -612,6 +698,7 @@ function SendGridConfig({ integration, testEmailMutation, testEmailStatus, userE
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['sendgrid-health'] });
       setIsEditing(false);
       setApiKeyInput('');
       setErrorMsg('');
@@ -626,6 +713,7 @@ function SendGridConfig({ integration, testEmailMutation, testEmailStatus, userE
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['sendgrid-health'] });
       setIsEditing(true);
     }
   });
@@ -641,36 +729,172 @@ function SendGridConfig({ integration, testEmailMutation, testEmailStatus, userE
   const isConfigured = integration?.isConfigured;
   const isInvalid = isConfigured && integration?.lastValidationResult !== 'valid';
 
+  const { data: health, isLoading: isHealthLoading, error: healthError } = useQuery({
+    queryKey: ['sendgrid-health'],
+    queryFn: () => settingsService.getSendgridHealth(),
+    enabled: !!isConfigured && !isEditing,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
   return (
     <div className="space-y-4 pt-2">
       {isConfigured && !isEditing ? (
-        <div className="p-4 border rounded-md bg-slate-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center">
-            {isInvalid ? (
-              <span className="w-3 h-3 rounded-full bg-red-500 mr-3 flex-shrink-0"></span>
-            ) : (
-              <span className="w-3 h-3 rounded-full bg-emerald-500 mr-3 flex-shrink-0"></span>
-            )}
-            <div>
-              <p className="text-sm font-medium text-slate-900 flex items-center">
-                SendGrid API Key
-                {isInvalid && <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-red-600 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">Invalid</span>}
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Last validated: {integration?.lastValidatedAt ? new Date(integration.lastValidatedAt).toLocaleString() : 'Unknown'}
-              </p>
-              {isInvalid && <p className="text-xs text-red-600 mt-1">This key was revoked or lacks required permissions.</p>}
+        <>
+          <div className="p-4 border rounded-md bg-slate-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center">
+              {isInvalid ? (
+                <span className="w-3 h-3 rounded-full bg-red-500 mr-3 flex-shrink-0"></span>
+              ) : (
+                <span className="w-3 h-3 rounded-full bg-emerald-500 mr-3 flex-shrink-0"></span>
+              )}
+              <div>
+                <p className="text-sm font-medium text-slate-900 flex items-center">
+                  SendGrid API Key
+                  {isInvalid && <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-red-600 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">Invalid</span>}
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Last validated: {integration?.lastValidatedAt ? new Date(integration.lastValidatedAt).toLocaleString() : 'Unknown'}
+                </p>
+                {isInvalid && <p className="text-xs text-red-600 mt-1">This key was revoked or lacks required permissions.</p>}
+              </div>
+            </div>
+            <div className="space-x-2 flex-shrink-0">
+              <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded shadow-sm transition-colors">
+                Update Key
+              </button>
+              <button onClick={() => disconnectMutation.mutate()} className="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-slate-300 hover:bg-red-50 hover:border-red-200 rounded shadow-sm transition-colors">
+                Remove
+              </button>
             </div>
           </div>
-          <div className="space-x-2 flex-shrink-0">
-            <button onClick={() => setIsEditing(true)} className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded shadow-sm transition-colors">
-              Update Key
-            </button>
-            <button onClick={() => disconnectMutation.mutate()} className="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-slate-300 hover:bg-red-50 hover:border-red-200 rounded shadow-sm transition-colors">
-              Remove
-            </button>
+
+          <div className="p-4 border border-slate-200 rounded-md bg-white space-y-4 mt-4">
+            <h6 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Configuration Health</h6>
+            {isHealthLoading ? (
+              <div className="flex items-center text-xs text-slate-500">
+                <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />
+                Checking configuration health...
+              </div>
+            ) : healthError ? (
+              <div className="text-xs text-slate-500">
+                Failed to load configuration health. Verify your settings manually.
+              </div>
+            ) : health ? (
+              <div className="space-y-4">
+                {/* Sender Verification Check */}
+                <div className="flex items-start gap-3">
+                  {health.senderVerified === true ? (
+                    <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 border border-emerald-200">✓</span>
+                  ) : health.senderVerified === false ? (
+                    <span className="w-5 h-5 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 border border-amber-200">!</span>
+                  ) : health.senderVerified === 'insufficient_permissions' ? (
+                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 border border-slate-200">?</span>
+                  ) : (
+                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 border border-slate-200">⟳</span>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-900">Sender Identity Verification</p>
+                      {health.senderVerified === true && <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Verified</span>}
+                      {health.senderVerified === false && <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">Unverified</span>}
+                      {health.senderVerified === 'insufficient_permissions' && <span className="text-[11px] font-semibold text-slate-650 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Security Scoped</span>}
+                      {health.senderVerified === 'check_failed' && <span className="text-[11px] font-semibold text-slate-650 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Check Failed</span>}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {health.senderVerified === true && "Your sender email identity is verified. SendGrid will accept emails sent from this address."}
+                      {health.senderVerified === false && (
+                        <>
+                          Your sender email identity is not verified in SendGrid. Emails sent from this address will fail to deliver.{" "}
+                          <a href="https://app.sendgrid.com/settings/sender_auth" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline inline-flex items-center">
+                            Fix this in SendGrid →
+                          </a>
+                        </>
+                      )}
+                      {health.senderVerified === 'insufficient_permissions' && (
+                        <>
+                          You've scoped this key narrowly for security, which is good. We can't check this automatically, so please verify sender status directly in{" "}
+                          <a href="https://app.sendgrid.com/settings/sender_auth" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline">
+                            SendGrid
+                          </a>.
+                        </>
+                      )}
+                      {health.senderVerified === 'check_failed' && (
+                        <>
+                          We couldn't check this right now — try refreshing the page, or verify manually in{" "}
+                          <a href="https://app.sendgrid.com/settings/sender_auth" target="_blank" rel="noopener noreferrer" className="text-blue-650 font-medium hover:underline">
+                            SendGrid
+                          </a>.
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Domain Authentication Check */}
+                <div className="flex items-start gap-3 pt-3 border-t border-slate-100">
+                  {health.domainAuthenticated === true ? (
+                    <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 border border-emerald-200">✓</span>
+                  ) : health.domainAuthenticated === false ? (
+                    <span className="w-5 h-5 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 border border-amber-200">!</span>
+                  ) : health.domainAuthenticated === 'insufficient_permissions' ? (
+                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 border border-slate-200">?</span>
+                  ) : (
+                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 border border-slate-200">⟳</span>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-900">Domain Authentication (SPF/DKIM)</p>
+                      {health.domainAuthenticated === true && <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Authenticated</span>}
+                      {health.domainAuthenticated === false && <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">Not Configured</span>}
+                      {health.domainAuthenticated === 'insufficient_permissions' && <span className="text-[11px] font-semibold text-slate-650 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Security Scoped</span>}
+                      {health.domainAuthenticated === 'check_failed' && <span className="text-[11px] font-semibold text-slate-650 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Check Failed</span>}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {health.domainAuthenticated === true && "Your sending domain has valid SPF/DKIM records authenticated. This ensures high deliverability."}
+                      {health.domainAuthenticated === false && (
+                        <>
+                          Without domain authentication, your emails are more likely to be marked as spam by recipients' mail providers.{" "}
+                          <a href="https://app.sendgrid.com/settings/sender_auth" target="_blank" rel="noopener noreferrer" className="text-blue-650 font-medium hover:underline inline-flex items-center">
+                            Fix this in SendGrid →
+                          </a>
+                        </>
+                      )}
+                      {health.domainAuthenticated === 'insufficient_permissions' && (
+                        <>
+                          You've scoped this key narrowly for security, which is good. We can't check this automatically, so please verify domain authentication status directly in{" "}
+                          <a href="https://app.sendgrid.com/settings/sender_auth" target="_blank" rel="noopener noreferrer" className="text-blue-650 font-medium hover:underline">
+                            SendGrid
+                          </a>.
+                        </>
+                      )}
+                      {health.domainAuthenticated === 'check_failed' && (
+                        <>
+                          We couldn't check this right now — try refreshing the page, or verify manually in{" "}
+                          <a href="https://app.sendgrid.com/settings/sender_auth" target="_blank" rel="noopener noreferrer" className="text-blue-650 font-medium hover:underline">
+                            SendGrid
+                          </a>.
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Reasons box if there are any failures or notes */}
+                {health.reasons && health.reasons.length > 0 && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-600 space-y-1 mt-2">
+                    <span className="font-semibold text-slate-800">Validation details:</span>
+                    <ul className="list-disc pl-4 space-y-0.5">
+                      {health.reasons.map((r: string, idx: number) => (
+                        <li key={idx}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
-        </div>
+        </>
       ) : (
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">SendGrid API Key</label>

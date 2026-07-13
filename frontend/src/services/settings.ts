@@ -50,6 +50,22 @@ export const settingsService = {
     return response.data;
   },
 
+  getInboundVerificationStatus: async (): Promise<{
+    defaultEmailProvider: string | null;
+    dnsVerifiedAt: string | null;
+    hasRealCapture: boolean;
+    latestTest: { status: 'pending' | 'passed' | 'failed' | 'expired'; expiresAt: string } | null;
+    inboundParseDomain: string;
+  }> => {
+    const response = await api.get('/settings/inbound-verification/status');
+    return response.data;
+  },
+
+  startInboundVerificationTest: async (): Promise<{ testId: string; expiresAt: string }> => {
+    const response = await api.post('/settings/inbound-verification/test');
+    return response.data;
+  },
+
   saveRazorpayKey: async (data: { keyId: string; keySecret: string; webhookSecret: string }): Promise<{ message: string }> => {
     const response = await api.post('/settings/integrations/razorpay', data);
     return response.data;
@@ -57,5 +73,15 @@ export const settingsService = {
 
   disconnectRazorpay: async (): Promise<void> => {
     await api.delete('/settings/integrations/razorpay');
+  },
+
+  getSendgridHealth: async (): Promise<{
+    senderVerified: boolean | 'insufficient_permissions' | 'check_failed';
+    domainAuthenticated: boolean | 'insufficient_permissions' | 'check_failed';
+    checkedAt: string;
+    reasons: string[];
+  }> => {
+    const response = await api.get('/settings/integrations/sendgrid/health');
+    return response.data;
   },
 };

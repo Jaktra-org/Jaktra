@@ -4,10 +4,9 @@ import { disputeService, type InboundEmailReview } from '../services/dispute';
 import { settingsService } from '../services/settings';
 import { 
   MessageSquare, AlertCircle, CheckCircle, Trash2, 
-  RefreshCw, Edit3, X, User, Clock, ChevronDown, ChevronUp, ExternalLink,
+  RefreshCw, Edit3, Clock, ChevronDown, ChevronUp, ExternalLink,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { getErrorMessage } from '../utils/error-utils';
 
 export function Disputes() {
@@ -23,11 +22,27 @@ export function Disputes() {
     queryFn: () => disputeService.getPendingDisputes({ page, limit: 25 }),
   });
 
-  // 2. Fetch tenant settings for warning check
-  const { data: settings, isLoading: isSettingsLoading } = useQuery({
-    queryKey: ['settings'],
-    queryFn: settingsService.getSettings,
+  // 2. Fetch inbound verification status
+  const { data: inboundStatus, isLoading: isInboundStatusLoading, refetch: refetchInboundStatus } = useQuery({
+    queryKey: ['inboundVerificationStatus'],
+    queryFn: settingsService.getInboundVerificationStatus,
   });
+
+  const startTestMutation = useMutation({
+    mutationFn: settingsService.startInboundVerificationTest,
+    onSuccess: () => {
+      refetchInboundStatus();
+    },
+  });
+
+  useEffect(() => {
+    if (inboundStatus?.latestTest?.status === 'pending') {
+      const interval = setInterval(() => {
+        refetchInboundStatus();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [inboundStatus, refetchInboundStatus]);
 
   // 3. Approve Mutation
   const approveMutation = useMutation({
@@ -80,7 +95,7 @@ export function Disputes() {
     }
   };
 
-  if (isDisputesLoading || isSettingsLoading) {
+  if (isDisputesLoading || isInboundStatusLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader className="w-8 h-8 animate-spin text-blue-600" />
@@ -88,8 +103,27 @@ export function Disputes() {
     );
   }
 
-  // Determine if automatic reply capture is active (inbound_parse_active must be true)
-  const isReplyCaptureActive = settings?.inboundParseActive === true;
+  // Determine if automatic reply capture is active (SMTP does not support, SendGrid requires real capture or fresh verification)
+  const isReplyCaptureActive = (() => {
+    if (!inboundStatus) return false;
+    if (inboundStatus.defaultEmailProvider !== 'sendgrid') return false;
+    
+    // NOTE (v1 limitation): Once the tenant has at least one real inbound_emails record
+    // in the database, hasRealCapture resolves to true and clears the warning banner
+    // permanently. This is a deliberate v1 simplification; if their DNS/Inbound settings
+    // are broken later, the warning will not automatically reappear.
+    if (inboundStatus.hasRealCapture) return true;
+    
+    if (inboundStatus.dnsVerifiedAt) {
+      const verifiedTime = new Date(inboundStatus.dnsVerifiedAt).getTime();
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      if (Date.now() - verifiedTime < thirtyDays) {
+        return true;
+      }
+    }
+    
+    return false;
+  })();
 
   const pendingDisputes = disputesData?.data || [];
   const pagination = disputesData?.pagination;
@@ -114,16 +148,45 @@ export function Disputes() {
       </div>
 
       {/* Persistent warning banner if email replies are not capture-ready */}
-      {!isReplyCaptureActive && (
-        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-md flex items-start space-x-3 shadow-sm transition-all hover:shadow-md">
+      {!isReplyCaptureActive && inboundStatus && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-md flex items-start space-x-3 shadow-sm transition-all hover:shadow-md mb-6">
           <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-amber-800">
+          <div className="text-sm text-amber-800 w-full">
             <p className="font-semibold text-amber-900">Automatic Inbound Reply Capture Inactive</p>
-            <p className="mt-1">
-              Your account is using a configuration that doesn't support automatic reply capture. 
-              New customer replies won't appear here automatically — please monitor your inbox manually. 
-              Existing dispute items below are displayed as historical logs.
-            </p>
+            {inboundStatus.defaultEmailProvider !== 'sendgrid' ? (
+              <p className="mt-1 text-amber-700">
+                Your account is using SMTP for sending, which doesn't support automatic reply capture. 
+                Please check your inbox manually.
+              </p>
+            ) : (
+              <div className="mt-1 space-y-2 text-amber-700">
+                <p>
+                  Inbound reply capture hasn't been verified for your domain. New customer replies won't appear here automatically.
+                </p>
+                <div className="pt-2 flex items-center space-x-4">
+                  {inboundStatus.latestTest?.status === 'pending' ? (
+                    <div className="flex items-center text-amber-900 bg-amber-100 px-3 py-1.5 rounded border border-amber-200">
+                      <span className="animate-pulse mr-2 w-2 h-2 rounded-full bg-amber-600"></span>
+                      <span>Waiting for your reply... Check your inbox and reply to the test email.</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startTestMutation.mutate()}
+                      disabled={startTestMutation.isPending}
+                      className="bg-amber-600 hover:bg-amber-700 text-white font-medium px-3 py-1.5 rounded transition-colors disabled:opacity-50 text-xs"
+                    >
+                      {startTestMutation.isPending ? 'Sending test...' : 'Run Inbound Test'}
+                    </button>
+                  )}
+                  {inboundStatus.latestTest?.status === 'expired' && (
+                    <span className="text-xs text-red-600">Previous test expired. Please run a new one.</span>
+                  )}
+                  {inboundStatus.latestTest?.status === 'failed' && (
+                    <span className="text-xs text-red-600">Previous test failed. Please try again.</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
