@@ -330,4 +330,25 @@ export class IntegrationController {
       next(error);
     }
   };
+
+  getSendgridHealth = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const settings = await this.communicationService.getSettings(tenantId);
+      if (!settings || !settings.senderEmail) {
+        res.json({
+          senderVerified: 'check_failed',
+          domainAuthenticated: 'check_failed',
+          checkedAt: new Date().toISOString(),
+          reasons: ['Sender Email is not configured under Email Configuration.'],
+        });
+        return;
+      }
+
+      const health = await this.integrationService.getConfigurationHealth(tenantId, settings.senderEmail);
+      res.json(health);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

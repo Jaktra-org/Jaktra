@@ -288,7 +288,8 @@ export const tenantSettings = pgTable('tenant_settings', {
   autoPurgeDays: integer('auto_purge_days').notNull().default(30),
   dlqThreshold: integer('dlq_threshold').notNull().default(3),
   mfaRequired: boolean('mfa_required').notNull().default(false),
-  inboundParseActive: boolean('inbound_parse_active').notNull().default(false),
+  dnsVerifiedAt: timestamp('dns_verified_at', { withTimezone: true }),
+  inboundBlockedByAdmin: boolean('inbound_blocked_by_admin').notNull().default(false),
 });
 
 export const tenantIntegrations = pgTable('tenant_integrations', {

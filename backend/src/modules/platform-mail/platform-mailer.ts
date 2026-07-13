@@ -154,5 +154,32 @@ export class PlatformMailer {
       };
     }
   }
+
+  async sendInboundVerificationTestEmail(to: string, replyTo: string): Promise<EmailSendResult> {
+    try {
+      const provider = await this.getProvider();
+      if (!provider) {
+        return { success: false, error: 'Platform SMTP not configured' };
+      }
+      
+      const message: EmailMessage = {
+        to,
+        from: { name: 'Jaktra Support', email: 'noreply@jaktra.com' },
+        replyTo,
+        subject: '[Jaktra] Verify Inbound Reply Capture',
+        html: `
+          <p>Please reply to this email to complete your Jaktra inbound reply capture verification test.</p>
+          <p>Once you reply, the system will verify your setup and display active status on the Disputes tab.</p>
+        `,
+      };
+
+      return await provider.send(message);
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
 }
 

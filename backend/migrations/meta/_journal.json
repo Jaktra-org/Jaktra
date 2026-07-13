@@ -99,6 +99,13 @@
       "when": 1783802700000,
       "tag": "0013_add_inbound_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1783811550000,
+      "tag": "0014_add_dns_verified_at",
+      "breakpoints": true
     }
   ]
 }

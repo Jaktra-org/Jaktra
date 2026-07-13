@@ -135,6 +135,15 @@ export function createApp(config: AppConfig): Application {
   app.use(standardLimiter);
 
   if (config.db) {
+    const lockoutRedis = envConfig.REDIS_URL && process.env['NODE_ENV'] !== 'test'
+      ? createRedisClient({ url: envConfig.REDIS_URL })
+      : null;
+    if (lockoutRedis) {
+      lockoutRedis.connect().catch((err: Error) => {
+        logger.error(err, '[LockoutService] Redis connect failed — lockout tracking will be skipped (fail-open)');
+      });
+    }
+
     // Shared Repositories
     const invoiceRepo = new InvoiceRepository(config.db);
     const eventRepo = new EventRepository(config.db);
@@ -159,7 +168,7 @@ export function createApp(config: AppConfig): Application {
     const agentRepo = new AgentRepository(config.db);
 
     // Shared Services
-    const integrationService = new IntegrationService(integrationRepo);
+    const integrationService = new IntegrationService(integrationRepo, lockoutRedis as unknown as RedisClientType | null);
 
     // Platform & Tenant Mailers
     const platformEmailConfigResolver = new EnvPlatformEmailConfigResolver();
@@ -196,20 +205,11 @@ export function createApp(config: AppConfig): Application {
     const webhookService = new WebhookService(invoiceRepo, eventService);
     const sendgridService = new SendgridWebhookService(communicationService, config.sendgridWebhookPublicKey);
     
-    app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, settingsRepo, sendgridService, disputeService)));
+    app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, settingsRepo, sendgridService, disputeService, lockoutRedis as any)));
 
     if (config.jwtSecret) {
       const userRepo = new UserRepository(config.db);
       const tenantRepo = new TenantRepository(config.db);
-
-      const lockoutRedis = envConfig.REDIS_URL && process.env['NODE_ENV'] !== 'test'
-        ? createRedisClient({ url: envConfig.REDIS_URL })
-        : null;
-      if (lockoutRedis) {
-        lockoutRedis.connect().catch((err: Error) => {
-          logger.error(err, '[LockoutService] Redis connect failed — lockout tracking will be skipped (fail-open)');
-        });
-      }
       const lockoutService = new LockoutService(lockoutRedis as unknown as RedisClientType | null, eventRepo);
       const otpService = new OtpService(lockoutRedis as unknown as RedisClientType | null);
       const emailVerificationService = new EmailVerificationService(lockoutRedis as unknown as RedisClientType | null, otpService);
@@ -247,7 +247,7 @@ export function createApp(config: AppConfig): Application {
       const analyticsService = new AnalyticsService(analyticsRepo);
       app.use('/api/analytics', createAnalyticsRouter(new AnalyticsController(analyticsService), authMiddleware, tenantScoped));
 
-      const settingsService = new SettingsService(settingsRepo);
+      const settingsService = new SettingsService(settingsRepo, lockoutRedis as unknown as RedisClientType | null);
       app.use('/api/settings', createSettingsRouter(new SettingsController(settingsService, eventService, dlqService), authMiddleware, tenantScoped));
 
       const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo, config.db);

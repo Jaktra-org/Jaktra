@@ -1,3 +1,4 @@
+import type { RedisClientType } from 'redis';
 import sgClient from '@sendgrid/client';
 import type { IntegrationRepository } from './integration.repository.js';
 import { encrypt, decrypt } from '../../shared/encryption.js';
@@ -7,7 +8,10 @@ import type { TenantIntegration } from '../../db/index.js';
 import { SmtpConnectionFactory, SmtpConfig } from '../../shared/email/providers/smtp-email.provider.js';
 
 export class IntegrationService {
-  constructor(private readonly repo: IntegrationRepository) {}
+  constructor(
+    private readonly repo: IntegrationRepository,
+    private readonly redis: RedisClientType | null = null
+  ) {}
 
   private getAadContext(tenantId: string, provider: string, version: number): string {
     return `${tenantId}:${provider}:v${version}`;
@@ -351,5 +355,132 @@ export class IntegrationService {
       logger.error(`Decryption failed for tenant ${tenantId} Razorpay integration.`);
       throw IntegrationErrors.CREDENTIAL_INVALID();
     }
+  }
+
+  async getConfigurationHealth(tenantId: string, senderEmail: string): Promise<{
+    senderVerified: boolean | 'insufficient_permissions' | 'check_failed';
+    domainAuthenticated: boolean | 'insufficient_permissions' | 'check_failed';
+    checkedAt: Date;
+    reasons: string[];
+  }> {
+    const cacheKey = `sendgrid:health:${tenantId}`;
+    if (this.redis && this.redis.isOpen) {
+      try {
+        const cached = await this.redis.get(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          return {
+            ...parsed,
+            checkedAt: new Date(parsed.checkedAt),
+          };
+        }
+      } catch (err) {
+        logger.error(`Failed to read SendGrid health cache for tenant ${tenantId}:`, err);
+      }
+    }
+
+    let apiKey: string;
+    try {
+      apiKey = await this.getDecryptedSendgridKey(tenantId);
+    } catch {
+      return {
+        senderVerified: 'check_failed',
+        domainAuthenticated: 'check_failed',
+        checkedAt: new Date(),
+        reasons: ['No SendGrid API Key configured or key is invalid.'],
+      };
+    }
+
+    let senderVerified: boolean | 'insufficient_permissions' | 'check_failed' = 'check_failed';
+    let domainAuthenticated: boolean | 'insufficient_permissions' | 'check_failed' = 'check_failed';
+    const reasons: string[] = [];
+
+    sgClient.setApiKey(apiKey);
+
+    const makeRequest = async (url: string) => {
+      try {
+        const [response] = await sgClient.request({
+          method: 'GET',
+          url,
+        });
+        return { success: true, body: response.body as any, status: response.statusCode };
+      } catch (err: any) {
+        const status = err?.code || err?.response?.statusCode || 500;
+        return { success: false, status, error: err };
+      }
+    };
+
+    // Check Sender Identity
+    const senderRes = await makeRequest('/v3/verified_senders');
+    if (senderRes.success) {
+      const results = (senderRes.body as any)?.results || [];
+      const foundSender = results.find((s: any) => s.from_email === senderEmail);
+      if (foundSender) {
+        senderVerified = foundSender.verified === true;
+        if (!senderVerified) {
+          reasons.push('Sender email is pending verification in SendGrid.');
+        }
+      } else {
+        senderVerified = false;
+        reasons.push(`Sender email "${senderEmail}" is not configured as a Sender Identity in SendGrid.`);
+      }
+    } else if (senderRes.status === 403) {
+      senderVerified = 'insufficient_permissions';
+      reasons.push('Insufficient API key permissions to check sender verification status.');
+    } else {
+      senderVerified = 'check_failed';
+      reasons.push(`Failed to query SendGrid sender verification API (Status: ${senderRes.status}).`);
+    }
+
+    // Check Domain Authentication
+    const domainRes = await makeRequest('/v3/whitelabel/domains');
+    if (domainRes.success) {
+      const domains = Array.isArray(domainRes.body) ? domainRes.body : [];
+      const emailDomain = senderEmail.split('@')[1]?.toLowerCase();
+      if (emailDomain) {
+        const foundDomain = domains.find((d: any) => d.domain?.toLowerCase() === emailDomain);
+        if (foundDomain) {
+          domainAuthenticated = foundDomain.valid === true;
+          if (!domainAuthenticated) {
+            reasons.push(`Domain "${emailDomain}" is configured but authentication (SPF/DKIM) is invalid or pending DNS update.`);
+          }
+        } else {
+          domainAuthenticated = false;
+          reasons.push(`Domain "${emailDomain}" has not been authenticated in SendGrid.`);
+        }
+      } else {
+        domainAuthenticated = false;
+        reasons.push('Invalid sender email format.');
+      }
+    } else if (domainRes.status === 403) {
+      domainAuthenticated = 'insufficient_permissions';
+      reasons.push('Insufficient API key permissions to check domain authentication status.');
+    } else {
+      domainAuthenticated = 'check_failed';
+      reasons.push(`Failed to query SendGrid domain authentication API (Status: ${domainRes.status}).`);
+    }
+
+    const healthResult = {
+      senderVerified,
+      domainAuthenticated,
+      checkedAt: new Date(),
+      reasons,
+    };
+
+    // Cache ONLY if no checks failed transiently
+    if (
+      senderVerified !== 'check_failed' &&
+      domainAuthenticated !== 'check_failed' &&
+      this.redis &&
+      this.redis.isOpen
+    ) {
+      try {
+        await this.redis.set(cacheKey, JSON.stringify(healthResult), { EX: 300 });
+      } catch (err) {
+        logger.error(`Failed to write SendGrid health cache for tenant ${tenantId}:`, err);
+      }
+    }
+
+    return healthResult;
   }
 }

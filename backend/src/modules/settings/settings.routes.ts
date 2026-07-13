@@ -14,6 +14,8 @@ export function createSettingsRouter(
   router.get('/', settingsController.getSettings);
   router.patch('/', requireRole('admin'), settingsController.updateSettings);
   router.post('/webhook-token/rotate', requireRole('admin'), settingsController.rotateWebhookToken);
+  router.post('/inbound-verification/test', requireRole('admin'), settingsController.startInboundVerificationTest);
+  router.get('/inbound-verification/status', settingsController.getInboundVerificationStatus);
 
   return router;
 }

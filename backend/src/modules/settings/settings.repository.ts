@@ -1,7 +1,7 @@
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
 import type { DatabaseClient } from '../../db/index.js';
-import { tenantSettings, tenants, users, type TenantSettings } from '../../db/schema.js';
+import { tenantSettings, tenants, users, inboundEmails, type TenantSettings } from '../../db/schema.js';
 
 export class SettingsRepository {
   constructor(private db: DatabaseClient) {}
@@ -85,5 +85,14 @@ export class SettingsRepository {
       .select()
       .from(tenantSettings)
       .where(eq(tenantSettings.autoPurgeEnabled, true));
+  }
+
+  async hasInboundEmails(tenantId: string): Promise<boolean> {
+    const result = await this.db
+      .select({ id: inboundEmails.id })
+      .from(inboundEmails)
+      .where(eq(inboundEmails.tenantId, tenantId))
+      .limit(1);
+    return result.length > 0;
   }
 }
