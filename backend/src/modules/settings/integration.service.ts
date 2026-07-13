@@ -7,6 +7,25 @@ import { logger } from '../../shared/logger.js';
 import type { TenantIntegration } from '../../db/index.js';
 import { SmtpConnectionFactory, SmtpConfig } from '../../shared/email/providers/smtp-email.provider.js';
 
+export interface IntegrationStatus {
+  provider: 'sendgrid' | 'smtp';
+  isConfigured: boolean;
+  lastValidatedAt: Date | null;
+  lastValidationResult: TenantIntegration['lastValidationResult'];
+  displayHost?: string;
+  maskedUsername?: string;
+  port?: number;
+  securityMode?: string;
+}
+
+export interface RazorpayIntegrationStatus {
+  provider: 'razorpay';
+  isConfigured: boolean;
+  lastValidatedAt: Date | null;
+  lastValidationResult: TenantIntegration['lastValidationResult'];
+  maskedKeyId?: string;
+}
+
 export class IntegrationService {
   constructor(
     private readonly repo: IntegrationRepository,
@@ -17,7 +36,7 @@ export class IntegrationService {
     return `${tenantId}:${provider}:v${version}`;
   }
 
-  async getIntegrationStatus(tenantId: string, provider: 'sendgrid' | 'smtp') {
+  async getIntegrationStatus(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<IntegrationStatus> {
     const integration = await this.repo.getIntegration(tenantId, provider);
     
     if (!integration) {
@@ -53,7 +72,7 @@ export class IntegrationService {
     };
   }
 
-  async getIntegrationStatusRazorpay(tenantId: string) {
+  async getIntegrationStatusRazorpay(tenantId: string): Promise<RazorpayIntegrationStatus> {
     const integration = await this.repo.getIntegration(tenantId, 'razorpay');
     if (!integration) {
       return {
@@ -397,15 +416,16 @@ export class IntegrationService {
 
     sgClient.setApiKey(apiKey);
 
-    const makeRequest = async (url: string) => {
+    const makeRequest = async (url: string): Promise<{ success: boolean; body?: unknown; status: number; error?: unknown }> => {
       try {
         const [response] = await sgClient.request({
           method: 'GET',
           url,
         });
-        return { success: true, body: response.body as any, status: response.statusCode };
-      } catch (err: any) {
-        const status = err?.code || err?.response?.statusCode || 500;
+        return { success: true, body: response.body, status: response.statusCode };
+      } catch (err: unknown) {
+        const errObj = err as { code?: string | number; response?: { statusCode?: number } } | null;
+        const status = Number(errObj?.code || errObj?.response?.statusCode || 500);
         return { success: false, status, error: err };
       }
     };
@@ -413,8 +433,8 @@ export class IntegrationService {
     // Check Sender Identity
     const senderRes = await makeRequest('/v3/verified_senders');
     if (senderRes.success) {
-      const results = (senderRes.body as any)?.results || [];
-      const foundSender = results.find((s: any) => s.from_email === senderEmail);
+      const results = (senderRes.body as { results?: Array<{ from_email?: string; verified?: boolean }> })?.results || [];
+      const foundSender = results.find((s: { from_email?: string; verified?: boolean }) => s.from_email === senderEmail);
       if (foundSender) {
         senderVerified = foundSender.verified === true;
         if (!senderVerified) {
@@ -435,10 +455,10 @@ export class IntegrationService {
     // Check Domain Authentication
     const domainRes = await makeRequest('/v3/whitelabel/domains');
     if (domainRes.success) {
-      const domains = Array.isArray(domainRes.body) ? domainRes.body : [];
+      const domains = Array.isArray(domainRes.body) ? (domainRes.body as Array<{ domain?: string; valid?: boolean }>) : [];
       const emailDomain = senderEmail.split('@')[1]?.toLowerCase();
       if (emailDomain) {
-        const foundDomain = domains.find((d: any) => d.domain?.toLowerCase() === emailDomain);
+        const foundDomain = domains.find((d: { domain?: string; valid?: boolean }) => d.domain?.toLowerCase() === emailDomain);
         if (foundDomain) {
           domainAuthenticated = foundDomain.valid === true;
           if (!domainAuthenticated) {

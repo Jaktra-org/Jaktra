@@ -4,6 +4,8 @@ import type { TenantSettings } from '../../db/schema.js';
 import type { SettingsRepository } from './settings.repository.js';
 import { NotFoundError, ValidationError } from '../../shared/errors/index.js';
 import { config } from '../../config/index.js';
+import type { RedisClientType } from 'redis';
+import type { PlatformMailer } from '../platform-mail/platform-mailer.js';
 
 export const updateSettingsSchema = z.object({
   companyName: z.string().optional(),
@@ -26,7 +28,7 @@ export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
 export class SettingsService {
   constructor(
     private settingsRepo: SettingsRepository,
-    private redis: any = null
+    private redis: RedisClientType | null = null
   ) {}
 
   async getSettings(tenantId: string): Promise<TenantSettings> {
@@ -79,7 +81,7 @@ export class SettingsService {
     ];
   }
 
-  async startInboundVerificationTest(tenantId: string, userEmail: string, platformMailer: any): Promise<{ testId: string; expiresAt: string }> {
+  async startInboundVerificationTest(tenantId: string, userEmail: string, platformMailer: PlatformMailer): Promise<{ testId: string; expiresAt: string }> {
     if (this.redis && this.redis.isOpen) {
       const rateLimitKey = `rate_limit:inbound_verify_test:${tenantId}`;
       const countRaw = await this.redis.get(rateLimitKey);

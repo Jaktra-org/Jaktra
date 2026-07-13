@@ -5,13 +5,14 @@ import { AuthError, NotFoundError, ValidationError } from '../../shared/errors/i
 import type { EventService, ActorContext } from '../event/event.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 import { DlqService } from '../dlq/dlq.service.js';
+import type { PlatformMailer } from '../platform-mail/platform-mailer.js';
 
 export class SettingsController {
   constructor(
     private settingsService: SettingsService,
     private eventService?: EventService,
     private dlqService?: DlqService,
-    private platformMailer?: any
+    private platformMailer?: PlatformMailer
   ) {}
 
   private getActorContext(req: Request): ActorContext {
@@ -143,6 +144,11 @@ export class SettingsController {
       const userEmail = authReq.user?.email;
       if (!userEmail) {
         next(new AuthError('User email required', 401));
+        return;
+      }
+
+      if (!this.platformMailer) {
+        next(new ValidationError('Platform mailer not configured'));
         return;
       }
 

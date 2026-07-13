@@ -32,7 +32,7 @@ export class IntegrationController {
     };
   }
 
-  getStatus = async (req: Request, res: Response, next: NextFunction) => {
+  getStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const [sendgridStatus, smtpStatus, razorpayStatus] = await Promise.all([
@@ -51,7 +51,7 @@ export class IntegrationController {
     }
   };
 
-  saveSendgridKey = async (req: Request, res: Response, next: NextFunction) => {
+  saveSendgridKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { apiKey } = req.body;
@@ -87,7 +87,7 @@ export class IntegrationController {
     }
   };
 
-  testSendgridKey = async (req: Request, res: Response, next: NextFunction) => {
+  testSendgridKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { to } = req.body;
@@ -105,7 +105,7 @@ export class IntegrationController {
     }
   };
 
-  disconnectSendgrid = async (req: Request, res: Response, next: NextFunction) => {
+  disconnectSendgrid = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       await this.integrationService.deleteSendgridIntegration(tenantId);
@@ -134,7 +134,7 @@ export class IntegrationController {
     }
   };
 
-  saveSmtpConfig = async (req: Request, res: Response, next: NextFunction) => {
+  saveSmtpConfig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
 
@@ -170,7 +170,7 @@ export class IntegrationController {
     }
   };
 
-  testSmtpConfig = async (req: Request, res: Response, next: NextFunction) => {
+  testSmtpConfig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { to } = req.body;
@@ -219,7 +219,7 @@ export class IntegrationController {
     }
   };
 
-  disconnectSmtp = async (req: Request, res: Response, next: NextFunction) => {
+  disconnectSmtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       await this.integrationService.deleteSmtpIntegration(tenantId);
@@ -248,7 +248,7 @@ export class IntegrationController {
     }
   };
 
-  saveRazorpayKey = async (req: Request, res: Response, next: NextFunction) => {
+  saveRazorpayKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       
@@ -276,7 +276,7 @@ export class IntegrationController {
     }
   };
 
-  disconnectRazorpay = async (req: Request, res: Response, next: NextFunction) => {
+  disconnectRazorpay = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       await this.integrationService.deleteRazorpayIntegration(tenantId);
@@ -294,7 +294,7 @@ export class IntegrationController {
     }
   };
 
-  setDefaultProvider = async (req: Request, res: Response, next: NextFunction) => {
+  setDefaultProvider = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { provider } = req.body;
@@ -331,7 +331,7 @@ export class IntegrationController {
     }
   };
 
-  getSendgridHealth = async (req: Request, res: Response, next: NextFunction) => {
+  getSendgridHealth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const settings = await this.communicationService.getSettings(tenantId);
