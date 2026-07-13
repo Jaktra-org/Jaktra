@@ -1,13 +1,14 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
 import type { DatabaseClient } from '../../db/index.js';
 import { dlqEntries, invoices } from '../../db/schema.js';
+import type { DlqEntry } from '../../db/schema.js';
 import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 import { NotFoundError } from '../../shared/errors/index.js';
 
 export class DlqRepository {
   constructor(private readonly db: DatabaseClient) {}
   
-  async recordFailure(invoiceId: string, tenantId: string, errorMsg: string, technicalMsg?: string) {
+  async recordFailure(invoiceId: string, tenantId: string, errorMsg: string, technicalMsg?: string): Promise<DlqEntry[]> {
     const invoice = await this.db
       .select({ id: invoices.id })
       .from(invoices)
@@ -45,7 +46,7 @@ export class DlqRepository {
       .returning();
   }
 
-  async clearFailure(invoiceId: string, tenantId: string) {
+  async clearFailure(invoiceId: string, tenantId: string): Promise<DlqEntry[]> {
     const invoice = await this.db
       .select({ id: invoices.id })
       .from(invoices)
@@ -62,7 +63,17 @@ export class DlqRepository {
       .returning();
   }
 
-  async getAllEntries(tenantId: string) {
+  async getAllEntries(tenantId: string): Promise<Array<{
+    invoiceId: string;
+    consecutiveFailures: number;
+    lastError: string | null;
+    lastErrorDisplay: string | null;
+    lastErrorTechnical: string | null;
+    firstFailure: Date;
+    lastFailure: Date;
+    clientName: string;
+    invoiceNo: string;
+  }>> {
     return await this.db
       .select({
         invoiceId: dlqEntries.invoiceId,
@@ -81,7 +92,7 @@ export class DlqRepository {
       .orderBy(desc(dlqEntries.consecutiveFailures), desc(dlqEntries.lastFailure));
   }
 
-  async getStats(tenantId: string) {
+  async getStats(tenantId: string): Promise<{ total: number; critical: number }> {
     const result = await this.db
       .select({
         total: sql<number>`cast(count(*) as integer)`,
@@ -97,7 +108,7 @@ export class DlqRepository {
     };
   }
 
-  async clearAllEntries(tenantId: string) {
+  async clearAllEntries(tenantId: string): Promise<DlqEntry[]> {
     return await this.db
       .delete(dlqEntries)
       .where(eq(dlqEntries.tenantId, tenantId))
