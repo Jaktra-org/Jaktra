@@ -45,6 +45,10 @@ export type {
   NewTeamInvitation,
   InboundEmail,
   NewInboundEmail,
+  PaymentWebhookEvent,
+  NewPaymentWebhookEvent,
+  InvoicePaymentLink,
+  NewInvoicePaymentLink,
 } from './schema.js';
 
 export { createDatabaseClient } from './client.js';

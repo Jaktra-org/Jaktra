@@ -524,3 +524,9 @@ export type NewTeamInvitation = typeof teamInvitations.$inferInsert;
 export type InboundEmail = typeof inboundEmails.$inferSelect;
 export type NewInboundEmail = typeof inboundEmails.$inferInsert;
 
+export type PaymentWebhookEvent = typeof paymentWebhookEvents.$inferSelect;
+export type NewPaymentWebhookEvent = typeof paymentWebhookEvents.$inferInsert;
+
+export type InvoicePaymentLink = typeof invoicePaymentLinks.$inferSelect;
+export type NewInvoicePaymentLink = typeof invoicePaymentLinks.$inferInsert;
+
