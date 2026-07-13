@@ -148,8 +148,11 @@ export class DisputeService {
     }
   }
 
-  async listPending(tenantId: string): Promise<any[]> {
-    return this.disputeRepo.listPending(tenantId);
+  async listPending(tenantId: string, params: { page: number; limit: number }): Promise<{
+    data: any[];
+    pagination: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    return this.disputeRepo.listPending(tenantId, params);
   }
 
   async approveDispute(id: string, tenantId: string, approvedBody: string, actor: any): Promise<void> {

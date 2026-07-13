@@ -4,21 +4,23 @@ import { disputeService, type InboundEmailReview } from '../services/dispute';
 import { settingsService } from '../services/settings';
 import { 
   MessageSquare, AlertCircle, CheckCircle, Trash2, 
-  RefreshCw, Edit3, X, User, Clock, ChevronDown, ChevronUp, ExternalLink
+  RefreshCw, Edit3, X, User, Clock, ChevronDown, ChevronUp, ExternalLink,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { getErrorMessage } from '../utils/error-utils';
 
 export function Disputes() {
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftResponse, setDraftResponse] = useState<string>('');
 
   // 1. Fetch pending disputes
-  const { data: disputes, isLoading: isDisputesLoading, error: disputesError, refetch: refetchDisputes } = useQuery<InboundEmailReview[]>({
-    queryKey: ['pendingDisputes'],
-    queryFn: disputeService.getPendingDisputes,
+  const { data: disputesData, isLoading: isDisputesLoading, error: disputesError, refetch: refetchDisputes } = useQuery({
+    queryKey: ['pendingDisputes', page],
+    queryFn: () => disputeService.getPendingDisputes({ page, limit: 25 }),
   });
 
   // 2. Fetch tenant settings for warning check
@@ -89,7 +91,8 @@ export function Disputes() {
   // Determine if automatic reply capture is active (inbound_parse_active must be true)
   const isReplyCaptureActive = settings?.inboundParseActive === true;
 
-  const pendingDisputes = disputes || [];
+  const pendingDisputes = disputesData?.data || [];
+  const pagination = disputesData?.pagination;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -137,7 +140,7 @@ export function Disputes() {
         <div>
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600 mr-2"></span>
-            Pending Disputes ({pendingDisputes.length})
+            Pending Disputes ({pagination ? pagination.total : pendingDisputes.length})
           </h3>
           {pendingDisputes.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-lg p-8 text-center text-slate-500">
@@ -165,6 +168,33 @@ export function Disputes() {
                   discardPending={discardMutation.isPending}
                 />
               ))}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border border-slate-200 rounded-lg bg-white shadow-sm mt-6">
+              <div className="text-sm text-slate-500">
+                Showing <span className="font-medium">{(page - 1) * pagination.limit + 1}</span> to <span className="font-medium">{Math.min(page * pagination.limit, pagination.total)}</span> of <span className="font-medium">{pagination.total}</span> results
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="sr-only">Previous page</span>
+                </button>
+                <button
+                  onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                  disabled={page === pagination.totalPages}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="sr-only">Next page</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

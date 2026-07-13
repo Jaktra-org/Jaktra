@@ -1,4 +1,4 @@
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, asc, count } from 'drizzle-orm';
 import { inboundEmails, invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { InboundEmail, NewInboundEmail } from '../../db/index.js';
@@ -6,8 +6,26 @@ import type { InboundEmail, NewInboundEmail } from '../../db/index.js';
 export class DisputeRepository {
   constructor(private db: DatabaseClient) {}
 
-  async listPending(tenantId: string): Promise<any[]> {
-    return this.db
+  async listPending(tenantId: string, params: { page: number; limit: number }): Promise<{
+    data: any[];
+    pagination: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const offset = (params.page - 1) * params.limit;
+
+    const [countResult] = await this.db
+      .select({ count: count() })
+      .from(inboundEmails)
+      .where(
+        and(
+          eq(inboundEmails.tenantId, tenantId),
+          eq(inboundEmails.status, 'pending_review')
+        )
+      );
+
+    const total = Number(countResult?.count || 0);
+    const totalPages = Math.ceil(total / params.limit);
+
+    const data = await this.db
       .select({
         id: inboundEmails.id,
         tenantId: inboundEmails.tenantId,
@@ -32,7 +50,19 @@ export class DisputeRepository {
           eq(inboundEmails.status, 'pending_review')
         )
       )
-      .orderBy(desc(inboundEmails.createdAt));
+      .orderBy(asc(inboundEmails.createdAt))
+      .limit(params.limit)
+      .offset(offset);
+
+    return {
+      data,
+      pagination: {
+        total,
+        page: params.page,
+        limit: params.limit,
+        totalPages,
+      },
+    };
   }
 
   async findById(id: string): Promise<InboundEmail | undefined> {

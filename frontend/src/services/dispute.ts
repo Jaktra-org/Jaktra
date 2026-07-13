@@ -17,9 +17,19 @@ export interface InboundEmailReview {
   clientName?: string;
 }
 
+export interface ListDisputesResponse {
+  data: InboundEmailReview[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export const disputeService = {
-  getPendingDisputes: async (): Promise<InboundEmailReview[]> => {
-    const response = await api.get('/disputes/pending');
+  getPendingDisputes: async (params?: { page?: number; limit?: number }): Promise<ListDisputesResponse> => {
+    const response = await api.get('/disputes/pending', { params });
     return response.data;
   },
   approveDispute: async (id: string, suggestedResponse: string): Promise<void> => {

@@ -8,6 +8,11 @@ const ApproveSchema = z.object({
   suggestedResponse: z.string().min(1, 'Response body cannot be empty'),
 });
 
+const ListDisputesSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(25),
+});
+
 export class DisputeController {
   constructor(private readonly disputeService: DisputeService) {}
 
@@ -26,8 +31,9 @@ export class DisputeController {
     try {
       const authReq = req as AuthenticatedRequest;
       const tenantId = authReq.user.tenantId;
-      const list = await this.disputeService.listPending(tenantId);
-      res.status(200).json(list);
+      const params = ListDisputesSchema.parse(req.query);
+      const result = await this.disputeService.listPending(tenantId, params);
+      res.status(200).json(result);
     } catch (err) {
       next(err);
     }
