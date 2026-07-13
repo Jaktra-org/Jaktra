@@ -139,7 +139,7 @@ export class AimlService {
     clientName: string;
     invoiceAmount: string;
     dueDate: string;
-    priorCommunications?: any[];
+    priorCommunications?: Array<{ subject: string | null; body: string | null; sentAt: Date | null }>;
   }): Promise<{
     classification: 'dispute' | 'question' | 'payment_promise' | 'unclear';
     confidence: number;
@@ -162,7 +162,7 @@ export class AimlService {
       reasoning: string;
     }>('POST', '/agents/dispute', payload);
     return {
-      classification: raw.classification as any,
+      classification: raw.classification as 'dispute' | 'question' | 'payment_promise' | 'unclear',
       confidence: raw.confidence,
       suggestedResponse: raw.suggested_response,
       reasoning: raw.reasoning,
