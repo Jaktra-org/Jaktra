@@ -9,6 +9,6 @@ export function createEmailProvider(config: ResolvedEmailConfig): EmailProvider 
     case 'sendgrid':
       return new SendGridEmailProvider(config);
     default:
-      throw new Error(`Unsupported email config kind: ${(config as any).kind}`);
+      throw new Error(`Unsupported email config kind: ${(config as ResolvedEmailConfig).kind}`);
   }
 }
