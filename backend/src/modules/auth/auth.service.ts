@@ -28,7 +28,7 @@ import { OtpService } from './otp.service.js';
 const SALT_ROUNDS = 12;
 const MFA_BACKUP_CODE_COUNT = 8;
 const MFA_PENDING_EXPIRES = '5m';
-const mfaAad = (userId: string) => `user:${userId}`;
+const mfaAad = (userId: string): string => `user:${userId}`;
  
 export interface OnboardInput {
   name: string;

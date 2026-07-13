@@ -6,7 +6,8 @@ import { logger } from '../../shared/logger.js';
 export interface OtpData {
   hashedCode: string;
   attempts: number;
-  [key: string]: any;
+  userId?: string;
+  [key: string]: unknown;
 }
 
 export class OtpService {
@@ -44,7 +45,7 @@ export class OtpService {
   async storeOtp(
     email: string,
     prefix: string,
-    extraFields: Record<string, any> = {},
+    extraFields: Record<string, unknown> = {},
     expirySeconds: number = 600
   ): Promise<string> {
     if (!this.isRedisReady) {
@@ -115,7 +116,7 @@ export class OtpService {
   async checkRateLimit(
     email: string,
     prefix: string,
-    cooldownSeconds: number = 60,
+    _cooldownSeconds: number = 60,
     maxPerHour: number = 5
   ): Promise<void> {
     if (!this.isRedisReady) {
