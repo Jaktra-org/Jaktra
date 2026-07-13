@@ -76,6 +76,18 @@ export class DisputeService {
     const tenantId = invoice.tenantId;
     logger.info(`Matched inbound reply to invoice ${invoiceId} via sub-addressing`);
 
+    // Verify tenant settings has inboundParseActive enabled
+    const [settings] = await this.db
+      .select()
+      .from(tenantSettings)
+      .where(eq(tenantSettings.tenantId, tenantId))
+      .limit(1);
+
+    if (!settings || !settings.inboundParseActive) {
+      logger.warn(`Inbound email matched invoice ${invoiceId} but tenant ${tenantId} does not have inboundParseActive enabled — dropping`);
+      return;
+    }
+
     const emailBody = params.text || params.html || '';
 
     // Fetch prior communication history for context
