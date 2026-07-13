@@ -38,7 +38,7 @@ export class EventRepository {
       .orderBy(asc(events.createdAt));
   }
 
-  async getTenantFeed(tenantId: string, limit: number = 50) {
+  async getTenantFeed(tenantId: string, limit: number = 50): Promise<Array<Event & { invoiceId: string; invoiceNo: string }>> {
     const rows = await this.db
       .select({
         event: events,
