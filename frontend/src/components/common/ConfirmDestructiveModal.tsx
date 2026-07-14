@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Modal } from "../ui/Modal";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { getErrorMessage } from "../../utils/error-utils";
 
 interface ConfirmDestructiveModalProps {
   isOpen: boolean;
@@ -23,13 +24,15 @@ export function ConfirmDestructiveModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setInputValue("");
       setError(null);
       setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +43,8 @@ export function ConfirmDestructiveModal({
     try {
       await onConfirm();
       onClose();
-    } catch (err: any) {
-      setError(err.message || "Failed to permanently delete invoice.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
       setIsSubmitting(false);
     }
   };
