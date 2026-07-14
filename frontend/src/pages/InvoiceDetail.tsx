@@ -39,7 +39,11 @@ import {
   XCircle
 } from "lucide-react";
 
-
+interface GroupedInvoiceEvent extends InvoiceEvent {
+  isGrouped?: boolean;
+  editsCount?: number;
+  subEvents?: InvoiceEvent[];
+}
 
 const formatCurrency = (val: string | number) => {
   return Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(val));
@@ -65,7 +69,7 @@ export function InvoiceDetail() {
     role: string | null;
     email: string | null;
   } | null>(null);
-  const [accumulatedTimeline, setAccumulatedTimeline] = useState<any[]>([]);
+  const [accumulatedTimeline, setAccumulatedTimeline] = useState<GroupedInvoiceEvent[]>([]);
   const [totalTimelineCount, setTotalTimelineCount] = useState(0);
 
   const { data: invoice, isLoading: isInvoiceLoading } = useQuery({
@@ -85,25 +89,27 @@ export function InvoiceDetail() {
 
   useEffect(() => {
     if (timelineResponse?.data) {
-      if (timelinePage === 1) {
-        setAccumulatedTimeline(timelineResponse.data);
-      } else {
-        setAccumulatedTimeline(prev => {
-          const existingIds = new Set(prev.map(e => e.id));
-          const uniqueNew = timelineResponse.data.filter((e: any) => !existingIds.has(e.id));
-          return [...prev, ...uniqueNew];
-        });
-      }
-      setTotalTimelineCount(timelineResponse.pagination.total);
+      Promise.resolve().then(() => {
+        if (timelinePage === 1) {
+          setAccumulatedTimeline(timelineResponse.data);
+        } else {
+          setAccumulatedTimeline(prev => {
+            const existingIds = new Set(prev.map(e => e.id));
+            const uniqueNew = timelineResponse.data.filter((e: GroupedInvoiceEvent) => !existingIds.has(e.id));
+            return [...prev, ...uniqueNew];
+          });
+        }
+        setTotalTimelineCount(timelineResponse.pagination.total);
+      });
     }
   }, [timelineResponse, timelinePage]);
 
   // Reset timeline to page 1 whenever the invoice data updates (indicates a mutation occurred)
-  useEffect(() => {
-    if (invoice) {
-      setTimelinePage(1);
-    }
-  }, [invoice?.updatedAt]);
+  const [prevInvoiceUpdatedAt, setPrevInvoiceUpdatedAt] = useState(invoice?.updatedAt);
+  if (invoice?.updatedAt !== prevInvoiceUpdatedAt) {
+    setPrevInvoiceUpdatedAt(invoice?.updatedAt);
+    setTimelinePage(1);
+  }
 
   const { data: communications, isLoading: isCommsLoading } = useQuery({
     queryKey: ["invoice-communications", id],
@@ -118,7 +124,7 @@ export function InvoiceDetail() {
 
   const { data: integrations } = useQuery({
     queryKey: ['integrations'],
-    queryFn: settingsService.getIntegrations,
+    queryFn: () => settingsService.getIntegrations(),
     retry: false,
   });
 
@@ -128,7 +134,7 @@ export function InvoiceDetail() {
   const statusMutation = useMutation({
     mutationFn: (status: string) => invoiceService.updateInvoiceStatus(id!, status),
     onMutate: () => setError(null),
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
     onSuccess: () => {
@@ -143,7 +149,7 @@ export function InvoiceDetail() {
   const agentMutation = useMutation({
     mutationFn: (tone?: string) => agentService.runAgentForInvoice(id!, tone),
     onMutate: () => setError(null),
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
     onSuccess: () => {
@@ -166,7 +172,7 @@ export function InvoiceDetail() {
   const deleteMutation = useMutation({
     mutationFn: () => invoiceService.deleteInvoice(id!),
     onMutate: () => setError(null),
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
     onSuccess: () => {
@@ -184,7 +190,7 @@ export function InvoiceDetail() {
   const generateLinkMutation = useMutation({
     mutationFn: () => invoiceService.generatePaymentLink(id!),
     onMutate: () => setError(null),
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
     onSuccess: () => {
@@ -201,7 +207,7 @@ export function InvoiceDetail() {
     );
   }
 
-  const renderEventIcon = (event: any) => {
+  const renderEventIcon = (event: GroupedInvoiceEvent) => {
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
     // 1. Paid status or payment received
@@ -260,7 +266,7 @@ export function InvoiceDetail() {
     return <MessageSquare className="w-4 h-4 text-slate-500" />;
   };
 
-  const formatDateValue = (val: any) => {
+  const formatDateValue = (val: unknown) => {
     if (!val) return 'None';
     if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
       const date = new Date(val);
@@ -271,7 +277,7 @@ export function InvoiceDetail() {
     return String(val);
   };
 
-  const getEventIconStyles = (event: any) => {
+  const getEventIconStyles = (event: GroupedInvoiceEvent) => {
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
     if (type.includes('received') || (event.newValues && event.newValues.paymentStatus === 'Paid')) {
@@ -313,7 +319,7 @@ export function InvoiceDetail() {
     return 'bg-slate-50 text-slate-500 border-slate-200';
   };
 
-  const getEventHeading = (event: any) => {
+  const getEventHeading = (event: GroupedInvoiceEvent) => {
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
     // Build JSX for Actor to clean up name repeats and fold in hover info
@@ -569,11 +575,11 @@ export function InvoiceDetail() {
     return <span>{event.description || event.actionType || event.eventType}</span>;
   };
 
-  const groupTimelineEvents = (events: any[]) => {
+  const groupTimelineEvents = (events: GroupedInvoiceEvent[]) => {
     if (events.length === 0) return [];
     
-    const grouped: any[] = [];
-    let currentGroup: any[] = [];
+    const grouped: GroupedInvoiceEvent[] = [];
+    let currentGroup: GroupedInvoiceEvent[] = [];
     
     for (let i = 0; i < events.length; i++) {
       const evt = events[i];
@@ -615,7 +621,7 @@ export function InvoiceDetail() {
     return grouped;
   };
 
-  const mergeGroup = (group: any[]) => {
+  const mergeGroup = (group: GroupedInvoiceEvent[]): GroupedInvoiceEvent => {
     if (group.length === 1) return group[0];
     
     // Sort group chronological ascending to determine transition
@@ -640,7 +646,7 @@ export function InvoiceDetail() {
 
 
 
-  const renderEventDescription = (event: any) => {
+  const renderEventDescription = (event: GroupedInvoiceEvent) => {
     const payload = event.payload;
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
@@ -1015,7 +1021,7 @@ export function InvoiceDetail() {
                                 {event.isGrouped && isExpanded && (
                                   <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-[11px] text-slate-500">
                                     <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider mb-1">Edit History ({event.editsCount} revisions)</p>
-                                    {event.subEvents.map((sub: any) => {
+                                    {event.subEvents?.map((sub: InvoiceEvent) => {
                                       const subKeys = Object.keys({ ...sub.oldValues, ...sub.newValues }).filter(k => sub.oldValues?.[k] !== sub.newValues?.[k]);
                                       const subKey = subKeys[0];
                                       const oldV = sub.oldValues?.[subKey];
