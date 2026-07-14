@@ -31,7 +31,7 @@ export function DLQ() {
       queryClient.invalidateQueries({ queryKey: ['dlq-entries'] });
       setDismissingId(null);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setMutationError(getErrorMessage(err));
       setDismissingId(null);
     }
@@ -47,7 +47,7 @@ export function DLQ() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dlq-entries'] });
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setMutationError(getErrorMessage(err));
     },
     onSettled: () => {
