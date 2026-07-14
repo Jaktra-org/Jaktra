@@ -13,6 +13,7 @@ export function Disputes() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftResponse, setDraftResponse] = useState<string>('');
 
@@ -117,7 +118,7 @@ export function Disputes() {
     if (inboundStatus.dnsVerifiedAt) {
       const verifiedTime = new Date(inboundStatus.dnsVerifiedAt).getTime();
       const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-      if (Date.now() - verifiedTime < thirtyDays) {
+      if (now - verifiedTime < thirtyDays) {
         return true;
       }
     }
