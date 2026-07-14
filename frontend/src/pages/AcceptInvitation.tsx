@@ -9,23 +9,25 @@ import { getErrorMessage } from '../utils/error-utils';
 
 export function AcceptInvitation() {
   const navigate = useNavigate();
-  const [token, setToken] = useState<string | null>(null);
+  const [token] = useState<string | null>(() => {
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const tokenMatch = hash.match(/token=([^&]+)/);
+    return tokenMatch && tokenMatch[1] ? tokenMatch[1] : null;
+  });
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>(() => {
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const tokenMatch = hash.match(/token=([^&]+)/);
+    return tokenMatch && tokenMatch[1] ? '' : 'Invalid or missing invitation token.';
+  });
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    const tokenMatch = hash.match(/token=([^&]+)/);
-    
-    if (tokenMatch && tokenMatch[1]) {
-      setToken(tokenMatch[1]);
+    if (token) {
       window.history.replaceState(null, '', window.location.pathname);
-    } else {
-      setError('Invalid or missing invitation token.');
     }
-  }, []);
+  }, [token]);
 
   const acceptSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -40,7 +42,7 @@ export function AcceptInvitation() {
         navigate('/login', { replace: true });
       }, 2000);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     }
   });
