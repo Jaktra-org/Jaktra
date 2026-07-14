@@ -127,7 +127,7 @@ function MemberRow({ member, isAdmin, currentUserId }: { member: TeamMember, isA
           <div className="flex items-center gap-2">
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as any)}
+              onChange={(e) => setRole(e.target.value as 'admin' | 'manager' | 'viewer')}
               className="text-sm border rounded-md px-2 py-1"
             >
               <option value="admin">Admin</option>
@@ -249,7 +249,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
       queryClient.invalidateQueries({ queryKey: ['team', 'invitations'] });
       onClose();
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     }
   });
@@ -300,7 +300,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
             <label className="text-sm font-medium text-slate-700">Role</label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as any)}
+              onChange={(e) => setRole(e.target.value as 'admin' | 'manager' | 'viewer')}
               className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="viewer">Viewer (Read-only)</option>

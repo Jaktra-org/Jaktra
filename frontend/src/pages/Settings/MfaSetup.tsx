@@ -69,6 +69,7 @@ export function MfaSetup({ mfaEnabled, onMfaChange }: MfaSetupProps) {
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 2000);
     } catch {
+      // Ignore clipboard copy failure
     }
   };
 

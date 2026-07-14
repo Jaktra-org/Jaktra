@@ -4,7 +4,7 @@ import { settingsService } from '../services/settings';
 import { authService } from '../services/auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon, Trash2 } from 'lucide-react';
-import type { TenantSettings } from '../types/api';
+import type { TenantSettings, IntegrationsResponse, SmtpConfig } from '../types/api';
 import { getErrorMessage } from '../utils/error-utils';
 import { useAuth } from '../contexts/AuthContext';
 import { TeamSettings } from './Settings/TeamSettings';
@@ -88,7 +88,14 @@ export function Settings() {
   );
 }
 
-function TabButton({ active, onClick, icon, label }: any) {
+interface TabButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}
+
+function TabButton({ active, onClick, icon, label }: TabButtonProps) {
   return (
     <button
       onClick={onClick}
@@ -108,7 +115,6 @@ function GeneralSettings() {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Partial<TenantSettings>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [localError, setLocalError] = useState<string | null>(null);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
@@ -117,7 +123,9 @@ function GeneralSettings() {
 
   useEffect(() => {
     if (settings) {
-      setFormData(settings);
+      Promise.resolve().then(() => {
+        setFormData(settings);
+      });
     }
   }, [settings]);
 
@@ -134,15 +142,12 @@ function GeneralSettings() {
     },
   });
 
+  const localError = formData.autoPurgeEnabled && formData.autoPurgeDays !== undefined && formData.autoPurgeDays < 7
+    ? "Auto-purge retention period must be at least 7 days"
+    : null;
+
   useEffect(() => {
-    if (!settings) return;
-    
-    if (formData.autoPurgeEnabled && formData.autoPurgeDays !== undefined && formData.autoPurgeDays < 7) {
-      setLocalError("Auto-purge retention period must be at least 7 days");
-      return;
-    } else {
-      setLocalError(null);
-    }
+    if (!settings || localError) return;
 
     const hasChanges = Object.keys(formData).some(
       key => formData[key as keyof TenantSettings] !== settings[key as keyof TenantSettings]
@@ -154,7 +159,7 @@ function GeneralSettings() {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [formData, settings]);
+  }, [formData, settings, localError, mutation]);
 
   const handleChange = (field: keyof TenantSettings, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -339,7 +344,9 @@ function EmailSettings() {
 
   useEffect(() => {
     if (settings) {
-      setFormData(settings);
+      Promise.resolve().then(() => {
+        setFormData(settings);
+      });
     }
   }, [settings]);
 
@@ -379,9 +386,9 @@ function EmailSettings() {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [formData, settings]);
+  }, [formData, settings, mutation]);
 
-  const handleChange = (field: keyof TenantSettings, value: any) => {
+  const handleChange = (field: keyof TenantSettings, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -686,7 +693,14 @@ function EmailSettings() {
 
 
 
-function SendGridConfig({ integration, testEmailMutation, testEmailStatus, userEmail }: any) {
+interface SendGridConfigProps {
+  integration: IntegrationsResponse['sendgrid'] | undefined;
+  testEmailMutation: { mutate: (to: string) => void; isPending: boolean };
+  testEmailStatus: 'idle' | 'sending' | 'success' | 'error';
+  userEmail: string;
+}
+
+function SendGridConfig({ integration, testEmailMutation, testEmailStatus, userEmail }: SendGridConfigProps) {
   const queryClient = useQueryClient();
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -703,7 +717,7 @@ function SendGridConfig({ integration, testEmailMutation, testEmailStatus, userE
       setApiKeyInput('');
       setErrorMsg('');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setErrorMsg(getErrorMessage(err));
     }
   });
@@ -972,7 +986,12 @@ function SendGridConfig({ integration, testEmailMutation, testEmailStatus, userE
   );
 }
 
-function SmtpConfigurator({ integration, userEmail }: any) {
+interface SmtpConfiguratorProps {
+  integration: IntegrationsResponse['smtp'] | undefined;
+  userEmail: string;
+}
+
+function SmtpConfigurator({ integration, userEmail }: SmtpConfiguratorProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -988,7 +1007,7 @@ function SmtpConfigurator({ integration, userEmail }: any) {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (config: any) => settingsService.saveSmtpConfig(config),
+    mutationFn: (config: SmtpConfig) => settingsService.saveSmtpConfig(config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
@@ -996,7 +1015,7 @@ function SmtpConfigurator({ integration, userEmail }: any) {
       setFormData({ host: '', port: 587, securityMode: 'starttls', username: '', password: '' });
       setErrorMsg('');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setErrorMsg(getErrorMessage(err));
     }
   });
@@ -1208,7 +1227,7 @@ function ProfileSettings() {
       updateUser(updatedUser);
       setTimeout(() => setSaveStatus('idle'), 2000);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setSaveStatus('error');
       setErrorMessage(getErrorMessage(err));
     },

@@ -31,7 +31,7 @@ export function IntegrationsTab() {
       setFormData({ keyId: '', keySecret: '', webhookSecret: '' });
       setErrorMsg('');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setErrorMsg(getErrorMessage(err));
     }
   });
