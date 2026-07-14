@@ -44,5 +44,15 @@
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
     "vitest": "^4.1.10"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "1.0.3",
+    "@rolldown/binding-darwin-x64": "1.0.3",
+    "@rolldown/binding-linux-arm64-gnu": "1.0.3",
+    "@rolldown/binding-linux-arm64-musl": "1.0.3",
+    "@rolldown/binding-linux-x64-gnu": "1.0.3",
+    "@rolldown/binding-linux-x64-musl": "1.0.3",
+    "@rolldown/binding-win32-arm64-msvc": "1.0.3",
+    "@rolldown/binding-win32-x64-msvc": "1.0.3"
   }
 }
