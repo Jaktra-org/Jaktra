@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/Card";
 import { analyticsService } from "../services/analytics";
 import { agentService } from "../services/agent";
+import { formatCurrencyUSD } from "../utils/format";
 import { AlertCircle, FileText, TrendingUp, DollarSign, Loader2, PieChart as PieChartIcon, BarChart3, Clock, Zap, AlertTriangle } from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -81,18 +82,6 @@ export function Dashboard() {
     : (latestRun ? "0.0%" : "N/A");
 
   const stage5Halted = agingData?.find(d => d.tier === 'legal_escalation')?.count || 0;
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border border-slate-200 p-3 shadow-lg rounded-md">
-          <p className="font-medium text-slate-900 mb-1">{payload[0].name}</p>
-          <p className="text-sm text-slate-600 font-semibold">{formatCurrency(payload[0].value)}</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="space-y-6">
@@ -289,3 +278,20 @@ export function Dashboard() {
     </div>
   );
 }
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-slate-200 p-3 shadow-lg rounded-md text-xs">
+        <p className="font-medium text-slate-900 mb-1">{payload[0].name}</p>
+        <p className="text-sm text-slate-600 font-semibold">{formatCurrencyUSD(payload[0].value)}</p>
+      </div>
+    );
+  }
+  return null;
+};

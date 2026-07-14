@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '../services/analytics';
 import { settingsService } from '../services/settings';
+import { formatCurrencyUSD } from '../utils/format';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { TrendingUp, DollarSign, Clock, AlertCircle, Loader2, Construction, Send, Zap, LayoutDashboard, MailOpen, MousePointerClick } from 'lucide-react';
@@ -81,19 +82,6 @@ function FinancialMetricsTab() {
     count: d.count,
     fill: tierConfig[d.tier]?.color || '#cbd5e1'
   })).reverse();
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border border-slate-200 p-3 shadow-lg rounded-md">
-          <p className="font-medium text-slate-900 mb-1">{payload[0].payload.name}</p>
-          <p className="text-sm text-slate-600 font-semibold">{formatCurrency(payload[0].value)}</p>
-          <p className="text-xs text-slate-500 mt-1">{payload[0].payload.count} Invoices</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="space-y-6">
@@ -314,7 +302,42 @@ function AgentPerformanceTab() {
 }
 
 // Reusable Components
-function MetricCard({ title, value, loading, formatter, icon, valueColor = "text-slate-900" }: any) {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+    payload: {
+      name: string;
+      count: number;
+    };
+  }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const item = payload[0];
+    return (
+      <div className="bg-white border border-slate-200 p-3 shadow-lg rounded-md text-xs">
+        <p className="font-medium text-slate-900 mb-1">{item.payload.name}</p>
+        <p className="text-sm text-slate-600 font-semibold">{formatCurrencyUSD(item.value)}</p>
+        <p className="text-xs text-slate-500 mt-1">{item.payload.count} Invoices</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+interface MetricCardProps {
+  title: string;
+  value?: number | string | null;
+  loading: boolean;
+  formatter?: (val: number) => string;
+  icon?: React.ReactNode;
+  valueColor?: string;
+}
+
+function MetricCard({ title, value, loading, formatter, icon, valueColor = "text-slate-900" }: MetricCardProps) {
   return (
     <Card>
       <CardContent className="p-6">
@@ -323,7 +346,7 @@ function MetricCard({ title, value, loading, formatter, icon, valueColor = "text
           {icon}
         </div>
         <div className={`mt-4 flex items-baseline text-3xl font-bold ${valueColor}`}>
-          {loading ? <Loader2 className="w-6 h-6 animate-spin text-slate-300" /> : (formatter ? formatter(value || 0) : (value || 0))}
+          {loading ? <Loader2 className="w-6 h-6 animate-spin text-slate-300" /> : (formatter ? formatter((value as number) || 0) : (value || 0))}
         </div>
       </CardContent>
     </Card>
