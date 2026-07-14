@@ -92,9 +92,9 @@ export interface InvoiceEvent {
   eventType: string;    
   source: 'ui' | 'api' | 'agent' | 'webhook' | 'system';
   description: string | null;
-  oldValues: Record<string, any> | null;
-  newValues: Record<string, any> | null;
-  payload: Record<string, any> | null;
+  oldValues: Record<string, unknown> | null;
+  newValues: Record<string, unknown> | null;
+  payload: Record<string, unknown> | null;
 
   createdAt: string;
 }
@@ -269,4 +269,12 @@ export interface TeamInvitation {
   deliveryStatus: 'pending' | 'sent' | 'failed';
   createdAt: string;
   expiresAt: string;
+}
+
+export interface SmtpConfig {
+  host: string;
+  port: number;
+  securityMode: 'none' | 'starttls' | 'tls' | string;
+  username: string;
+  password?: string;
 }
