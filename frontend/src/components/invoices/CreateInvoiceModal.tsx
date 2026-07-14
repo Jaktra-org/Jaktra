@@ -40,7 +40,7 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
       });
       setError(null);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
   });

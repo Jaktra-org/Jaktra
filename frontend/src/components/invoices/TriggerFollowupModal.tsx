@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Modal } from "../ui/Modal";
 import { ToneSelector } from "../agent/ToneSelector";
 import { Loader2, Zap, AlertCircle } from "lucide-react";
@@ -31,11 +31,15 @@ export function TriggerFollowupModal({
   const initialTone = isRecommendedValid ? recommendedTone! : "";
   const [selectedTone, setSelectedTone] = useState<string>(initialTone);
 
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevInvoiceId, setPrevInvoiceId] = useState(invoice.id);
+  if (isOpen !== prevIsOpen || invoice.id !== prevInvoiceId) {
+    setPrevIsOpen(isOpen);
+    setPrevInvoiceId(invoice.id);
     if (isOpen) {
       setSelectedTone(isRecommendedValid ? recommendedTone! : "");
     }
-  }, [isOpen, recommendedTone, isRecommendedValid]);
+  }
 
   const getNoRecommendationReason = () => {
     if (invoice.paymentStatus === 'Paid') {

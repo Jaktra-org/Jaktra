@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Modal } from "../ui/Modal";
 import { invoiceService } from "../../services/invoice";
@@ -22,7 +22,9 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
     subject: invoice.subject ?? "",
   });
 
-  useEffect(() => {
+  const [prevInvoice, setPrevInvoice] = useState(invoice);
+  if (invoice.id !== prevInvoice.id || invoice.updatedAt !== prevInvoice.updatedAt) {
+    setPrevInvoice(invoice);
     setFormData({
       clientName: invoice.clientName,
       invoiceAmount: invoice.invoiceAmount,
@@ -30,7 +32,7 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
       contactEmail: invoice.contactEmail,
       subject: invoice.subject ?? "",
     });
-  }, [invoice]);
+  }
 
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +47,7 @@ export function EditInvoiceModal({ isOpen, onClose, invoice }: EditInvoiceModalP
       onClose();
       setError(null);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
   });

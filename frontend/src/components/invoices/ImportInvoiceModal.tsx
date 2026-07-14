@@ -11,11 +11,16 @@ interface ImportInvoiceModalProps {
   onClose: () => void;
 }
 
+interface ImportError {
+  row: number;
+  error: string;
+}
+
 export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps) {
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [strategy, setStrategy] = useState<'skip' | 'update'>('skip');
-  const [preview, setPreview] = useState<any[]>([]);
+  const [preview, setPreview] = useState<Record<string, string>[]>([]);
   const [previewHeaders, setPreviewHeaders] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -24,7 +29,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
     imported: number;
     updated: number;
     skipped: number;
-    errors: any[];
+    errors: ImportError[];
   } | null>(null);
 
   const resetState = () => {
@@ -48,7 +53,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
       queryClient.invalidateQueries({ queryKey: ["analytics-aging"] });
       setImportResult(data);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
   });
