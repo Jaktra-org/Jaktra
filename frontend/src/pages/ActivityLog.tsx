@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { 
   History, Search, Filter, RefreshCw, ArrowRight,
@@ -8,21 +8,7 @@ import {
 } from "lucide-react";
 import { eventService } from "../services/event";
 import type { InvoiceEvent } from "../types/api";
-
-export const formatCurrency = (val: string | number) => {
-  return Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(Number(val));
-};
-
-export const formatDateValue = (val: any) => {
-  if (!val) return 'None';
-  const date = new Date(val);
-  if (isNaN(date.getTime())) return String(val);
-  const day = date.getDate();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
-};
+import { formatCurrency, formatDateValue } from "../utils/format";
 
 const categoryActionTypeMap: Record<string, string[]> = {
   invoices: [
@@ -76,7 +62,7 @@ const categoryActionTypeMap: Record<string, string[]> = {
 
 const eventCategoryMap: {
   prefix: string;
-  icon: any;
+  icon: React.ElementType;
   colorClass: string;
   badgeStyle: string;
 }[] = [
@@ -150,7 +136,7 @@ export function ActivityLog() {
     { id: "operational", label: "Operations" },
   ];
 
-  const fetchEvents = async (isRefresh = false) => {
+  const fetchEvents = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
@@ -179,18 +165,27 @@ export function ActivityLog() {
       setEvents(response.data);
       setTotal(response.pagination.total);
       setTotalPages(response.pagination.totalPages);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load activity log events:", err);
-      setError(err?.response?.data?.error?.message || err?.message || "An unexpected error occurred");
+      const errMessage = err instanceof Error ? err.message : String(err);
+      setError(errMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [page, limit, selectedCategory, selectedSource, selectedDateRange]);
 
   useEffect(() => {
-    fetchEvents();
-  }, [page, selectedCategory, selectedSource, selectedDateRange]);
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) {
+        fetchEvents();
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [fetchEvents]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -214,29 +209,7 @@ export function ActivityLog() {
       (evt.invoiceNo && evt.invoiceNo.toLowerCase().includes(term))
     );
   });
-
-  const formatCurrency = (val: any) => {
-    const amount = Number(val);
-    if (isNaN(amount)) return '₹0.00';
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
-  };
-
-  const formatDateValue = (val: any) => {
-    if (!val) return '—';
-    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
-      const date = new Date(val);
-      if (!isNaN(date.getTime())) {
-        const day = date.getDate();
-        const month = date.toLocaleString('default', { month: 'short' });
-        const year = date.getFullYear();
-        return `${day} ${month} ${year}`;
-      }
-    }
-    return String(val);
-  };
+  // Local formatCurrency and formatDateValue have been removed in favor of imported utilities
 
   const getEventIcon = (actionType: string) => {
     const config = getEventConfig(actionType);
@@ -276,7 +249,7 @@ export function ActivityLog() {
   };
 
   const renderEventDetails = (event: InvoiceEvent) => {
-    const formatVal = (v: any) => {
+    const formatVal = (v: unknown) => {
       if (v === null || v === undefined) return "None";
       if (typeof v === "object") return JSON.stringify(v);
       return String(v);

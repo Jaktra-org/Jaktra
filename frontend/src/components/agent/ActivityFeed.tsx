@@ -72,7 +72,7 @@ export function ActivityFeed({ isRunning }: ActivityFeedProps) {
         <div className="flex items-center space-x-2">
           <select 
             value={filter} 
-            onChange={(e) => setFilter(e.target.value as any)}
+            onChange={(e) => setFilter(e.target.value as 'all' | 'activity' | 'errors')}
             className="text-xs border-slate-200 rounded-md py-1.5 pl-2 pr-8 focus:ring-blue-500 focus:border-blue-500 text-slate-700 bg-white shadow-sm"
           >
             <option value="all">All Events</option>
