@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { TenantSettings, IntegrationsResponse } from '../types/api';
+import type { TenantSettings, IntegrationsResponse, SmtpConfig } from '../types/api';
 
 export const settingsService = {
   getSettings: async (): Promise<TenantSettings> => {
@@ -31,7 +31,7 @@ export const settingsService = {
     return response.data;
   },
 
-  saveSmtpConfig: async (config: any): Promise<{ message: string }> => {
+  saveSmtpConfig: async (config: SmtpConfig): Promise<{ message: string }> => {
     const response = await api.post('/settings/integrations/smtp', config);
     return response.data;
   },

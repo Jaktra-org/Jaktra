@@ -4,7 +4,7 @@ import type { Invoice, ListInvoicesParams, PaginatedResponse } from '../types/ap
 export const invoiceService = {
   getInvoices: async (params: ListInvoicesParams = {}): Promise<PaginatedResponse<Invoice>> => {
     // Convert arrays to comma-separated strings for the backend
-    const queryParams: Record<string, any> = { ...params };
+    const queryParams: Record<string, string | number | string[] | undefined> = { ...params };
     if (params.status && params.status.length > 0) {
       queryParams.status = params.status.join(',');
     }
@@ -56,7 +56,7 @@ export const invoiceService = {
   },
 
   getTrashedInvoices: async (params: Omit<ListInvoicesParams, 'status'> = {}): Promise<PaginatedResponse<Invoice>> => {
-    const queryParams: Record<string, any> = { ...params };
+    const queryParams: Record<string, string | number | string[] | undefined> = { ...params };
     const response = await api.get('/invoices/trash', { params: queryParams });
     return response.data;
   },
