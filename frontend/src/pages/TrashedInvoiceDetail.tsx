@@ -37,8 +37,9 @@ interface GroupedInvoiceEvent extends InvoiceEvent {
   subEvents?: InvoiceEvent[];
 }
 
-const formatCurrency = (val: string | number) => {
-  return Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(val));
+const formatCurrency = (val: unknown) => {
+  const num = typeof val === 'number' ? val : Number(val as string | number) || 0;
+  return Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 };
 
 export function TrashedInvoiceDetail() {
@@ -235,15 +236,15 @@ export function TrashedInvoiceDetail() {
         return <span className="font-semibold text-slate-900">{displayName}</span>;
       }
       const isCardOpen = activeHoverCard?.eventId === event.id;
-      const initials = event.actorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+      const initials = (event.actorName || '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
       return (
         <span 
           className="relative inline-block"
           onMouseEnter={() => setActiveHoverCard({
             eventId: event.id,
-            name: event.actorName,
-            role: event.actorRole,
-            email: event.actorEmail
+            name: event.actorName || '',
+            role: event.actorRole || null,
+            email: event.actorEmail || null
           })}
           onMouseLeave={() => setActiveHoverCard(null)}
         >
@@ -340,7 +341,7 @@ export function TrashedInvoiceDetail() {
       return <span>Payment link generated for <span className="font-semibold text-slate-900">{invoice?.clientName}</span></span>;
     }
     if (type === 'followup.triggered') {
-      const tone = event.payload?.tone || 'default';
+      const tone = String(event.payload?.tone || 'default');
       return <span>{actor} triggered AI follow-up (tone: <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[11px] border border-slate-200">{tone}</span>)</span>;
     }
     if (type === 'followup.sent') {
@@ -461,7 +462,7 @@ export function TrashedInvoiceDetail() {
     if (payload?.subject) {
       return (
         <div>
-          <p className="text-xs text-slate-500 font-mono bg-slate-50 p-1 rounded">Subject: {payload.subject}</p>
+          <p className="text-xs text-slate-500 font-mono bg-slate-50 p-1 rounded">Subject: {String(payload.subject)}</p>
         </div>
       );
     }
