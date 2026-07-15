@@ -79,7 +79,7 @@ export function ImportInvoiceModal({ isOpen, onClose }: ImportInvoiceModalProps)
           if (results.meta.fields) {
             setPreviewHeaders(results.meta.fields);
           }
-          setPreview(results.data);
+          setPreview(results.data as Record<string, string>[]);
         },
         error: (err) => {
           setError("Failed to parse CSV preview: " + getErrorMessage(err));
