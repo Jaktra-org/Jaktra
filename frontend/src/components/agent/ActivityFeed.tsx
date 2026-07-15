@@ -122,21 +122,21 @@ export function ActivityFeed({ isRunning }: ActivityFeedProps) {
                         </Link>
                       )}
                     </div>
-                    {event.payload?.error && (
+                    {!!event.payload?.error && (
                       <p className="text-xs text-red-600 mt-1">{getErrorMessage(event.payload.error)}</p>
                     )}
-                    {event.eventType === 'halted' && !event.payload?.error && event.payload?.reason && (
+                    {event.eventType === 'halted' && !event.payload?.error && !!event.payload?.reason && (
                       <p className="text-xs text-slate-600 mt-1">
-                        {typeof event.payload.reason === 'string' && (event.payload.reason.includes('sent ') || event.payload.reason.includes('ago'))
-                          ? `Skipped: recently sent (${event.payload.reason})`
-                          : event.payload.reason === 'no_automated_channel'
-                          ? `No automated channel configured for ${event.payload.tier || 'this'} tier`
-                          : `Reason: ${event.payload.reason}`}
+                        {typeof event.payload?.reason === 'string' && (String(event.payload.reason).includes('sent ') || String(event.payload.reason).includes('ago'))
+                          ? `Skipped: recently sent (${String(event.payload.reason)})`
+                          : event.payload?.reason === 'no_automated_channel'
+                          ? `No automated channel configured for ${String(event.payload?.tier || 'this')} tier`
+                          : `Reason: ${String(event.payload?.reason)}`}
                       </p>
                     )}
-                    {event.payload?.subject && (
+                    {!!event.payload?.subject && (
                       <p className="text-xs text-slate-600 mt-1 truncate max-w-[250px] sm:max-w-[400px]">
-                        Subject: {event.payload.subject}
+                        Subject: {String(event.payload?.subject)}
                       </p>
                     )}
                   </div>
