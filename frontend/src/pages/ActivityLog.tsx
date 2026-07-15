@@ -416,18 +416,18 @@ export function ActivityLog() {
     };
 
     if (action === 'user.invited') {
-      const email = evt.newValues?.email || evt.payload?.email || 'new user';
-      const role = evt.newValues?.role || evt.payload?.role || 'member';
+      const email = String(evt.newValues?.email || evt.payload?.email || 'new user');
+      const role = String(evt.newValues?.role || evt.payload?.role || 'member');
       const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
       return (
         <span>
-          {actor} invited <span className="font-semibold text-slate-900">{email}</span> as <span className="font-bold text-slate-950">{capitalizedRole}</span>
+          {actor} invited <span className="font-semibold text-slate-900">{email}</span> as <span className="font-bold text-slate-955">{capitalizedRole}</span>
         </span>
       );
     }
 
     if (action === 'user.invite_resent') {
-      const email = evt.newValues?.email || evt.payload?.email || 'user';
+      const email = String(evt.newValues?.email || evt.payload?.email || 'user');
       return (
         <span>
           {actor} resent the team invitation to <span className="font-semibold text-slate-900">{email}</span>
@@ -436,7 +436,7 @@ export function ActivityLog() {
     }
 
     if (action === 'user.invite_revoked') {
-      const email = evt.newValues?.email || evt.payload?.email || 'user';
+      const email = String(evt.newValues?.email || evt.payload?.email || 'user');
       return (
         <span>
           {actor} revoked the team invitation for <span className="font-semibold text-slate-900">{email}</span>
@@ -453,8 +453,8 @@ export function ActivityLog() {
     }
 
     if (action === 'user.role_updated') {
-      const targetName = evt.newValues?.name || evt.payload?.name || 'user';
-      const role = evt.newValues?.role || evt.payload?.role || '';
+      const targetName = String(evt.newValues?.name || evt.payload?.name || 'user');
+      const role = String(evt.newValues?.role || evt.payload?.role || '');
       const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
       return (
         <span>
@@ -464,7 +464,7 @@ export function ActivityLog() {
     }
 
     if (action === 'user.removed') {
-      const targetName = evt.newValues?.name || evt.payload?.name || 'user';
+      const targetName = String(evt.newValues?.name || evt.payload?.name || 'user');
       return (
         <span>
           {actor} removed <span className="font-semibold text-slate-900">{targetName}</span> from the organization
@@ -487,40 +487,40 @@ export function ActivityLog() {
           return <span>{actor} {enabled ? 'enabled' : 'disabled'} auto-purge</span>;
         }
         if (key === 'autoPurgeDays') {
-          return <span>{actor} changed auto-purge window from <span className="font-semibold text-slate-900">{oldVal ?? 30}</span> to <span className="font-bold text-slate-950">{newVal ?? 30}</span> days</span>;
+          return <span>{actor} changed auto-purge window from <span className="font-semibold text-slate-900">{String(oldVal ?? 30)}</span> to <span className="font-bold text-slate-955">{String(newVal ?? 30)}</span> days</span>;
         }
         if (key === 'companyName') {
-          return <span>{actor} changed organization name to <span className="font-bold text-slate-955">"{newVal}"</span></span>;
+          return <span>{actor} changed organization name to <span className="font-bold text-slate-955">"{String(newVal)}"</span></span>;
         }
         if (key === 'senderName') {
-          return <span>{actor} updated the sender name to <span className="font-bold text-slate-955">"{newVal}"</span></span>;
+          return <span>{actor} updated the sender name to <span className="font-bold text-slate-955">"{String(newVal)}"</span></span>;
         }
         if (key === 'senderEmail') {
-          return <span>{actor} updated the sender email to <span className="font-semibold text-slate-900">{newVal}</span></span>;
+          return <span>{actor} updated the sender email to <span className="font-semibold text-slate-900">{String(newVal)}</span></span>;
         }
         if (key === 'replyTo') {
           if (!newVal) {
             return <span>{actor} removed the reply-to email</span>;
           }
-          return <span>{actor} changed the reply-to email to <span className="font-semibold text-slate-900">{newVal}</span></span>;
+          return <span>{actor} changed the reply-to email to <span className="font-semibold text-slate-900">{String(newVal)}</span></span>;
         }
         if (key === 'paymentLink') {
           if (!newVal) {
             return <span>{actor} removed the default payment link</span>;
           }
-          return <span>{actor} changed the default payment link to <span className="font-semibold text-slate-900">{newVal}</span></span>;
+          return <span>{actor} changed the default payment link to <span className="font-semibold text-slate-900">{String(newVal)}</span></span>;
         }
         if (key === 'bankDetails') {
           return <span>{actor} updated organizational bank details</span>;
         }
         if (key === 'timezone') {
-          return <span>{actor} changed the timezone to <span className="font-semibold text-slate-900">{newVal}</span></span>;
+          return <span>{actor} changed the timezone to <span className="font-semibold text-slate-900">{String(newVal)}</span></span>;
         }
         if (key === 'scheduleHour') {
           return <span>{actor} changed the daily run time</span>;
         }
         if (key === 'idempotencyWindowHours') {
-          return <span>{actor} changed the idempotency window to <span className="font-semibold text-slate-900">{newVal}</span> hours</span>;
+          return <span>{actor} changed the idempotency window to <span className="font-semibold text-slate-900">{String(newVal)}</span> hours</span>;
         }
         if (key === 'defaultEmailProvider') {
           const providerName = String(newVal).toUpperCase();
@@ -564,7 +564,7 @@ export function ActivityLog() {
     }
 
     if (action === 'integration.connected') {
-      const provider = evt.payload?.provider || evt.payload?.integration || evt.newValues?.provider || 'service';
+      const provider = String(evt.payload?.provider || evt.payload?.integration || evt.newValues?.provider || 'service');
       const capitalizedProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
       return (
         <span>
@@ -574,17 +574,17 @@ export function ActivityLog() {
     }
 
     if (action === 'integration.disconnected') {
-      const provider = evt.payload?.provider || evt.payload?.integration || evt.oldValues?.provider || 'service';
+      const provider = String(evt.payload?.provider || evt.payload?.integration || evt.oldValues?.provider || 'service');
       const capitalizedProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
       return (
         <span>
-          {actor} disconnected <span className="font-bold text-slate-950">{capitalizedProvider}</span> integration
+          {actor} disconnected <span className="font-bold text-slate-955">{capitalizedProvider}</span> integration
         </span>
       );
     }
 
     if (action === 'integration.default_provider_changed') {
-      const provider = evt.payload?.to || evt.newValues?.to || 'None';
+      const provider = String(evt.payload?.to || evt.newValues?.to || 'None');
       const providerName = provider === 'None' ? 'None' : provider.toUpperCase();
       return (
         <span>
@@ -618,7 +618,7 @@ export function ActivityLog() {
     }
 
     if (action === 'auth.account_locked') {
-      const email = evt.payload?.email || evt.actorEmail || 'unknown';
+      const email = String(evt.payload?.email || evt.actorEmail || 'unknown');
       return (
         <span>
           System locked account <span className="font-semibold text-slate-900">{email}</span> due to repeated failed login attempts
@@ -627,7 +627,7 @@ export function ActivityLog() {
     }
 
     if (action === 'invoice.bulk_imported') {
-      const count = evt.payload?.count || evt.newValues?.count || 'multiple';
+      const count = String(evt.payload?.count || evt.newValues?.count || 'multiple');
       return (
         <span>
           {actor} bulk-imported <span className="font-bold text-slate-955">{count}</span> invoices
@@ -652,7 +652,7 @@ export function ActivityLog() {
     }
 
     if (action === 'invoice.created') {
-      const invoiceNo = evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
       return (
         <span>
           {actor} created Invoice {renderInvoiceLink(invoiceNo)}
@@ -661,7 +661,7 @@ export function ActivityLog() {
     }
 
     if (action === 'invoice.updated') {
-      const invoiceNo = evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
       return (
         <span>
           {actor} updated Invoice {renderInvoiceLink(invoiceNo)}
@@ -670,7 +670,7 @@ export function ActivityLog() {
     }
 
     if (action === 'invoice.imported') {
-      const invoiceNo = evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
       return (
         <span>
           {actor} imported Invoice {renderInvoiceLink(invoiceNo)} via CSV
@@ -679,8 +679,8 @@ export function ActivityLog() {
     }
 
     if (action === 'invoice.status_changed') {
-      const invoiceNo = evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
-      const status = evt.newValues?.paymentStatus || evt.payload?.paymentStatus || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.newValues?.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
+      const status = String(evt.newValues?.paymentStatus || evt.payload?.paymentStatus || 'unknown');
       const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1);
       return (
         <span>
@@ -690,7 +690,7 @@ export function ActivityLog() {
     }
 
     if (action === 'payment.link_generated') {
-      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
       return (
         <span>
           {actor} generated payment link for Invoice {renderInvoiceLink(invoiceNo)}
@@ -699,9 +699,9 @@ export function ActivityLog() {
     }
 
     if (action === 'payment.received') {
-      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
       const amount = evt.newValues?.amount || evt.payload?.amount || '';
-      const provider = evt.newValues?.provider || evt.payload?.provider || '';
+      const provider = String(evt.newValues?.provider || evt.payload?.provider || '');
       const formattedAmount = amount ? formatCurrency(amount) : '';
       return (
         <span>
@@ -711,7 +711,7 @@ export function ActivityLog() {
     }
 
     if (action === 'invoice.trashed') {
-      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
       return (
         <span>
           {actor} moved Invoice {renderInvoiceLink(invoiceNo)} to Trash
@@ -720,7 +720,7 @@ export function ActivityLog() {
     }
 
     if (action === 'invoice.restored') {
-      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
       return (
         <span>
           {actor} restored Invoice {renderInvoiceLink(invoiceNo)} from Trash
@@ -729,7 +729,7 @@ export function ActivityLog() {
     }
 
     if (action === 'invoice.permanently_deleted') {
-      const invoiceNo = evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown';
+      const invoiceNo = String(evt.invoiceNo || evt.oldValues?.invoiceNo || 'unknown');
       return (
         <span>
           {actor} permanently deleted Invoice {renderInvoiceLink(invoiceNo)}
