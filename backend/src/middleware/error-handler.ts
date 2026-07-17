@@ -5,8 +5,31 @@ import { AppError } from '../shared/errors/index.js';
 import { logger } from '../shared/logger.js';
 import { mapErrorToDisplayMessage } from '../shared/utils/error-mapper.js';
 
-function sanitizeTechnicalMessage(message: string): string {
-  const lower = message.toLowerCase();
+export function sanitizeTechnicalMessage(message: string): string {
+  let sanitized = message;
+
+  // 1. Redact environment variable assignments (run first to avoid matching spaces in other redacted placeholders)
+  sanitized = sanitized.replace(/[A-Z0-9_]*(?:KEY|SECRET|PASSWORD|TOKEN|URL)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'`<>]+)/gi, '[env redacted]');
+
+  // 2. Redact connection strings
+  sanitized = sanitized.replace(/(?:postgresql|postgres|redis|mongodb|mysql|amqp):\/\/[^\s"'`<>]+/gi, '[connection-string redacted]');
+
+  // 3. Redact absolute file paths (Unix and Windows)
+  sanitized = sanitized.replace(/(?:[a-z]:\\|\/(?:home|app|var|usr|opt|etc|node_modules|dist|src)\/)[^\s"'`<>:]+/gi, '[path redacted]');
+
+  // 4. Redact common secrets and keys
+  sanitized = sanitized.replace(/(?:sk|pk|rzp|whsec)_[a-zA-Z0-9_]+/gi, '[secret redacted]');
+  sanitized = sanitized.replace(/Bearer\s+[a-zA-Z0-9_\-\.\+/=]+/gi, '[secret redacted]');
+  sanitized = sanitized.replace(/AKIA[A-Z0-9]{16}/g, '[secret redacted]');
+  sanitized = sanitized.replace(/SG\.[a-zA-Z0-9_\-\.]{20,}/gi, '[secret redacted]');
+  sanitized = sanitized.replace(/\b[a-fA-F0-9]{48,}\b/g, '[secret redacted]');
+  sanitized = sanitized.replace(/\b[a-zA-Z0-9_\-\+/=]{48,}\b/g, '[secret redacted]');
+
+  // 5. Redact internal hostnames and URLs
+  sanitized = sanitized.replace(/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|[a-zA-Z0-9\-]+\.(?:internal|local))(?::\d+)?/gi, '[host redacted]');
+
+  // 6. Redact database query patterns
+  const lower = sanitized.toLowerCase();
   if (
     lower.includes('select ') ||
     lower.includes('insert ') ||
@@ -22,7 +45,8 @@ function sanitizeTechnicalMessage(message: string): string {
   ) {
     return 'Database Error';
   }
-  return message;
+
+  return sanitized;
 }
 
 export function errorHandler(
@@ -98,8 +122,8 @@ export function errorHandler(
     }
   };
 
-  // Dev only — never in production
-  if (process.env.NODE_ENV !== 'production') {
+  // Dev only — never in production/staging/test
+  if (process.env.NODE_ENV === 'development') {
     errorResponse.error.details = sanitizeTechnicalMessage(technicalMessage);
     if (err.stack) {
       errorResponse.error.stack = sanitizeTechnicalMessage(err.stack);
