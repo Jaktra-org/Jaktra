@@ -9,7 +9,7 @@ export function createIntegrationRouter(controller: IntegrationController): Rout
 
   router.use(tenantScoped);
 
-  router.get('/', controller.getStatus);
+  router.get('/', requireRole('admin', 'manager'), controller.getStatus);
   router.get('/sendgrid/health', requireRole('admin'), controller.getSendgridHealth);
   
   router.post('/sendgrid', requireRole('admin'), controller.saveSendgridKey);
