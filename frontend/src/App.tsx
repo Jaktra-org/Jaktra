@@ -35,9 +35,9 @@ function App() {
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route path="/agent" element={<Agent />} />
           <Route path="/analytics" element={<Analytics />} />
-          <Route path="/dlq" element={<DLQ />} />
           
           <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
+            <Route path="/dlq" element={<DLQ />} />
             <Route path="/disputes" element={<Disputes />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/activity-log" element={<ActivityLog />} />

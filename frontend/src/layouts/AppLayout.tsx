@@ -19,7 +19,7 @@ export function AppLayout() {
     { label: "Invoices", path: "/invoices", icon: FileText },
     { label: "Agent", path: "/agent", icon: Bot },
     { label: "Analytics", path: "/analytics", icon: BarChart3 },
-    { label: "DLQ", path: "/dlq", icon: AlertTriangle },
+    ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "DLQ", path: "/dlq", icon: AlertTriangle }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Disputes", path: "/disputes", icon: MessageSquare }] : []),
     ...((user?.role === 'admin' || user?.role === 'manager') ? [{ label: "Activity Log", path: "/activity-log", icon: History }] : []),
     ...(user?.role !== 'viewer' ? [{ label: "Settings", path: "/settings", icon: Settings }] : []),

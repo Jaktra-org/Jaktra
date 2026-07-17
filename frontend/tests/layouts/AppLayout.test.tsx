@@ -36,6 +36,7 @@ describe('AppLayout layout component', () => {
     expect(screen.getByRole('link', { name: 'Invoices' })).toBeInTheDocument();
     
     // Restricted links should NOT render
+    expect(screen.queryByRole('link', { name: 'DLQ' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Disputes' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Activity Log' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Settings' })).not.toBeInTheDocument();

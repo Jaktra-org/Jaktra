@@ -59,24 +59,8 @@ describe('DLQ page', () => {
     expect(screen.getByText('Client Beta')).toBeInTheDocument();
   });
 
-  it('hides action buttons for viewer role profiles', async () => {
-    vi.mocked(dlqService.getEntries).mockResolvedValue(mockDlqEntries);
-
-    renderWithProviders(<DLQ />, {
-      authState: {
-        user: { id: 'u1', name: 'Viewer', email: 'v@a.com', role: 'viewer', tenantId: 't1' },
-        isLoading: false,
-        isAuthenticated: true,
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Client Alpha')).toBeInTheDocument();
-    });
-
-    expect(screen.queryByRole('button', { name: /Retry Processing/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Dismiss/i })).not.toBeInTheDocument();
-  });
+  // Viewer access is now blocked at the router level via ProtectedRoute allowedRoles.
+  // See ProtectedRoute.test.tsx for that coverage.
 
   it('triggers individual retry and opens dismiss dialog confirmations', async () => {
     vi.mocked(dlqService.getEntries).mockResolvedValue(mockDlqEntries);
