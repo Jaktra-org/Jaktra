@@ -71,6 +71,20 @@ export class DisputeService {
       return;
     }
 
+    const contactEmail = invoice.contactEmail;
+    if (senderEmail.trim().toLowerCase() !== contactEmail.trim().toLowerCase()) {
+      const getEmailDomain = (email: string): string => {
+        const index = email.lastIndexOf('@');
+        return index !== -1 ? email.slice(index + 1) : email;
+      };
+      const expectedDomain = getEmailDomain(contactEmail);
+      const actualDomain = getEmailDomain(senderEmail);
+      logger.warn(
+        `Security Warning: Inbound email sender domain (${actualDomain}) does not match expected contact email domain (${expectedDomain}) for invoice ID ${invoice.id} — dropping`
+      );
+      return;
+    }
+
     const invoiceId = invoice.id;
     const tenantId = invoice.tenantId;
     logger.info(`Matched inbound reply to invoice ${invoiceId} via sub-addressing`);
