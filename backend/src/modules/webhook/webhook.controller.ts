@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { PaymentGatewayFactory } from '../../modules/payment/gateway.factory.js';
 import type { WebhookService } from './webhook.service.js';
 import { logger } from '../../shared/logger.js';
@@ -10,6 +11,14 @@ import type { DisputeService } from '../dispute/dispute.service.js';
 import { timingSafeCompare, extractEmail } from '../dispute/dispute.service.js';
 import { config } from '../../config/index.js';
 import type { RedisClientType } from 'redis';
+
+// Rate-limit config for invalid webhook token attempts.
+// Threshold is intentionally generous: legitimate traffic from SendGrid will always
+// carry the correct secret (no retry storm), so only brute-force probes hit this.
+// During secret rotation, deploy the new secret before updating the SendGrid URL
+// to avoid triggering the limit on real traffic.
+const WEBHOOK_RATE_LIMIT_THRESHOLD = 15;
+const WEBHOOK_RATE_LIMIT_WINDOW_SECONDS = 15 * 60; // 15 minutes
 
 export class WebhookController {
   constructor(
@@ -68,11 +77,32 @@ export class WebhookController {
 
   handleSendgridInbound = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const secretToken = req.params.secretToken as string;
+    const sourceIp = req.ip || 'unknown';
     const configuredSecret = config.SENDGRID_INBOUND_PARSE_SECRET;
 
+    // Short-circuit if this IP has already exceeded the invalid-token threshold.
+    // Still returns 200 to preserve the webhook contract with SendGrid.
+    const isRateLimited = await this.checkWebhookRateLimit(sourceIp);
+    if (isRateLimited) {
+      logger.warn({
+        securityEvent: 'webhook_rate_limited',
+        sourceIp,
+        endpoint: 'sendgrid_inbound_parse',
+      }, 'SendGrid inbound parse webhook rate-limited due to repeated invalid token attempts');
+      res.status(200).json({ status: 'ignored', reason: 'not_processed' });
+      return;
+    }
+
     if (!configuredSecret || !timingSafeCompare(secretToken, configuredSecret)) {
-      logger.warn('SendGrid inbound parse webhook received with missing or invalid secret token — ignoring');
-      res.status(200).json({ status: 'ignored', reason: 'invalid_secret' });
+      const tokenHash = crypto.createHash('sha256').update(secretToken).digest('hex').slice(0, 8);
+      logger.warn({
+        securityEvent: 'webhook_invalid_token',
+        sourceIp,
+        tokenHash,
+        endpoint: 'sendgrid_inbound_parse',
+      }, 'SendGrid inbound parse webhook received with invalid secret token');
+      await this.incrementWebhookFailure(sourceIp);
+      res.status(200).json({ status: 'ignored', reason: 'not_processed' });
       return;
     }
 
@@ -191,4 +221,45 @@ export class WebhookController {
       next(error);
     }
   };
+
+  // ── Webhook rate-limiting helpers (Redis-backed, fail-open) ─────────
+  // Follows the same fail-open pattern as LockoutService: if Redis is
+  // unavailable, brute-force throttling is skipped but structured logging
+  // still fires on every invalid attempt, keeping attacks detectable.
+
+  private async checkWebhookRateLimit(ip: string): Promise<boolean> {
+    if (!this.redisClient || !this.redisClient.isOpen) {
+      logger.warn({
+        securityEvent: 'webhook_ratelimit_degraded',
+        sourceIp: ip,
+        endpoint: 'sendgrid_inbound_parse',
+      }, 'Webhook rate-limit check skipped — Redis unavailable (fail-open)');
+      return false;
+    }
+
+    try {
+      const key = `webhook_invalid_token:${ip}`;
+      const raw = await this.redisClient.get(key);
+      if (raw === null) return false;
+      return parseInt(raw, 10) >= WEBHOOK_RATE_LIMIT_THRESHOLD;
+    } catch {
+      // Redis error — fail-open
+      return false;
+    }
+  }
+
+  private async incrementWebhookFailure(ip: string): Promise<void> {
+    if (!this.redisClient || !this.redisClient.isOpen) return;
+
+    try {
+      const key = `webhook_invalid_token:${ip}`;
+      const count = await this.redisClient.incr(key);
+      if (count === 1) {
+        await this.redisClient.expire(key, WEBHOOK_RATE_LIMIT_WINDOW_SECONDS);
+      }
+    } catch {
+      // Redis error — fail-open, structured logging on the attempt itself
+      // still fires regardless.
+    }
+  }
 }
