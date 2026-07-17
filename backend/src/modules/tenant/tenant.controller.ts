@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import type { TenantService } from './tenant.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
-import { ValidationError, AuthError } from '../../shared/errors/index.js';
+import { ValidationError, NotFoundError } from '../../shared/errors/index.js';
 
 const createTenantSchema = z.object({
   name: z.string().min(1).max(255),
@@ -33,8 +33,12 @@ export class TenantController {
     const id = req.params.id as string;
     const { tenantId } = (req as AuthenticatedRequest).user;
 
-    if (id !== tenantId && (req as AuthenticatedRequest).user.role !== 'admin') {
-      next(new AuthError('Cannot view another tenant', 403));
+    // Strict tenant scoping: users can ONLY view their own tenant's data.
+    // Role is never used to bypass tenant ownership — it only governs
+    // intra-tenant permissions. Return 404 (not 403) to prevent tenant
+    // ID enumeration.
+    if (id !== tenantId) {
+      next(new NotFoundError('Tenant not found'));
       return;
     }
 
