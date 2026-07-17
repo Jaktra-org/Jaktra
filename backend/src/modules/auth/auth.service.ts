@@ -501,15 +501,12 @@ export class AuthService {
     const user = await this.userRepo.findFirstByEmail(normalizedEmail);
 
     if (!user) {
-      // Sleep to prevent timing-based user enumeration
       await new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * 100));
       return;
     }
 
-    // Rate limiting
     await this.otpService.checkRateLimit(normalizedEmail, 'password_reset_resend');
 
-    // Store OTP in Redis
     const code = await this.otpService.storeOtp(
       normalizedEmail,
       'password_reset_otp',
@@ -517,14 +514,11 @@ export class AuthService {
       600
     );
 
-    // Update rate limits
     await this.otpService.incrementRateLimit(normalizedEmail, 'password_reset_resend');
 
-    // Send email
     const emailResult = await this.platformMailer.sendPasswordResetOtpEmail(normalizedEmail, code);
     if (!emailResult.success) {
       if (process.env.NODE_ENV !== 'production' && emailResult.error === 'Platform SMTP not configured') {
-        // Log skipped warning in non-production
       } else {
         throw new AuthError(`Failed to send password reset email: ${emailResult.error}`, 500);
       }
@@ -542,10 +536,8 @@ export class AuthService {
   async verifyForgotPasswordOtp(email: string, code: string): Promise<{ resetToken: string }> {
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Verify OTP using shared OtpService
     const otpData = await this.otpService.verifyOtp(normalizedEmail, 'password_reset_otp', code);
 
-    // Issue short-lived reset token (JWT)
     const resetToken = jwt.sign(
       {
         purpose: 'password_reset',
@@ -571,16 +563,19 @@ export class AuthService {
       throw new AuthError('Invalid or expired reset token, please request a new one', 400);
     }
 
-    // SECURITY NOTE: if Redis is unavailable, one-time-use enforcement on
-    // the reset token is skipped (fail-open). The token remains valid for its
-    // full 10-minute window and could be replayed if this happens.
-    if (this.redis && this.redis.isOpen) {
+    if (!this.redis || !this.redis.isOpen) {
+      throw new AuthError('Service temporarily unavailable, please try again', 503);
+    }
+
+    try {
       const isUsed = await this.redis.get(`password_reset_token_used:${payload.jti}`);
       if (isUsed) {
         throw new AuthError('Reset token has already been used', 400);
       }
-      // Invalidate the token for its 10-minute maximum lifetime
       await this.redis.set(`password_reset_token_used:${payload.jti}`, '1', { EX: 600 });
+    } catch (err) {
+      if (err instanceof AuthError) throw err;
+      throw new AuthError('Service temporarily unavailable, please try again', 503);
     }
 
     const user = await this.userRepo.findById(payload.userId);
@@ -588,14 +583,11 @@ export class AuthService {
       throw new AuthError('User not found', 404);
     }
 
-    // Hash and update password
     const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
     await this.userRepo.update(user.id, { passwordHash });
 
-    // Clear failed login lockout attempts
     await this.lockoutService.clearFailures(user.email);
 
-    // Log audit event
     await this.eventRepo.create({
       tenantId: user.tenantId,
       entityType: 'user',
@@ -613,7 +605,6 @@ export class AuthService {
       payload: null,
     });
 
-    // Auto-login: issue fresh auth token
     const token = this.signToken(user);
     return { user: this.stripSensitive(user), token };
   }
