@@ -408,7 +408,7 @@ export class AuthService {
   }
 
   async refreshToken(token: string): Promise<AuthResult> {
-    const payload = this.verifyToken(token);
+    const payload = this.verifyToken(token) as JwtPayload & { mfaPending?: boolean };
     if (payload.mfaPending) {
       throw new AuthError('MFA verification required', 401);
     }
