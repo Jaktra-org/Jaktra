@@ -1,12 +1,14 @@
 
 import { defineConfig } from 'vitest/config';
 
+import { resolve } from 'path';
+
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['src/test/setup.ts'],
-    include: ['src/test/**/*.{test,spec}.ts', 'src/**/*.test.ts'],
+    setupFiles: ['test/setup.ts'],
+    include: ['test/**/*.{test,spec}.ts', 'src/**/*.test.ts'],
     pool: 'forks',
     poolOptions: { forks: { singleFork: true } },
     hookTimeout: 60000,
@@ -20,7 +22,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': '/src',
+      '@': resolve(__dirname, './src'),
     },
   },
 });
