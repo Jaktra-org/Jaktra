@@ -8,6 +8,8 @@ import type { CommunicationService } from '../communication/communication.servic
 import type { CommunicationRepository } from '../communication/communication.repository.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
 import { logger } from '../../shared/logger.js';
+import type { RedisClientType } from 'redis';
+import { config } from '../../config/index.js';
 
 export function timingSafeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -26,6 +28,11 @@ export function extractEmail(rawHeader: string | undefined): string | null {
   return rawHeader.trim().toLowerCase();
 }
 
+export function getEmailDomain(email: string): string {
+  const index = email.lastIndexOf('@');
+  return index !== -1 ? email.slice(index + 1) : email;
+}
+
 export class DisputeService {
   constructor(
     private readonly disputeRepo: DisputeRepository,
@@ -33,7 +40,8 @@ export class DisputeService {
     private readonly db: DatabaseClient,
     private readonly communicationRepo: CommunicationRepository,
     private readonly communicationService: CommunicationService,
-    private readonly eventService?: EventService
+    private readonly eventService?: EventService,
+    private readonly redisClient?: RedisClientType | null
   ) { }
 
   // NOTE (v1 limitation): No rate limiting exists on inbound processing volume per tenant/sender.
@@ -73,10 +81,6 @@ export class DisputeService {
 
     const contactEmail = invoice.contactEmail;
     if (senderEmail.trim().toLowerCase() !== contactEmail.trim().toLowerCase()) {
-      const getEmailDomain = (email: string): string => {
-        const index = email.lastIndexOf('@');
-        return index !== -1 ? email.slice(index + 1) : email;
-      };
       const expectedDomain = getEmailDomain(contactEmail);
       const actualDomain = getEmailDomain(senderEmail);
       logger.warn(
@@ -87,6 +91,72 @@ export class DisputeService {
 
     const invoiceId = invoice.id;
     const tenantId = invoice.tenantId;
+
+    // Rate Limiting checks
+    if (this.redisClient && this.redisClient.isOpen) {
+      try {
+        const tenantLimit = config.DISPUTE_LIMIT_PER_TENANT_HOURLY;
+        const senderLimit = config.DISPUTE_LIMIT_PER_SENDER_HOURLY;
+
+        const tenantKey = `dispute_rate_limit:tenant:${tenantId}`;
+        const senderKey = `dispute_rate_limit:tenant:${tenantId}:sender:${senderEmail}`;
+
+        // 1. Check if either limit is already exceeded
+        const [tenantCountStr, senderCountStr] = await Promise.all([
+          this.redisClient.get(tenantKey),
+          this.redisClient.get(senderKey),
+        ]);
+
+        const tenantCount = tenantCountStr ? parseInt(tenantCountStr, 10) : 0;
+        const senderCount = senderCountStr ? parseInt(senderCountStr, 10) : 0;
+        const senderDomain = getEmailDomain(senderEmail);
+
+        if (tenantCount >= tenantLimit) {
+          logger.warn(
+            `Inbound email rate-limited for tenant ${tenantId} and sender domain ${senderDomain}: count ${tenantCount} exceeded threshold ${tenantLimit} — dropping`
+          );
+          return;
+        }
+
+        if (senderCount >= senderLimit) {
+          logger.warn(
+            `Inbound email rate-limited for tenant ${tenantId} and sender domain ${senderDomain}: count ${senderCount} exceeded threshold ${senderLimit} — dropping`
+          );
+          return;
+        }
+
+        // 2. Increment counters
+        const [newTenantCount, newSenderCount] = await Promise.all([
+          this.redisClient.incr(tenantKey),
+          this.redisClient.incr(senderKey),
+        ]);
+
+        // 3. Set TTL of 1 hour on new keys
+        const promises: Promise<unknown>[] = [];
+        if (newTenantCount === 1) {
+          promises.push(this.redisClient.expire(tenantKey, 3600));
+        }
+        if (newSenderCount === 1) {
+          promises.push(this.redisClient.expire(senderKey, 3600));
+        }
+        await Promise.all(promises);
+
+      } catch (err) {
+        // Fail-open: log warning and proceed with processing the email
+        logger.warn({
+          err: err instanceof Error ? err.message : String(err),
+          tenantId,
+        }, 'Redis error during dispute rate limiting — failing open');
+      }
+    } else {
+      // Redis is not configured or not open.
+      // Log degraded state and fail-open.
+      logger.warn(
+        { tenantId },
+        'Redis unavailable for dispute rate limiting — failing open and allowing inbound email'
+      );
+    }
+
     logger.info(`Matched inbound reply to invoice ${invoiceId} via sub-addressing`);
 
     // Verify tenant settings is not blocked by admin

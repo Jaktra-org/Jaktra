@@ -198,7 +198,8 @@ export function createApp(config: AppConfig): Application {
       config.db,
       communicationRepo,
       communicationService,
-      eventService
+      eventService,
+      lockoutRedis as unknown as RedisClientType | null
     );
     const disputeController = new DisputeController(disputeService);
 

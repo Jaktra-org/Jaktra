@@ -34,6 +34,9 @@ const schema = z.object({
   AUTH_LOCKOUT_MAX_MINUTES: z.coerce.number().int().positive().default(1440),
   AUTH_MFA_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
 
+  DISPUTE_LIMIT_PER_TENANT_HOURLY: z.coerce.number().int().positive().default(100),
+  DISPUTE_LIMIT_PER_SENDER_HOURLY: z.coerce.number().int().positive().default(15),
+
   ENCRYPTION_KEY: z.string().refine((val) => {
     try {
       return Buffer.from(val, 'base64').length === 32;
