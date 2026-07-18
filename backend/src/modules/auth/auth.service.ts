@@ -409,6 +409,9 @@ export class AuthService {
 
   async refreshToken(token: string): Promise<AuthResult> {
     const payload = this.verifyToken(token);
+    if (payload.mfaPending) {
+      throw new AuthError('MFA verification required', 401);
+    }
 
     const user = await this.userRepo.findById(payload.userId);
     if (!user) {
