@@ -80,9 +80,9 @@ export class DisputeService {
     }
 
     const contactEmail = invoice.contactEmail;
-    if (senderEmail.trim().toLowerCase() !== contactEmail.trim().toLowerCase()) {
-      const expectedDomain = getEmailDomain(contactEmail);
-      const actualDomain = getEmailDomain(senderEmail);
+    const expectedDomain = getEmailDomain(contactEmail).trim().toLowerCase();
+    const actualDomain = getEmailDomain(senderEmail).trim().toLowerCase();
+    if (actualDomain !== expectedDomain) {
       logger.warn(
         `Security Warning: Inbound email sender domain (${actualDomain}) does not match expected contact email domain (${expectedDomain}) for invoice ID ${invoice.id} — dropping`
       );
