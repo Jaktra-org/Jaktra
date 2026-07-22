@@ -10,7 +10,7 @@ export default defineConfig({
     setupFiles: ['test/setup.ts'],
     include: ['test/**/*.{test,spec}.ts', 'src/**/*.test.ts'],
     pool: 'forks',
-    poolOptions: { forks: { singleFork: true } },
+    forks: { singleFork: true },
     hookTimeout: 60000,
     testTimeout: 60000,
     coverage: {
