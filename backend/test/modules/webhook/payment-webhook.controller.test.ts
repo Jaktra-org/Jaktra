@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WebhookController } from '../../../src/src/modules/webhook/webhook.controller.js';
+import { WebhookController } from '../../../src/modules/webhook/webhook.controller.js';
 import type { Request, Response } from 'express';
-import { NotFoundError, ValidationError, AuthError } from '../../../src/src/shared/errors/index.js';
+import { NotFoundError, ValidationError, AuthError } from '../../../src/shared/errors/index.js';
 
 describe('WebhookController', () => {
   let controller: WebhookController;
