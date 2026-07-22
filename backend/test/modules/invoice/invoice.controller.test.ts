@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
-import { InvoiceController } from '../../../src/src/modules/invoice/invoice.controller.js';
-import type { InvoiceImportService } from '../../../src/src/modules/invoice/invoice.service.js';
-import type { InvoiceRepository } from '../../../src/src/modules/invoice/invoice.repository.js';
-import type { PaymentService } from '../../../src/src/modules/payment/payment.service.js';
-import type { EventService } from '../../../src/src/modules/event/event.service.js';
-import type { DlqService } from '../../../src/src/modules/dlq/dlq.service.js';
-import type { CommunicationRepository } from '../../../src/src/modules/communication/communication.repository.js';
-import { ValidationError, NotFoundError } from '../../../src/src/shared/errors/index.js';
+import { InvoiceController } from '../../../src/modules/invoice/invoice.controller.js';
+import type { InvoiceImportService } from '../../../src/modules/invoice/invoice.service.js';
+import type { InvoiceRepository } from '../../../src/modules/invoice/invoice.repository.js';
+import type { PaymentService } from '../../../src/modules/payment/payment.service.js';
+import type { EventService } from '../../../src/modules/event/event.service.js';
+import type { DlqService } from '../../../src/modules/dlq/dlq.service.js';
+import type { CommunicationRepository } from '../../../src/modules/communication/communication.repository.js';
+import { ValidationError, NotFoundError } from '../../../src/shared/errors/index.js';
 
 function mockRes(tenantId = 'tenant-123'): Response {
   const res: Partial<Response> = {
