@@ -279,7 +279,7 @@ export function createApp(config: AppConfig): Application {
     }
   }
 
-  const healthController = new HealthController(config.db, app.locals.aimlService);
+  const healthController = new HealthController(config.db, config.aimlServiceUrl ? app.locals.aimlService : undefined);
   app.use('/api/health', createHealthRouter(healthController));
 
   // 404 Fallback
