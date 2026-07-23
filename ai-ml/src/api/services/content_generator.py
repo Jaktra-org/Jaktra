@@ -4,8 +4,8 @@ from src.prompt_registry import PromptRegistry, TierNotAutomatableError, Unknown
 from src.llm_client import LLMClient
 from src.security import sanitize_input, validate_email_output, validate_sms_output, validate_whatsapp_output
 from src.exceptions import LLMGenerationError
-from api.config import settings
-from api.logging import logger
+from src.api.config import settings
+from src.api.logging import logger
 
 
 class GenerationResult(BaseModel):

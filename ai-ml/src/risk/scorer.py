@@ -22,9 +22,9 @@ class RiskScorer:
         self._use_ml_model = True
         
         # Determine paths
-        # If this script is run from inside ai-ml/src/risk, models/ is two levels up
+        # If this script is run from inside ai-ml/src/risk, models/ is under src/
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        self._model_path = os.path.join(base_dir, 'models', 'risk_scorer.joblib')
+        self._model_path = os.path.join(base_dir, 'src', 'models', 'risk_scorer.joblib')
         
         self._load_model()
         

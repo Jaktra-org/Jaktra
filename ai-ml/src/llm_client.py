@@ -3,7 +3,7 @@ import litellm
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from dataclasses import dataclass
 from src.exceptions import LLMGenerationError
-from api.config import settings
+from src.api.config import settings
 
 @dataclass
 class LLMResponse:

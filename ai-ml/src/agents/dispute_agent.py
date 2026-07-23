@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict
 from src.security import sanitize_input
 from src.llm_client import llm_client
-from prompts.dispute_prompt import DISPUTE_SYSTEM_PROMPT, DISPUTE_USER_PROMPT
+from src.prompts.dispute_prompt import DISPUTE_SYSTEM_PROMPT, DISPUTE_USER_PROMPT
 
 class DisputeRequest(BaseModel):
     inbound_text: str

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from api.services.content_generator import ContentGenerator
+from src.api.services.content_generator import ContentGenerator
 from src.prompt_registry import registry
 from src.llm_client import llm_client
 

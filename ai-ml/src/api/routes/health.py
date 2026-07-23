@@ -1,6 +1,6 @@
 import time
 from fastapi import APIRouter, Depends
-from api.middleware.auth import verify_service_key
+from src.api.middleware.auth import verify_service_key
 
 router = APIRouter(tags=["Health"])
 

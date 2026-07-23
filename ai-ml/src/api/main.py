@@ -2,9 +2,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, Depends
-from api.routes import health, generation, risk, agents
-from api.middleware.auth import verify_service_key
-from api.middleware.logging import LoggingMiddleware
+from src.api.routes import health, generation, risk, agents
+from src.api.middleware.auth import verify_service_key
+from src.api.middleware.logging import LoggingMiddleware
 
 app = FastAPI(
     title="Jaktra AI-ML Service",

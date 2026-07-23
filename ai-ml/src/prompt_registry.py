@@ -19,10 +19,10 @@ class PromptRegistry:
 
     def _load_prompts(self):
         # Email Prompts
-        from prompts.email.warm import PROMPT as EMAIL_WARM
-        from prompts.email.firm import PROMPT as EMAIL_FIRM
-        from prompts.email.serious import PROMPT as EMAIL_SERIOUS
-        from prompts.email.stern import PROMPT as EMAIL_STERN
+        from src.prompts.email.warm import PROMPT as EMAIL_WARM
+        from src.prompts.email.firm import PROMPT as EMAIL_FIRM
+        from src.prompts.email.serious import PROMPT as EMAIL_SERIOUS
+        from src.prompts.email.stern import PROMPT as EMAIL_STERN
 
         self._registry[f"email:{TIER_WARM}"] = EMAIL_WARM
         self._registry[f"email:{TIER_FIRM}"] = EMAIL_FIRM
@@ -30,10 +30,10 @@ class PromptRegistry:
         self._registry[f"email:{TIER_STERN}"] = EMAIL_STERN
 
         # SMS Prompts
-        from prompts.sms.warm import PROMPT as SMS_WARM
-        from prompts.sms.firm import PROMPT as SMS_FIRM
-        from prompts.sms.serious import PROMPT as SMS_SERIOUS
-        from prompts.sms.stern import PROMPT as SMS_STERN
+        from src.prompts.sms.warm import PROMPT as SMS_WARM
+        from src.prompts.sms.firm import PROMPT as SMS_FIRM
+        from src.prompts.sms.serious import PROMPT as SMS_SERIOUS
+        from src.prompts.sms.stern import PROMPT as SMS_STERN
 
         self._registry[f"sms:{TIER_WARM}"] = SMS_WARM
         self._registry[f"sms:{TIER_FIRM}"] = SMS_FIRM
@@ -41,10 +41,10 @@ class PromptRegistry:
         self._registry[f"sms:{TIER_STERN}"] = SMS_STERN
 
         # WhatsApp Prompts
-        from prompts.whatsapp.warm import PROMPT as WA_WARM
-        from prompts.whatsapp.firm import PROMPT as WA_FIRM
-        from prompts.whatsapp.serious import PROMPT as WA_SERIOUS
-        from prompts.whatsapp.stern import PROMPT as WA_STERN
+        from src.prompts.whatsapp.warm import PROMPT as WA_WARM
+        from src.prompts.whatsapp.firm import PROMPT as WA_FIRM
+        from src.prompts.whatsapp.serious import PROMPT as WA_SERIOUS
+        from src.prompts.whatsapp.stern import PROMPT as WA_STERN
 
         self._registry[f"whatsapp:{TIER_WARM}"] = WA_WARM
         self._registry[f"whatsapp:{TIER_FIRM}"] = WA_FIRM

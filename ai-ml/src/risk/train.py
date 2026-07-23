@@ -104,8 +104,8 @@ def train_model():
     else:
         print("ML Model did not outperform rule-based approach.")
     
-    # Path should be ai-ml/models/risk_scorer.joblib
-    models_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'models')
+    # Path should be ai-ml/src/models/risk_scorer.joblib
+    models_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
     os.makedirs(models_dir, exist_ok=True)
     model_path = os.path.join(models_dir, 'risk_scorer.joblib')
     

@@ -3,6 +3,7 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     # Service
+    ENVIRONMENT: str = "development"
     SERVICE_HOST: str = "0.0.0.0"
     SERVICE_PORT: int = 8000
     SERVICE_KEY: str = Field(alias="SERVICE_KEY")
@@ -23,7 +24,7 @@ class Settings(BaseSettings):
     LLM_FALLBACK_API_KEY: str | None = None
 
     # Risk Scoring
-    RISK_MODEL_PATH: str = "models/risk_scorer.joblib"
+    RISK_MODEL_PATH: str = "src/models/risk_scorer.joblib"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

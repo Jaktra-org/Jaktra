@@ -1,7 +1,7 @@
 import hmac
 import logging
 from fastapi import Request, HTTPException
-from api.config import settings
+from src.api.config import settings
 
 logger = logging.getLogger(__name__)
 
