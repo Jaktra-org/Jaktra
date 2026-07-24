@@ -62,7 +62,7 @@ def _plain_to_html(plain_body: str, sender_name: str) -> str:
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-
+ 
           <!-- Header -->
           <tr>
             <td style="background-color: #1e3a5f; padding: 28px 40px;">
@@ -71,14 +71,14 @@ def _plain_to_html(plain_body: str, sender_name: str) -> str:
               </p>
             </td>
           </tr>
-
+ 
           <!-- Body -->
           <tr>
             <td style="padding: 36px 40px 24px 40px;">
 {html_paragraphs}
             </td>
           </tr>
-
+ 
           <!-- Footer -->
           <tr>
             <td style="background-color: #f3f4f6; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
@@ -88,7 +88,7 @@ def _plain_to_html(plain_body: str, sender_name: str) -> str:
               </p>
             </td>
           </tr>
-
+ 
         </table>
       </td>
     </tr>
@@ -112,10 +112,9 @@ class ContentGenerator:
             raise ValueError(f"{request.urgency_tier} does not have an automated prompt.")
         except UnknownPromptError as e:
             raise ValueError(str(e))
-
         sender_name = getattr(settings, "SMTP_SENDER_NAME", "Finance Department")
-        payment_link = getattr(request, "payment_link", None) or ""
-        bank_details = getattr(request, "bank_details", None) or getattr(settings, "BANK_DETAILS", "") or ""
+        payment_link = sanitize_input(getattr(request, "payment_link", None) or "")
+        bank_details = sanitize_input(getattr(request, "bank_details", None) or getattr(settings, "BANK_DETAILS", "") or "")
 
         # Build a conditional CTA — never pass empty strings to the prompt
         cta_instruction = _build_cta_instruction(payment_link, bank_details)
@@ -123,7 +122,7 @@ class ContentGenerator:
         # Build subject context — only include if the invoice has a description
         raw_subject = getattr(request, "invoice_subject", None)
         if raw_subject and str(raw_subject).strip():
-            subject_context = f"- Invoice Description: {str(raw_subject).strip()}"
+            subject_context = f"- Invoice Description: {sanitize_input(str(raw_subject).strip())}"
         else:
             subject_context = ""
 
@@ -137,6 +136,7 @@ class ContentGenerator:
             sender_name=sender_name,
             cta_instruction=cta_instruction,
             subject_context=subject_context,
+            payment_link=payment_link,
         )
 
         llm_response = await self.llm.generate(messages, temperature=settings.LLM_TEMPERATURE)
@@ -160,13 +160,27 @@ class ContentGenerator:
             used_fallback=llm_response.used_fallback
         )
 
+        # Clean markdown formatting backticks from the LLM content
+        content = llm_response.content.strip()
+        if content.startswith("```"):
+            first_newline = content.find("\n")
+            if first_newline != -1:
+                content = content[first_newline + 1:]
+            else:
+                content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+
+        llm_response.content = content
+
         if request.channel == "email":
-            subject, body = validate_email_output(llm_response.content)
+            subject, body = validate_email_output(llm_response.content, payment_link)
             html_body = _plain_to_html(body, sender_name)
             return GenerationResult(subject=subject, html_body=html_body, plain_body=body, metadata=metadata)
         elif request.channel == "sms":
-            body = validate_sms_output(llm_response.content)
+            body = validate_sms_output(llm_response.content, payment_link)
             return GenerationResult(subject=None, plain_body=body, metadata=metadata)
         elif request.channel == "whatsapp":
-            body = validate_whatsapp_output(llm_response.content)
+            body = validate_whatsapp_output(llm_response.content, payment_link)
             return GenerationResult(subject=None, plain_body=body, metadata=metadata)
