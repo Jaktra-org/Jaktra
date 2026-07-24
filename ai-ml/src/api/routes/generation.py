@@ -1,30 +1,32 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, Literal
 from src.api.services.content_generator import ContentGenerator
 from src.prompt_registry import registry
 from src.llm_client import llm_client
+import asyncio
+import time
 
 router = APIRouter(prefix="/followup", tags=["Generation"])
 content_generator = ContentGenerator(prompt_registry=registry, llm_client=llm_client)
 
 class FollowupRequest(BaseModel):
-    invoice_id: str
-    invoice_no: str
-    client_name: str
-    contact_email: str
-    invoice_amount: str
-    currency: str
-    due_date: str
-    days_overdue: int
-    urgency_tier: str
-    channel: str = "email"
-    followup_count: int = 0
-    payment_link: Optional[str] = None
-    bank_details: Optional[str] = None
-    sender_name: Optional[str] = None
-    company_name: Optional[str] = None
-    invoice_subject: Optional[str] = None
+    invoice_id: str = Field(..., max_length=100)
+    invoice_no: str = Field(..., max_length=100)
+    client_name: str = Field(..., max_length=200)
+    contact_email: str = Field(..., max_length=255)
+    invoice_amount: str = Field(..., max_length=50)
+    currency: str = Field(..., max_length=10)
+    due_date: str = Field(..., max_length=20)
+    days_overdue: int = Field(..., ge=0, le=3650)
+    urgency_tier: str = Field(..., max_length=50)
+    channel: Literal["email", "sms", "whatsapp"] = "email"
+    followup_count: int = Field(0, ge=0, le=100)
+    payment_link: Optional[str] = Field(None, max_length=2048)
+    bank_details: Optional[str] = Field(None, max_length=2048)
+    sender_name: Optional[str] = Field(None, max_length=200)
+    company_name: Optional[str] = Field(None, max_length=200)
+    invoice_subject: Optional[str] = Field(None, max_length=255)
 
 class Content(BaseModel):
     subject: str
@@ -45,7 +47,7 @@ class FollowupResponse(BaseModel):
 
 class BatchFollowupRequest(BaseModel):
     invoices: list[FollowupRequest]
-    concurrency: int = 3
+    concurrency: int = Field(3, ge=1, le=10)
 
 class BatchResult(BaseModel):
     invoice_id: str
@@ -65,28 +67,44 @@ class BatchFollowupResponse(BaseModel):
     results: list[BatchResult]
     summary: BatchSummary
 
-import asyncio
-import time
-
 from src.exceptions import OutputValidationError, PromptInjectionDetectedError
 
 @router.post("", response_model=FollowupResponse)
 async def generate_followup(request: FollowupRequest):
     from src.exceptions import LLMGenerationError, OutputValidationError, PromptInjectionDetectedError
+    from src.api.routes.health import stats
+    from src.api.logging import logger
+    
+    stats["is_processing"] = True
+    start_time = time.perf_counter()
     try:
         result = await content_generator.generate(request)
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        stats["requests_served"] += 1
+        stats["total_generation_ms"] += int(duration_ms)
     except ValueError as e:
+        stats["errors_last_hour"] += 1
         if "legal_escalation" in str(e) or "does not have an automated prompt" in str(e):
             raise HTTPException(status_code=400, detail="TIER_NOT_AUTOMATABLE")
         if "UNSUPPORTED_CHANNEL" in str(e):
             raise HTTPException(status_code=400, detail="UNSUPPORTED_CHANNEL")
         raise HTTPException(status_code=400, detail=str(e))
-    except OutputValidationError:
-        raise HTTPException(status_code=422, detail="GENERATION_VALIDATION_FAILED")
-    except PromptInjectionDetectedError:
+    except (OutputValidationError, PromptInjectionDetectedError):
+        stats["errors_last_hour"] += 1
         raise HTTPException(status_code=422, detail="GENERATION_VALIDATION_FAILED")
     except LLMGenerationError as e:
-        raise HTTPException(status_code=502, detail={"error": str(e), "retryable": True})
+        stats["errors_last_hour"] += 1
+        logger.error("llm_generation_failed", error=str(e), exc_info=True)
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "Failed to generate communication content due to an upstream LLM error.", "retryable": True}
+        )
+    except Exception as e:
+        stats["errors_last_hour"] += 1
+        logger.error("generation_unknown_error", error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        stats["is_processing"] = False
         
     plain_body = result.plain_body or ""
     html_body = result.html_body or plain_body
@@ -110,14 +128,24 @@ async def generate_followup(request: FollowupRequest):
 
 async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Semaphore) -> dict:
     from src.exceptions import LLMGenerationError, OutputValidationError, PromptInjectionDetectedError
+    from src.api.routes.health import stats
+    from src.api.logging import logger
+    
     async with sem:
+        stats["is_processing"] = True
+        start_time = time.perf_counter()
         try:
             # Enforce 60 second timeout per invoice
             result = await asyncio.wait_for(
                 content_generator.generate(invoice),
                 timeout=60.0
             )
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            stats["requests_served"] += 1
+            stats["total_generation_ms"] += int(duration_ms)
         except asyncio.TimeoutError:
+            stats["errors_last_hour"] += 1
+            logger.warning("batch_invoice_timeout", invoice_id=invoice.invoice_id)
             return {
                 "invoice_id": invoice.invoice_id,
                 "status": "error",
@@ -125,6 +153,7 @@ async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Sema
                 "retryable": True
             }
         except ValueError as e:
+            stats["errors_last_hour"] += 1
             if "legal_escalation" in str(e) or "does not have an automated prompt" in str(e):
                 return {
                     "invoice_id": invoice.invoice_id,
@@ -138,14 +167,8 @@ async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Sema
                 "error": str(e),
                 "retryable": False
             }
-        except OutputValidationError:
-            return {
-                "invoice_id": invoice.invoice_id,
-                "status": "error",
-                "error": "GENERATION_VALIDATION_FAILED",
-                "retryable": False
-            }
-        except PromptInjectionDetectedError:
+        except (OutputValidationError, PromptInjectionDetectedError):
+            stats["errors_last_hour"] += 1
             return {
                 "invoice_id": invoice.invoice_id,
                 "status": "error",
@@ -153,19 +176,25 @@ async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Sema
                 "retryable": False
             }
         except LLMGenerationError as e:
+            stats["errors_last_hour"] += 1
+            logger.error("batch_llm_generation_failed", error=str(e), invoice_id=invoice.invoice_id, exc_info=True)
             return {
                 "invoice_id": invoice.invoice_id,
                 "status": "error",
-                "error": str(e),
+                "error": "Upstream LLM generation failed",
                 "retryable": True
             }
         except Exception as e:
+            stats["errors_last_hour"] += 1
+            logger.error("batch_invoice_unknown_error", error=str(e), invoice_id=invoice.invoice_id, exc_info=True)
             return {
                 "invoice_id": invoice.invoice_id,
                 "status": "error",
-                "error": str(e),
+                "error": "Internal processing failed",
                 "retryable": False
             }
+        finally:
+            stats["is_processing"] = False
 
         plain_body = result.plain_body or ""
         html_body = result.html_body or plain_body
