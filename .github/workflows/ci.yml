@@ -104,3 +104,34 @@ jobs:
       - name: Run Playwright E2E Tests
         run: npm run test
         working-directory: tests/e2e
+
+  ai-service-ci:
+    name: AI Service CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: ai-service/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio anyio
+          pip install -r requirements.txt
+        working-directory: ai-service
+
+      - name: Run tests
+        run: pytest test/ -v
+        working-directory: ai-service
+        env:
+          ENVIRONMENT: development
+          SERVICE_KEY: test-service-key
+          LLM_API_KEY: test-llm-api-key
+
