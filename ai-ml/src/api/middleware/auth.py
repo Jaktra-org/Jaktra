@@ -2,6 +2,7 @@ import hmac
 import logging
 from fastapi import Request, HTTPException
 from src.api.config import settings
+from src.security import rate_limiter
 
 logger = logging.getLogger(__name__)
 
@@ -16,3 +17,10 @@ async def verify_service_key(request: Request):
         client_ip = request.client.host if request.client else "unknown"
         logger.warning(f"Unauthorized access attempt from {client_ip}. Path: {request.url.path}")
         raise HTTPException(status_code=401, detail="Invalid service key")
+
+    # Rate limiting (identifying clients by API key or IP address fallback)
+    identifier = key if key else (request.client.host if request.client else "unknown")
+    if rate_limiter.is_rate_limited(identifier):
+        logger.warning(f"Rate limit exceeded for {identifier} on path: {request.url.path}")
+        raise HTTPException(status_code=429, detail="Too Many Requests")
+
