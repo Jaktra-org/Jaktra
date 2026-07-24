@@ -81,7 +81,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # AGENT RUN OUTPUTS
-ai-ml/outputs/
+ai-service/outputs/
 
 # DATABASE 
 *.sqlite
@@ -96,7 +96,7 @@ ai-ml/outputs/
 
 
 implementation_plan/
-ai-ml/test
+ai-service/test
 
 
 tests/e2e/playwright-report/
