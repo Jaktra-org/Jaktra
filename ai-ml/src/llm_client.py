@@ -46,6 +46,7 @@ class LLMClient:
         response = await litellm.acompletion(
             messages=messages,
             temperature=temperature,
+            timeout=settings.LLM_TIMEOUT_SECONDS,
             **provider_config
         )
         duration_ms = (time.perf_counter() - start_time) * 1000
@@ -59,14 +60,13 @@ class LLMClient:
             if msg_type == "system":
                 role = "system"
             litellm_messages.append({"role": role, "content": getattr(msg, "content", str(msg))})
-
         try:
             response, duration_ms = await self._invoke_with_retry(litellm_messages, self.primary, temperature)
             used_fallback = False
             provider_used = self.primary["model"].split("/")[0]
         except Exception as primary_error:
             if isinstance(primary_error, litellm.exceptions.BadRequestError):
-                raise LLMGenerationError(f"Bad Request: {primary_error}") from primary_error
+                raise LLMGenerationError("LLM provider error occurred") from primary_error
 
             if self.fallback:
                 try:
@@ -74,15 +74,16 @@ class LLMClient:
                     used_fallback = True
                     provider_used = self.fallback["model"].split("/")[0]
                 except Exception as fallback_error:
-                    raise LLMGenerationError(f"Primary and fallback failed. Fallback error: {fallback_error}") from fallback_error
+                    raise LLMGenerationError("LLM provider error occurred") from fallback_error
             else:
-                raise LLMGenerationError(f"Primary failed and no fallback configured: {primary_error}") from primary_error
+                raise LLMGenerationError("LLM provider error occurred") from primary_error
 
-        prompt_tokens = 0
-        completion_tokens = 0
         if hasattr(response, "usage") and response.usage:
             prompt_tokens = getattr(response.usage, "prompt_tokens", 0)
             completion_tokens = getattr(response.usage, "completion_tokens", 0)
+        else:
+            prompt_tokens = 0
+            completion_tokens = 0
 
         return LLMResponse(
             content=response.choices[0].message.content,
