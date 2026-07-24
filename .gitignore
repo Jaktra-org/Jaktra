@@ -96,8 +96,6 @@ ai-service/outputs/
 
 
 implementation_plan/
-ai-service/test
-
 
 tests/e2e/playwright-report/
 tests/e2e/test-results/
