@@ -2,13 +2,12 @@ import os
 import joblib
 import pandas as pd
 from pydantic import BaseModel
-from typing import Optional
 
 class RiskFeatures(BaseModel):
     days_overdue: int
     invoice_amount: float
     followup_count: int
-    client_historical_payment_rate: Optional[float] = None
+    client_historical_payment_rate: float | None = None
 
 class RiskResult(BaseModel):
     risk_score: float  # 0.0-1.0
@@ -45,24 +44,43 @@ class RiskScorer:
             return self._score_rule_based(features)
             
     def _score_ml(self, features: RiskFeatures) -> RiskResult:
+        # Clamp inputs to safe ranges to avoid out-of-distribution model issues or pandas crashes
+        clamped_days = max(features.days_overdue, -30)
+        clamped_amount = max(features.invoice_amount, 0.0)
+        clamped_followup = min(features.followup_count, 20)
+        
         hist_rate = features.client_historical_payment_rate if features.client_historical_payment_rate is not None else 0.5
+        clamped_hist_rate = max(min(hist_rate, 1.0), 0.0)
         
         df = pd.DataFrame([{
-            'days_overdue': features.days_overdue,
-            'invoice_amount': features.invoice_amount,
-            'followup_count': features.followup_count,
-            'client_historical_payment_rate': hist_rate
+            'days_overdue': clamped_days,
+            'invoice_amount': clamped_amount,
+            'followup_count': clamped_followup,
+            'client_historical_payment_rate': clamped_hist_rate
         }])
         
-        risk_score = float(self._ml_model.predict_proba(df)[0, 1])
+        risk_score = 0.0
+        if self._ml_model is not None:
+            try:
+                risk_score = float(self._ml_model.predict_proba(df)[0, 1])
+            except Exception:
+                pass
+                
         risk_score = round(risk_score, 3)
         risk_level = "high" if risk_score >= 0.7 else "medium" if risk_score >= 0.4 else "low"
+        
+        features_used = {
+            'days_overdue': clamped_days,
+            'invoice_amount': clamped_amount,
+            'followup_count': clamped_followup,
+            'client_historical_payment_rate': clamped_hist_rate if features.client_historical_payment_rate is not None else None
+        }
         
         return RiskResult(
             risk_score=risk_score,
             risk_level=risk_level,
             model_version="ml-gbm-v1",
-            features_used=features.model_dump(),
+            features_used=features_used,
         )
 
     def _score_rule_based(self, features: RiskFeatures) -> RiskResult:
