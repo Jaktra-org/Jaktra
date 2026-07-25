@@ -123,7 +123,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio anyio
+          pip install pytest pytest-asyncio anyio joblib scikit-learn
           pip install -r requirements.txt
         working-directory: ai-service
 
