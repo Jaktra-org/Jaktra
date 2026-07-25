@@ -35,6 +35,13 @@ export const inboundEmailStatusEnum = pgEnum('inbound_email_status', [
   'discarded',
 ]);
 
+export const paymentPlanStatusEnum = pgEnum('payment_plan_status', [
+  'pending',
+  'approved',
+  'denied',
+  'cancelled',
+]);
+
 
 
 export const paymentStatusEnum = pgEnum('payment_status', [
@@ -122,6 +129,8 @@ export const invoices = pgTable(
       .notNull()
       .defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    hasActivePaymentPlan: boolean('has_active_payment_plan').notNull().default(false),
+    paymentStatusChangedAt: timestamp('payment_status_changed_at', { withTimezone: true }),
   },
   (table) => [
     uniqueIndex('invoices_invoice_no_tenant_id_uniq').on(
@@ -498,6 +507,7 @@ export const inboundEmails = pgTable('inbound_emails', {
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
+  source: text('source').notNull().default('email'),
 }, (table) => [
   index('inbound_emails_tenant_id_status_idx').on(table.tenantId, table.status),
   index('inbound_emails_invoice_id_idx').on(table.invoiceId),
@@ -529,4 +539,79 @@ export type NewPaymentWebhookEvent = typeof paymentWebhookEvents.$inferInsert;
 
 export type InvoicePaymentLink = typeof invoicePaymentLinks.$inferSelect;
 export type NewInvoicePaymentLink = typeof invoicePaymentLinks.$inferInsert;
+
+export const invoicePortalLinks = pgTable('invoice_portal_links', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  invoiceId: uuid('invoice_id')
+    .notNull()
+    .references(() => invoices.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  viewedAt: timestamp('viewed_at', { withTimezone: true }),
+}, (table) => [
+  index('invoice_portal_links_token_hash_idx').on(table.tokenHash),
+  index('invoice_portal_links_invoice_id_idx').on(table.invoiceId),
+]);
+
+export const invoicePortalLinksRelations = relations(invoicePortalLinks, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [invoicePortalLinks.tenantId],
+    references: [tenants.id],
+  }),
+  invoice: one(invoices, {
+    fields: [invoicePortalLinks.invoiceId],
+    references: [invoices.id],
+  }),
+}));
+
+export type InvoicePortalLink = typeof invoicePortalLinks.$inferSelect;
+export type NewInvoicePortalLink = typeof invoicePortalLinks.$inferInsert;
+
+export const paymentPlanRequests = pgTable('payment_plan_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  invoiceId: uuid('invoice_id')
+    .notNull()
+    .references(() => invoices.id, { onDelete: 'cascade' }),
+  installments: integer('installments').notNull(),
+  proposedAmountPerMonth: numeric('proposed_amount_per_month', { precision: 14, scale: 2 }).notNull(),
+  reason: text('reason'),
+  status: paymentPlanStatusEnum('status').notNull().default('pending'),
+  reviewedBy: uuid('reviewed_by')
+    .references(() => users.id, { onDelete: 'set null' }),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (table) => [
+  index('payment_plan_requests_tenant_id_status_idx').on(table.tenantId, table.status),
+  index('payment_plan_requests_invoice_id_idx').on(table.invoiceId),
+]);
+
+export const paymentPlanRequestsRelations = relations(paymentPlanRequests, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [paymentPlanRequests.tenantId],
+    references: [tenants.id],
+  }),
+  invoice: one(invoices, {
+    fields: [paymentPlanRequests.invoiceId],
+    references: [invoices.id],
+  }),
+  reviewer: one(users, {
+    fields: [paymentPlanRequests.reviewedBy],
+    references: [users.id],
+  }),
+}));
+
+export type PaymentPlanRequest = typeof paymentPlanRequests.$inferSelect;
+export type NewPaymentPlanRequest = typeof paymentPlanRequests.$inferInsert;
+
 
