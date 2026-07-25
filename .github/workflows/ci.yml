@@ -128,9 +128,10 @@ jobs:
         working-directory: ai-service
 
       - name: Run tests
-        run: pytest test/ -v
+        run: python -m pytest test/ -v
         working-directory: ai-service
         env:
+          PYTHONPATH: .
           ENVIRONMENT: development
           SERVICE_KEY: test-service-key
           LLM_API_KEY: test-llm-api-key
