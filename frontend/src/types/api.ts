@@ -72,6 +72,8 @@ export interface Invoice {
   updatedAt: string;
   deletedAt?: string | null;
   needsManualReview?: boolean;
+  hasActivePaymentPlan?: boolean;
+  paymentStatusChangedAt?: string | null;
 }
 
 export interface InvoiceEvent {

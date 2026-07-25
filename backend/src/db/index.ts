@@ -10,6 +10,8 @@ export {
   tenantIntegrations,
   teamInvitations,
   inboundEmails,
+  invoicePortalLinks,
+  paymentPlanRequests,
 } from './schema.js';
 
 export {
@@ -20,6 +22,7 @@ export {
   providerEnum,
   validationResultEnum,
   inboundEmailStatusEnum,
+  paymentPlanStatusEnum,
 } from './schema.js';
 
 export type {
@@ -49,6 +52,10 @@ export type {
   NewPaymentWebhookEvent,
   InvoicePaymentLink,
   NewInvoicePaymentLink,
+  InvoicePortalLink,
+  NewInvoicePortalLink,
+  PaymentPlanRequest,
+  NewPaymentPlanRequest,
 } from './schema.js';
 
 export { createDatabaseClient } from './client.js';

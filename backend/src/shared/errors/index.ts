@@ -172,4 +172,16 @@ export const IntegrationErrors = {
   RATE_LIMITED: () => new IntegrationError('Too many requests. Please try again later.', 'INTEGRATION_RATE_LIMITED', 429),
 };
 
+export class GoneError extends AppError {
+  constructor(displayMessage = 'This link is no longer valid', technicalMessage?: string) {
+    super({
+      statusCode: 410,
+      errorCode: 'GONE',
+      displayMessage,
+      technicalMessage: technicalMessage || displayMessage,
+    });
+  }
+}
+
+
 
