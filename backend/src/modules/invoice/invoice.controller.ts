@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import type { InvoiceImportService, DuplicateStrategy } from './invoice.service.js';
 import type { InvoiceRepository } from './invoice.repository.js';
 import { logger } from '../../shared/logger.js';
+import type { PortalService } from '../portal/portal.service.js';
+import { config } from '../../config/index.js';
 import { TriageService } from '../agent/triage.service.js';
 import {
   createInvoiceSchema,
@@ -21,10 +23,11 @@ export class InvoiceController {
   constructor(
     private importService: InvoiceImportService,
     private invoiceRepo: InvoiceRepository,
-    private paymentService?: PaymentService,
-    private eventService?: EventService,
-    private dlqService?: DlqService,
-    private communicationRepo?: CommunicationRepository
+    private paymentService: PaymentService,
+    private eventService: EventService,
+    private dlqService: DlqService,
+    private communicationRepo: CommunicationRepository,
+    private portalService: PortalService
   ) {}
 
   private getActorContext(req: Request): ActorContext {
@@ -624,6 +627,52 @@ export class InvoiceController {
       });
 
       res.status(200).json(restored);
+    } catch (error: unknown) {
+      next(error);
+    }
+  };
+
+  getPortalLinkStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = res.locals.tenantId as string;
+      const id = req.params.id as string;
+
+      const invoice = await this.invoiceRepo.findById(id);
+      if (!invoice || invoice.tenantId !== tenantId) {
+        next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (!this.portalService) {
+        throw new Error('PortalService is not configured');
+      }
+
+      const status = await this.portalService.getLatestLinkStatus(id);
+      res.status(200).json(status);
+    } catch (error: unknown) {
+      next(error);
+    }
+  };
+
+  regeneratePortalLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = res.locals.tenantId as string;
+      const id = req.params.id as string;
+
+      const invoice = await this.invoiceRepo.findById(id);
+      if (!invoice || invoice.tenantId !== tenantId) {
+        next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (!this.portalService) {
+        throw new Error('PortalService is not configured');
+      }
+
+      const token = await this.portalService.getOrCreatePortalLink(tenantId, id);
+      const url = `${config.FRONTEND_URL}/i/${token}`;
+
+      res.status(200).json({ token, url });
     } catch (error: unknown) {
       next(error);
     }
