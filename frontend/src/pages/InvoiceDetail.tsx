@@ -37,7 +37,9 @@ import {
   MessageSquare,
   RefreshCw,
   RotateCcw,
-  XCircle
+  XCircle,
+  Copy,
+  Check
 } from "lucide-react";
 
 interface GroupedInvoiceEvent extends InvoiceEvent {
@@ -61,6 +63,30 @@ export function InvoiceDetail() {
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timeline' | 'emails'>('timeline');
   const [error, setError] = useState<string | null>(null);
+
+  // Debtor Portal Link States & Mutations
+  const [regeneratedLink, setRegeneratedLink] = useState<{ url: string } | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const { data: portalLinkStatus, refetch: refetchPortalLinkStatus } = useQuery({
+    queryKey: ["portal-link-status", id],
+    queryFn: () => invoiceService.getPortalLinkStatus(id!),
+    enabled: !!id && (user?.role === 'admin' || user?.role === 'manager'),
+  });
+
+  const regenerateLinkMutation = useMutation({
+    mutationFn: () => invoiceService.regeneratePortalLink(id!),
+    onMutate: () => setError(null),
+    onError: (err: unknown) => {
+      setError(getErrorMessage(err));
+    },
+    onSuccess: (data) => {
+      setRegeneratedLink(data);
+      refetchPortalLinkStatus();
+      queryClient.invalidateQueries({ queryKey: ["invoice", id] });
+    }
+  });
 
   // Timeline Pagination State
   const [timelinePage, setTimelinePage] = useState(1);
@@ -191,6 +217,17 @@ export function InvoiceDetail() {
 
   const generateLinkMutation = useMutation({
     mutationFn: () => invoiceService.generatePaymentLink(id!),
+    onMutate: () => setError(null),
+    onError: (err: unknown) => {
+      setError(getErrorMessage(err));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", id] });
+    }
+  });
+
+  const cancelPlanMutation = useMutation({
+    mutationFn: () => invoiceService.cancelPaymentPlan(id!),
     onMutate: () => setError(null),
     onError: (err: unknown) => {
       setError(getErrorMessage(err));
@@ -753,6 +790,11 @@ export function InvoiceDetail() {
                   Needs Manual Review
                 </Badge>
               )}
+              {invoice.hasActivePaymentPlan && (
+                <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                  Active Payment Plan
+                </Badge>
+              )}
             </div>
           </div>
           <p className="text-3xl font-light text-slate-900 mt-4">
@@ -793,6 +835,17 @@ export function InvoiceDetail() {
                     {statusMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                     Mark as Paid
                   </button>
+
+                  {invoice.hasActivePaymentPlan && (
+                    <button
+                      onClick={() => cancelPlanMutation.mutate()}
+                      disabled={cancelPlanMutation.isPending}
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 h-10 px-4 py-2 disabled:opacity-50"
+                    >
+                      {cancelPlanMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                      Cancel Payment Plan
+                    </button>
+                  )}
 
                   <button
                     onClick={handleTriggerFollowup}
@@ -925,6 +978,98 @@ export function InvoiceDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {(user?.role === 'admin' || user?.role === 'manager') && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Debtor Portal Link</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {portalLinkStatus ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-500">Status</span>
+                      {!portalLinkStatus.exists ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
+                          No link generated yet
+                        </span>
+                      ) : portalLinkStatus.revokedAt ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                          Revoked
+                        </span>
+                      ) : (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                          Active
+                        </span>
+                      )}
+                    </div>
+
+                    {portalLinkStatus.exists && (
+                      <div className="text-xs text-slate-600 space-y-1.5 pt-2 border-t border-slate-100">
+                        <div className="flex justify-between">
+                          <span>Created At</span>
+                          <span className="font-medium">{new Date(portalLinkStatus.createdAt!).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Last Viewed</span>
+                          <span className="font-medium">
+                            {portalLinkStatus.viewedAt ? new Date(portalLinkStatus.viewedAt).toLocaleString() : 'Never'}
+                          </span>
+                        </div>
+                        {portalLinkStatus.revokedAt && (
+                          <div className="flex justify-between text-red-600">
+                            <span>Revoked At</span>
+                            <span className="font-medium">{new Date(portalLinkStatus.revokedAt).toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {regeneratedLink ? (
+                      <div className="space-y-3 pt-3 border-t border-slate-100">
+                        <div className="rounded-md bg-amber-50 border border-amber-200 p-2.5 flex gap-2 text-xs text-amber-800">
+                          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                          <span>Copy this URL now. For security, the full URL cannot be retrieved again.</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="text" 
+                            readOnly 
+                            value={regeneratedLink.url} 
+                            className="w-full text-xs p-1.5 border border-slate-200 rounded bg-slate-50 text-slate-600 truncate"
+                            title={regeneratedLink.url}
+                          />
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(regeneratedLink.url);
+                              setIsCopied(true);
+                              setTimeout(() => setIsCopied(false), 2000);
+                            }}
+                            className="px-2 py-1.5 bg-white border border-slate-300 rounded text-xs font-medium hover:bg-slate-50 transition-colors flex-shrink-0 flex items-center justify-center"
+                          >
+                            {isCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pt-2">
+                        <button
+                          onClick={() => setIsConfirmOpen(true)}
+                          className="w-full inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors focus-visible:outline-none border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 h-8 px-3"
+                        >
+                          Regenerate Portal Link
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Tabs Area */}
@@ -1205,6 +1350,42 @@ export function InvoiceDetail() {
             >
               {deleteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Delete Invoice
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        title="Regenerate Debtor Portal Link"
+        description="Are you sure you want to regenerate the portal link?"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            This action will immediately revoke the existing portal link. Any debtor currently viewing or trying to access the old link will lose access and see an error.
+          </p>
+          <div className="rounded-md bg-amber-50 border border-amber-200 p-3 flex gap-2 text-xs text-amber-800">
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>Regenerating the link does NOT automatically send a new email. You will need to copy and share the new link manually.</span>
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <button
+              onClick={() => setIsConfirmOpen(false)}
+              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-sm font-semibold rounded-lg bg-white text-slate-700 shadow-sm transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                setIsConfirmOpen(false);
+                regenerateLinkMutation.mutate();
+              }}
+              disabled={regenerateLinkMutation.isPending}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white rounded-lg shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {regenerateLinkMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Regenerate Link
             </button>
           </div>
         </div>
