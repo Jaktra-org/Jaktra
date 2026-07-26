@@ -38,6 +38,15 @@ import { DisputeService } from './modules/dispute/dispute.service.js';
 import { DisputeController } from './modules/dispute/dispute.controller.js';
 import { createDisputeRouter } from './modules/dispute/dispute.routes.js';
 
+import { PortalRepository } from './modules/portal/portal.repository.js';
+import { PortalService } from './modules/portal/portal.service.js';
+import { PortalController } from './modules/portal/portal.controller.js';
+import { createPortalRouter } from './modules/portal/portal.routes.js';
+import { createPortalTokenAuthMiddleware } from './middleware/portal-auth.js';
+import { PaymentPlanRepository } from './modules/payment-plan/payment-plan.repository.js';
+import { PaymentPlanService } from './modules/payment-plan/payment-plan.service.js';
+import { PaymentPlanController } from './modules/payment-plan/payment-plan.controller.js';
+
 import { UserRepository } from './modules/auth/user.repository.js';
 import { LockoutService } from './modules/auth/lockout.service.js';
 import { TenantRepository } from './modules/tenant/tenant.repository.js';
@@ -145,9 +154,9 @@ export function createApp(config: AppConfig): Application {
     }
 
     // Shared Repositories
-    const invoiceRepo = new InvoiceRepository(config.db);
     const eventRepo = new EventRepository(config.db);
-    const eventService = new EventService(eventRepo, invoiceRepo);
+    const eventService = new EventService(eventRepo);
+    const invoiceRepo = new InvoiceRepository(config.db, eventService);
     const communicationRepo = new CommunicationRepository(config.db);
     const integrationRepo = new IntegrationRepository(config.db);
     const settingsRepo = new SettingsRepository(config.db);
@@ -177,7 +186,11 @@ export function createApp(config: AppConfig): Application {
     const tenantEmailConfigResolver = new DbTenantEmailConfigResolver(integrationService, communicationRepo);
     const tenantMailer = new TenantMailer(tenantEmailConfigResolver, communicationRepo, invoiceRepo, eventService, dlqRepo);
 
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, tenantMailer, eventService, dlqRepo);
+    const portalRepo = new PortalRepository(config.db);
+    const portalService = new PortalService(portalRepo);
+
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, tenantMailer, portalService, eventService, dlqRepo);
+    app.locals.communicationService = communicationService;
     
     const gatewayFactory = new PaymentGatewayFactory();
     gatewayFactory.register(new RazorpayAdapter());
@@ -203,10 +216,19 @@ export function createApp(config: AppConfig): Application {
     );
     const disputeController = new DisputeController(disputeService);
 
+    const paymentPlanRepo = new PaymentPlanRepository(config.db);
+    const paymentPlanService = new PaymentPlanService(paymentPlanRepo, invoiceRepo, eventService, config.db);
+    const paymentPlanController = new PaymentPlanController(paymentPlanService);
+
+    const portalController = new PortalController(portalService, paymentService, paymentPlanService, disputeService);
+    const portalTokenAuth = createPortalTokenAuthMiddleware(portalService);
+    app.locals.portalService = portalService;
+
     const webhookService = new WebhookService(invoiceRepo, eventService);
     const sendgridService = new SendgridWebhookService(communicationService, config.sendgridWebhookPublicKey);
     
     app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, settingsRepo, sendgridService, disputeService, lockoutRedis as unknown as RedisClientType | null)));
+    app.use('/public/portal', createPortalRouter(portalController, portalTokenAuth));
 
     if (config.jwtSecret) {
       const userRepo = new UserRepository(config.db);
@@ -241,7 +263,7 @@ export function createApp(config: AppConfig): Application {
 
       const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo);
       const triageService = new TriageService();
-      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService, dlqService, communicationRepo), authMiddleware, tenantScoped));
+      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService, dlqService, communicationRepo, portalService), paymentPlanController, authMiddleware, tenantScoped));
       app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo, dlqService, communicationRepo), authMiddleware, tenantScoped));
 
       const analyticsRepo = new AnalyticsRepository(config.db);
@@ -272,7 +294,7 @@ export function createApp(config: AppConfig): Application {
 
         const idempotencyService = new IdempotencyService(communicationRepo);
 
-        const agentService = new AgentService(agentRepo, aimlService, invoiceRepo, triageService, eventService, dlqService, idempotencyService, paymentService, communicationService, communicationRepo);
+        const agentService = new AgentService(agentRepo, aimlService, invoiceRepo, triageService, eventService, dlqService, idempotencyService, paymentService, communicationService, communicationRepo, portalService);
         app.locals.agentService = agentService;
         app.use('/api/agent', createAgentRouter(new AgentController(agentService, eventService), authMiddleware, tenantScoped));
       }
