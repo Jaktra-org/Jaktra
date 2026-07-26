@@ -212,7 +212,7 @@ export class InvoiceRepository {
 
   async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>, tx?: DatabaseOrTransaction): Promise<Invoice | undefined> {
     const dbClient = tx || this.db;
-    const updateData: Record<string, any> = { ...data, updatedAt: new Date() };
+    const updateData: Record<string, unknown> = { ...data, updatedAt: new Date() };
 
     if (data.paymentStatus !== undefined) {
       const [existing] = await dbClient
@@ -232,7 +232,7 @@ export class InvoiceRepository {
       .returning();
 
     if (data.paymentStatus) {
-      await this.autoCancelPendingPaymentPlans(invoiceId, data.paymentStatus as any, dbClient);
+      await this.autoCancelPendingPaymentPlans(invoiceId, data.paymentStatus as 'Pending' | 'Paid' | 'Overdue' | 'Written Off', dbClient);
     }
 
     return rows[0];
@@ -302,7 +302,7 @@ export class InvoiceRepository {
 
     if (existing) {
       const statusChanged = existing.paymentStatus !== data.paymentStatus;
-      const updateData: Record<string, any> = {
+      const updateData: Record<string, unknown> = {
         clientName: data.clientName,
         invoiceAmount: data.invoiceAmount,
         dueDate: data.dueDate,
