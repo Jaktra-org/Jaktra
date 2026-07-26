@@ -8,7 +8,7 @@ export interface InboundEmailReview {
   subject: string;
   body: string;
   classification: 'dispute' | 'question' | 'payment_promise' | 'unclear';
-  confidence: number;
+  confidence: string | null;
   suggestedResponse: string;
   reasoning: string;
   status: 'pending_review' | 'approved' | 'discarded';

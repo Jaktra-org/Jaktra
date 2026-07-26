@@ -7,6 +7,7 @@ import type { PaymentService } from '../../../src/modules/payment/payment.servic
 import type { EventService } from '../../../src/modules/event/event.service.js';
 import type { DlqService } from '../../../src/modules/dlq/dlq.service.js';
 import type { CommunicationRepository } from '../../../src/modules/communication/communication.repository.js';
+import type { PortalService } from '../../../src/modules/portal/portal.service.js';
 import { ValidationError, NotFoundError } from '../../../src/shared/errors/index.js';
 
 function mockRes(tenantId = 'tenant-123'): Response {
@@ -77,13 +78,20 @@ describe('InvoiceController', () => {
       getSettings: vi.fn().mockResolvedValue({ dlqThreshold: 3 }),
     } as unknown as CommunicationRepository;
 
+    const portalService = {
+      getOrCreatePortalLink: vi.fn(),
+      resolveAndValidateToken: vi.fn(),
+      recordViewIfNeeded: vi.fn(),
+    } as unknown as PortalService;
+
     controller = new InvoiceController(
       importService,
       invoiceRepo,
       paymentService,
       eventService,
       dlqService,
-      communicationRepo
+      communicationRepo,
+      portalService
     );
   });
 
