@@ -116,7 +116,7 @@ export class PaymentRepository {
       }
 
       await tx.update(invoices)
-        .set({ paymentStatus: 'Paid', updatedAt: new Date() })
+        .set({ paymentStatus: 'Paid', updatedAt: new Date(), paymentStatusChangedAt: new Date() })
         .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)));
 
       if (activeLinkId) {

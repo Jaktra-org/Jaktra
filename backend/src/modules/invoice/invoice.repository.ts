@@ -1,10 +1,15 @@
 import { eq, and, isNull, isNotNull, desc, asc, ilike, inArray, count, lte, gte } from 'drizzle-orm';
-import { invoices } from '../../db/index.js';
+import { invoices, paymentPlanRequests } from '../../db/index.js';
 import type { DatabaseClient, DatabaseOrTransaction } from '../../db/index.js';
 import type { Invoice, NewInvoice } from '../../db/index.js';
+import { EventService } from '../event/event.service.js';
+import { logger } from '../../shared/logger.js';
 
 export class InvoiceRepository {
-  constructor(public readonly db: DatabaseClient) {}
+  constructor(
+    public readonly db: DatabaseClient,
+    private readonly eventService: EventService,
+  ) {}
 
   async findByTenant(tenantId: string): Promise<Invoice[]> {
     return this.db
@@ -40,7 +45,19 @@ export class InvoiceRepository {
 
   async updatePaymentStatus(invoiceId: string, status: 'Pending' | 'Paid' | 'Overdue' | 'Written Off', externalRefId?: string, tx?: DatabaseOrTransaction): Promise<void> {
     const dbClient = tx || this.db;
+    
+    // Check if the status is actually changing
+    const [existing] = await dbClient
+      .select({ paymentStatus: invoices.paymentStatus })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1);
+    const statusChanged = !existing || existing.paymentStatus !== status;
+
     const updateData: Record<string, unknown> = { paymentStatus: status, updatedAt: new Date() };
+    if (statusChanged) {
+      updateData.paymentStatusChangedAt = new Date();
+    }
     if (externalRefId) {
       updateData.externalRefId = externalRefId;
     }
@@ -49,6 +66,8 @@ export class InvoiceRepository {
       .update(invoices)
       .set(updateData)
       .where(eq(invoices.id, invoiceId));
+
+    await this.autoCancelPendingPaymentPlans(invoiceId, status, dbClient);
   }
 
   async findByInvoiceNo(invoiceNo: string, tenantId: string): Promise<Invoice | undefined> {
@@ -111,14 +130,22 @@ export class InvoiceRepository {
 
   async create(data: NewInvoice, tx?: DatabaseOrTransaction): Promise<Invoice> {
     const dbClient = tx || this.db;
-    const rows = await dbClient.insert(invoices).values(data).returning();
+    const insertData = {
+      ...data,
+      paymentStatusChangedAt: data.paymentStatusChangedAt || new Date(),
+    };
+    const rows = await dbClient.insert(invoices).values(insertData).returning();
     return rows[0]!;
   }
 
   async createMany(data: NewInvoice[], tx?: DatabaseOrTransaction): Promise<Invoice[]> {
     if (data.length === 0) return [];
     const dbClient = tx || this.db;
-    return dbClient.insert(invoices).values(data).returning();
+    const formattedData = data.map((item) => ({
+      ...item,
+      paymentStatusChangedAt: item.paymentStatusChangedAt || new Date(),
+    }));
+    return dbClient.insert(invoices).values(formattedData).returning();
   }
 
   async findMany(params: {
@@ -185,11 +212,29 @@ export class InvoiceRepository {
 
   async update(invoiceId: string, tenantId: string, data: Partial<NewInvoice>, tx?: DatabaseOrTransaction): Promise<Invoice | undefined> {
     const dbClient = tx || this.db;
+    const updateData: Record<string, any> = { ...data, updatedAt: new Date() };
+
+    if (data.paymentStatus !== undefined) {
+      const [existing] = await dbClient
+        .select({ paymentStatus: invoices.paymentStatus })
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      if (!existing || existing.paymentStatus !== data.paymentStatus) {
+        updateData.paymentStatusChangedAt = new Date();
+      }
+    }
+
     const rows = await dbClient
       .update(invoices)
-      .set({ ...data, updatedAt: new Date() })
+      .set(updateData)
       .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
       .returning();
+
+    if (data.paymentStatus) {
+      await this.autoCancelPendingPaymentPlans(invoiceId, data.paymentStatus as any, dbClient);
+    }
+
     return rows[0];
   }
 
@@ -256,21 +301,31 @@ export class InvoiceRepository {
     const existing = rowsFound[0];
 
     if (existing) {
+      const statusChanged = existing.paymentStatus !== data.paymentStatus;
+      const updateData: Record<string, any> = {
+        clientName: data.clientName,
+        invoiceAmount: data.invoiceAmount,
+        dueDate: data.dueDate,
+        contactEmail: data.contactEmail,
+        subject: data.subject ?? null,
+        paymentStatus: data.paymentStatus,
+        followupCount: data.followupCount,
+        lastFollowupDate: data.lastFollowupDate,
+        updatedAt: new Date(),
+      };
+      if (statusChanged) {
+        updateData.paymentStatusChangedAt = new Date();
+      }
+
       const rows = await dbClient
         .update(invoices)
-        .set({
-          clientName: data.clientName,
-          invoiceAmount: data.invoiceAmount,
-          dueDate: data.dueDate,
-          contactEmail: data.contactEmail,
-          subject: data.subject ?? null,
-          paymentStatus: data.paymentStatus,
-          followupCount: data.followupCount,
-          lastFollowupDate: data.lastFollowupDate,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(invoices.id, existing.id))
         .returning();
+
+      if (statusChanged) {
+        await this.autoCancelPendingPaymentPlans(existing.id, data.paymentStatus!, dbClient);
+      }
 
       return { invoice: rows[0]!, wasUpdated: true };
     }
@@ -291,5 +346,51 @@ export class InvoiceRepository {
         )
       )
       .limit(limit);
+  }
+
+  private async autoCancelPendingPaymentPlans(
+    invoiceId: string,
+    status: 'Pending' | 'Paid' | 'Overdue' | 'Written Off',
+    dbClient: DatabaseOrTransaction
+  ): Promise<void> {
+    if (status === 'Paid' || status === 'Written Off') {
+      const rows = await dbClient
+        .update(paymentPlanRequests)
+        .set({ status: 'cancelled', reviewedAt: new Date() })
+        .where(and(
+          eq(paymentPlanRequests.invoiceId, invoiceId),
+          eq(paymentPlanRequests.status, 'pending')
+        ))
+        .returning();
+
+      if (rows.length > 0) {
+        // Find tenantId for this invoice
+        const [inv] = await dbClient
+          .select({ tenantId: invoices.tenantId })
+          .from(invoices)
+          .where(eq(invoices.id, invoiceId))
+          .limit(1);
+
+        const tenantId = inv?.tenantId;
+        if (tenantId) {
+          for (const row of rows) {
+            await this.eventService.emitEvent(
+              'invoice',
+              invoiceId,
+              tenantId,
+              'invoice.payment_plan_cancelled',
+              { source: 'system', name: 'System Auto-Cancel' },
+              {
+                description: `Payment plan request auto-cancelled because invoice was marked ${status}.`,
+                payload: { requestId: row.id },
+                tx: dbClient,
+              }
+            ).catch((err) => {
+              logger.error('Failed to emit auto-cancelled event', err);
+            });
+          }
+        }
+      }
+    }
   }
 }
