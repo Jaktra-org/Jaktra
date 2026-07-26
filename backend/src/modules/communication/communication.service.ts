@@ -210,7 +210,7 @@ export class CommunicationService {
       html,
     };
 
-    const comm = await this.communicationRepo.create({
+    await this.communicationRepo.create({
       tenantId,
       invoiceId: invoiceId || '',
       channel: 'email',
