@@ -158,3 +158,97 @@ export const authLimiter = rateLimit({
   passOnStoreError: true,
   validate: { singleCount: false },
 });
+
+export const portalViewIpLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests from this IP, please try again later.' } },
+  store: new FallbackStore('rl:portal_view_ip:'),
+  passOnStoreError: true,
+  validate: { singleCount: false },
+});
+
+export const portalViewTokenLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' ? req.params['token'] : '') || req.ip || '',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests for this link, please try again later.' } },
+  store: new FallbackStore('rl:portal_view_token:'),
+  passOnStoreError: true,
+  validate: { singleCount: false },
+});
+
+export const portalPayIpLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many payment requests from this IP, please try again later.' } },
+  store: new FallbackStore('rl:portal_pay_ip:'),
+  passOnStoreError: true,
+  validate: { singleCount: false },
+});
+
+export const portalPayTokenLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' ? req.params['token'] : '') || req.ip || '',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many payment attempts for this link, please try again later.' } },
+  store: new FallbackStore('rl:portal_pay_token:'),
+  passOnStoreError: true,
+  validate: { singleCount: false },
+});
+
+export const portalPlanIpLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: process.env['NODE_ENV'] === 'test' ? 100 : 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many payment plan requests from this IP, please try again later.' } },
+  store: new FallbackStore('rl:portal_plan_ip:'),
+  passOnStoreError: true,
+  validate: { singleCount: false },
+});
+
+export const portalPlanTokenLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 3,
+  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' ? req.params['token'] : '') || req.ip || '',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many payment plan requests for this link, please try again later.' } },
+  store: new FallbackStore('rl:portal_plan_token:'),
+  passOnStoreError: true,
+  validate: { singleCount: false },
+});
+
+export const portalDisputeIpLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: process.env['NODE_ENV'] === 'test' ? 100 : 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many dispute submissions from this IP, please try again later.' } },
+  store: new FallbackStore('rl:portal_dispute_ip:'),
+  passOnStoreError: true,
+  validate: { singleCount: false },
+});
+
+export const portalDisputeTokenLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 3,
+  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' ? req.params['token'] : '') || req.ip || '',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many dispute submissions for this link, please try again later.' } },
+  store: new FallbackStore('rl:portal_dispute_token:'),
+  passOnStoreError: true,
+  validate: { singleCount: false },
+});
+
+
