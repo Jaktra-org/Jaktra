@@ -7,6 +7,7 @@ import * as dns from 'dns/promises';
 import { logger } from '../../shared/logger.js';
 import type { DlqRepository } from '../dlq/dlq.repository.js';
 import { config } from '../../config/index.js';
+import type { PortalService } from '../portal/portal.service.js';
 
 export const createCommunicationSchema = z.object({
   invoiceId: z.string().uuid(),
@@ -39,8 +40,9 @@ export class CommunicationService {
     private readonly communicationRepo: CommunicationRepository,
     private readonly invoiceRepo: InvoiceRepository,
     private readonly tenantMailer: TenantMailer,
-    private readonly eventService?: EventService,
-    private readonly dlqRepo?: DlqRepository
+    private readonly portalService: PortalService,
+    private readonly eventService: EventService,
+    private readonly dlqRepo: DlqRepository
   ) { }
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['findByInvoiceId']>>> {
@@ -168,6 +170,7 @@ export class CommunicationService {
     }
   }
 
+
   async send(options: SendCommunicationOptions): Promise<boolean> {
     const { tenantId, to, subject, html, channel = 'email', invoiceId } = options;
 
@@ -190,6 +193,15 @@ export class CommunicationService {
       customReplyTo = `reply+${invoiceId}@${config.INBOUND_PARSE_DOMAIN}`;
     }
 
+    // Generate portal link if it doesn't exist yet (so a row is created when email goes out)
+    if (invoiceId && this.portalService) {
+      try {
+        await this.portalService.ensurePortalLinkExists(tenantId, invoiceId);
+      } catch (err) {
+        logger.error('Failed to get or create portal link during send:', err);
+      }
+    }
+
     const message: EmailMessage = {
       to,
       from: { name: settings.senderName, email: settings.senderEmail },
@@ -197,6 +209,17 @@ export class CommunicationService {
       subject,
       html,
     };
+
+    const comm = await this.communicationRepo.create({
+      tenantId,
+      invoiceId: invoiceId || '',
+      channel: 'email',
+      subject,
+      body: html,
+      status: 'pending',
+      sentAt: null,
+      error: null,
+    });
 
     const result = await this.tenantMailer.sendCollectionEmail(tenantId, message, { invoiceId });
     if (!result.success) {

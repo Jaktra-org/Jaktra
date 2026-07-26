@@ -63,6 +63,7 @@ export class TriageService {
   }
 
   isActionable(invoice: Invoice): boolean {
+    if (invoice.hasActivePaymentPlan) return false;
     if (NON_ACTIONABLE_STATUSES.has(invoice.paymentStatus)) return false;
 
     const daysOverdue = this.computeDaysOverdue(invoice.dueDate);

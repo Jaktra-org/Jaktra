@@ -11,6 +11,8 @@ import { PaymentService } from '../payment/payment.service.js';
 import { logger } from '../../shared/logger.js';
 import { NotFoundError, CommunicationError } from '../../shared/errors/index.js';
 import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
+import { PortalService } from '../portal/portal.service.js';
+import { config } from '../../config/index.js';
 
 export class AgentService {
   private activeRuns = new Set<string>();
@@ -25,8 +27,14 @@ export class AgentService {
     private idempotencyService: IdempotencyService,
     private paymentService: PaymentService,
     private communicationService: CommunicationService,
-    private communicationRepo: CommunicationRepository
+    private communicationRepo: CommunicationRepository,
+    private portalService: PortalService
   ) { }
+
+  private async getPortalLinkUrl(tenantId: string, invoiceId: string): Promise<string> {
+    const token = await this.portalService.getOrCreatePortalLink(tenantId, invoiceId);
+    return `${config.FRONTEND_URL}/i/${token}`;
+  }
 
   hasActiveRuns(): boolean {
     return this.activeRuns.size > 0;
@@ -140,12 +148,7 @@ export class AgentService {
           continue;
         }
 
-        let paymentLink = undefined;
-        try {
-          paymentLink = await this.paymentService.getOrGeneratePaymentLink(tenantId, inv.id, 'razorpay');
-        } catch (e: unknown) {
-          logger.warn(`Could not generate payment link for invoice ${inv.id} - ${e instanceof Error ? e.message : String(e)}`);
-        }
+        const paymentLink = await this.getPortalLinkUrl(tenantId, inv.id);
 
         for (const channel of channels) {
           if (channel === 'email') {
@@ -391,12 +394,7 @@ export class AgentService {
     }
 
     try {
-      let paymentLink = undefined;
-      try {
-        paymentLink = await this.paymentService.getOrGeneratePaymentLink(tenantId, invoice.id, 'razorpay');
-      } catch (e: unknown) {
-        logger.warn(`Could not generate payment link for invoice ${invoice.id} - ${e instanceof Error ? e.message : String(e)}`);
-      }
+      const paymentLink = await this.getPortalLinkUrl(tenantId, invoice.id);
 
       const results = [];
       for (const channel of channels) {
