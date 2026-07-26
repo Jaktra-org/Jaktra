@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { eq, and, isNull } from 'drizzle-orm';
 import { invoices, tenantSettings } from '../../db/index.js';
-import type { DatabaseClient } from '../../db/index.js';
+import type { DatabaseClient, Invoice } from '../../db/index.js';
 import type { DisputeRepository, PendingDisputeItem } from './dispute.repository.js';
 import type { AimlService } from '../agent/aiml.service.js';
 import type { CommunicationService } from '../communication/communication.service.js';
@@ -10,6 +10,7 @@ import type { EventService, ActorContext } from '../event/event.service.js';
 import { logger } from '../../shared/logger.js';
 import type { RedisClientType } from 'redis';
 import { config } from '../../config/index.js';
+import { ValidationError, ForbiddenError } from '../../shared/errors/index.js';
 
 export function timingSafeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -40,8 +41,8 @@ export class DisputeService {
     private readonly db: DatabaseClient,
     private readonly communicationRepo: CommunicationRepository,
     private readonly communicationService: CommunicationService,
-    private readonly eventService?: EventService,
-    private readonly redisClient?: RedisClientType | null
+    private readonly eventService: EventService,
+    private readonly redisClient: RedisClientType | null
   ) { }
 
   // NOTE (v1 limitation): No rate limiting exists on inbound processing volume per tenant/sender.
@@ -159,22 +160,61 @@ export class DisputeService {
 
     logger.info(`Matched inbound reply to invoice ${invoiceId} via sub-addressing`);
 
-    // Verify tenant settings is not blocked by admin
+    const emailBody = params.text || params.html || '';
+    await this.createDisputeRecord({
+      tenantId,
+      invoiceId,
+      sender: senderEmail,
+      subject: params.subject,
+      body: emailBody,
+      source: 'email',
+    }, invoice);
+  }
+
+  async createDisputeRecord(
+    params: {
+      tenantId: string;
+      invoiceId: string;
+      sender: string;
+      subject: string;
+      body: string;
+      source: 'email' | 'portal';
+    },
+    preFetchedInvoice?: Invoice
+  ): Promise<void> {
+    const invoice = preFetchedInvoice || (await this.db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.id, params.invoiceId), isNull(invoices.deletedAt)))
+      .limit(1)
+      .then((rows) => rows[0]));
+
+    if (!invoice) {
+      throw new ValidationError('Invoice not found.');
+    }
+
+    // 1. Check Paid/Written Off state (portal-specific constraint)
+    if (params.source === 'portal' && (invoice.paymentStatus === 'Paid' || invoice.paymentStatus === 'Written Off')) {
+      throw new ValidationError('Cannot submit a dispute for a paid or written off invoice.');
+    }
+
+    // 2. Check admin kill-switch settings
     const [settings] = await this.db
       .select()
       .from(tenantSettings)
-      .where(eq(tenantSettings.tenantId, tenantId))
+      .where(eq(tenantSettings.tenantId, params.tenantId))
       .limit(1);
 
     if (settings?.inboundBlockedByAdmin) {
-      logger.warn(`Inbound email matched invoice ${invoiceId} but tenant ${tenantId} is blocked by admin — dropping`);
+      if (params.source === 'portal') {
+        throw new ForbiddenError('Dispute submissions are temporarily disabled.');
+      }
+      logger.warn(`Inbound email matched invoice ${params.invoiceId} but tenant ${params.tenantId} is blocked by admin — dropping`);
       return;
     }
 
-    const emailBody = params.text || params.html || '';
-
     // Fetch prior communication history for context
-    const comms = await this.communicationRepo.findByInvoiceId(invoiceId);
+    const comms = await this.communicationRepo.findByInvoiceId(params.invoiceId);
     const priorHistory = comms.map((c) => ({
       subject: c.subject,
       body: c.body,
@@ -189,7 +229,7 @@ export class DisputeService {
 
     try {
       const aiResult = await this.aimlService.analyzeDispute({
-        inboundText: emailBody,
+        inboundText: params.body,
         invoiceId: invoice.id,
         invoiceNo: invoice.invoiceNo,
         clientName: invoice.clientName,
@@ -209,28 +249,32 @@ export class DisputeService {
 
     // Save review queue item
     await this.disputeRepo.create({
-      tenantId,
-      invoiceId,
-      sender: senderEmail,
+      tenantId: params.tenantId,
+      invoiceId: params.invoiceId,
+      sender: params.sender,
       subject: params.subject,
-      body: emailBody,
+      body: params.body,
       classification,
       confidence: confidence.toFixed(3),
       suggestedResponse,
       reasoning,
       status: 'pending_review',
+      source: params.source,
     });
 
     // Log dispute received audit event
     if (this.eventService) {
       await this.eventService.emitEvent(
         'invoice',
-        invoiceId,
-        tenantId,
+        params.invoiceId,
+        params.tenantId,
         'dispute.received',
-        { source: 'webhook' },
         {
-          description: `Dispute email reply received from ${senderEmail} (intent: ${classification})`,
+          source: params.source,
+          name: params.source === 'portal' ? 'Customer Portal' : 'Inbound Email',
+        },
+        {
+          description: `Dispute ${params.source} received from ${params.sender} (intent: ${classification})`,
           payload: {
             classification,
             confidence,
