@@ -1,7 +1,7 @@
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { invoicePortalLinks, invoices, tenants, tenantSettings } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
-import type { InvoicePortalLink, NewInvoicePortalLink } from '../../db/index.js';
+import type { InvoicePortalLink } from '../../db/index.js';
 import crypto from 'crypto';
 
 export class PortalRepository {
@@ -23,7 +23,12 @@ export class PortalRepository {
     return result;
   }
 
-  async findLinkByTokenHash(tokenHash: string) {
+  async findLinkByTokenHash(tokenHash: string): Promise<{
+    link: InvoicePortalLink;
+    invoice: typeof invoices.$inferSelect;
+    tenant: typeof tenants.$inferSelect;
+    settings: typeof tenantSettings.$inferSelect | null;
+  } | undefined> {
     const result = await this.db
       .select({
         link: invoicePortalLinks,

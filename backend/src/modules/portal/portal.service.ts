@@ -1,12 +1,11 @@
 import crypto from 'crypto';
 import { PortalRepository } from './portal.repository.js';
 import { NotFoundError, GoneError } from '../../shared/errors/index.js';
-import type { Invoice, Tenant, TenantSettings } from '../../db/index.js';
 
 export class PortalService {
   constructor(private readonly repo: PortalRepository) {}
 
-  async resolveAndValidateToken(rawToken: string) {
+  async resolveAndValidateToken(rawToken: string): Promise<NonNullable<Awaited<ReturnType<PortalRepository['findLinkByTokenHash']>>>> {
     if (!rawToken || typeof rawToken !== 'string') {
       throw new NotFoundError('This link is no longer valid or does not exist.');
     }
@@ -68,7 +67,7 @@ export class PortalService {
     await this.repo.getOrCreatePortalLink(tenantId, invoiceId);
   }
 
-  async getLatestLinkStatus(invoiceId: string) {
+  async getLatestLinkStatus(invoiceId: string): Promise<{ exists: false } | { exists: true; createdAt: Date; viewedAt: Date | null; revokedAt: Date | null }> {
     const link = await this.repo.findLatestLinkByInvoiceId(invoiceId);
     if (!link) {
       return { exists: false };

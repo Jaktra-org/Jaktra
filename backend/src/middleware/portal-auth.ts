@@ -13,14 +13,15 @@ export function createPortalTokenAuthMiddleware(portalService: PortalService): R
       const context = await portalService.resolveAndValidateToken(token);
       res.locals.portalContext = context;
       next();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Translate dynamic verification errors to consistent client responses
       // 404 and 410 return the exact same user-facing display message to prevent token scanning
-      const statusCode = error.statusCode || 500;
+      const err = error as { statusCode?: number; errorCode?: string };
+      const statusCode = err.statusCode || 500;
       if (statusCode === 404 || statusCode === 410) {
         res.status(statusCode).json({
           error: {
-            code: error.errorCode || 'NOT_FOUND',
+            code: err.errorCode || 'NOT_FOUND',
             message: 'This link is no longer valid or does not exist.',
           },
         });
