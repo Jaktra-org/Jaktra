@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
 import { createDatabaseClient } from '../../../src/db/index.js';
 import { config } from '../../../src/config/env.js';
 import { eq, inArray } from 'drizzle-orm';
@@ -24,11 +24,17 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
 
   beforeAll(async () => {
     db = createDatabaseClient({ connectionString: config.DATABASE_URL });
-    invoiceRepo = new InvoiceRepository(db);
-    settingsRepo = new SettingsRepository(db);
     eventRepo = new EventRepository(db);
-    eventService = new EventService(eventRepo, invoiceRepo);
+    eventService = new EventService(eventRepo);
+    invoiceRepo = new InvoiceRepository(db, eventService);
+    settingsRepo = new SettingsRepository(db);
     purgeService = new InvoicePurgeService(invoiceRepo, settingsRepo, eventService);
+  });
+
+  afterAll(async () => {
+    if (db && db.$pool) {
+      await db.$pool.end();
+    }
   });
 
   beforeEach(async () => {

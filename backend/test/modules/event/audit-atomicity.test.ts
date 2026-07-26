@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { createDatabaseClient } from '../../../src/db/index.js';
 import { config } from '../../../src/config/env.js';
 import { eq, inArray } from 'drizzle-orm';
@@ -23,9 +23,9 @@ describe('Audit Atomicity and Transaction Control', () => {
 
   beforeAll(async () => {
     db = createDatabaseClient({ connectionString: config.DATABASE_URL });
-    invoiceRepo = new InvoiceRepository(db);
     eventRepo = new EventRepository(db);
-    eventService = new EventService(eventRepo, invoiceRepo);
+    eventService = new EventService(eventRepo);
+    invoiceRepo = new InvoiceRepository(db, eventService);
   });
 
   beforeEach(async () => {
@@ -48,6 +48,12 @@ describe('Audit Atomicity and Transaction Control', () => {
     }
     if (testTenantIds.length > 0) {
       await db.delete(tenants).where(inArray(tenants.id, testTenantIds));
+    }
+  });
+
+  afterAll(async () => {
+    if (db && db.$pool) {
+      await db.$pool.end();
     }
   });
 
@@ -138,6 +144,11 @@ describe('Audit Atomicity and Transaction Control', () => {
       recordFailure: vi.fn().mockResolvedValue({}),
     };
 
+    const mockPortalService: any = {
+      getOrCreatePortalLink: vi.fn().mockResolvedValue('mock-token'),
+      ensurePortalLinkExists: vi.fn().mockResolvedValue(undefined),
+    };
+
     const agentService = new AgentService(
       {} as any,
       mockAimlService,
@@ -148,20 +159,20 @@ describe('Audit Atomicity and Transaction Control', () => {
       mockIdempotencyService,
       mockPaymentService,
       mockCommService,
-      mockCommRepo
+      mockCommRepo,
+      mockPortalService
     );
 
     // Insert an invoice first
-    const invoiceNo = `INV-${crypto.randomUUID().substring(0, 8)}`;
-    const invoice = await invoiceRepo.create({
+    const [invoice] = await db.insert(invoices).values({
       tenantId,
-      invoiceNo,
+      invoiceNo: 'INV-ATOM-001',
       clientName: 'Background test',
       invoiceAmount: '100.00',
       dueDate: '2026-06-30',
       contactEmail: 'bg@example.com',
       paymentStatus: 'Pending',
-    });
+    }).returning();
     testInvoiceIds.push(invoice.id);
 
     // Call triggerSingleInvoice with a mock ActorContext (so it calls emitEvent which throws)
@@ -175,6 +186,8 @@ describe('Audit Atomicity and Transaction Control', () => {
         role: 'admin',
       })
     ).resolves.toBeDefined();
+
+    expect(mockPortalService.getOrCreatePortalLink).toHaveBeenCalledWith(tenantId, invoice.id);
 
     // Verify logger.error was called for the failed event log
     expect(loggerErrorSpy).toHaveBeenCalled();

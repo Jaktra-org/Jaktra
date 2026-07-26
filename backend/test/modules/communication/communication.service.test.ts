@@ -28,10 +28,15 @@ describe('CommunicationService', () => {
       sendCollectionEmail: vi.fn().mockResolvedValue({ success: true, providerMessageId: 'test-msg-id' }),
     } as any;
 
+    const mockPortalService = {
+      getOrCreatePortalLink: vi.fn().mockResolvedValue('test-token'),
+    } as any;
+
     communicationService = new CommunicationService(
       mockCommRepo as any,
       mockInvoiceRepo as any,
       mockTenantMailer as any,
+      mockPortalService as any,
       mockEventService as any,
       mockDlqRepo as any
     );

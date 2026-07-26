@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
 import { createDatabaseClient } from '../../../src/db/index.js';
 import { config } from '../../../src/config/env.js';
 import { inArray } from 'drizzle-orm';
@@ -20,6 +20,12 @@ describe('EventRepository - Filtering and Pagination', () => {
   beforeAll(async () => {
     db = createDatabaseClient({ connectionString: config.DATABASE_URL });
     eventRepo = new EventRepository(db);
+  });
+
+  afterAll(async () => {
+    if (db && db.$pool) {
+      await db.$pool.end();
+    }
   });
 
   beforeEach(async () => {

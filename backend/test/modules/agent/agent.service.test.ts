@@ -5,6 +5,7 @@ describe('AgentService - getRunDetails', () => {
   let agentService: AgentService;
   let mockAgentRepo: any;
   let mockEventService: any;
+  let mockPortalService: any;
 
   beforeEach(() => {
     mockAgentRepo = {
@@ -12,6 +13,11 @@ describe('AgentService - getRunDetails', () => {
     };
     mockEventService = {
       findByRunId: vi.fn(),
+    };
+
+    mockPortalService = {
+      getOrCreatePortalLink: vi.fn().mockResolvedValue('mock-token'),
+      ensurePortalLinkExists: vi.fn().mockResolvedValue(undefined)
     };
 
     agentService = new AgentService(
@@ -24,7 +30,8 @@ describe('AgentService - getRunDetails', () => {
       {} as any, // idempotencyService
       {} as any, // paymentService
       {} as any, // communicationService
-      {} as any  // communicationRepo
+      {} as any, // communicationRepo
+      mockPortalService as any
     );
   });
 
@@ -124,6 +131,7 @@ describe('AgentService - triggerRun', () => {
   let mockPaymentService: any;
   let mockCommunicationService: any;
   let mockCommunicationRepo: any;
+  let mockPortalService: any;
 
   beforeEach(() => {
     mockAgentRepo = {
@@ -150,6 +158,11 @@ describe('AgentService - triggerRun', () => {
       getSettings: vi.fn(),
     };
 
+    mockPortalService = {
+      getOrCreatePortalLink: vi.fn().mockResolvedValue('mock-token'),
+      ensurePortalLinkExists: vi.fn().mockResolvedValue(undefined)
+    };
+
     agentService = new AgentService(
       mockAgentRepo,
       mockAimlService,
@@ -160,7 +173,8 @@ describe('AgentService - triggerRun', () => {
       mockIdempotencyService,
       mockPaymentService,
       mockCommunicationService,
-      mockCommunicationRepo
+      mockCommunicationRepo,
+      mockPortalService
     );
   });
 

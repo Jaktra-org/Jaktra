@@ -5,8 +5,7 @@ import { ValidationError } from '../../../src/shared/errors/index.js';
 describe('Global Activity Log Validation', () => {
   it('should throw ValidationError if emitEvent is called with a garbage actionType', async () => {
     const dummyEventRepo = {} as any;
-    const dummyInvoiceRepo = {} as any;
-    const eventService = new EventService(dummyEventRepo, dummyInvoiceRepo);
+    const eventService = new EventService(dummyEventRepo);
 
     await expect(
       eventService.emitEvent(
@@ -27,8 +26,7 @@ describe('Global Activity Log Validation', () => {
         return data;
       }
     } as any;
-    const dummyInvoiceRepo = {} as any;
-    const eventService = new EventService(mockEventRepo, dummyInvoiceRepo);
+    const eventService = new EventService(mockEventRepo);
 
     const result = await eventService.emitEvent(
       'user',

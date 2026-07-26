@@ -13,6 +13,7 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
   let mockPaymentService: any;
   let mockCommunicationService: any;
   let mockCommunicationRepo: any;
+  let mockPortalService: any;
 
   beforeEach(() => {
     mockAgentRepo = {
@@ -51,6 +52,10 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
         dlqThreshold: 3,
       }),
     };
+    mockPortalService = {
+      getOrCreatePortalLink: vi.fn().mockResolvedValue('mock-token'),
+      ensurePortalLinkExists: vi.fn().mockResolvedValue(undefined),
+    };
 
     agentService = new AgentService(
       mockAgentRepo,
@@ -62,7 +67,8 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
       mockIdempotencyService,
       mockPaymentService,
       mockCommunicationService,
-      mockCommunicationRepo
+      mockCommunicationRepo,
+      mockPortalService
     );
   });
 
@@ -175,6 +181,7 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
 
     await agentService.triggerSingleInvoice('inv-1', 'tenant-1', undefined, { source: 'ui', name: 'User' } as any);
 
+    expect(mockPortalService.getOrCreatePortalLink).toHaveBeenCalledWith('tenant-1', 'inv-1');
     expect(mockDlqService.clearFailure).toHaveBeenCalledWith('inv-1', 'tenant-1');
   });
 
@@ -205,6 +212,7 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
     });
 
     const result: any = await agentService.triggerSingleInvoice('inv-1', 'tenant-1', undefined, { source: 'ui', name: 'User' } as any);
+    expect(mockPortalService.getOrCreatePortalLink).toHaveBeenCalledWith('tenant-1', 'inv-1');
     expect(result.emailSent).toBe(false);
 
     expect(mockDlqService.recordFailure).toHaveBeenCalledWith('inv-1', 'tenant-1', 'SMTP Error');

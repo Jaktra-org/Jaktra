@@ -11,10 +11,7 @@ describe('EventService - Actor Mapping & Validation', () => {
     mockEventRepo = {
       create: vi.fn().mockResolvedValue({ id: 'event-1' }),
     };
-    mockInvoiceRepo = {
-      findById: vi.fn(),
-    };
-    eventService = new EventService(mockEventRepo as any, mockInvoiceRepo as any);
+    eventService = new EventService(mockEventRepo as any);
   });
 
   it('should map ActorContext from UI to corresponding DB actor fields', async () => {

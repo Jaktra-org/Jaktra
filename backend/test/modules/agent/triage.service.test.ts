@@ -23,6 +23,8 @@ describe('TriageService - DLQ Block Exclusion', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
+      hasActivePaymentPlan: false,
+      paymentStatusChangedAt: null,
     },
     {
       id: 'invoice-2',
@@ -41,6 +43,8 @@ describe('TriageService - DLQ Block Exclusion', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
+      hasActivePaymentPlan: false,
+      paymentStatusChangedAt: null,
     },
   ];
 

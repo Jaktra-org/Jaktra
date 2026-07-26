@@ -61,10 +61,25 @@ describe('CommunicationService Outbound replyTo Injection', () => {
       sendCollectionEmail: vi.fn().mockResolvedValue({ success: true }),
     };
 
+    const mockPortalService = {
+      getOrCreatePortalLink: vi.fn().mockResolvedValue('test-token'),
+    } as any;
+
+    const mockEventService = {
+      emitEvent: vi.fn().mockResolvedValue({}),
+    } as any;
+
+    const mockDlqRepo = {
+      recordFailure: vi.fn(),
+    } as any;
+
     commService = new CommunicationService(
       mockCommRepo,
       mockInvoiceRepo,
-      mockTenantMailer
+      mockTenantMailer,
+      mockPortalService,
+      mockEventService,
+      mockDlqRepo
     );
   });
 
@@ -202,7 +217,8 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
       mockDbQueryChain,
       mockCommRepo,
       mockCommService,
-      mockEventService
+      mockEventService,
+      null
     );
   });
 
@@ -518,7 +534,8 @@ describe('DisputeService Approve & Discard Actions', () => {
       {} as any,
       {} as any,
       mockCommService,
-      mockEventService
+      mockEventService,
+      null
     );
   });
 
@@ -690,7 +707,7 @@ describe('Dispute listPending Pagination Tests', () => {
         pagination: { total: 0, page: 1, limit: 25, totalPages: 0 }
       })
     };
-    const service = new DisputeService(mockRepo as any, {} as any, {} as any, {} as any, {} as any, {} as any);
+    const service = new DisputeService(mockRepo as any, {} as any, {} as any, {} as any, {} as any, {} as any, null);
     const params = { page: 2, limit: 10 };
     await service.listPending('tenant-123', params);
 
