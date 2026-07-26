@@ -1,13 +1,14 @@
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { ACTION_TYPES, type ActionType } from './event.action-types.js';
 import type { EventRepository } from './event.repository.js';
-import type { InvoiceRepository } from '../invoice/invoice.repository.js';
+import { invoices } from '../../db/index.js';
 import type { Event, DatabaseOrTransaction } from '../../db/index.js';
 import { ValidationError } from '../../shared/errors/index.js';
 
 export type ActorContext =
   | { source: 'ui' | 'api'; userId: string; name: string; email: string; role: string }
-  | { source: 'agent' | 'webhook' | 'system'; name?: string; email?: string; role?: string };
+  | { source: 'agent' | 'webhook' | 'system' | 'email' | 'portal'; name?: string; email?: string; role?: string };
 
 export const EVENT_TYPES = [
   'created',
@@ -27,7 +28,6 @@ export type EventType = (typeof EVENT_TYPES)[number];
 export class EventService {
   constructor(
     private eventRepo: EventRepository,
-    private invoiceRepo: InvoiceRepository,
   ) {}
 
   async emitEvent(
@@ -172,7 +172,11 @@ export class EventService {
   }
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Event[]> {
-    const invoice = await this.invoiceRepo.findById(invoiceId);
+    const [invoice] = await (this.eventRepo as any).db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1);
     if (!invoice || invoice.tenantId !== tenantId) {
       throw new EventError('Invoice not found', 404);
     }

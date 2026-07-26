@@ -52,6 +52,11 @@ export const ACTION_TYPES = [
   'dispute.approved',
   'dispute.discarded',
 
+  'invoice.payment_plan_requested',
+  'invoice.payment_plan_approved',
+  'invoice.payment_plan_denied',
+  'invoice.payment_plan_cancelled',
+
   'legacy.event',
 ] as const;
 
@@ -88,4 +93,8 @@ export const ACTIVITY_LOG_VISIBLE_ACTIONS: ActionType[] = [
   'dispute.received',
   'dispute.approved',
   'dispute.discarded',
+  'invoice.payment_plan_requested',
+  'invoice.payment_plan_approved',
+  'invoice.payment_plan_denied',
+  'invoice.payment_plan_cancelled',
 ];
