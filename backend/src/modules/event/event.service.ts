@@ -172,7 +172,7 @@ export class EventService {
   }
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Event[]> {
-    const [invoice] = await (this.eventRepo as any).db
+    const [invoice] = await this.eventRepo.db
       .select()
       .from(invoices)
       .where(eq(invoices.id, invoiceId))

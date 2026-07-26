@@ -5,7 +5,7 @@ import type { Event, NewEvent } from '../../db/index.js';
 import { ACTIVITY_LOG_VISIBLE_ACTIONS, type ActionType } from './event.action-types.js';
 
 export class EventRepository {
-  constructor(private db: DatabaseClient) {}
+  constructor(public readonly db: DatabaseClient) {}
 
   async findByInvoiceId(invoiceId: string): Promise<Event[]> {
     return this.db
