@@ -173,7 +173,7 @@ export const portalViewIpLimiter = rateLimit({
 export const portalViewTokenLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 30,
-  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' ? req.params['token'] : '') || req.ip || '',
+  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' && req.params['token']) ? req.params['token'] : 'unknown',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests for this link, please try again later.' } },
@@ -196,7 +196,7 @@ export const portalPayIpLimiter = rateLimit({
 export const portalPayTokenLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 10,
-  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' ? req.params['token'] : '') || req.ip || '',
+  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' && req.params['token']) ? req.params['token'] : 'unknown',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many payment attempts for this link, please try again later.' } },
@@ -219,7 +219,7 @@ export const portalPlanIpLimiter = rateLimit({
 export const portalPlanTokenLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 3,
-  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' ? req.params['token'] : '') || req.ip || '',
+  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' && req.params['token']) ? req.params['token'] : 'unknown',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many payment plan requests for this link, please try again later.' } },
@@ -242,7 +242,7 @@ export const portalDisputeIpLimiter = rateLimit({
 export const portalDisputeTokenLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 3,
-  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' ? req.params['token'] : '') || req.ip || '',
+  keyGenerator: (req) => (typeof req.params?.['token'] === 'string' && req.params['token']) ? req.params['token'] : 'unknown',
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many dispute submissions for this link, please try again later.' } },
