@@ -43,8 +43,8 @@ export function DebtorPortal() {
       setPlanSuccess(true);
       queryClient.invalidateQueries({ queryKey: ['portal-invoice', token] });
     },
-    onError: (err: any) => {
-      const errMsg = err?.response?.data?.error?.message || "Something went wrong submitting your request, please try again.";
+    onError: (err: unknown) => {
+      const errMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || "Something went wrong submitting your request, please try again.";
       setPlanError(errMsg);
     }
   });
@@ -55,8 +55,8 @@ export function DebtorPortal() {
       setDisputeSuccess(true);
       setDisputeReason('');
     },
-    onError: (err: any) => {
-      const errMsg = err?.response?.data?.error?.message || "Something went wrong submitting your dispute, please try again.";
+    onError: (err: unknown) => {
+      const errMsg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || "Something went wrong submitting your dispute, please try again.";
       setDisputeError(errMsg);
     }
   });

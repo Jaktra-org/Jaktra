@@ -33,12 +33,12 @@ export const portalService = {
     return data;
   },
 
-  async submitPaymentPlan(token: string, payload: { installments: number; reason?: string }): Promise<any> {
+  async submitPaymentPlan(token: string, payload: { installments: number; reason?: string }): Promise<unknown> {
     const { data } = await axios.post(`${PUBLIC_BASE_URL}/public/portal/${token}/plan`, payload);
     return data;
   },
 
-  async submitDispute(token: string, payload: { body: string }): Promise<any> {
+  async submitDispute(token: string, payload: { body: string }): Promise<unknown> {
     const { data } = await axios.post(`${PUBLIC_BASE_URL}/public/portal/${token}/dispute`, payload);
     return data;
   }

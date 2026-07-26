@@ -32,8 +32,8 @@ export function PaymentPlans() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingPaymentPlans'] });
     },
-    onError: (err: any) => {
-      setError(err?.response?.data?.error?.message || 'Failed to approve payment plan request.');
+    onError: (err: unknown) => {
+      setError((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Failed to approve payment plan request.');
     },
   });
 
@@ -42,8 +42,8 @@ export function PaymentPlans() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingPaymentPlans'] });
     },
-    onError: (err: any) => {
-      setError(err?.response?.data?.error?.message || 'Failed to deny payment plan request.');
+    onError: (err: unknown) => {
+      setError((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Failed to deny payment plan request.');
     },
   });
 
