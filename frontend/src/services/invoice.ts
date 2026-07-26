@@ -75,4 +75,34 @@ export const invoiceService = {
     const response = await api.get(`/invoices/${id}/trashed`);
     return response.data;
   },
+
+  getPendingPaymentPlans: async (params: { page?: number; limit?: number } = {}) => {
+    const response = await api.get('/invoices/payment-plans/pending', { params });
+    return response.data;
+  },
+
+  approvePaymentPlan: async (id: string) => {
+    const response = await api.post(`/invoices/payment-plans/${id}/approve`);
+    return response.data;
+  },
+
+  denyPaymentPlan: async (id: string) => {
+    const response = await api.post(`/invoices/payment-plans/${id}/deny`);
+    return response.data;
+  },
+
+  cancelPaymentPlan: async (invoiceId: string) => {
+    const response = await api.post(`/invoices/${invoiceId}/cancel-payment-plan`);
+    return response.data;
+  },
+
+  getPortalLinkStatus: async (id: string): Promise<{ exists: boolean; createdAt?: string; viewedAt?: string | null; revokedAt?: string | null }> => {
+    const response = await api.get(`/invoices/${id}/portal-link`);
+    return response.data;
+  },
+
+  regeneratePortalLink: async (id: string): Promise<{ token: string; url: string }> => {
+    const response = await api.post(`/invoices/${id}/portal-link/regenerate`);
+    return response.data;
+  },
 };
