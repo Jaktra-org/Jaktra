@@ -50,7 +50,7 @@ export class PaymentPlanRepository {
   async listPending(
     tenantId: string,
     params: { page: number; limit: number }
-  ): Promise<{ data: any[]; total: number }> {
+  ): Promise<{ data: unknown[]; total: number }> {
     const conditions = and(
       eq(paymentPlanRequests.tenantId, tenantId),
       eq(paymentPlanRequests.status, 'pending')

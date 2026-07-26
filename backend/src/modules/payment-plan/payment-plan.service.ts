@@ -1,5 +1,5 @@
-import { and, eq } from 'drizzle-orm';
-import { invoices, paymentPlanRequests } from '../../db/index.js';
+import { eq } from 'drizzle-orm';
+import { invoices } from '../../db/index.js';
 import type { DatabaseClient, PaymentPlanRequest } from '../../db/index.js';
 import type { PaymentPlanRepository } from './payment-plan.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
@@ -82,7 +82,7 @@ export class PaymentPlanService {
   async listPending(
     tenantId: string,
     params: { page: number; limit: number }
-  ): Promise<{ data: any[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
+  ): Promise<{ data: unknown[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
     const { data, total } = await this.repo.listPending(tenantId, params);
     const totalPages = Math.ceil(total / params.limit);
     return {
