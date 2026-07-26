@@ -13,7 +13,9 @@ import { Analytics } from "./pages/Analytics";
 import { Settings } from "./pages/Settings";
 import { ActivityLog } from "./pages/ActivityLog";
 import { Disputes } from "./pages/Disputes";
+import { PaymentPlans } from "./pages/PaymentPlans";
 import { AcceptInvitation } from "./pages/AcceptInvitation";
+import { DebtorPortal } from "./pages/DebtorPortal";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
@@ -24,6 +26,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/invite" element={<AcceptInvitation />} />
+      <Route path="/i/:token" element={<DebtorPortal />} />
 
 
       {/* Protected Routes */}
@@ -39,6 +42,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
             <Route path="/dlq" element={<DLQ />} />
             <Route path="/disputes" element={<Disputes />} />
+            <Route path="/payment-plans" element={<PaymentPlans />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/activity-log" element={<ActivityLog />} />
           </Route>
