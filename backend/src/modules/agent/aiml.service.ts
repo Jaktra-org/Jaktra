@@ -132,6 +132,85 @@ export class AimlService {
     };
   }
 
+  async triggerBatchFollowup(request: {
+    invoices: FollowupRequest[];
+    concurrency?: number;
+  }): Promise<{
+    results: Array<{
+      invoiceId: string;
+      status: 'success' | 'error';
+      content?: {
+        subject?: string;
+        plain_body?: string;
+        html_body?: string;
+      };
+      error?: string;
+      retryable?: boolean;
+    }>;
+    summary: {
+      total: number;
+      succeeded: number;
+      failed: number;
+      totalMs: number;
+    };
+  }> {
+    const payload = {
+      invoices: request.invoices.map((invoice) => ({
+        invoice_id: invoice.invoiceId,
+        invoice_no: invoice.invoiceNo,
+        client_name: invoice.clientName,
+        contact_email: invoice.contactEmail,
+        invoice_amount: invoice.invoiceAmount,
+        currency: invoice.currency ?? 'INR',
+        due_date: invoice.dueDate,
+        days_overdue: invoice.daysOverdue,
+        urgency_tier: invoice.urgencyTier,
+        followup_count: invoice.followupCount,
+        channel: invoice.channel,
+        payment_link: invoice.paymentLink,
+        invoice_subject: invoice.invoiceSubject ?? null,
+      })),
+      concurrency: request.concurrency ?? 5,
+    };
+
+    const raw = await this.request<{
+      results: Array<{
+        invoice_id: string;
+        status: string;
+        content?: {
+          subject?: string;
+          plain_body?: string;
+          html_body?: string;
+        };
+        error?: string;
+        retryable?: boolean;
+      }>;
+      summary: {
+        total: number;
+        succeeded: number;
+        failed: number;
+        total_ms: number;
+      };
+    }>('POST', '/followup/batch', payload);
+
+    return {
+      results: raw.results.map((res) => ({
+        invoiceId: res.invoice_id,
+        status: res.status as 'success' | 'error',
+        content: res.content,
+        error: res.error,
+        retryable: res.retryable,
+      })),
+      summary: {
+        total: raw.summary.total,
+        succeeded: raw.summary.succeeded,
+        failed: raw.summary.failed,
+        totalMs: raw.summary.total_ms,
+      },
+    };
+  }
+
+
   async analyzeDispute(request: {
     inboundText: string;
     invoiceId: string;
