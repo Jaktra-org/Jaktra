@@ -1,4 +1,5 @@
 import { AgentRepository } from './agent.repository.js';
+import { AgentChunkRepository } from './agent-chunk.repository.js';
 import { AimlService } from './aiml.service.js';
 import { InvoiceRepository } from '../invoice/invoice.repository.js';
 import { TriageService, type TriagedInvoice, type UrgencyTier } from './triage.service.js';
@@ -13,12 +14,14 @@ import { NotFoundError, CommunicationError } from '../../shared/errors/index.js'
 import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 import { PortalService } from '../portal/portal.service.js';
 import { config } from '../../config/index.js';
+import { type AgentRunChunk } from '../../db/index.js';
 
 export class AgentService {
   private activeRuns = new Set<string>();
 
   constructor(
     private agentRepo: AgentRepository,
+    private agentChunkRepo: AgentChunkRepository,
     private aimlService: AimlService,
     private invoiceRepo: InvoiceRepository,
     private triageService: TriageService,
@@ -75,6 +78,8 @@ export class AgentService {
       invoicesProcessed: 0,
       emailsSent: 0,
       errors: 0,
+      totalInvoices: triaged.invoices.length,
+      chunkSize: 10, // Chunk size fixed to 10
     });
 
     if (triaged.invoices.length === 0) {
@@ -110,9 +115,38 @@ export class AgentService {
     let processed = 0;
     let emailsSent = 0;
     let errorsCount = 0;
+    const CHUNK_SIZE = 10;
+    const invoiceGroups: TriagedInvoice[][] = [];
+    for (let i = 0; i < invoices.length; i += CHUNK_SIZE) {
+      invoiceGroups.push(invoices.slice(i, i + CHUNK_SIZE));
+    }
 
-    for (const inv of invoices) {
-      try {
+    const chunkInserts = invoiceGroups.map((group, idx) => ({
+      runId,
+      tenantId,
+      chunkIndex: idx,
+      totalChunks: invoiceGroups.length,
+      invoiceIds: group.map((inv) => inv.id),
+      status: 'queued' as const,
+    }));
+
+    const createdChunks = await this.agentChunkRepo.createChunks(chunkInserts);
+
+    for (let idx = 0; idx < invoiceGroups.length; idx++) {
+      const chunk = createdChunks[idx];
+      const group = invoiceGroups[idx];
+
+      await this.agentChunkRepo.updateChunk(chunk.id, tenantId, {
+        status: 'running',
+        startTime: new Date(),
+      });
+
+      const followupRequests = [];
+      const invoiceMap = new Map<string, TriagedInvoice>();
+
+      for (const inv of group) {
+        invoiceMap.set(inv.id, inv);
+
         const idempotencyCheck = await this.idempotencyService.checkInvoice(tenantId, inv.id);
         if (idempotencyCheck.skipped) {
           await this.eventService.emitEvent(
@@ -183,7 +217,7 @@ export class AgentService {
             }
           }
 
-          const resp = await this.aimlService.triggerFollowup({
+          followupRequests.push({
             invoiceId: inv.id,
             invoiceNo: inv.invoiceNo,
             clientName: inv.clientName,
@@ -198,20 +232,135 @@ export class AgentService {
             paymentLink,
             invoiceSubject: ('subject' in inv ? (inv as unknown as Record<string, unknown>).subject as string : undefined) ?? undefined,
           });
+        }
+      }
 
-          // Generation failed — record in DLQ and move on
-          if (resp.error || !resp.emailGenerated) {
-            errorsCount++;
-            await this.communicationRepo.create({
-              tenantId,
-              invoiceId: inv.id,
-              channel: channel as 'email' | 'sms' | 'whatsapp',
-              subject: resp.subject ?? null,
-              body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
-              status: 'failed',
-              sentAt: null,
-              error: resp.error ?? 'Generation produced no content',
-            });
+      let chunkProcessed = 0;
+      let chunkEmailsSent = 0;
+      let chunkErrors = 0;
+
+      if (followupRequests.length > 0) {
+        try {
+          const batchResult = await this.aimlService.triggerBatchFollowup({
+            invoices: followupRequests,
+            concurrency: 5,
+          });
+
+          for (const res of batchResult.results) {
+            const inv = invoiceMap.get(res.invoiceId)!;
+            const channel = 'email'; // Simple default channel mapping since our requests map to this
+            const toneSource = toneOverride ? 'manual' : 'auto';
+            const effectiveTier = toneOverride ?? inv.computedTier;
+
+            if (res.status === 'error' || !res.content?.plain_body) {
+              chunkErrors++;
+              errorsCount++;
+              await this.communicationRepo.create({
+                tenantId,
+                invoiceId: inv.id,
+                channel: channel as 'email' | 'sms' | 'whatsapp',
+                subject: res.content?.subject ?? null,
+                body: res.content?.html_body ?? res.content?.plain_body ?? null,
+                status: 'failed',
+                sentAt: null,
+                error: res.error ?? 'Generation produced no content',
+              });
+              await this.eventService.emitEvent(
+                'invoice',
+                inv.id,
+                tenantId,
+                'followup.halted',
+                { source: 'agent' },
+                {
+                  description: `Follow-up email generation failed`,
+                  payload: { subject: res.content?.subject, error: res.error, channel, toneSource, tone: effectiveTier, runId }
+                }
+              ).catch(err => logger.error('Failed to log followup.halted event', err));
+              await this.dlqService.recordFailure(inv.id, tenantId, res.error ?? 'Generation produced no content').catch(() => { });
+              continue;
+            }
+
+            let sendError: string | undefined;
+            try {
+              await this.communicationService.send({
+                tenantId,
+                to: inv.contactEmail,
+                subject: res.content.subject!,
+                html: res.content.html_body ?? res.content.plain_body ?? '',
+                channel: channel as 'email',
+                invoiceId: inv.id,
+              });
+            } catch (sendErr: unknown) {
+              sendError = sendErr instanceof Error ? sendErr.message : String(sendErr);
+              logger.warn(`Email send failed for invoice ${inv.id}: ${sendError}`);
+            }
+
+            const now = new Date();
+            if (!sendError) {
+              await this.communicationRepo.create({
+                tenantId,
+                invoiceId: inv.id,
+                channel: channel as 'email' | 'sms' | 'whatsapp',
+                subject: res.content.subject ?? null,
+                body: res.content.html_body ?? res.content.plain_body ?? null,
+                status: 'sent',
+                sentAt: now,
+                error: null,
+              });
+              await this.invoiceRepo.update(inv.id, tenantId, {
+                followupCount: inv.followupCount + 1,
+                lastFollowupDate: now,
+              });
+              chunkEmailsSent++;
+              emailsSent++;
+              await this.eventService.emitEvent(
+                'invoice',
+                inv.id,
+                tenantId,
+                'followup.sent',
+                { source: 'agent' },
+                {
+                  description: `Follow-up email sent via ${channel}`,
+                  payload: { subject: res.content.subject, channel, toneSource, tone: effectiveTier, runId }
+                }
+              ).catch(err => logger.error('Failed to log followup.sent event', err));
+              await this.dlqService.clearFailure(inv.id, tenantId).catch(() => { });
+            } else {
+              chunkErrors++;
+              errorsCount++;
+              await this.communicationRepo.create({
+                tenantId,
+                invoiceId: inv.id,
+                channel: channel as 'email' | 'sms' | 'whatsapp',
+                subject: res.content.subject ?? null,
+                body: res.content.html_body ?? res.content.plain_body ?? null,
+                status: 'failed',
+                sentAt: null,
+                error: sendError,
+              });
+              await this.eventService.emitEvent(
+                'invoice',
+                inv.id,
+                tenantId,
+                'followup.halted',
+                { source: 'agent' },
+                {
+                  description: `Follow-up email send failed`,
+                  payload: { subject: res.content.subject, error: sendError, channel, toneSource, tone: effectiveTier, runId }
+                }
+              ).catch(err => logger.error('Failed to log followup.halted event', err));
+              await this.dlqService.recordFailure(inv.id, tenantId, sendError).catch(() => { });
+            }
+          }
+        } catch (err: unknown) {
+          chunkErrors += group.length;
+          errorsCount += group.length;
+          const errMsg = err instanceof Error ? err.message : String(err);
+          const errStack = err instanceof Error ? err.stack : undefined;
+          const displayErr = mapErrorToDisplayMessage(err);
+          logger.error(`Failed to process batch for chunk ${idx}: ${errMsg}`);
+          
+          for (const inv of group) {
             await this.eventService.emitEvent(
               'invoice',
               inv.id,
@@ -219,116 +368,31 @@ export class AgentService {
               'followup.halted',
               { source: 'agent' },
               {
-                description: `Follow-up email generation failed`,
-                payload: { subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error, channel, toneSource, tone: effectiveTier, runId }
+                description: `Follow-up failed with error`,
+                payload: { error: displayErr, runId }
               }
-            ).catch(err => logger.error('Failed to log followup.halted event', err));
-            await this.dlqService.recordFailure(inv.id, tenantId, resp.error ?? 'Generation produced no content').catch(() => { });
-            continue;
-          }
-
-          // Generation succeeded — now actually send the email
-          let sendError: string | undefined;
-          try {
-            await this.communicationService.send({
-              tenantId,
-              to: inv.contactEmail,
-              subject: resp.subject!,
-              html: resp.htmlBody ?? resp.bodyPreview ?? '',
-              channel: channel as 'email',
-              invoiceId: inv.id,
-            });
-          } catch (sendErr: unknown) {
-            sendError = sendErr instanceof Error ? sendErr.message : String(sendErr);
-            logger.warn(`Email send failed for invoice ${inv.id}: ${sendError}`);
-          }
-
-          const now = new Date();
-          if (!sendError) {
-            // Record successful communication
-            await this.communicationRepo.create({
-              tenantId,
-              invoiceId: inv.id,
-              channel: channel as 'email' | 'sms' | 'whatsapp',
-              subject: resp.subject ?? null,
-              body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
-              status: 'sent',
-              sentAt: now,
-              error: null,
-            });
-            // Update invoice followup tracking
-            await this.invoiceRepo.update(inv.id, tenantId, {
-              followupCount: inv.followupCount + 1,
-              lastFollowupDate: now,
-            });
-            emailsSent++;
-            await this.eventService.emitEvent(
-              'invoice',
-              inv.id,
-              tenantId,
-              'followup.sent',
-              { source: 'agent' },
-              {
-                description: `Follow-up email sent via ${channel}`,
-                payload: { subject: resp.subject, bodyPreview: resp.bodyPreview, channel, toneSource, tone: effectiveTier, runId }
-              }
-            ).catch(err => logger.error('Failed to log followup.sent event', err));
-            await this.dlqService.clearFailure(inv.id, tenantId).catch(() => { });
-          } else {
-            // Record failed delivery
-            errorsCount++;
-            await this.communicationRepo.create({
-              tenantId,
-              invoiceId: inv.id,
-              channel: channel as 'email' | 'sms' | 'whatsapp',
-              subject: resp.subject ?? null,
-              body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
-              status: 'failed',
-              sentAt: null,
-              error: sendError,
-            });
-            await this.eventService.emitEvent(
-              'invoice',
-              inv.id,
-              tenantId,
-              'followup.halted',
-              { source: 'agent' },
-              {
-                description: `Follow-up email send failed`,
-                payload: { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, toneSource, tone: effectiveTier, runId }
-              }
-            ).catch(err => logger.error('Failed to log followup.halted event', err));
-            await this.dlqService.recordFailure(inv.id, tenantId, sendError).catch(() => { });
+            ).catch(eventErr => logger.error('Failed to log followup.halted event', eventErr));
+            await this.dlqService.recordFailure(inv.id, tenantId, errMsg, errStack).catch(() => { });
           }
         }
-
-        processed++;
-      } catch (err: unknown) {
-        errorsCount++;
-        const errMsg = err instanceof Error ? err.message : String(err);
-        const errStack = err instanceof Error ? err.stack : undefined;
-        const displayErr = mapErrorToDisplayMessage(err);
-        await this.eventService.emitEvent(
-          'invoice',
-          inv.id,
-          tenantId,
-          'followup.halted',
-          { source: 'agent' },
-          {
-            description: `Follow-up failed with error`,
-            payload: { error: displayErr, runId }
-          }
-        ).catch(err => logger.error('Failed to log followup.halted event', err));
-        await this.dlqService.recordFailure(inv.id, tenantId, errMsg, errStack).catch(() => { });
       }
 
-      if (processed % 10 === 0 || processed === invoices.length) {
-        await this.agentRepo.updateRun(runId, tenantId, {
-          invoicesProcessed: processed,
-          emailsSent,
-          errors: errorsCount,
-        });
-      }
+      chunkProcessed = group.length;
+      processed += group.length;
+
+      await this.agentChunkRepo.updateChunk(chunk.id, tenantId, {
+        status: chunkErrors === group.length ? 'failed' : 'completed',
+        invoicesProcessed: chunkProcessed,
+        emailsSent: chunkEmailsSent,
+        errors: chunkErrors,
+        endTime: new Date(),
+      });
+
+      await this.agentRepo.updateRun(runId, tenantId, {
+        invoicesProcessed: processed,
+        emailsSent,
+        errors: errorsCount,
+      });
     }
 
     await this.agentRepo.updateRun(runId, tenantId, {
@@ -586,6 +650,10 @@ export class AgentService {
 
   async getRuns(tenantId: string): Promise<Awaited<ReturnType<AgentRepository['getRuns']>>> {
     return this.agentRepo.getRuns(tenantId);
+  }
+
+  async getChunks(runId: string, tenantId: string): Promise<AgentRunChunk[]> {
+    return this.agentChunkRepo.getChunksByRunId(runId, tenantId);
   }
 
   async getRunDetails(runId: string, tenantId: string): Promise<null | (Awaited<ReturnType<AgentRepository['getRunById']>> & { events: Awaited<ReturnType<EventService['findByRunId']>> })> {
