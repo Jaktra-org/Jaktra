@@ -151,6 +151,7 @@ describe('Audit Atomicity and Transaction Control', () => {
 
     const agentService = new AgentService(
       {} as any,
+      {} as any, // agentChunkRepo
       mockAimlService,
       invoiceRepo,
       { computeDaysOverdue: () => 5, assignTier: () => 'stage_1_warm' } as any,

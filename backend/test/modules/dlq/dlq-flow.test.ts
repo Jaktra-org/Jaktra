@@ -42,7 +42,9 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
       clearFailure: vi.fn().mockResolvedValue(undefined),
       recordFailure: vi.fn().mockResolvedValue(undefined),
     };
-    mockIdempotencyService = {};
+    mockIdempotencyService = {
+      checkInvoice: vi.fn().mockResolvedValue({ skipped: false }),
+    };
     mockPaymentService = {};
     mockCommunicationService = {};
     mockCommunicationRepo = {
@@ -51,14 +53,22 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
         senderEmail: 'billing@example.com',
         dlqThreshold: 3,
       }),
+      create: vi.fn().mockResolvedValue({}),
     };
     mockPortalService = {
       getOrCreatePortalLink: vi.fn().mockResolvedValue('mock-token'),
       ensurePortalLinkExists: vi.fn().mockResolvedValue(undefined),
     };
 
+    const mockAgentChunkRepo = {
+      createChunks: vi.fn().mockImplementation((chunks) => chunks.map((c: any, i: number) => ({ ...c, id: `chunk-${i}` }))),
+      updateChunk: vi.fn().mockResolvedValue({}),
+      getChunksByRunId: vi.fn().mockResolvedValue([]),
+    };
+
     agentService = new AgentService(
       mockAgentRepo,
+      mockAgentChunkRepo as any,
       mockAimlService,
       mockInvoiceRepo,
       mockTriageService,

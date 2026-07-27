@@ -22,6 +22,7 @@ describe('AgentService - getRunDetails', () => {
 
     agentService = new AgentService(
       mockAgentRepo as any,
+      {} as any, // agentChunkRepo
       {} as any, // aimlService
       {} as any, // invoiceRepo
       {} as any, // triageService
@@ -135,8 +136,13 @@ describe('AgentService - triggerRun', () => {
 
   beforeEach(() => {
     mockAgentRepo = {
-      createRun: vi.fn().mockResolvedValue({ id: 'run-123' }),
+      createRun: vi.fn().mockResolvedValue({ id: 'run-123', status: 'running' }),
       updateRun: vi.fn().mockResolvedValue({ id: 'run-123', status: 'completed' }),
+    };
+    const mockAgentChunkRepo = {
+      createChunks: vi.fn().mockImplementation((chunks) => chunks.map((c: any, i: number) => ({ ...c, id: `chunk-${i}` }))),
+      updateChunk: vi.fn().mockResolvedValue({}),
+      getChunksByRunId: vi.fn().mockResolvedValue([]),
     };
     mockAimlService = {};
     mockInvoiceRepo = {
@@ -151,7 +157,9 @@ describe('AgentService - triggerRun', () => {
     mockDlqService = {
       getDlqEntries: vi.fn().mockResolvedValue([]),
     };
-    mockIdempotencyService = {};
+    mockIdempotencyService = {
+      checkInvoice: vi.fn().mockResolvedValue({ skipped: false }),
+    };
     mockPaymentService = {};
     mockCommunicationService = {};
     mockCommunicationRepo = {
@@ -165,6 +173,7 @@ describe('AgentService - triggerRun', () => {
 
     agentService = new AgentService(
       mockAgentRepo,
+      mockAgentChunkRepo as any,
       mockAimlService,
       mockInvoiceRepo,
       mockTriageService,
