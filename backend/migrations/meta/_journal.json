@@ -120,6 +120,13 @@
       "when": 1783830000000,
       "tag": "0016_add_payment_plan_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784459793413,
+      "tag": "0017_talented_forge",
+      "breakpoints": true
     }
   ]
 }

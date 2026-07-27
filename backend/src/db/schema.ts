@@ -241,6 +241,8 @@ export const agentRuns = pgTable(
     emailsSent: integer('emails_sent').notNull().default(0),
     errors: integer('errors').notNull().default(0),
     errorDetails: text('error_details'),
+    chunkSize: integer('chunk_size').notNull().default(10),
+    totalInvoices: integer('total_invoices').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -252,6 +254,37 @@ export const agentRuns = pgTable(
     ),
   ]
 );
+
+export const agentRunChunks = pgTable(
+  'agent_run_chunks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => agentRuns.id, { onDelete: 'cascade' }),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    chunkIndex: integer('chunk_index').notNull(),
+    totalChunks: integer('total_chunks').notNull(),
+    invoiceIds: jsonb('invoice_ids').notNull(), // JSON array of invoice IDs
+    status: text('status').notNull().default('queued'), // queued, running, completed, failed
+    invoicesProcessed: integer('invoices_processed').notNull().default(0),
+    emailsSent: integer('emails_sent').notNull().default(0),
+    errors: integer('errors').notNull().default(0),
+    errorDetails: text('error_details'),
+    startTime: timestamp('start_time', { withTimezone: true }),
+    endTime: timestamp('end_time', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('agent_run_chunks_run_id_idx').on(table.runId),
+    index('agent_run_chunks_tenant_status_idx').on(table.tenantId, table.status),
+  ]
+);
+
 
 export const dlqEntries = pgTable('dlq_entries', {
   invoiceId: uuid('invoice_id')
@@ -419,12 +452,23 @@ export const eventsRelations = relations(events, ({ one }) => ({
   }),
 }));
 
-export const agentRunsRelations = relations(agentRuns, ({ one }) => ({
+export const agentRunsRelations = relations(agentRuns, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [agentRuns.tenantId],
     references: [tenants.id],
   }),
+  chunks: many(agentRunChunks),
 }));
+
+export const agentRunChunksRelations = relations(agentRunChunks, ({ one }) => ({
+  run: one(agentRuns, {
+    fields: [agentRunChunks.runId],
+    references: [agentRuns.id],
+  }),
+}));
+
+export type AgentRunChunk = typeof agentRunChunks.$inferSelect;
+export type NewAgentRunChunk = typeof agentRunChunks.$inferInsert;
 
 export const dlqEntriesRelations = relations(dlqEntries, ({ one }) => ({
   invoice: one(invoices, {
@@ -457,6 +501,7 @@ export type NewEvent = typeof events.$inferInsert;
 
 export type AgentRun = typeof agentRuns.$inferSelect;
 export type NewAgentRun = typeof agentRuns.$inferInsert;
+
 
 export type DlqEntry = typeof dlqEntries.$inferSelect;
 export type NewDlqEntry = typeof dlqEntries.$inferInsert;
