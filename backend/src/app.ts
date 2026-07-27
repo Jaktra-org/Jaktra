@@ -54,6 +54,7 @@ import { InvoiceRepository } from './modules/invoice/invoice.repository.js';
 import { CommunicationRepository } from './modules/communication/communication.repository.js';
 import { EventRepository } from './modules/event/event.repository.js';
 import { AgentRepository } from './modules/agent/agent.repository.js';
+import { AgentChunkRepository } from './modules/agent/agent-chunk.repository.js';
 import { DlqRepository } from './modules/dlq/dlq.repository.js';
 import { AnalyticsRepository } from './modules/analytics/analytics.repository.js';
 import { SettingsRepository } from './modules/settings/settings.repository.js';
@@ -293,8 +294,9 @@ export function createApp(config: AppConfig): Application {
         app.use('/api/dlq', createDlqRouter(new DlqController(dlqService, eventService), authMiddleware, tenantScoped));
 
         const idempotencyService = new IdempotencyService(communicationRepo);
+        const agentChunkRepo = new AgentChunkRepository(config.db);
 
-        const agentService = new AgentService(agentRepo, aimlService, invoiceRepo, triageService, eventService, dlqService, idempotencyService, paymentService, communicationService, communicationRepo, portalService);
+        const agentService = new AgentService(agentRepo, agentChunkRepo, aimlService, invoiceRepo, triageService, eventService, dlqService, idempotencyService, paymentService, communicationService, communicationRepo, portalService);
         app.locals.agentService = agentService;
         app.use('/api/agent', createAgentRouter(new AgentController(agentService, eventService), authMiddleware, tenantScoped));
       }

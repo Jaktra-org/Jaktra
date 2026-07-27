@@ -98,6 +98,19 @@ export class AgentController {
     }
   };
 
+  getRunChunks = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const tenantId = authReq.user.tenantId;
+      const runId = req.params.id as string;
+
+      const chunks = await this.agentService.getChunks(runId, tenantId);
+      res.status(200).json({ runId, totalChunks: chunks.length, chunks });
+    } catch (err: unknown) {
+      next(err);
+    }
+  };
+
   runInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const authReq = req as AuthenticatedRequest;

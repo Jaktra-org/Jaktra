@@ -21,6 +21,9 @@ export function createAgentRouter(
   // GET /api/agent/runs/:id
   router.get('/runs/:id', validateParam('id'), agentController.getRunDetails);
 
+  // GET /api/agent/runs/:id/chunks
+  router.get('/runs/:id/chunks', validateParam('id'), agentController.getRunChunks);
+
   // POST /api/agent/run/invoice/:id
   router.post('/run/invoice/:id', validateParam('id'), requireRole('admin', 'manager'), agentController.runInvoice);
 
