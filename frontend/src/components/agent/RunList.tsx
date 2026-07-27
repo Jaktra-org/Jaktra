@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { agentService } from '../../services/agent';
-import type { AgentRun } from '../../types/api';
+import type { AgentRun, AgentRunChunk, AgentRunChunksResponse } from '../../types/api';
 import { ChevronDown, ChevronUp, Clock, CheckCircle2, AlertTriangle, Send, FileText, Loader2, Info } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { Link } from 'react-router-dom';
@@ -139,7 +139,8 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
 
   return (
     <div>
-      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Invoice Processing Breakdown</h4>
+      <ChunkBreakdown runId={run.id} />
+      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 mt-6">Invoice Processing Breakdown</h4>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {data.events.map((event, idx) => (
           <div key={idx} className="flex items-start p-3 border border-slate-200 rounded-md bg-slate-50">
@@ -180,3 +181,48 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
     </div>
   );
 }
+
+function ChunkBreakdown({ runId }: { runId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['agent-run-chunks', runId],
+    queryFn: () => agentService.getRunChunks(runId),
+    refetchInterval: (query) => {
+      // Poll chunks list if any chunk is running or queued
+      const data = query.state.data as AgentRunChunksResponse | undefined;
+      const chunks = data?.chunks || [];
+      const hasActive = chunks.some((c: AgentRunChunk) => c.status === 'running' || c.status === 'queued');
+      return hasActive ? 3000 : false;
+    },
+  });
+
+  if (isLoading) return <div className="text-xs text-slate-400">Loading chunk execution details...</div>;
+  if (!data?.chunks || data.chunks.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Chunk Processing Details</h4>
+      <div className="space-y-1.5 max-h-40 overflow-y-auto pr-2">
+        {data.chunks.map((chunk: AgentRunChunk) => (
+          <div key={chunk.id} className="flex items-center justify-between text-xs border border-slate-100 bg-slate-50/50 p-2 rounded">
+            <div className="flex items-center gap-2">
+              <Badge variant={
+                chunk.status === 'completed' ? 'success' :
+                chunk.status === 'running' ? 'warning' :
+                chunk.status === 'failed' ? 'danger' : 'default'
+              }>
+                {chunk.status}
+              </Badge>
+              <span className="font-medium text-slate-700">Chunk #{chunk.chunkIndex + 1} of {chunk.totalChunks}</span>
+            </div>
+            <div className="text-slate-500 flex items-center gap-3">
+              <span>Processed: {chunk.invoicesProcessed}</span>
+              <span>Sent: {chunk.emailsSent}</span>
+              {chunk.errors > 0 && <span className="text-red-500 font-semibold">Errors: {chunk.errors}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
