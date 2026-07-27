@@ -180,6 +180,29 @@ export interface AgentRunsResponse {
   total: number;
 }
 
+export interface AgentRunChunk {
+  id: string;
+  runId: string;
+  tenantId: string;
+  chunkIndex: number;
+  totalChunks: number;
+  invoiceIds: string[];
+  status: 'queued' | 'running' | 'completed' | 'failed';
+  invoicesProcessed: number;
+  emailsSent: number;
+  errors: number;
+  errorDetails: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  createdAt: string;
+}
+
+export interface AgentRunChunksResponse {
+  runId: string;
+  totalChunks: number;
+  chunks: AgentRunChunk[];
+}
+
 export interface DlqEntry {
   invoiceId: string;
   consecutiveFailures: number;

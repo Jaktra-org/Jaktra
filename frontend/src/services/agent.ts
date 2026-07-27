@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { AgentRunsResponse, AgentRunDetail, AgentRun } from '../types/api';
+import type { AgentRunsResponse, AgentRunDetail, AgentRun, AgentRunChunksResponse } from '../types/api';
 
 export const agentService = {
   getRuns: async (): Promise<AgentRunsResponse> => {
@@ -9,6 +9,11 @@ export const agentService = {
 
   getRunDetails: async (runId: string): Promise<AgentRunDetail> => {
     const response = await api.get(`/agent/runs/${runId}`);
+    return response.data;
+  },
+
+  getRunChunks: async (runId: string): Promise<AgentRunChunksResponse> => {
+    const response = await api.get(`/agent/runs/${runId}/chunks`);
     return response.data;
   },
 
