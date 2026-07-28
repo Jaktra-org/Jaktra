@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/jaktra
+      - JWT_SECRET=supersecretjwtsecretkeysupersecretjwtsecretkey
+      - CORS_ORIGINS=http://localhost:5173,http://localhost
+      - AI_ML_SERVICE_URL=http://ai-service:8000
+      - AI_ML_SERVICE_KEY=dev_key
+      - ENCRYPTION_KEY=Z3VpZGVsaW5lc3NhZmV0eWtleWJ5dGVzMTIzNDU2Nzg=
+    depends_on:
+      - postgres
+      - ai-service
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - SERVICE_KEY=dev_key
+      - LLM_API_KEY=mock_key
+      - LLM_PROVIDER=openai
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3001/api
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=jaktra
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
