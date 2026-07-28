@@ -1,0 +1,11 @@
+node_modules
+dist
+test
+tests
+.env
+.env.local
+.git
+.gitignore
+*.md
+eslint.config.js
+tsconfig.tsbuildinfo
