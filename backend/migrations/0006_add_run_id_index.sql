@@ -1,1 +1,0 @@
-CREATE INDEX IF NOT EXISTS events_payload_run_id_idx ON events ((payload->>'runId'));
