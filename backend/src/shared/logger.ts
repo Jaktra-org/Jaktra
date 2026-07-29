@@ -5,12 +5,10 @@ export const loggerStorage = new AsyncLocalStorage<{ requestId?: string }>();
 
 const pinoLogger = pino({
   level: process.env['LOG_LEVEL'] || 'info',
-  transport: process.env['NODE_ENV'] === 'development'
-    ? { target: 'pino-pretty' }
-    : undefined,
+  transport: undefined,
   base: {
     service: 'jaktra-backend',
-    environment: process.env['NODE_ENV'],
+    environment: 'production',
   },
   serializers: {
     err: pino.stdSerializers.err,
