@@ -99,3 +99,22 @@ implementation_plan/
 
 tests/e2e/playwright-report/
 tests/e2e/test-results/
+
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+*.tfplan
+*.plan
+*.log
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+secrets.json
+secrets.json.example
+
