@@ -12,15 +12,23 @@ export class PortalRepository {
     invoiceId: string;
     tokenHash: string;
   }): Promise<InvoicePortalLink> {
-    const [result] = await this.db
+    const id = crypto.randomUUID();
+    await this.db
       .insert(invoicePortalLinks)
       .values({
+        id,
         tenantId: data.tenantId,
         invoiceId: data.invoiceId,
         tokenHash: data.tokenHash,
-      })
-      .returning();
-    return result;
+      });
+    
+    const [result] = await this.db
+      .select()
+      .from(invoicePortalLinks)
+      .where(eq(invoicePortalLinks.id, id))
+      .limit(1);
+    
+    return result!;
   }
 
   async findLinkByTokenHash(tokenHash: string): Promise<{
@@ -76,6 +84,7 @@ export class PortalRepository {
 
     return { token: rawToken, link: newLink };
   }
+  
   async findLatestLinkByInvoiceId(invoiceId: string): Promise<InvoicePortalLink | undefined> {
     const [result] = await this.db
       .select()
