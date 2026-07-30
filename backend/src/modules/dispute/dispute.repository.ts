@@ -2,6 +2,7 @@ import { eq, and, asc, count } from 'drizzle-orm';
 import { inboundEmails, invoices } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { InboundEmail, NewInboundEmail } from '../../db/index.js';
+import crypto from 'crypto';
 
 export interface PendingDisputeItem {
   id: string;
@@ -91,10 +92,10 @@ export class DisputeRepository {
   }
 
   async create(data: NewInboundEmail): Promise<InboundEmail> {
-    const [row] = await this.db
-      .insert(inboundEmails)
-      .values(data)
-      .returning();
+    const id = data.id || crypto.randomUUID();
+    const insertData = { ...data, id };
+    await this.db.insert(inboundEmails).values(insertData);
+    const [row] = await this.db.select().from(inboundEmails).where(eq(inboundEmails.id, id)).limit(1);
     return row!;
   }
 
