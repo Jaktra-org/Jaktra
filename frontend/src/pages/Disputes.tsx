@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Loader2, Sparkles, AlertCircle, Send, RotateCcw, Archive
 } from 'lucide-react';
 import { getErrorMessage } from '../utils/error-utils';
-import { parseEmailBody, stripHtml } from '../utils/email-utils';
+import { parseEmailBody, stripHtml, extractMainContentSummary } from '../utils/email-utils';
 
 export type DisputeTab = 'all' | 'dispute' | 'question' | 'payment_promise' | 'unclear';
 
@@ -34,19 +34,18 @@ const CATEGORY_QUICK_INSTRUCTIONS: Record<string, { chips: string[]; placeholder
   },
   payment_promise: {
     chips: [
-      "Thank customer & confirm deadline",
-      "Send payment portal link",
-      "Note promise date in records",
-      "Offer installment plan if needed",
+      "Confirm extension approved",
+      "Send payment reminder on agreed date",
+      "Request partial payment now",
+      "Thank customer for update",
     ],
-    placeholder: "e.g., Thank you for confirming payment by Friday, here is the payment link...",
+    placeholder: "e.g., Extended payment date to Friday, please confirm payment confirmation...",
   },
   unclear: {
     chips: [
-      "Request more details & invoice reference",
-      "Attach invoice copy & payment options",
-      "Offer to schedule a call",
-      "Send standard payment instructions",
+      "Ask customer to clarify issue",
+      "Request invoice reference number",
+      "Offer phone callback",
     ],
     placeholder: "e.g., Please clarify invoice number and payment date...",
   },
@@ -62,6 +61,7 @@ export function Disputes() {
   const [draftResponse, setDraftResponse] = useState<string>('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [failedDraftId, setFailedDraftId] = useState<string | null>(null);
+  const [collapsedSubBoxMap, setCollapsedSubBoxMap] = useState<Record<string, boolean>>({});
 
   // 1. Fetch disputes with status and classification parameters
   const { data: disputesData, isLoading: isDisputesLoading, error: disputesError, refetch: refetchDisputes } = useQuery({
@@ -396,43 +396,79 @@ export function Disputes() {
 
                   {/* One Line Summary of latest customer reply */}
                   <div className="bg-slate-50 border border-slate-200/70 rounded-lg p-2.5 text-xs text-slate-700 font-medium truncate">
-                    {stripHtml(parseEmailBody(primaryItem.body || primaryItem.subject || '').replyText) || '(No preview content)'}
+                    {extractMainContentSummary(primaryItem.body || primaryItem.subject || '') || '(No preview content)'}
                   </div>
                 </div>
 
                 {/* Expanded Box Content */}
                 {isGroupExpanded && (
                   <div className="border-t border-slate-100 bg-slate-50/40 p-4 space-y-5">
-                    {group.items.map((item, index) => (
-                      <div key={item.id} className="space-y-4 bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2 text-xs">
-                          <span className="font-bold text-slate-700">
-                            Box {index + 1}: <span className="capitalize text-slate-900">{classificationConfigs[item.classification]?.label || item.classification}</span>
-                          </span>
-                          <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full border capitalize ${
-                            classificationConfigs[item.classification]?.bg || classificationConfigs.unclear.bg
-                          }`}>
-                            {classificationConfigs[item.classification]?.label || 'Unclear'}
-                          </span>
-                        </div>
+                    {group.items.map((item, index) => {
+                      const isSubBoxCollapsed = !!collapsedSubBoxMap[item.id];
+                      const itemSummary = extractMainContentSummary(item.body || item.subject || '');
 
-                        <CustomerReplyView item={item} />
-                        <ItemActionArea
-                          item={item}
-                          activeStatus={activeStatus}
-                          isEditingThisItem={editingId === item.id}
-                          draftResponse={editingId === item.id ? draftResponse : (item.suggestedResponse || '')}
-                          setDraftResponse={setDraftResponse}
-                          onStartEdit={handleStartEdit}
-                          onCancelEdit={handleCancelEdit}
-                          onSendReply={handleSendReply}
-                          onGenerateDraft={handleGenerateDraft}
-                          isGeneratingThisItem={generatingId === item.id}
-                          failedDraftId={failedDraftId}
-                          sendReplyPending={sendReplyMutation.isPending}
-                        />
-                      </div>
-                    ))}
+                      return (
+                        <div key={item.id} className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-2xs">
+                          {/* Collapsible Sub-Box Header Bar */}
+                          <div
+                            onClick={() => setCollapsedSubBoxMap((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                            className="p-3 bg-slate-50/80 hover:bg-slate-100/70 cursor-pointer transition-colors flex items-center justify-between gap-3 border-b border-slate-100"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-slate-800 text-xs">
+                                Box {index + 1}: <span className="capitalize">{classificationConfigs[item.classification]?.label || item.classification}</span>
+                              </span>
+                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border capitalize ${
+                                classificationConfigs[item.classification]?.bg || classificationConfigs.unclear.bg
+                              }`}>
+                                {classificationConfigs[item.classification]?.label || 'Unclear'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <span className="text-[11px] text-slate-400 font-medium">
+                                {new Date(item.createdAt).toLocaleString()}
+                              </span>
+                              <button
+                                type="button"
+                                className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+                              >
+                                {isSubBoxCollapsed ? <ChevronDown className="w-4 h-4 text-slate-600" /> : <ChevronUp className="w-4 h-4 text-slate-600" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Collapsed View: Main Content Summary */}
+                          {isSubBoxCollapsed ? (
+                            <div 
+                              onClick={() => setCollapsedSubBoxMap((prev) => ({ ...prev, [item.id]: false }))}
+                              className="p-3.5 text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-slate-50/70 transition-colors"
+                            >
+                              {itemSummary || '(No content summary)'}
+                            </div>
+                          ) : (
+                            /* Expanded View: Chat Bubbles & Reply Area */
+                            <div className="p-4 space-y-4">
+                              <CustomerReplyView item={item} />
+                              <ItemActionArea
+                                item={item}
+                                activeStatus={activeStatus}
+                                isEditingThisItem={editingId === item.id}
+                                draftResponse={editingId === item.id ? draftResponse : (item.suggestedResponse || '')}
+                                setDraftResponse={setDraftResponse}
+                                onStartEdit={handleStartEdit}
+                                onCancelEdit={handleCancelEdit}
+                                onSendReply={handleSendReply}
+                                onGenerateDraft={handleGenerateDraft}
+                                isGeneratingThisItem={generatingId === item.id}
+                                failedDraftId={failedDraftId}
+                                sendReplyPending={sendReplyMutation.isPending}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
 
                     {/* Single Invoice Group Resolution Actions Bar (Once per Invoice Box) */}
                     <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200">
@@ -568,6 +604,7 @@ function CustomerReplyView({ item }: { item: InboundEmailReview }) {
   );
 
   const cleanReplyText = parseEmailBody(item.body || item.subject || '').replyText;
+  const summaryText = extractMainContentSummary(item.body || item.subject || '');
 
   return (
     <div className="space-y-3">
@@ -608,7 +645,7 @@ function CustomerReplyView({ item }: { item: InboundEmailReview }) {
             onClick={() => setIsCustomerExpanded(true)}
             className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-slate-100/80 transition-colors"
           >
-            {cleanReplyText || '(No reply text)'}
+            {summaryText || cleanReplyText || '(No reply text)'}
           </div>
         )}
       </div>

@@ -223,6 +223,7 @@ export class AimlService {
     classification: 'dispute' | 'question' | 'payment_promise' | 'unclear';
     confidence: number;
     reasoning: string;
+    summary?: string;
   }> {
     const payload = {
       inbound_text: request.inboundText,
@@ -237,11 +238,13 @@ export class AimlService {
       classification: string;
       confidence: number;
       reasoning: string;
+      summary?: string;
     }>('POST', '/agents/dispute', payload);
     return {
       classification: raw.classification as 'dispute' | 'question' | 'payment_promise' | 'unclear',
       confidence: raw.confidence,
       reasoning: raw.reasoning,
+      summary: raw.summary,
     };
   }
 

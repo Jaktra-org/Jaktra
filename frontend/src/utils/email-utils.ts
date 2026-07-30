@@ -54,3 +54,26 @@ export function parseEmailBody(fullBody: string): { replyText: string; quotedTex
     quotedText: null,
   };
 }
+
+export function extractMainContentSummary(fullBody: string): string {
+  if (!fullBody) return '';
+  const { replyText } = parseEmailBody(fullBody);
+  if (!replyText) return '';
+
+  // Remove common salutations and greetings from the beginning
+  let clean = replyText
+    .replace(/^(?:hi|hello|dear|hey|good\s+(?:morning|afternoon|evening))\s*,?\s*/i, '')
+    .replace(/^(?:team|support|customer|sir|madam)\s*,?\s*/i, '');
+
+  // Remove common sign-offs and closing remarks from the end
+  clean = clean
+    .replace(/(?:thanks|thank\s+you|regards|best\s+regards|kind\s+regards|sincerely|looking\s+forward\s+to[\s\S]*)$/i, '')
+    .trim();
+
+  // If cleaning stripped all text, fall back to the normalized replyText
+  const summary = clean || replyText.trim();
+  
+  if (!summary) return '';
+  // Ensure the summary starts with a capital letter
+  return summary.charAt(0).toUpperCase() + summary.slice(1);
+}

@@ -315,6 +315,7 @@ export class DisputeService {
     let classification = 'unclear';
     let confidence = 0.0;
     let reasoning = 'AI classification failed';
+    let aiSummary = '';
 
     try {
       const aiResult = await this.aimlService.analyzeDispute({
@@ -330,6 +331,9 @@ export class DisputeService {
       classification = aiResult.classification;
       confidence = aiResult.confidence;
       reasoning = aiResult.reasoning;
+      if (aiResult.summary) {
+        aiSummary = aiResult.summary;
+      }
     } catch (err: unknown) {
       logger.error(`AI dispute analysis failed: ${err instanceof Error ? err.message : String(err)}`);
       reasoning = `AI analysis failed: ${err instanceof Error ? err.message : String(err)}`;
@@ -344,7 +348,7 @@ export class DisputeService {
       body: params.body,
       classification,
       confidence: confidence.toFixed(3),
-      reasoning,
+      reasoning: aiSummary || reasoning,
       status: 'pending',
       source: params.source,
     });
@@ -368,6 +372,7 @@ export class DisputeService {
             body: params.body,
             classification,
             confidence,
+            summary: aiSummary,
           },
         }
       ).catch((err: unknown) => {

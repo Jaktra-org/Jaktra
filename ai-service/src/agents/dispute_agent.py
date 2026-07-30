@@ -23,7 +23,8 @@ class DisputeResponse(BaseModel):
     classification: Literal["dispute", "question", "payment_promise", "unclear"]
     confidence: float = Field(..., ge=0.0, le=1.0)
     suggested_response: str = ""
-    reasoning: str
+    reasoning: str = ""
+    summary: str = ""
 
 class DisputeDraftRequest(BaseModel):
     tenant_instruction: str = Field(..., max_length=2000)
@@ -101,12 +102,14 @@ class DisputeAgent:
                 confidence = 0.0
 
             reasoning = str(data.get("reasoning", "") or "").strip()
+            summary = str(data.get("summary", "") or "").strip()
 
             return DisputeResponse(
                 classification=classification,  # type: ignore
                 confidence=confidence,
                 suggested_response="",
                 reasoning=reasoning,
+                summary=summary,
             )
         except Exception as e:
             logger.error("dispute_agent_llm_failed", error=str(e), exc_info=True)
