@@ -403,8 +403,19 @@ export function Disputes() {
                 {/* Expanded Box Content */}
                 {isGroupExpanded && (
                   <div className="border-t border-slate-100 bg-slate-50/40 p-4 space-y-5">
-                    {group.items.map((item) => (
-                      <div key={item.id} className="space-y-4 bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs">
+                    {group.items.map((item, index) => (
+                      <div key={item.id} className="space-y-4 bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2 text-xs">
+                          <span className="font-bold text-slate-700">
+                            Box {index + 1}: <span className="capitalize text-slate-900">{classificationConfigs[item.classification]?.label || item.classification}</span>
+                          </span>
+                          <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full border capitalize ${
+                            classificationConfigs[item.classification]?.bg || classificationConfigs.unclear.bg
+                          }`}>
+                            {classificationConfigs[item.classification]?.label || 'Unclear'}
+                          </span>
+                        </div>
+
                         <CustomerReplyView item={item} />
                         <ItemActionArea
                           item={item}
@@ -544,125 +555,93 @@ const classificationConfigs: Record<string, { bg: string, text: string, label: s
 };
 
 function CustomerReplyView({ item }: { item: InboundEmailReview }) {
-  const [showQuotedMap, setShowQuotedMap] = useState<Record<string, boolean>>({});
-  const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
+  const [showQuoted, setShowQuoted] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const toggleQuoted = (id: string) => {
-    setShowQuotedMap((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  // Extract outbound replies from thread that belong to this item
+  const outboundReplies = (item.thread || []).filter(
+    (msg) => msg.direction === 'outbound' && new Date(msg.createdAt) >= new Date(item.createdAt)
+  );
 
-  const toggleCollapse = (id: string) => {
-    setCollapsedMap((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const threadItems = item.thread && item.thread.length > 0 ? item.thread : [
-    {
-      id: item.id,
-      direction: 'inbound' as const,
-      sender: item.sender,
-      subject: item.subject,
-      body: item.body,
-      createdAt: item.createdAt,
-    }
-  ];
+  const { replyText, quotedText } = parseEmailBody(item.body || item.subject || '');
 
   return (
-    <div className="max-h-96 overflow-y-auto p-4 bg-slate-100/60 rounded-xl border border-slate-200/80 space-y-3">
-      {threadItems.map((msg) => {
-        const isCollapsed = !!collapsedMap[msg.id];
+    <div className="space-y-3">
+      {/* Target Customer Reply Message (Left Aligned) */}
+      <div className="max-w-[85%] mr-auto bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3.5 space-y-2 shadow-2xs">
+        <div className="flex items-center justify-between text-xs text-slate-500 gap-3">
+          <div className="flex items-center space-x-2">
+            <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Customer Reply</span>
+            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border capitalize ${
+              classificationConfigs[item.classification]?.bg || classificationConfigs.unclear.bg
+            }`}>
+              {classificationConfigs[item.classification]?.label || 'Unclear'}
+            </span>
+          </div>
+          <div className="flex items-center space-x-2 text-slate-400">
+            <span className="text-[11px]">{new Date(item.createdAt).toLocaleString()}</span>
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+              title={isCollapsed ? "Expand message" : "Collapse message"}
+            >
+              {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
 
-        if (msg.direction === 'outbound') {
-          const cleanText = stripHtml(msg.body || '');
-          return (
-            <div key={msg.id} className="max-w-[85%] ml-auto bg-blue-50/90 border border-blue-200 rounded-2xl rounded-tr-xs p-3.5 space-y-2 shadow-2xs">
-              <div className="flex items-center justify-between text-xs text-blue-900 gap-3">
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold uppercase tracking-wider text-[10px]">Dispute Reply Sent</span>
-                  <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
-                    💬 Dispute Agent
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 text-slate-500">
-                  <span className="text-[11px]">{new Date(msg.createdAt).toLocaleString()}</span>
-                  <button
-                    type="button"
-                    onClick={() => toggleCollapse(msg.id)}
-                    className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
-                    title={isCollapsed ? "Expand message" : "Collapse message"}
-                  >
-                    {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {isCollapsed ? (
-                <div 
-                  onClick={() => toggleCollapse(msg.id)}
-                  className="bg-white/80 border border-blue-100 p-2 rounded-md text-xs text-slate-600 italic truncate cursor-pointer hover:bg-white"
-                >
-                  {cleanText || '(No message content)'}
-                </div>
-              ) : (
-                <div className="bg-white border border-blue-100 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
-                  {cleanText || '(No message content)'}
-                </div>
-              )}
+        {isCollapsed ? (
+          <div 
+            onClick={() => setIsCollapsed(false)}
+            className="bg-slate-50 border border-slate-200/70 p-2 rounded-md text-xs text-slate-500 italic truncate cursor-pointer hover:bg-slate-100/70"
+          >
+            {replyText || '(No reply text)'}
+          </div>
+        ) : (
+          <>
+            <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
+              {replyText || '(No reply text)'}
             </div>
-          );
-        }
 
-        const { replyText, quotedText } = parseEmailBody(msg.body || msg.subject || '');
-        const isQuotedShown = !!showQuotedMap[msg.id];
-
-        return (
-          <div key={msg.id} className="max-w-[85%] mr-auto bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3.5 space-y-2 shadow-2xs">
-            <div className="flex items-center justify-between text-xs text-slate-500 gap-3">
-              <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Customer Reply</span>
-              <div className="flex items-center space-x-2 text-slate-400">
-                <span className="text-[11px]">{new Date(msg.createdAt).toLocaleString()}</span>
+            {quotedText && (
+              <div className="pt-0.5">
                 <button
                   type="button"
-                  onClick={() => toggleCollapse(msg.id)}
-                  className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
-                  title={isCollapsed ? "Expand message" : "Collapse message"}
+                  onClick={() => setShowQuoted(!showQuoted)}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 py-1 px-2.5 rounded bg-slate-100/70 border border-slate-200 transition-colors"
                 >
-                  {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <span>{showQuoted ? '▼ Hide original email thread' : '▶ Show original email thread'}</span>
                 </button>
-              </div>
-            </div>
 
-            {isCollapsed ? (
-              <div 
-                onClick={() => toggleCollapse(msg.id)}
-                className="bg-slate-50 border border-slate-200/70 p-2 rounded-md text-xs text-slate-500 italic truncate cursor-pointer hover:bg-slate-100/70"
-              >
-                {replyText || '(No reply text)'}
-              </div>
-            ) : (
-              <>
-                <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
-                  {replyText || '(No reply text)'}
-                </div>
-
-                {quotedText && (
-                  <div className="pt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => toggleQuoted(msg.id)}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 py-1 px-2.5 rounded bg-slate-100/70 border border-slate-200 transition-colors"
-                    >
-                      <span>{isQuotedShown ? '▼ Hide original email thread' : '▶ Show original email thread'}</span>
-                    </button>
-
-                    {isQuotedShown && (
-                      <div className="mt-2 bg-slate-100/80 border border-slate-200 p-3 rounded-md text-xs text-slate-600 font-mono whitespace-pre-wrap max-h-60 overflow-y-auto leading-normal">
-                        {quotedText}
-                      </div>
-                    )}
+                {showQuoted && (
+                  <div className="mt-2 bg-slate-100/80 border border-slate-200 p-3 rounded-md text-xs text-slate-600 font-mono whitespace-pre-wrap max-h-60 overflow-y-auto leading-normal">
+                    {quotedText}
                   </div>
                 )}
-              </>
+              </div>
             )}
+          </>
+        )}
+      </div>
+
+      {/* Matching Outbound Dispute Agent Replies (Right Aligned) */}
+      {outboundReplies.map((outboundMsg) => {
+        const cleanText = stripHtml(outboundMsg.body || '');
+        return (
+          <div key={outboundMsg.id} className="max-w-[85%] ml-auto bg-blue-50/90 border border-blue-200 rounded-2xl rounded-tr-xs p-3.5 space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between text-xs text-blue-900 gap-3">
+              <div className="flex items-center space-x-2">
+                <span className="font-bold uppercase tracking-wider text-[10px]">Dispute Reply Sent</span>
+                <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
+                  💬 Dispute Agent
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500">{new Date(outboundMsg.createdAt).toLocaleString()}</span>
+            </div>
+            <div className="bg-white border border-blue-100 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
+              {cleanText || '(No message content)'}
+            </div>
           </div>
         );
       })}
