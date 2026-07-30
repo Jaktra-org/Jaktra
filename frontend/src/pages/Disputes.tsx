@@ -555,19 +555,23 @@ const classificationConfigs: Record<string, { bg: string, text: string, label: s
 };
 
 function CustomerReplyView({ item }: { item: InboundEmailReview }) {
-  const [showQuoted, setShowQuoted] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCustomerExpanded, setIsCustomerExpanded] = useState(false);
+  const [expandedOutboundMap, setExpandedOutboundMap] = useState<Record<string, boolean>>({});
 
-  // Extract outbound replies from thread that belong to this item
+  const toggleOutboundExpand = (id: string) => {
+    setExpandedOutboundMap((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Extract outbound dispute replies belonging to this item
   const outboundReplies = (item.thread || []).filter(
     (msg) => msg.direction === 'outbound' && new Date(msg.createdAt) >= new Date(item.createdAt)
   );
 
-  const { replyText, quotedText } = parseEmailBody(item.body || item.subject || '');
+  const cleanReplyText = parseEmailBody(item.body || item.subject || '').replyText;
 
   return (
     <div className="space-y-3">
-      {/* Target Customer Reply Message (Left Aligned) */}
+      {/* 1. Customer Reply Chat Bubble (Left Aligned) */}
       <div className="max-w-[85%] mr-auto bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3.5 space-y-2 shadow-2xs">
         <div className="flex items-center justify-between text-xs text-slate-500 gap-3">
           <div className="flex items-center space-x-2">
@@ -582,66 +586,75 @@ function CustomerReplyView({ item }: { item: InboundEmailReview }) {
             <span className="text-[11px]">{new Date(item.createdAt).toLocaleString()}</span>
             <button
               type="button"
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={() => setIsCustomerExpanded(!isCustomerExpanded)}
               className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
-              title={isCollapsed ? "Expand message" : "Collapse message"}
+              title={isCustomerExpanded ? "Collapse email" : "Expand full email"}
             >
-              {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              {isCustomerExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           </div>
         </div>
 
-        {isCollapsed ? (
+        {/* Visible 1-Line Summary Text / Full Email Text on Click */}
+        {isCustomerExpanded ? (
           <div 
-            onClick={() => setIsCollapsed(false)}
-            className="bg-slate-50 border border-slate-200/70 p-2 rounded-md text-xs text-slate-500 italic truncate cursor-pointer hover:bg-slate-100/70"
+            onClick={() => setIsCustomerExpanded(false)}
+            className="bg-slate-50 border border-slate-200/70 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-slate-100/60 transition-colors"
           >
-            {replyText || '(No reply text)'}
+            {cleanReplyText || '(No reply text)'}
           </div>
         ) : (
-          <>
-            <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
-              {replyText || '(No reply text)'}
-            </div>
-
-            {quotedText && (
-              <div className="pt-0.5">
-                <button
-                  type="button"
-                  onClick={() => setShowQuoted(!showQuoted)}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 py-1 px-2.5 rounded bg-slate-100/70 border border-slate-200 transition-colors"
-                >
-                  <span>{showQuoted ? '▼ Hide original email thread' : '▶ Show original email thread'}</span>
-                </button>
-
-                {showQuoted && (
-                  <div className="mt-2 bg-slate-100/80 border border-slate-200 p-3 rounded-md text-xs text-slate-600 font-mono whitespace-pre-wrap max-h-60 overflow-y-auto leading-normal">
-                    {quotedText}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
+          <div 
+            onClick={() => setIsCustomerExpanded(true)}
+            className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-slate-100/80 transition-colors"
+          >
+            {cleanReplyText || '(No reply text)'}
+          </div>
         )}
       </div>
 
-      {/* Matching Outbound Dispute Agent Replies (Right Aligned) */}
+      {/* 2. Outbound Tenant / Dispute Agent Reply Chat Bubbles (Right Aligned) */}
       {outboundReplies.map((outboundMsg) => {
         const cleanText = stripHtml(outboundMsg.body || '');
+        const isOutboundExpanded = !!expandedOutboundMap[outboundMsg.id];
+
         return (
           <div key={outboundMsg.id} className="max-w-[85%] ml-auto bg-blue-50/90 border border-blue-200 rounded-2xl rounded-tr-xs p-3.5 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between text-xs text-blue-900 gap-3">
               <div className="flex items-center space-x-2">
-                <span className="font-bold uppercase tracking-wider text-[10px]">Dispute Reply Sent</span>
+                <span className="font-bold uppercase tracking-wider text-[10px]">Tenant Reply</span>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
                   💬 Dispute Agent
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500">{new Date(outboundMsg.createdAt).toLocaleString()}</span>
+              <div className="flex items-center space-x-2 text-slate-500">
+                <span className="text-[11px]">{new Date(outboundMsg.createdAt).toLocaleString()}</span>
+                <button
+                  type="button"
+                  onClick={() => toggleOutboundExpand(outboundMsg.id)}
+                  className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+                  title={isOutboundExpanded ? "Collapse reply" : "Expand full reply"}
+                >
+                  {isOutboundExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-            <div className="bg-white border border-blue-100 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
-              {cleanText || '(No message content)'}
-            </div>
+
+            {isOutboundExpanded ? (
+              <div 
+                onClick={() => toggleOutboundExpand(outboundMsg.id)}
+                className="bg-white border border-blue-100 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-slate-50 transition-colors"
+              >
+                {cleanText || '(No message content)'}
+              </div>
+            ) : (
+              <div 
+                onClick={() => toggleOutboundExpand(outboundMsg.id)}
+                className="bg-white/80 border border-blue-100 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-white transition-colors"
+              >
+                {cleanText || '(No message content)'}
+              </div>
+            )}
           </div>
         );
       })}
