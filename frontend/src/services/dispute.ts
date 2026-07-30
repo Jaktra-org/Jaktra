@@ -9,6 +9,7 @@ export interface ThreadItem {
   sender: string;
   subject: string | null;
   body: string | null;
+  aiSummary?: string | null;
   sourceTag?: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system';
   createdAt: string;
 }
@@ -24,6 +25,8 @@ export interface InboundEmailReview {
   confidence: string | null;
   suggestedResponse?: string;
   reasoning: string;
+  summary?: string;
+  aiSummary?: string | null;
   status: DisputeStatus;
   createdAt: string;
   invoiceNo?: string;

@@ -164,6 +164,7 @@ export const communications = mysqlTable(
     body: text('body'),
     status: communicationStatusEnum('status').notNull().default('pending'),
     source: communicationSourceEnum('source').notNull().default('system'),
+    aiSummary: text('ai_summary'),
     sentAt: datetime('sent_at', { mode: 'date' }),
     error: text('error'),
     createdAt: datetime('created_at', { mode: 'date' })
@@ -504,6 +505,7 @@ export const inboundEmails = mysqlTable('inbound_emails', {
   classification: varchar('classification', { length: 100 }),
   confidence: decimal('confidence', { precision: 4, scale: 3 }),
   reasoning: text('reasoning'),
+  aiSummary: text('ai_summary'),
   status: inboundEmailStatusEnum('status').notNull().default('pending'),
   reviewedBy: varchar('reviewed_by', { length: 36 })
     .references(() => users.id, { onDelete: 'set null' }),

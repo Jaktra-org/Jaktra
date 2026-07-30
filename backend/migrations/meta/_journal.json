@@ -78,6 +78,13 @@
       "when": 1785408000000,
       "tag": "0010_communication_source_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1785417000000,
+      "tag": "0011_add_ai_summary_columns",
+      "breakpoints": true
     }
   ]
 }

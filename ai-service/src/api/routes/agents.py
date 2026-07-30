@@ -4,11 +4,13 @@ from src.agents.dispute_agent import (
     DisputeRequest, DisputeResponse, DisputeAgent,
     DisputeDraftRequest, DisputeDraftResponse
 )
+from src.agents.summary_agent import SummaryRequest, SummaryResponse, SummaryAgent
 
 router = APIRouter(prefix="/agents", tags=["Agents"])
 
 negotiation_agent = NegotiationAgent()
 dispute_agent = DisputeAgent()
+summary_agent = SummaryAgent()
 
 @router.post("/negotiate", response_model=NegotiationResponse)
 async def handle_negotiate(request: NegotiationRequest):
@@ -31,6 +33,10 @@ async def handle_dispute(request: DisputeRequest):
 @router.post("/dispute/draft", response_model=DisputeDraftResponse)
 async def handle_dispute_draft(request: DisputeDraftRequest):
     return await dispute_agent.generate_draft(request)
+
+@router.post("/summarize", response_model=SummaryResponse)
+async def handle_summarize(request: SummaryRequest):
+    return await summary_agent.summarize(request)
 
 
 

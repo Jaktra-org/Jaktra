@@ -282,6 +282,25 @@ export class AimlService {
     return this.request<BatchRunResponse>('POST', '/batch-run', request);
   }
 
+  async summarizeEmail(request: {
+    emailText: string;
+    subject?: string;
+    direction?: 'inbound' | 'outbound';
+  }): Promise<{ summary: string }> {
+    try {
+      const payload = {
+        email_text: request.emailText,
+        subject: request.subject || null,
+        direction: request.direction || 'inbound',
+      };
+      const raw = await this.request<{ summary: string }>('POST', '/agents/summarize', payload);
+      return { summary: raw.summary || '' };
+    } catch (err: unknown) {
+      logger.warn(`AI email summarization failed: ${err instanceof Error ? err.message : String(err)}`);
+      return { summary: '' };
+    }
+  }
+
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
     this.checkCircuitBreaker();
 

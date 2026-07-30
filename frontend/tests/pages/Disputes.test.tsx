@@ -30,7 +30,8 @@ describe('Disputes page status tabs, navigation, and actions', () => {
         classification: 'dispute' as const,
         confidence: 0.95,
         suggestedResponse: 'We will investigate the charge.',
-        reasoning: 'AI generated response',
+        reasoning: 'Customer disputes invoice amount.',
+        aiSummary: 'Customer disagrees with invoice charge.',
         status: 'pending' as const,
         createdAt: '2026-07-12T00:00:00.000Z',
         invoiceNo: 'INV-101',
@@ -73,7 +74,7 @@ describe('Disputes page status tabs, navigation, and actions', () => {
       expect(screen.getByText(/client@company.com/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText('I disagree with this charge.')).toBeInTheDocument();
+    expect(screen.getByText('Customer disagrees with invoice charge.')).toBeInTheDocument();
 
     const clientEmail = screen.getByText(/client@company.com/i);
     await act(async () => {

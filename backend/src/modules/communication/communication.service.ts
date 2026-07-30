@@ -68,6 +68,7 @@ export function extractPlainTextFromHtml(html: string): string {
 }
 
 import type { IntegrationService } from '../settings/integration.service.js';
+import type { AimlService } from '../agent/aiml.service.js';
 
 export class CommunicationService {
   constructor(
@@ -77,7 +78,8 @@ export class CommunicationService {
     private readonly portalService: PortalService,
     private readonly eventService: EventService,
     private readonly dlqRepo: DlqRepository,
-    private readonly integrationService?: IntegrationService
+    private readonly integrationService?: IntegrationService,
+    private readonly aimlService?: AimlService
   ) { }
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['findByInvoiceId']>>> {
@@ -311,12 +313,29 @@ export class CommunicationService {
 
     const plainTextBody = options.bodyText || extractPlainTextFromHtml(html);
 
+    let aiSummary: string | null = null;
+    if (this.aimlService) {
+      try {
+        const sumResult = await this.aimlService.summarizeEmail({
+          emailText: plainTextBody,
+          subject,
+          direction: 'outbound',
+        });
+        if (sumResult.summary) {
+          aiSummary = sumResult.summary;
+        }
+      } catch (err) {
+        logger.warn('Failed to generate AI summary for outbound email:', err);
+      }
+    }
+
     const createdComm = await this.communicationRepo.create({
       tenantId,
       invoiceId: invoiceId || '',
       channel: 'email',
       subject,
       body: plainTextBody,
+      aiSummary,
       status: 'pending',
       source: options.source || 'system',
       sentAt: null,

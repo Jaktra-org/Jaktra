@@ -7,7 +7,20 @@ import {
   ChevronLeft, ChevronRight, Loader2, Sparkles, AlertCircle, Send, RotateCcw, Archive
 } from 'lucide-react';
 import { getErrorMessage } from '../utils/error-utils';
-import { parseEmailBody, stripHtml, extractMainContentSummary } from '../utils/email-utils';
+import { parseEmailBody, stripHtml } from '../utils/email-utils';
+
+function getAiSummary(item: InboundEmailReview): string {
+  if (item.aiSummary && item.aiSummary.trim()) {
+    return item.aiSummary.trim();
+  }
+  if (item.summary && item.summary.trim()) {
+    return item.summary.trim();
+  }
+  if (item.reasoning && item.reasoning.trim()) {
+    return item.reasoning.trim();
+  }
+  return parseEmailBody(item.body || item.subject || '').replyText || '';
+}
 
 export type DisputeTab = 'all' | 'dispute' | 'question' | 'payment_promise' | 'unclear';
 
@@ -396,7 +409,7 @@ export function Disputes() {
 
                   {/* One Line Summary of latest customer reply */}
                   <div className="bg-slate-50 border border-slate-200/70 rounded-lg p-2.5 text-xs text-slate-700 font-medium truncate">
-                    {extractMainContentSummary(primaryItem.body || primaryItem.subject || '') || '(No preview content)'}
+                    {getAiSummary(primaryItem) || '(No preview content)'}
                   </div>
                 </div>
 
@@ -405,7 +418,7 @@ export function Disputes() {
                   <div className="border-t border-slate-100 bg-slate-50/40 p-4 space-y-5">
                     {group.items.map((item, index) => {
                       const isSubBoxCollapsed = !!collapsedSubBoxMap[item.id];
-                      const itemSummary = extractMainContentSummary(item.body || item.subject || '');
+                      const itemSummary = getAiSummary(item);
 
                       return (
                         <div key={item.id} className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-2xs">
@@ -604,7 +617,7 @@ function CustomerReplyView({ item }: { item: InboundEmailReview }) {
   );
 
   const cleanReplyText = parseEmailBody(item.body || item.subject || '').replyText;
-  const summaryText = extractMainContentSummary(item.body || item.subject || '');
+  const summaryText = getAiSummary(item);
 
   return (
     <div className="space-y-3">
@@ -689,7 +702,7 @@ function CustomerReplyView({ item }: { item: InboundEmailReview }) {
                 onClick={() => toggleOutboundExpand(outboundMsg.id)}
                 className="bg-white/80 border border-blue-100 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-white transition-colors"
               >
-                {cleanText || '(No message content)'}
+                {outboundMsg.aiSummary || cleanText || '(No message content)'}
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@ export interface ThreadItem {
   sender: string;
   subject: string | null;
   body: string | null;
+  aiSummary?: string | null;
   sourceTag?: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system';
   createdAt: Date;
 }
@@ -24,6 +25,7 @@ export interface PendingDisputeItem {
   classification: string | null;
   confidence: string | null;
   reasoning: string | null;
+  aiSummary: string | null;
   status: 'pending' | 'resolved' | 'archived';
   createdAt: Date;
   invoiceNo: string | null;
@@ -104,6 +106,7 @@ export class DisputeRepository {
         classification: inboundEmails.classification,
         confidence: inboundEmails.confidence,
         reasoning: inboundEmails.reasoning,
+        aiSummary: inboundEmails.aiSummary,
         status: inboundEmails.status,
         createdAt: inboundEmails.createdAt,
         invoiceNo: invoices.invoiceNo,
@@ -119,7 +122,7 @@ export class DisputeRepository {
     const invoiceIds = Array.from(new Set(data.map((d) => d.invoiceId).filter((id): id is string => Boolean(id))));
 
     let allInboundForInvoices: Array<{ id: string; invoiceId: string | null; sender: string; subject: string | null; body: string | null; createdAt: Date }> = [];
-    let allOutboundForInvoices: Array<{ id: string; invoiceId: string; subject: string | null; body: string | null; source: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system'; sentAt: Date | null; createdAt: Date }> = [];
+    let allOutboundForInvoices: Array<{ id: string; invoiceId: string; subject: string | null; body: string | null; aiSummary: string | null; source: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system'; sentAt: Date | null; createdAt: Date }> = [];
 
     if (invoiceIds.length > 0) {
       allInboundForInvoices = await this.db
@@ -145,6 +148,7 @@ export class DisputeRepository {
           invoiceId: communications.invoiceId,
           subject: communications.subject,
           body: communications.body,
+          aiSummary: communications.aiSummary,
           source: communications.source,
           sentAt: communications.sentAt,
           createdAt: communications.createdAt,
@@ -183,6 +187,7 @@ export class DisputeRepository {
             sender: 'Finance Team',
             subject: outb.subject,
             body: outb.body,
+            aiSummary: outb.aiSummary,
             sourceTag: outb.source,
             createdAt: outb.sentAt || outb.createdAt,
           });

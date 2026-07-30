@@ -339,6 +339,21 @@ export class DisputeService {
       reasoning = `AI analysis failed: ${err instanceof Error ? err.message : String(err)}`;
     }
 
+    if (!aiSummary) {
+      try {
+        const sumRes = await this.aimlService.summarizeEmail({
+          emailText: params.body,
+          subject: params.subject,
+          direction: 'inbound',
+        });
+        if (sumRes.summary) {
+          aiSummary = sumRes.summary;
+        }
+      } catch (err) {
+        logger.warn('Failed to generate AI summary for inbound email:', err);
+      }
+    }
+
     // Save review queue item with default status 'pending'
     await this.disputeRepo.create({
       tenantId: params.tenantId,
@@ -348,7 +363,8 @@ export class DisputeService {
       body: params.body,
       classification,
       confidence: confidence.toFixed(3),
-      reasoning: aiSummary || reasoning,
+      reasoning,
+      aiSummary: aiSummary || null,
       status: 'pending',
       source: params.source,
     });
