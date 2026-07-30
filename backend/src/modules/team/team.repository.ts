@@ -3,6 +3,7 @@ import { eq, and, desc, sql, count } from 'drizzle-orm';
 import type { DatabaseOrTransaction } from '../../db/index.js';
 import { tenants, users, teamInvitations } from '../../db/schema.js';
 import type { User, TeamInvitation, NewTeamInvitation } from '../../db/schema.js';
+import crypto from 'crypto';
 
 export class TeamRepository {
   constructor(public readonly client: DatabaseOrTransaction) {}
@@ -36,11 +37,15 @@ export class TeamRepository {
   }
 
   async createInvitation(invitation: NewTeamInvitation): Promise<TeamInvitation> {
+    const id = invitation.id || crypto.randomUUID();
+    const data = { ...invitation, id };
+    await this.client.insert(teamInvitations).values(data);
     const [result] = await this.client
-      .insert(teamInvitations)
-      .values(invitation)
-      .returning();
-    return result;
+      .select()
+      .from(teamInvitations)
+      .where(eq(teamInvitations.id, id))
+      .limit(1);
+    return result!;
   }
 
   async findActiveInvitationByEmail(tenantId: string, email: string): Promise<TeamInvitation | undefined> {
