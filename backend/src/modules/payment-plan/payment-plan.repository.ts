@@ -1,14 +1,18 @@
 import { eq, and, desc, count } from 'drizzle-orm';
 import { paymentPlanRequests, invoices } from '../../db/index.js';
 import type { DatabaseClient, DatabaseOrTransaction, PaymentPlanRequest, NewPaymentPlanRequest } from '../../db/index.js';
+import crypto from 'crypto';
 
 export class PaymentPlanRepository {
   constructor(private readonly db: DatabaseClient) {}
 
   async create(data: NewPaymentPlanRequest, tx?: DatabaseOrTransaction): Promise<PaymentPlanRequest> {
     const dbClient = tx || this.db;
-    const rows = await dbClient.insert(paymentPlanRequests).values(data).returning();
-    return rows[0]!;
+    const id = data.id || crypto.randomUUID();
+    const insertData = { ...data, id };
+    await dbClient.insert(paymentPlanRequests).values(insertData);
+    const [row] = await dbClient.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, id)).limit(1);
+    return row!;
   }
 
   async findById(id: string, tx?: DatabaseOrTransaction): Promise<PaymentPlanRequest | undefined> {
@@ -96,11 +100,17 @@ export class PaymentPlanRepository {
     tx?: DatabaseOrTransaction
   ): Promise<PaymentPlanRequest> {
     const dbClient = tx || this.db;
-    const rows = await dbClient
+    await dbClient
       .update(paymentPlanRequests)
       .set(data)
+      .where(eq(paymentPlanRequests.id, id));
+    
+    const [row] = await dbClient
+      .select()
+      .from(paymentPlanRequests)
       .where(eq(paymentPlanRequests.id, id))
-      .returning();
-    return rows[0]!;
+      .limit(1);
+
+    return row!;
   }
 }
