@@ -326,6 +326,9 @@ export function Disputes() {
           {groupedList.map((group) => {
             const isGroupExpanded = expandedGroupKey === group.groupKey;
             const primaryItem = group.items[0];
+            const uniqueClassifications = Array.from(
+              new Set(group.items.map((i) => i.classification).filter(Boolean))
+            );
 
             return (
               <div
@@ -364,11 +367,20 @@ export function Disputes() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full border capitalize ${
-                        classificationConfigs[primaryItem.classification]?.bg || classificationConfigs.unclear.bg
-                      }`}>
-                        {classificationConfigs[primaryItem.classification]?.label || 'Unclear'}
-                      </span>
+                      {/* Render all unique classification tags for this invoice */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {uniqueClassifications.map((cat) => (
+                          <span
+                            key={cat}
+                            className={`px-2.5 py-1 text-xs font-bold rounded-full border capitalize ${
+                              classificationConfigs[cat]?.bg || classificationConfigs.unclear.bg
+                            }`}
+                          >
+                            {classificationConfigs[cat]?.label || 'Unclear'}
+                          </span>
+                        ))}
+                      </div>
+
                       <span className="text-slate-500 text-xs font-medium flex items-center">
                         <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />
                         {new Date(group.latestCreatedAt).toLocaleString()}
@@ -392,7 +404,7 @@ export function Disputes() {
                 {isGroupExpanded && (
                   <div className="border-t border-slate-100 bg-slate-50/40 p-4 space-y-5">
                     {group.items.map((item) => (
-                      <div key={item.id} className="space-y-4">
+                      <div key={item.id} className="space-y-4 bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs">
                         <CustomerReplyView item={item} />
                         <ItemActionArea
                           item={item}
@@ -403,15 +415,88 @@ export function Disputes() {
                           onStartEdit={handleStartEdit}
                           onCancelEdit={handleCancelEdit}
                           onSendReply={handleSendReply}
-                          onMarkStatus={handleMarkStatus}
                           onGenerateDraft={handleGenerateDraft}
                           isGeneratingThisItem={generatingId === item.id}
                           failedDraftId={failedDraftId}
                           sendReplyPending={sendReplyMutation.isPending}
-                          statusChangePending={statusMutation.isPending}
                         />
                       </div>
                     ))}
+
+                    {/* Single Invoice Group Resolution Actions Bar (Once per Invoice Box) */}
+                    <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                      {activeStatus === 'pending' && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={statusMutation.isPending}
+                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'resolved'))}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Mark Resolved</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={statusMutation.isPending}
+                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'archived'))}
+                            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                          >
+                            <Archive className="w-4 h-4" />
+                            <span>Archive</span>
+                          </button>
+                        </>
+                      )}
+
+                      {activeStatus === 'resolved' && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={statusMutation.isPending}
+                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                            <span>Reopen to Pending</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={statusMutation.isPending}
+                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'archived'))}
+                            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                          >
+                            <Archive className="w-4 h-4" />
+                            <span>Archive</span>
+                          </button>
+                        </>
+                      )}
+
+                      {activeStatus === 'archived' && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={statusMutation.isPending}
+                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'pending'))}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                            <span>Reopen to Pending</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={statusMutation.isPending}
+                            onClick={() => group.items.forEach((i) => handleMarkStatus(i.id, 'resolved'))}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Mark Resolved</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -594,12 +679,10 @@ function ItemActionArea({
   onStartEdit,
   onCancelEdit,
   onSendReply,
-  onMarkStatus,
   onGenerateDraft,
   isGeneratingThisItem,
   failedDraftId,
   sendReplyPending,
-  statusChangePending,
 }: {
   item: InboundEmailReview;
   activeStatus: DisputeStatus;
@@ -609,12 +692,10 @@ function ItemActionArea({
   onStartEdit: (item: InboundEmailReview) => void;
   onCancelEdit: () => void;
   onSendReply: (item: InboundEmailReview) => void;
-  onMarkStatus: (id: string, status: DisputeStatus) => void;
   onGenerateDraft: (id: string, instruction: string) => void;
   isGeneratingThisItem: boolean;
   failedDraftId: string | null;
   sendReplyPending: boolean;
-  statusChangePending: boolean;
 }) {
   const [instruction, setInstruction] = useState('');
   const categoryConfig = CATEGORY_QUICK_INSTRUCTIONS[item.classification] || CATEGORY_QUICK_INSTRUCTIONS.unclear;
@@ -745,90 +826,20 @@ function ItemActionArea({
         </>
       )}
 
-      {/* Action Buttons based on Active Status */}
-      <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
-        {activeStatus === 'pending' && (
-          <>
-            <button
-              type="button"
-              disabled={sendReplyPending || !activeDraftContent}
-              onClick={() => onSendReply(item)}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
-            >
-              {sendReplyPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              <span>Send Reply</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={statusChangePending}
-              onClick={() => onMarkStatus(item.id, 'resolved')}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>Mark Resolved</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={statusChangePending}
-              onClick={() => onMarkStatus(item.id, 'archived')}
-              className="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors"
-            >
-              <Archive className="w-3.5 h-3.5" />
-              <span>Archive</span>
-            </button>
-          </>
-        )}
-
-        {activeStatus === 'resolved' && (
-          <>
-            <button
-              type="button"
-              disabled={statusChangePending}
-              onClick={() => onMarkStatus(item.id, 'pending')}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reopen to Pending</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={statusChangePending}
-              onClick={() => onMarkStatus(item.id, 'archived')}
-              className="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors"
-            >
-              <Archive className="w-3.5 h-3.5" />
-              <span>Move to Archive</span>
-            </button>
-          </>
-        )}
-
-        {activeStatus === 'archived' && (
-          <>
-            <button
-              type="button"
-              disabled={statusChangePending}
-              onClick={() => onMarkStatus(item.id, 'pending')}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reopen to Pending</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={statusChangePending}
-              onClick={() => onMarkStatus(item.id, 'resolved')}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>Mark Resolved</span>
-            </button>
-          </>
-        )}
-      </div>
+      {/* Send Reply Action for this sub-box */}
+      {activeStatus === 'pending' && (
+        <div className="flex justify-end pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            disabled={sendReplyPending || !activeDraftContent}
+            onClick={() => onSendReply(item)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs cursor-pointer"
+          >
+            {sendReplyPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            <span>Send Reply</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
