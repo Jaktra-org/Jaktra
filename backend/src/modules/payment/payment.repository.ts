@@ -2,22 +2,33 @@ import type { DatabaseOrTransaction } from '../../db/index.js';
 import { paymentWebhookEvents, invoicePaymentLinks, invoices } from '../../db/schema.js';
 import type { PaymentWebhookEvent, InvoicePaymentLink } from '../../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
+import crypto from 'crypto';
 
 export class PaymentRepository {
   constructor(private db: DatabaseOrTransaction) { }
+  
   async insertWebhookEvent(event: Partial<typeof paymentWebhookEvents.$inferInsert>): Promise<PaymentWebhookEvent> {
-    const [result] = await this.db.insert(paymentWebhookEvents)
-      .values(event as typeof paymentWebhookEvents.$inferInsert)
-      .onConflictDoUpdate({
-        target: [paymentWebhookEvents.tenantId, paymentWebhookEvents.provider, paymentWebhookEvents.externalEventId],
+    const id = event.id || crypto.randomUUID();
+    const data = { ...event, id };
+    await this.db.insert(paymentWebhookEvents)
+      .values(data as typeof paymentWebhookEvents.$inferInsert)
+      .onDuplicateKeyUpdate({
         set: {
           status: 'pending',
           rawPayload: event.rawPayload,
           receivedAt: new Date()
         }
-      })
-      .returning();
-    return result;
+      });
+    
+    const [row] = await this.db.select()
+      .from(paymentWebhookEvents)
+      .where(and(
+        eq(paymentWebhookEvents.tenantId, event.tenantId!),
+        eq(paymentWebhookEvents.provider, event.provider!),
+        eq(paymentWebhookEvents.externalEventId, event.externalEventId!)
+      ))
+      .limit(1);
+    return row!;
   }
 
   async updateWebhookEventStatus(eventId: string, status: 'processed' | 'ignored' | 'error'): Promise<void> {
@@ -65,8 +76,11 @@ export class PaymentRepository {
   }
 
   async insertPaymentLink(link: typeof invoicePaymentLinks.$inferInsert): Promise<InvoicePaymentLink> {
-    const [result] = await this.db.insert(invoicePaymentLinks).values(link).returning();
-    return result;
+    const id = link.id || crypto.randomUUID();
+    const data = { ...link, id };
+    await this.db.insert(invoicePaymentLinks).values(data);
+    const [row] = await this.db.select().from(invoicePaymentLinks).where(eq(invoicePaymentLinks.id, id)).limit(1);
+    return row!;
   }
 
   /**
@@ -76,18 +90,24 @@ export class PaymentRepository {
    * 23505 exception that could abort a surrounding transaction.
    */
   async insertPaymentLinkFallback(link: typeof invoicePaymentLinks.$inferInsert): Promise<void> {
+    const id = link.id || crypto.randomUUID();
+    const data = { ...link, id };
     await this.db
       .insert(invoicePaymentLinks)
-      .values(link)
-      .onConflictDoNothing();
+      .ignore()
+      .values(data);
   }
 
   async updatePaymentLinkStatus(id: string, status: 'active' | 'paid' | 'expired' | 'cancelled'): Promise<InvoicePaymentLink> {
-    const [result] = await this.db.update(invoicePaymentLinks)
+    await this.db.update(invoicePaymentLinks)
       .set({ status, updatedAt: new Date() })
+      .where(eq(invoicePaymentLinks.id, id));
+    
+    const [row] = await this.db.select()
+      .from(invoicePaymentLinks)
       .where(eq(invoicePaymentLinks.id, id))
-      .returning();
-    return result;
+      .limit(1);
+    return row!;
   }
 
   async cancelActiveLinks(tenantId: string, invoiceId: string): Promise<void> {
