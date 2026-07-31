@@ -5,13 +5,11 @@ import { portalService } from '../services/portal';
 import { Loader2, AlertCircle, Calendar, CreditCard, FileText } from 'lucide-react';
 
 export function DebtorPortal() {
-  const params = useParams();
-  const rawToken = params.token || params['*'] || '';
-  const token = rawToken.replace(/\//g, '');
+  const { token } = useParams<{ token: string }>();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['portal-invoice', token],
-    queryFn: () => portalService.getInvoiceDetails(token),
+    queryFn: () => portalService.getInvoiceDetails(token!),
     enabled: !!token,
     retry: false,
   });

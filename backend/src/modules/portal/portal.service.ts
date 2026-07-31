@@ -10,8 +10,7 @@ export class PortalService {
       throw new NotFoundError('This link is no longer valid or does not exist.');
     }
 
-    const cleanToken = rawToken.replace(/\//g, '');
-    const tokenHash = crypto.createHash('sha256').update(cleanToken).digest('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     const record = await this.repo.findLinkByTokenHash(tokenHash);
 
     if (!record) {
