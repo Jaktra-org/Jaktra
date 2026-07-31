@@ -72,8 +72,8 @@ export class PortalRepository {
     // Revoke any existing active portal links for this invoice first
     await this.revokeActivePortalLinks(invoiceId);
 
-    // Generate new token
-    const rawToken = crypto.randomBytes(32).toString('hex');
+    // Generate new token (16 random bytes = 32 hex characters)
+    const rawToken = crypto.randomBytes(16).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
 
     const newLink = await this.createPortalLink({

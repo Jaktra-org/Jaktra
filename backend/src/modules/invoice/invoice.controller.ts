@@ -3,7 +3,6 @@ import type { InvoiceImportService, DuplicateStrategy } from './invoice.service.
 import type { InvoiceRepository } from './invoice.repository.js';
 import { logger } from '../../shared/logger.js';
 import type { PortalService } from '../portal/portal.service.js';
-import { config } from '../../config/index.js';
 import { TriageService } from '../agent/triage.service.js';
 import {
   createInvoiceSchema,
@@ -670,7 +669,7 @@ export class InvoiceController {
       }
 
       const token = await this.portalService.getOrCreatePortalLink(tenantId, id);
-      const url = `${config.FRONTEND_URL}/i/${token}`;
+      const url = `https://jaktra.site/i/${token}`;
 
       res.status(200).json({ token, url });
     } catch (error: unknown) {

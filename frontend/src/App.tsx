@@ -26,7 +26,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/invite" element={<AcceptInvitation />} />
-      <Route path="/i/:token" element={<DebtorPortal />} />
+      <Route path="/i/*" element={<DebtorPortal />} />
 
 
       {/* Protected Routes */}
