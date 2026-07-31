@@ -1,13 +1,23 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { agentRunChunks, type AgentRunChunk, type NewAgentRunChunk } from '../../db/schema.js';
 import type { DatabaseClient } from '../../db/index.js';
+import crypto from 'crypto';
 
 export class AgentChunkRepository {
-  constructor(private readonly db: DatabaseClient) {}
+  constructor(private readonly db: DatabaseClient) { }
 
   async createChunks(chunks: NewAgentRunChunk[]): Promise<AgentRunChunk[]> {
     if (chunks.length === 0) return [];
-    return this.db.insert(agentRunChunks).values(chunks).returning();
+    const items = chunks.map((item) => ({
+      ...item,
+      id: item.id || crypto.randomUUID(),
+    }));
+    const ids = items.map((item) => item.id);
+    await this.db.insert(agentRunChunks).values(items);
+    return await this.db
+      .select()
+      .from(agentRunChunks)
+      .where(inArray(agentRunChunks.id, ids));
   }
 
   async updateChunk(
@@ -15,12 +25,17 @@ export class AgentChunkRepository {
     tenantId: string,
     updates: Partial<Omit<AgentRunChunk, 'id' | 'tenantId' | 'createdAt'>>
   ): Promise<AgentRunChunk | undefined> {
-    const [updated] = await this.db
+    await this.db
       .update(agentRunChunks)
       .set(updates)
+      .where(and(eq(agentRunChunks.id, id), eq(agentRunChunks.tenantId, tenantId)));
+    
+    const [row] = await this.db
+      .select()
+      .from(agentRunChunks)
       .where(and(eq(agentRunChunks.id, id), eq(agentRunChunks.tenantId, tenantId)))
-      .returning();
-    return updated;
+      .limit(1);
+    return row;
   }
 
   async getChunksByRunId(runId: string, tenantId: string): Promise<AgentRunChunk[]> {
@@ -30,3 +45,4 @@ export class AgentChunkRepository {
       .where(and(eq(agentRunChunks.runId, runId), eq(agentRunChunks.tenantId, tenantId)));
   }
 }
+
