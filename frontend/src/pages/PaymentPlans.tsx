@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '../services/invoice';
 import { Loader2, AlertCircle, CheckCircle, XCircle, Calendar, RefreshCw } from 'lucide-react';
@@ -131,7 +132,12 @@ export function PaymentPlans() {
             <Card key={plan.id} className="border border-slate-200 shadow-sm overflow-hidden">
               <CardHeader className="bg-slate-50 border-b border-slate-200 py-4 px-6 flex flex-row items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <span className="font-semibold text-slate-900">{plan.invoiceNo}</span>
+                  <Link
+                    to={`/invoices/${plan.invoiceId}`}
+                    className="font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                  >
+                    {plan.invoiceNo}
+                  </Link>
                   <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200">
                     Pending Review
                   </Badge>

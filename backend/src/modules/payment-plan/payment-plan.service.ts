@@ -4,14 +4,21 @@ import type { DatabaseClient, PaymentPlanRequest } from '../../db/index.js';
 import type { PaymentPlanRepository } from './payment-plan.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
+import type { PortalService } from '../portal/portal.service.js';
+import type { TenantMailer } from '../communication/tenant-mailer.js';
+import type { SettingsRepository } from '../settings/settings.repository.js';
 import { ValidationError } from '../../shared/errors/index.js';
+import { logger } from '../../shared/logger.js';
 
 export class PaymentPlanService {
   constructor(
     private readonly repo: PaymentPlanRepository,
     private readonly invoiceRepo: InvoiceRepository,
     private readonly eventService: EventService,
-    private readonly db: DatabaseClient
+    private readonly db: DatabaseClient,
+    private readonly portalService?: PortalService,
+    private readonly tenantMailer?: TenantMailer,
+    private readonly settingsRepo?: SettingsRepository
   ) {}
 
   async hasPendingRequest(invoiceId: string): Promise<boolean> {
@@ -135,6 +142,8 @@ export class PaymentPlanService {
         }
       );
     });
+
+    await this.sendNotificationEmail(tenantId, plan.invoiceId, plan.installments, plan.proposedAmountPerMonth, 'approved');
   }
 
   async deny(id: string, tenantId: string, actor: ActorContext): Promise<void> {
@@ -170,6 +179,86 @@ export class PaymentPlanService {
         }
       );
     });
+
+    await this.sendNotificationEmail(tenantId, plan.invoiceId, plan.installments, plan.proposedAmountPerMonth, 'denied');
+  }
+
+  private async sendNotificationEmail(
+    tenantId: string,
+    invoiceId: string,
+    installments: number,
+    proposedAmountPerMonth: string,
+    status: 'approved' | 'denied'
+  ): Promise<void> {
+    try {
+      if (!this.tenantMailer || !this.portalService) return;
+
+      const invoice = await this.invoiceRepo.findById(invoiceId);
+      if (!invoice || !invoice.contactEmail) return;
+
+      let companyName = 'Billing Team';
+      if (this.settingsRepo) {
+        const settings = await this.settingsRepo.getSettings(tenantId);
+        if (settings?.companyName) {
+          companyName = settings.companyName;
+        }
+      }
+
+      const token = await this.portalService.getOrCreatePortalLink(tenantId, invoiceId);
+      const portalUrl = `https://www.jaktra.site/i/${token}`;
+
+      const currency = invoice.currency || 'INR';
+      const formattedBalance = `${currency} ${parseFloat(invoice.invoiceAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+      const formattedMonthly = `${currency} ${parseFloat(proposedAmountPerMonth).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+      let subject = '';
+      let html = '';
+
+      if (status === 'approved') {
+        subject = `Payment Plan Approved for Invoice #${invoice.invoiceNo}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; padding: 20px;">
+            <h2 style="color: #0f172a; margin-bottom: 16px;">Payment Plan Approved</h2>
+            <p>Dear ${invoice.clientName || 'Customer'},</p>
+            <p>Your requested payment plan for <strong>Invoice #${invoice.invoiceNo}</strong> (Total: ${formattedBalance}) has been <strong>APPROVED</strong>.</p>
+            
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Installment Schedule:</strong> ${installments} Months</p>
+              <p style="margin: 0; font-size: 14px; color: #4f46e5;"><strong>Monthly Amount:</strong> ${formattedMonthly} / month</p>
+            </div>
+
+            <p>Please pay your installments as per the agreed schedule using your payment portal:</p>
+            <p style="margin-top: 24px;">
+              <a href="${portalUrl}" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">View Invoice & Pay Installments</a>
+            </p>
+            <p style="color: #64748b; font-size: 12px; margin-top: 32px;">Regards,<br/>${companyName}</p>
+          </div>
+        `;
+      } else {
+        subject = `Payment Plan Update for Invoice #${invoice.invoiceNo}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; padding: 20px;">
+            <h2 style="color: #0f172a; margin-bottom: 16px;">Payment Plan Request Update</h2>
+            <p>Dear ${invoice.clientName || 'Customer'},</p>
+            <p>Your recent payment plan proposal for <strong>Invoice #${invoice.invoiceNo}</strong> (Total: ${formattedBalance}) was <strong>NOT APPROVED</strong>.</p>
+            <p>Please arrange to settle the outstanding balance as per the original invoice terms or reach out to our billing department.</p>
+            <p style="margin-top: 24px;">
+              <a href="${portalUrl}" style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">View Invoice & Settle Balance</a>
+            </p>
+            <p style="color: #64748b; font-size: 12px; margin-top: 32px;">Regards,<br/>${companyName}</p>
+          </div>
+        `;
+      }
+
+      await this.tenantMailer.sendCollectionEmail(tenantId, {
+        to: invoice.contactEmail,
+        from: { name: companyName, email: 'no-reply@jaktra.site' },
+        subject,
+        html,
+      }, { invoiceId });
+    } catch (err) {
+      logger.error(`Failed to send payment plan ${status} notification email:`, err);
+    }
   }
 
   async cancelActivePlan(invoiceId: string, tenantId: string, actor: ActorContext): Promise<void> {

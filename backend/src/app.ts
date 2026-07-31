@@ -227,7 +227,7 @@ export function createApp(config: AppConfig): Application {
     const disputeController = new DisputeController(disputeService);
 
     const paymentPlanRepo = new PaymentPlanRepository(config.db);
-    const paymentPlanService = new PaymentPlanService(paymentPlanRepo, invoiceRepo, eventService, config.db);
+    const paymentPlanService = new PaymentPlanService(paymentPlanRepo, invoiceRepo, eventService, config.db, portalService, tenantMailer, settingsRepo);
     const paymentPlanController = new PaymentPlanController(paymentPlanService);
 
     const portalController = new PortalController(portalService, paymentService, paymentPlanService, disputeService);
