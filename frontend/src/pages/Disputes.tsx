@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { disputeService, type InboundEmailReview, type DisputeStatus } from '../services/dispute';
+import { disputeService, type InboundEmailReview, type DisputeStatus, type ThreadItem } from '../services/dispute';
 import { 
   MessageSquare, CheckCircle, RefreshCw, Edit3, Clock, ChevronDown, ChevronUp, ExternalLink,
   ChevronLeft, ChevronRight, Loader2, Sparkles, AlertCircle, Send, RotateCcw, Archive
@@ -413,14 +413,62 @@ export function Disputes() {
                 </div>
 
                 {/* Expanded Box Content */}
-                {isGroupExpanded && (
-                  <div className="border-t border-slate-200 bg-slate-50/40 p-4 space-y-4">
-                    {/* Unified Conversation Timeline for all items of this invoice */}
-                    <div className="space-y-3">
-                      {group.items.map((item) => (
-                        <CustomerReplyView key={item.id} item={item} />
-                      ))}
-                    </div>
+                {isGroupExpanded && (() => {
+                  // Build a single unified, strictly chronological timeline for the invoice group
+                  const groupTimelineItems: Array<{
+                    id: string;
+                    kind: 'inbound' | 'outbound';
+                    timestamp: number;
+                    inboundItem?: InboundEmailReview;
+                    outboundMsg?: ThreadItem;
+                  }> = [];
+
+                  // 1. Add all inbound emails in group.items
+                  for (const item of group.items) {
+                    groupTimelineItems.push({
+                      id: item.id,
+                      kind: 'inbound',
+                      timestamp: new Date(item.createdAt).getTime(),
+                      inboundItem: item,
+                    });
+                  }
+
+                  // 2. Add all unique outbound replies from item.thread across group.items
+                  const outboundMap = new Map<string, ThreadItem>();
+                  for (const item of group.items) {
+                    for (const msg of item.thread || []) {
+                      if (msg.direction === 'outbound' && !outboundMap.has(msg.id)) {
+                        outboundMap.set(msg.id, msg);
+                      }
+                    }
+                  }
+
+                  for (const msg of outboundMap.values()) {
+                    groupTimelineItems.push({
+                      id: msg.id,
+                      kind: 'outbound',
+                      timestamp: new Date(msg.createdAt).getTime(),
+                      outboundMsg: msg,
+                    });
+                  }
+
+                  // 3. Sort strictly by timestamp ascending (earliest to latest)
+                  groupTimelineItems.sort((a, b) => a.timestamp - b.timestamp);
+
+                  return (
+                    <div className="border-t border-slate-200 bg-slate-50/40 p-4 space-y-4">
+                      {/* Unified Conversation Timeline for all items of this invoice */}
+                      <div className="space-y-3">
+                        {groupTimelineItems.map((tItem) => {
+                          if (tItem.kind === 'inbound' && tItem.inboundItem) {
+                            return <InboundChatBubble key={tItem.id} item={tItem.inboundItem} />;
+                          }
+                          if (tItem.kind === 'outbound' && tItem.outboundMsg) {
+                            return <OutboundChatBubble key={tItem.id} msg={tItem.outboundMsg} />;
+                          }
+                          return null;
+                        })}
+                      </div>
 
                     {/* Single Reply & Auto-Generate Action Area */}
                     <ItemActionArea
@@ -513,7 +561,8 @@ export function Disputes() {
                       )}
                     </div>
                   </div>
-                )}
+                );
+              })()}
               </div>
             );
           })}
@@ -558,111 +607,95 @@ const classificationConfigs: Record<string, { bg: string, text: string, label: s
   unclear: { bg: 'bg-amber-50 text-amber-700 border-amber-100', label: 'Unclear', text: 'text-amber-700' },
 };
 
-function CustomerReplyView({ item }: { item: InboundEmailReview }) {
-  const [isCustomerExpanded, setIsCustomerExpanded] = useState(false);
-  const [expandedOutboundMap, setExpandedOutboundMap] = useState<Record<string, boolean>>({});
-
-  const toggleOutboundExpand = (id: string) => {
-    setExpandedOutboundMap((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  // Extract outbound dispute replies belonging to this item
-  const outboundReplies = (item.thread || []).filter(
-    (msg) => msg.direction === 'outbound' && new Date(msg.createdAt) >= new Date(item.createdAt)
-  );
-
+function InboundChatBubble({ item }: { item: InboundEmailReview }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const cleanReplyText = parseEmailBody(item.body || item.subject || '').replyText;
   const summaryText = getAiSummary(item);
 
   return (
-    <div className="space-y-3">
-      {/* 1. Customer Reply Chat Bubble (Left Aligned) */}
-      <div className="max-w-[85%] mr-auto bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3.5 space-y-2 shadow-2xs">
-        <div className="flex items-center justify-between text-xs text-slate-500 gap-3">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Customer Reply</span>
-            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border capitalize ${
-              classificationConfigs[item.classification]?.bg || classificationConfigs.unclear.bg
-            }`}>
-              {classificationConfigs[item.classification]?.label || 'Unclear'}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2 text-slate-400">
-            <span className="text-[11px]">{new Date(item.createdAt).toLocaleString()}</span>
-            <button
-              type="button"
-              onClick={() => setIsCustomerExpanded(!isCustomerExpanded)}
-              className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
-              title={isCustomerExpanded ? "Collapse email" : "Expand full email"}
-            >
-              {isCustomerExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-          </div>
+    <div className="max-w-[85%] mr-auto bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3.5 space-y-2 shadow-2xs">
+      <div className="flex items-center justify-between text-xs text-slate-500 gap-3">
+        <div className="flex items-center space-x-2">
+          <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Customer Reply</span>
+          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border capitalize ${
+            classificationConfigs[item.classification]?.bg || classificationConfigs.unclear.bg
+          }`}>
+            {classificationConfigs[item.classification]?.label || 'Unclear'}
+          </span>
         </div>
-
-        {/* Visible 1-Line Summary Text / Full Email Text on Click */}
-        {isCustomerExpanded ? (
-          <div 
-            onClick={() => setIsCustomerExpanded(false)}
-            className="bg-slate-50 border border-slate-200/70 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-slate-100/60 transition-colors"
+        <div className="flex items-center space-x-2 text-slate-400">
+          <span className="text-[11px]">{new Date(item.createdAt).toLocaleString()}</span>
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+            title={isExpanded ? "Collapse email" : "Expand full email"}
           >
-            {cleanReplyText || '(No reply text)'}
-          </div>
-        ) : (
-          <div 
-            onClick={() => setIsCustomerExpanded(true)}
-            className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-slate-100/80 transition-colors"
-          >
-            {summaryText || cleanReplyText || '(No reply text)'}
-          </div>
-        )}
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
-      {/* 2. Outbound Tenant / Dispute Agent Reply Chat Bubbles (Right Aligned) */}
-      {outboundReplies.map((outboundMsg) => {
-        const cleanText = stripHtml(outboundMsg.body || '');
-        const isOutboundExpanded = !!expandedOutboundMap[outboundMsg.id];
+      {isExpanded ? (
+        <div 
+          onClick={() => setIsExpanded(false)}
+          className="bg-slate-50 border border-slate-200/70 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-slate-100/60 transition-colors"
+        >
+          {cleanReplyText || '(No reply text)'}
+        </div>
+      ) : (
+        <div 
+          onClick={() => setIsExpanded(true)}
+          className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-slate-100/80 transition-colors"
+        >
+          {summaryText || cleanReplyText || '(No reply text)'}
+        </div>
+      )}
+    </div>
+  );
+}
 
-        return (
-          <div key={outboundMsg.id} className="max-w-[85%] ml-auto bg-blue-50/90 border border-blue-200 rounded-2xl rounded-tr-xs p-3.5 space-y-2 shadow-2xs">
-            <div className="flex items-center justify-between text-xs text-blue-900 gap-3">
-              <div className="flex items-center space-x-2">
-                <span className="font-bold uppercase tracking-wider text-[10px]">Tenant Reply</span>
-                <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
-                  💬 Dispute Agent
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-500">
-                <span className="text-[11px]">{new Date(outboundMsg.createdAt).toLocaleString()}</span>
-                <button
-                  type="button"
-                  onClick={() => toggleOutboundExpand(outboundMsg.id)}
-                  className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
-                  title={isOutboundExpanded ? "Collapse reply" : "Expand full reply"}
-                >
-                  {isOutboundExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
+function OutboundChatBubble({ msg }: { msg: ThreadItem }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const cleanText = stripHtml(msg.body || '');
 
-            {isOutboundExpanded ? (
-              <div 
-                onClick={() => toggleOutboundExpand(outboundMsg.id)}
-                className="bg-white border border-blue-100 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-slate-50 transition-colors"
-              >
-                {cleanText || '(No message content)'}
-              </div>
-            ) : (
-              <div 
-                onClick={() => toggleOutboundExpand(outboundMsg.id)}
-                className="bg-white/80 border border-blue-100 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-white transition-colors"
-              >
-                {outboundMsg.aiSummary || cleanText || '(No message content)'}
-              </div>
-            )}
-          </div>
-        );
-      })}
+  return (
+    <div className="max-w-[85%] ml-auto bg-blue-50/90 border border-blue-200 rounded-2xl rounded-tr-xs p-3.5 space-y-2 shadow-2xs">
+      <div className="flex items-center justify-between text-xs text-blue-900 gap-3">
+        <div className="flex items-center space-x-2">
+          <span className="font-bold uppercase tracking-wider text-[10px]">Tenant Reply</span>
+          <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
+            💬 Dispute Agent
+          </span>
+        </div>
+        <div className="flex items-center space-x-2 text-slate-500">
+          <span className="text-[11px]">{new Date(msg.createdAt).toLocaleString()}</span>
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+            title={isExpanded ? "Collapse reply" : "Expand full reply"}
+          >
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {isExpanded ? (
+        <div 
+          onClick={() => setIsExpanded(false)}
+          className="bg-white border border-blue-100 p-3 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap cursor-pointer hover:bg-slate-50 transition-colors"
+        >
+          {cleanText || '(No message content)'}
+        </div>
+      ) : (
+        <div 
+          onClick={() => setIsExpanded(true)}
+          className="bg-white/80 border border-blue-100 p-2.5 rounded-md text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-white transition-colors"
+        >
+          {msg.aiSummary || cleanText || '(No message content)'}
+        </div>
+      )}
     </div>
   );
 }
