@@ -1,5 +1,4 @@
 import { ValidationError } from '../../shared/errors/index.js';
-import { logger } from '../../shared/logger.js';
 import type { EmailProvider, ResolvedEmailConfig, EmailSendResult, EmailMessage } from '../../shared/email/index.js';
 import { createEmailProvider } from '../../shared/email/email-provider.factory.js';
 
@@ -14,10 +13,7 @@ export class EnvPlatformEmailConfigResolver implements PlatformEmailConfigResolv
     if (provider === 'smtp') {
       const smtpUrl = process.env.PLATFORM_SMTP_URL;
       if (!smtpUrl) {
-        if (process.env.NODE_ENV === 'production') {
-          throw new ValidationError('PLATFORM_SMTP_URL must be configured in production');
-        }
-        throw new ValidationError('Platform SMTP not configured');
+        throw new ValidationError('PLATFORM_SMTP_URL must be configured');
       }
 
       try {
@@ -62,10 +58,6 @@ export class PlatformMailer {
       const config = await this.configResolver.resolve();
       return createEmailProvider(config);
     } catch (error: unknown) {
-      if (process.env.NODE_ENV !== 'production' && error instanceof ValidationError) {
-        logger.warn(`Platform email config resolution failed: ${error.message}. Emails will be skipped.`);
-        return null;
-      }
       throw error;
     }
   }
