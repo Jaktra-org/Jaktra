@@ -65,11 +65,11 @@ export class CommunicationRepository {
   }
 
   async create(data: NewCommunication): Promise<Communication> {
-    const rows = await this.db
-      .insert(communications)
-      .values(data)
-      .returning();
-    return rows[0]!;
+    const id = data.id || crypto.randomUUID();
+    const insertData = { ...data, id };
+    await this.db.insert(communications).values(insertData);
+    const [row] = await this.db.select().from(communications).where(eq(communications.id, id)).limit(1);
+    return row!;
   }
 
   async updateOpenedAt(id: string, openedAt: Date): Promise<void> {
@@ -110,23 +110,24 @@ export class CommunicationRepository {
   }
 
   async upsertSettings(tenantId: string, settings: Omit<NewTenantSettings, 'tenantId' | 'updatedAt'>): Promise<TenantSettings> {
-    const [upserted] = await this.db
+    const token = crypto.randomBytes(32).toString('hex');
+    await this.db
       .insert(tenantSettings)
       .values({
         tenantId,
         ...settings,
-        webhookToken: crypto.randomBytes(32).toString('hex'),
+        webhookToken: token,
         updatedAt: new Date(),
       })
-      .onConflictDoUpdate({
-        target: tenantSettings.tenantId,
+      .onDuplicateKeyUpdate({
         set: {
           ...settings,
           updatedAt: new Date(),
         },
-      })
-      .returning();
-    return upserted;
+      });
+    
+    const result = await this.getSettings(tenantId);
+    return result!;
   }
 
   async setDefaultEmailProvider(tenantId: string, provider: 'sendgrid' | 'smtp' | null): Promise<void> {
