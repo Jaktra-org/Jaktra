@@ -1,13 +1,12 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
+import { dlqEntries, invoices, type DlqEntry } from '../../db/schema.js';
 import type { DatabaseClient } from '../../db/index.js';
-import { dlqEntries, invoices } from '../../db/schema.js';
-import type { DlqEntry } from '../../db/schema.js';
 import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 import { NotFoundError } from '../../shared/errors/index.js';
 
 export class DlqRepository {
-  constructor(private readonly db: DatabaseClient) {}
-  
+  constructor(private readonly db: DatabaseClient) { }
+
   async recordFailure(invoiceId: string, tenantId: string, errorMsg: string, technicalMsg?: string): Promise<DlqEntry[]> {
     const invoice = await this.db
       .select({ id: invoices.id })
@@ -21,7 +20,7 @@ export class DlqRepository {
 
     const displayError = mapErrorToDisplayMessage(errorMsg);
 
-    return await this.db
+    await this.db
       .insert(dlqEntries)
       .values({
         invoiceId,
@@ -33,8 +32,7 @@ export class DlqRepository {
         firstFailure: new Date(),
         lastFailure: new Date(),
       })
-      .onConflictDoUpdate({
-        target: dlqEntries.invoiceId,
+      .onDuplicateKeyUpdate({
         set: {
           consecutiveFailures: sql`${dlqEntries.consecutiveFailures} + 1`,
           lastError: errorMsg,
@@ -42,8 +40,12 @@ export class DlqRepository {
           lastErrorTechnical: technicalMsg || errorMsg,
           lastFailure: new Date(),
         },
-      })
-      .returning();
+      });
+
+    return await this.db
+      .select()
+      .from(dlqEntries)
+      .where(eq(dlqEntries.invoiceId, invoiceId));
   }
 
   async clearFailure(invoiceId: string, tenantId: string): Promise<DlqEntry[]> {
@@ -57,10 +59,16 @@ export class DlqRepository {
       throw new NotFoundError('Invoice not found or does not belong to this tenant');
     }
 
-    return await this.db
+    const existing = await this.db
+      .select()
+      .from(dlqEntries)
+      .where(eq(dlqEntries.invoiceId, invoiceId));
+
+    await this.db
       .delete(dlqEntries)
-      .where(eq(dlqEntries.invoiceId, invoiceId))
-      .returning();
+      .where(eq(dlqEntries.invoiceId, invoiceId));
+
+    return existing;
   }
 
   async getAllEntries(tenantId: string): Promise<Array<{
@@ -96,7 +104,7 @@ export class DlqRepository {
     const result = await this.db
       .select({
         total: sql<number>`cast(count(*) as integer)`,
-        critical: sql<number>`cast(count(*) filter (where ${dlqEntries.consecutiveFailures} >= 3) as integer)`,
+        critical: sql<number>`cast(sum(case when ${dlqEntries.consecutiveFailures} >= 3 then 1 else 0 end) as integer)`,
       })
       .from(dlqEntries)
       .innerJoin(invoices, eq(dlqEntries.invoiceId, invoices.id))
@@ -109,9 +117,15 @@ export class DlqRepository {
   }
 
   async clearAllEntries(tenantId: string): Promise<DlqEntry[]> {
-    return await this.db
+    const existing = await this.db
+      .select()
+      .from(dlqEntries)
+      .where(eq(dlqEntries.tenantId, tenantId));
+
+    await this.db
       .delete(dlqEntries)
-      .where(eq(dlqEntries.tenantId, tenantId))
-      .returning();
+      .where(eq(dlqEntries.tenantId, tenantId));
+
+    return existing;
   }
 }
