@@ -251,6 +251,8 @@ export function createApp(config: AppConfig): Application {
     );
 
     app.use('/api/webhooks', createWebhookRouter(sendgridWebhookController, paymentWebhookController));
+    app.use('/api/public/portal', createPortalRouter(portalController, portalTokenAuth));
+    app.use('/api/portal', createPortalRouter(portalController, portalTokenAuth));
     app.use('/public/portal', createPortalRouter(portalController, portalTokenAuth));
 
     if (config.jwtSecret) {
