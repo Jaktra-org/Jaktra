@@ -1,22 +1,25 @@
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { agentRuns, type AgentRun, type NewAgentRun } from '../../db/schema.js';
 import type { DatabaseClient } from '../../db/index.js';
+import crypto from 'crypto';
 
 export class AgentRepository {
   constructor(private readonly db: DatabaseClient) {}
 
   async createRun(run: NewAgentRun): Promise<AgentRun> {
-    const [created] = await this.db.insert(agentRuns).values(run).returning();
-    return created;
+    const id = run.id || crypto.randomUUID();
+    const data = { ...run, id };
+    await this.db.insert(agentRuns).values(data);
+    const [row] = await this.db.select().from(agentRuns).where(eq(agentRuns.id, id)).limit(1);
+    return row!;
   }
 
   async updateRun(id: string, tenantId: string, updates: Partial<Omit<AgentRun, 'id' | 'tenantId' | 'createdAt'>>): Promise<AgentRun | undefined> {
-    const [updated] = await this.db
+    await this.db
       .update(agentRuns)
       .set(updates)
-      .where(and(eq(agentRuns.id, id), eq(agentRuns.tenantId, tenantId)))
-      .returning();
-    return updated;
+      .where(and(eq(agentRuns.id, id), eq(agentRuns.tenantId, tenantId)));
+    return this.getRunById(id, tenantId);
   }
 
   async recordBounce(id: string, tenantId: string): Promise<void> {
