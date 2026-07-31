@@ -17,14 +17,8 @@ import { EmailVerificationService } from './email-verification.service.js';
 import { PlatformMailer } from '../platform-mail/platform-mailer.js';
 import { OtpService } from './otp.service.js';
 
-// V1 LIMITATION: No self-service MFA recovery flow exists.
-// If a user loses both their authenticator device AND all backup codes, an admin
-// must manually clear MFA fields in the database via Drizzle Studio or direct SQL:
-//   UPDATE users SET mfa_enabled=false, mfa_secret=NULL, mfa_secret_iv=NULL,
-//     mfa_secret_auth_tag=NULL, mfa_secret_key_version=NULL,
-//     mfa_backup_codes=NULL, mfa_last_used_step=NULL WHERE id = '<userId>';
-// A future v2 should add an admin API endpoint: DELETE /api/team/:userId/mfa
- 
+
+
 const SALT_ROUNDS = 12;
 const MFA_BACKUP_CODE_COUNT = 8;
 const MFA_PENDING_EXPIRES = '5m';
@@ -97,11 +91,7 @@ export class AuthService {
 
     const emailResult = await this.platformMailer.sendOtpEmail(normalizedEmail, code);
     if (!emailResult.success) {
-      if (process.env.NODE_ENV !== 'production' && emailResult.error === 'Platform SMTP not configured') {
-        // Log skipped warning in non-production environments
-      } else {
-        throw new AuthError(`Failed to send verification email: ${emailResult.error}`, 500);
-      }
+      throw new AuthError(`Failed to send verification email: ${emailResult.error}`, 500);
     }
 
     return { pendingVerification: true };
@@ -127,11 +117,7 @@ export class AuthService {
     const code = await this.emailVerificationService.resendOtp(normalizedEmail);
     const emailResult = await this.platformMailer.sendOtpEmail(normalizedEmail, code);
     if (!emailResult.success) {
-      if (process.env.NODE_ENV !== 'production' && emailResult.error === 'Platform SMTP not configured') {
-        // Log skipped warning in non-production environments
-      } else {
-        throw new AuthError(`Failed to send verification email: ${emailResult.error}`, 500);
-      }
+      throw new AuthError(`Failed to send verification email: ${emailResult.error}`, 500);
     }
   }
 
@@ -521,10 +507,7 @@ export class AuthService {
 
     const emailResult = await this.platformMailer.sendPasswordResetOtpEmail(normalizedEmail, code);
     if (!emailResult.success) {
-      if (process.env.NODE_ENV !== 'production' && emailResult.error === 'Platform SMTP not configured') {
-      } else {
-        throw new AuthError(`Failed to send password reset email: ${emailResult.error}`, 500);
-      }
+      throw new AuthError(`Failed to send password reset email: ${emailResult.error}`, 500);
     }
   }
 
