@@ -3,6 +3,7 @@ import { events, invoices } from '../../db/index.js';
 import type { DatabaseClient, DatabaseOrTransaction } from '../../db/index.js';
 import type { Event, NewEvent } from '../../db/index.js';
 import { ACTIVITY_LOG_VISIBLE_ACTIONS, type ActionType } from './event.action-types.js';
+import crypto from 'crypto';
 
 export class EventRepository {
   constructor(public readonly db: DatabaseClient) {}
@@ -34,7 +35,7 @@ export class EventRepository {
     return this.db
       .select()
       .from(events)
-      .where(sql`${events.payload}->>'runId' = ${runId}`)
+      .where(sql`JSON_UNQUOTE(JSON_EXTRACT(${events.payload}, '$.runId')) = ${runId}`)
       .orderBy(asc(events.createdAt));
   }
 
@@ -59,14 +60,23 @@ export class EventRepository {
 
   async create(data: NewEvent, tx?: DatabaseOrTransaction): Promise<Event> {
     const dbClient = tx || this.db;
-    const rows = await dbClient.insert(events).values(data).returning();
-    return rows[0]!;
+    const id = data.id || crypto.randomUUID();
+    const insertData = { ...data, id };
+    await dbClient.insert(events).values(insertData);
+    const [row] = await dbClient.select().from(events).where(eq(events.id, id)).limit(1);
+    return row!;
   }
 
   async createMany(data: NewEvent[], tx?: DatabaseOrTransaction): Promise<Event[]> {
     if (data.length === 0) return [];
     const dbClient = tx || this.db;
-    return await dbClient.insert(events).values(data).returning();
+    const items = data.map((item) => ({
+      ...item,
+      id: item.id || crypto.randomUUID(),
+    }));
+    const ids = items.map((item) => item.id);
+    await dbClient.insert(events).values(items);
+    return await dbClient.select().from(events).where(inArray(events.id, ids));
   }
 
   async findByEntityPaginated(
