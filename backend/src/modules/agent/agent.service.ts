@@ -38,7 +38,7 @@ export class AgentService {
 
   private async getPortalLinkUrl(tenantId: string, invoiceId: string): Promise<string> {
     const token = await this.portalService.getOrCreatePortalLink(tenantId, invoiceId);
-    const baseUrl = config.FRONTEND_URL || 'https://jaktra.site';
+    const baseUrl = config.FRONTEND_URL || 'https://www.jaktra.site';
     return `${baseUrl.replace(/\/$/, '')}/i/${token}`;
   }
 

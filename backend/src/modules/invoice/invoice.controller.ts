@@ -670,7 +670,7 @@ export class InvoiceController {
       }
 
       const token = await this.portalService.getOrCreatePortalLink(tenantId, id);
-      const baseUrl = config.FRONTEND_URL || 'https://jaktra.site';
+      const baseUrl = config.FRONTEND_URL || 'https://www.jaktra.site';
       const url = `${baseUrl.replace(/\/$/, '')}/i/${token}`;
 
       res.status(200).json({ token, url });
