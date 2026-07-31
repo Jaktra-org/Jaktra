@@ -15,6 +15,7 @@ import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 import { PortalService } from '../portal/portal.service.js';
 import type { IntegrationService } from '../settings/integration.service.js';
 import { type AgentRunChunk } from '../../db/index.js';
+import { config } from '../../config/index.js';
 
 export class AgentService {
   private activeRuns = new Set<string>();
@@ -37,7 +38,8 @@ export class AgentService {
 
   private async getPortalLinkUrl(tenantId: string, invoiceId: string): Promise<string> {
     const token = await this.portalService.getOrCreatePortalLink(tenantId, invoiceId);
-    return `https://jaktra.site/i/${token}`;
+    const baseUrl = config.FRONTEND_URL || 'https://jaktra.site';
+    return `${baseUrl.replace(/\/$/, '')}/i/${token}`;
   }
 
   hasActiveRuns(): boolean {

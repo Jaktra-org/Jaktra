@@ -4,6 +4,7 @@ import type { InvoiceRepository } from './invoice.repository.js';
 import { logger } from '../../shared/logger.js';
 import type { PortalService } from '../portal/portal.service.js';
 import { TriageService } from '../agent/triage.service.js';
+import { config } from '../../config/index.js';
 import {
   createInvoiceSchema,
   bulkCreateInvoiceSchema,
@@ -669,7 +670,8 @@ export class InvoiceController {
       }
 
       const token = await this.portalService.getOrCreatePortalLink(tenantId, id);
-      const url = `https://jaktra.site/i/${token}`;
+      const baseUrl = config.FRONTEND_URL || 'https://jaktra.site';
+      const url = `${baseUrl.replace(/\/$/, '')}/i/${token}`;
 
       res.status(200).json({ token, url });
     } catch (error: unknown) {
