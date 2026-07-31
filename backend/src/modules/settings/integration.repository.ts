@@ -1,6 +1,7 @@
 import { eq, and } from 'drizzle-orm';
 import type { DatabaseClient } from '../../db/index.js';
 import { tenantIntegrations, type TenantIntegration, type NewTenantIntegration } from '../../db/index.js';
+import crypto from 'crypto';
 
 export class IntegrationRepository {
   constructor(private readonly db: DatabaseClient) {}
@@ -21,11 +22,12 @@ export class IntegrationRepository {
   }
 
   async upsertIntegration(data: NewTenantIntegration): Promise<TenantIntegration> {
-    const [result] = await this.db
+    const id = data.id || crypto.randomUUID();
+    const insertData = { ...data, id };
+    await this.db
       .insert(tenantIntegrations)
-      .values(data)
-      .onConflictDoUpdate({
-        target: [tenantIntegrations.tenantId, tenantIntegrations.provider],
+      .values(insertData)
+      .onDuplicateKeyUpdate({
         set: {
           ciphertext: data.ciphertext,
           iv: data.iv,
@@ -36,18 +38,18 @@ export class IntegrationRepository {
           lastOperationalErrorCode: data.lastOperationalErrorCode,
           updatedAt: new Date(),
         },
-      })
-      .returning();
+      });
 
-    return result;
+    const result = await this.getIntegration(data.tenantId, data.provider);
+    return result!;
   }
 
   async insertIntegration(data: NewTenantIntegration): Promise<TenantIntegration> {
-    const [result] = await this.db
-      .insert(tenantIntegrations)
-      .values(data)
-      .returning();
-    return result;
+    const id = data.id || crypto.randomUUID();
+    const insertData = { ...data, id };
+    await this.db.insert(tenantIntegrations).values(insertData);
+    const result = await this.getIntegration(data.tenantId, data.provider);
+    return result!;
   }
 
   async optimisticUpdateIntegration(
@@ -56,7 +58,7 @@ export class IntegrationRepository {
     data: Partial<NewTenantIntegration>,
     expectedUpdatedAt: Date
   ): Promise<TenantIntegration | null> {
-    const [result] = await this.db
+    await this.db
       .update(tenantIntegrations)
       .set({ ...data, updatedAt: new Date() })
       .where(
@@ -65,10 +67,9 @@ export class IntegrationRepository {
           eq(tenantIntegrations.provider, provider),
           eq(tenantIntegrations.updatedAt, expectedUpdatedAt)
         )
-      )
-      .returning();
+      );
     
-    return result || null;
+    return await this.getIntegration(tenantId, provider) || null;
   }
 
   async deleteIntegration(tenantId: string, provider: 'sendgrid' | 'smtp' | 'razorpay'): Promise<void> {
