@@ -74,7 +74,6 @@ export function Disputes() {
   const [draftResponse, setDraftResponse] = useState<string>('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [failedDraftId, setFailedDraftId] = useState<string | null>(null);
-  const [collapsedSubBoxMap, setCollapsedSubBoxMap] = useState<Record<string, boolean>>({});
 
   // 1. Fetch disputes with status and classification parameters
   const { data: disputesData, isLoading: isDisputesLoading, error: disputesError, refetch: refetchDisputes } = useQuery({
@@ -415,73 +414,29 @@ export function Disputes() {
 
                 {/* Expanded Box Content */}
                 {isGroupExpanded && (
-                  <div className="border-t border-slate-100 bg-slate-50/40 p-4 space-y-5">
-                    {group.items.map((item, index) => {
-                      const isSubBoxCollapsed = !!collapsedSubBoxMap[item.id];
-                      const itemSummary = getAiSummary(item);
+                  <div className="border-t border-slate-200 bg-slate-50/40 p-4 space-y-4">
+                    {/* Unified Conversation Timeline for all items of this invoice */}
+                    <div className="space-y-3">
+                      {group.items.map((item) => (
+                        <CustomerReplyView key={item.id} item={item} />
+                      ))}
+                    </div>
 
-                      return (
-                        <div key={item.id} className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-2xs">
-                          {/* Collapsible Sub-Box Header Bar */}
-                          <div
-                            onClick={() => setCollapsedSubBoxMap((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
-                            className="p-3 bg-slate-50/80 hover:bg-slate-100/70 cursor-pointer transition-colors flex items-center justify-between gap-3 border-b border-slate-100"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <span className="font-bold text-slate-800 text-xs">
-                                Box {index + 1}: <span className="capitalize">{classificationConfigs[item.classification]?.label || item.classification}</span>
-                              </span>
-                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border capitalize ${
-                                classificationConfigs[item.classification]?.bg || classificationConfigs.unclear.bg
-                              }`}>
-                                {classificationConfigs[item.classification]?.label || 'Unclear'}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              <span className="text-[11px] text-slate-400 font-medium">
-                                {new Date(item.createdAt).toLocaleString()}
-                              </span>
-                              <button
-                                type="button"
-                                className="p-0.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
-                              >
-                                {isSubBoxCollapsed ? <ChevronDown className="w-4 h-4 text-slate-600" /> : <ChevronUp className="w-4 h-4 text-slate-600" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Collapsed View: Main Content Summary */}
-                          {isSubBoxCollapsed ? (
-                            <div 
-                              onClick={() => setCollapsedSubBoxMap((prev) => ({ ...prev, [item.id]: false }))}
-                              className="p-3.5 text-xs text-slate-700 font-medium truncate cursor-pointer hover:bg-slate-50/70 transition-colors"
-                            >
-                              {itemSummary || '(No content summary)'}
-                            </div>
-                          ) : (
-                            /* Expanded View: Chat Bubbles & Reply Area */
-                            <div className="p-4 space-y-4">
-                              <CustomerReplyView item={item} />
-                              <ItemActionArea
-                                item={item}
-                                activeStatus={activeStatus}
-                                isEditingThisItem={editingId === item.id}
-                                draftResponse={editingId === item.id ? draftResponse : (item.suggestedResponse || '')}
-                                setDraftResponse={setDraftResponse}
-                                onStartEdit={handleStartEdit}
-                                onCancelEdit={handleCancelEdit}
-                                onSendReply={handleSendReply}
-                                onGenerateDraft={handleGenerateDraft}
-                                isGeneratingThisItem={generatingId === item.id}
-                                failedDraftId={failedDraftId}
-                                sendReplyPending={sendReplyMutation.isPending}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {/* Single Reply & Auto-Generate Action Area */}
+                    <ItemActionArea
+                      item={primaryItem}
+                      activeStatus={activeStatus}
+                      isEditingThisItem={editingId === primaryItem.id}
+                      draftResponse={editingId === primaryItem.id ? draftResponse : (primaryItem.suggestedResponse || '')}
+                      setDraftResponse={setDraftResponse}
+                      onStartEdit={handleStartEdit}
+                      onCancelEdit={handleCancelEdit}
+                      onSendReply={handleSendReply}
+                      onGenerateDraft={handleGenerateDraft}
+                      isGeneratingThisItem={generatingId === primaryItem.id}
+                      failedDraftId={failedDraftId}
+                      sendReplyPending={sendReplyMutation.isPending}
+                    />
 
                     {/* Single Invoice Group Resolution Actions Bar (Once per Invoice Box) */}
                     <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200">
