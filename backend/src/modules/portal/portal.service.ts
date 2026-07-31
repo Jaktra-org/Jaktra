@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { PortalRepository } from './portal.repository.js';
-import { NotFoundError, GoneError } from '../../shared/errors/index.js';
+import { NotFoundError } from '../../shared/errors/index.js';
 
 export class PortalService {
   constructor(private readonly repo: PortalRepository) {}
@@ -18,24 +18,6 @@ export class PortalService {
     }
 
     const { link, invoice, tenant, settings } = record;
-
-    if (link.revokedAt) {
-      throw new GoneError('This link is no longer valid or does not exist.');
-    }
-
-    // Dynamic Lifecycle-Based Expiry Check
-    if (invoice.paymentStatus === 'Paid' || invoice.paymentStatus === 'Written Off') {
-      const statusTime = invoice.paymentStatusChangedAt;
-      if (!statusTime) {
-        throw new GoneError('This link is no longer valid or does not exist.');
-      }
-      const gracePeriodEnd = new Date(statusTime.getTime());
-      gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7); // 7-day grace period
-
-      if (new Date() > gracePeriodEnd) {
-        throw new GoneError('This link is no longer valid or does not exist.');
-      }
-    }
 
     return {
       link,

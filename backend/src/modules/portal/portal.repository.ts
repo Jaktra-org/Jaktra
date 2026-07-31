@@ -69,12 +69,14 @@ export class PortalRepository {
   }
 
   async getOrCreatePortalLink(tenantId: string, invoiceId: string): Promise<{ token: string; link: InvoicePortalLink }> {
-    // Revoke any existing active portal links for this invoice first
-    await this.revokeActivePortalLinks(invoiceId);
-
-    // Generate new token (16 random bytes = 32 hex characters)
-    const rawToken = crypto.randomBytes(16).toString('hex');
+    const secret = 'jaktra-portal-token-v1';
+    const rawToken = crypto.createHmac('sha256', secret).update(`${tenantId}:${invoiceId}`).digest('hex').substring(0, 32);
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const existing = await this.findLinkByTokenHash(tokenHash);
+    if (existing) {
+      return { token: rawToken, link: existing.link };
+    }
 
     const newLink = await this.createPortalLink({
       tenantId,

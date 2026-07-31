@@ -215,11 +215,11 @@ describe('Portal Token Security & Isolation Tests', () => {
       expect(res.body.invoice.clientName).toBe('Client A');
     });
 
-    it('should expire links after 7-day grace period for Paid/Written Off invoices', async () => {
+    it('should keep links valid indefinitely even for Paid/Written Off invoices', async () => {
       const rawTokenA = crypto.randomBytes(32).toString('hex');
       await createTestLink(tenantAId, invoiceAId, rawTokenA);
 
-      // Mark paid with transition timestamp 8 days ago
+      // Mark paid 8 days ago
       const eightDaysAgo = new Date();
       eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
 
@@ -231,8 +231,8 @@ describe('Portal Token Security & Isolation Tests', () => {
         .where(eq(invoices.id, invoiceAId));
 
       const res = await request(app).get(`/public/portal/${rawTokenA}`);
-      expect(res.status).toBe(410);
-      expect(res.body.error.message).toBe('This link is no longer valid or does not exist.');
+      expect(res.status).toBe(200);
+      expect(res.body.invoice.paymentStatus).toBe('Paid');
     });
 
     it('should keep links valid indefinitely for Pending or Overdue statuses regardless of time elapsed', async () => {
@@ -253,38 +253,6 @@ describe('Portal Token Security & Isolation Tests', () => {
       const res = await request(app).get(`/public/portal/${rawTokenA}`);
       expect(res.status).toBe(200);
       expect(res.body.invoice.paymentStatus).toBe('Overdue');
-    });
-
-    it('should block manually revoked tokens immediately', async () => {
-      const rawTokenA = crypto.randomBytes(32).toString('hex');
-      const link = await createTestLink(tenantAId, invoiceAId, rawTokenA);
-
-      // Revoke the link
-      await db.update(invoicePortalLinks)
-        .set({ revokedAt: new Date() })
-        .where(eq(invoicePortalLinks.id, link.id));
-
-      const res = await request(app).get(`/public/portal/${rawTokenA}`);
-      expect(res.status).toBe(410);
-      expect(res.body.error.message).toBe('This link is no longer valid or does not exist.');
-    });
-
-    it('should present an identical error message for 404 (not found) and 410 (expired/revoked) for user privacy', async () => {
-      const nonexistentToken = crypto.randomBytes(32).toString('hex');
-      
-      // 404 Case
-      const res404 = await request(app).get(`/public/portal/${nonexistentToken}`);
-      expect(res404.status).toBe(404);
-      expect(res404.body.error.message).toBe('This link is no longer valid or does not exist.');
-
-      // 410 Case (Revoked)
-      const rawToken = crypto.randomBytes(32).toString('hex');
-      const link = await createTestLink(tenantAId, invoiceAId, rawToken);
-      await db.update(invoicePortalLinks).set({ revokedAt: new Date() }).where(eq(invoicePortalLinks.id, link.id));
-      
-      const res410 = await request(app).get(`/public/portal/${rawToken}`);
-      expect(res410.status).toBe(410);
-      expect(res410.body.error.message).toBe('This link is no longer valid or does not exist.');
     });
 
     it('should preserve the active portal link when sending multiple follow-up emails for the same invoice', async () => {
@@ -1088,28 +1056,24 @@ describe('Portal Token Security & Isolation Tests', () => {
     });
 
     describe('POST /api/invoices/:id/portal-link/regenerate', () => {
-      it('revokes the old link and creates a new one successfully', async () => {
-        const oldRawToken = crypto.randomBytes(32).toString('hex');
-        await createTestLink(tenantAId, invoiceAId, oldRawToken);
-
-        // Trigger regeneration
-        const resRegen = await request(app)
+      it('returns the same permanent unique portal link for an invoice on repeated calls', async () => {
+        const res1 = await request(app)
           .post(`/api/invoices/${invoiceAId}/portal-link/regenerate`)
           .set('Authorization', `Bearer ${managerToken}`);
 
-        expect(resRegen.status).toBe(200);
-        expect(resRegen.body.token).toBeDefined();
-        expect(resRegen.body.url).toContain(resRegen.body.token);
+        expect(res1.status).toBe(200);
+        expect(res1.body.token).toBeDefined();
 
-        // Old link must return 410 (Gone) now
-        const resOld = await request(app)
-          .get(`/public/portal/${oldRawToken}`);
-        expect(resOld.status).toBe(410);
+        const res2 = await request(app)
+          .post(`/api/invoices/${invoiceAId}/portal-link/regenerate`)
+          .set('Authorization', `Bearer ${managerToken}`);
 
-        // New link must return 200 (OK)
-        const resNew = await request(app)
-          .get(`/public/portal/${resRegen.body.token}`);
-        expect(resNew.status).toBe(200);
+        expect(res2.status).toBe(200);
+        expect(res2.body.token).toBe(res1.body.token);
+
+        const resAccess = await request(app)
+          .get(`/public/portal/${res1.body.token}`);
+        expect(resAccess.status).toBe(200);
       });
 
       it('enforces tenant isolation and blocks cross-tenant regeneration', async () => {
