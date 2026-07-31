@@ -27,28 +27,29 @@ export class SettingsRepository {
 
   async rotateWebhookToken(tenantId: string): Promise<TenantSettings> {
     const newToken = crypto.randomBytes(32).toString('hex');
-    const [updated] = await this.db
+    await this.db
       .update(tenantSettings)
       .set({
         webhookToken: newToken,
         updatedAt: new Date(),
       })
-      .where(eq(tenantSettings.tenantId, tenantId))
-      .returning();
-    return updated;
+      .where(eq(tenantSettings.tenantId, tenantId));
+    
+    const settings = await this.getSettings(tenantId);
+    return settings!;
   }
 
   async updateSettings(tenantId: string, data: Partial<Omit<TenantSettings, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>>): Promise<TenantSettings> {
-    const [updated] = await this.db
+    await this.db
       .update(tenantSettings)
       .set({
         ...data,
         updatedAt: new Date(),
       })
-      .where(eq(tenantSettings.tenantId, tenantId))
-      .returning();
+      .where(eq(tenantSettings.tenantId, tenantId));
 
-    return updated || null;
+    const settings = await this.getSettings(tenantId);
+    return settings!;
   }
 
   async createDefaultSettings(tenantId: string): Promise<TenantSettings> {
@@ -66,7 +67,7 @@ export class SettingsRepository {
       .limit(1);
     const adminUser = adminResult[0];
 
-    const [newSettings] = await this.db
+    await this.db
       .insert(tenantSettings)
       .values({
         tenantId,
@@ -74,10 +75,10 @@ export class SettingsRepository {
         senderName: adminUser?.name || 'Finance Team',
         senderEmail: adminUser?.email || 'billing@example.com',
         dlqThreshold: 3,
-      })
-      .returning();
+      });
 
-    return newSettings;
+    const settings = await this.getSettings(tenantId);
+    return settings!;
   }
 
   async findAllWithAutoPurgeEnabled(): Promise<TenantSettings[]> {
