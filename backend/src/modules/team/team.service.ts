@@ -157,21 +157,24 @@ export class TeamService {
         throw new AuthError('Email is already registered in the system', 409);
       }
 
-      const [newUser] = await tx.insert(users).values({
+      const userId = crypto.randomUUID();
+      await tx.insert(users).values({
+        id: userId,
         tenantId: invite.tenantId,
         email: invite.email,
         name,
         passwordHash,
         role: invite.role,
         emailVerified: true,
-      }).returning();
+      });
+      const [newUser] = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
       
       await tx.update(teamInvitations)
         .set({ acceptedAt: new Date() })
         .where(eq(teamInvitations.id, invite.id));
 
       return {
-        id: newUser.id,
+        id: newUser!.id,
         tenantId: invite.tenantId,
         email: invite.email,
         name,
