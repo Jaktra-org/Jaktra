@@ -22,8 +22,7 @@ export class ReconcilerService {
   ) {}
 
   async reconcile(tenantId: string): Promise<ReconcilerResult> {
-    // Single SQL query that finds all mismatches
-    const mismatches = await this.db.execute(sql`
+    const [rows] = await this.db.execute(sql`
         SELECT
             i.id as invoice_id,
             i.invoice_no,
@@ -39,17 +38,16 @@ export class ReconcilerService {
         WHERE i.tenant_id = ${tenantId}
         AND i.deleted_at IS NULL
         AND i.followup_count != COALESCE(c.sent_count, 0)
-    `);
+    `) as unknown as [Record<string, unknown>[]];
 
-    // Auto-correct mismatches
-    for (const m of mismatches.rows) {
+    for (const m of rows) {
       await this.invoiceRepo.updateFollowupCount(m.invoice_id as string, Number(m.new_followup_count));
     }
 
     return {
       checked: await this.invoiceRepo.countByTenant(tenantId),
-      mismatches: mismatches.rows.length,
-      corrections: mismatches.rows.map((m: Record<string, unknown>) => ({
+      mismatches: rows.length,
+      corrections: rows.map((m: Record<string, unknown>) => ({
         invoiceId: m.invoice_id as string,
         invoiceNo: m.invoice_no as string,
         oldFollowupCount: Number(m.old_followup_count),
