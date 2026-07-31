@@ -1,6 +1,7 @@
 import type { RedisClientType } from 'redis';
 import { AuthError } from '../../shared/errors/index.js';
 import { OtpService } from './otp.service.js';
+import { logger } from '../../shared/logger.js';
 
 export interface PendingRegistration {
   name: string;
@@ -12,6 +13,7 @@ export interface PendingRegistration {
 
 export class EmailVerificationService {
   private readonly otpService: OtpService;
+  private static readonly memoryPendingStore = new Map<string, { data: string; expiresAt: number }>();
 
   constructor(
     private readonly redis: RedisClientType | null,
@@ -29,10 +31,6 @@ export class EmailVerificationService {
   }
 
   async storePendingRegistration(email: string, payload: Omit<PendingRegistration, 'createdAt'>): Promise<string> {
-    if (!this.isRedisReady) {
-      throw new AuthError('Registration service temporarily unavailable', 503);
-    }
-
     const normalizedEmail = email.toLowerCase().trim();
     const pendingKey = `pending_registration:${normalizedEmail}`;
 
@@ -41,64 +39,76 @@ export class EmailVerificationService {
       createdAt: new Date(),
     };
 
-    // Store OTP using shared OtpService
     const code = await this.otpService.storeOtp(normalizedEmail, 'email_otp', {}, 600);
 
-    // Store pending registration data
-    await this.redis!.set(pendingKey, JSON.stringify(pendingData), { EX: 900 }); // 15 mins
+    if (this.isRedisReady) {
+      await this.redis!.set(pendingKey, JSON.stringify(pendingData), { EX: 900 }); // 15 mins
+    } else {
+      logger.info(`[EmailVerificationService] Storing pending registration in-memory fallback for ${normalizedEmail}`);
+      EmailVerificationService.memoryPendingStore.set(pendingKey, {
+        data: JSON.stringify(pendingData),
+        expiresAt: Date.now() + 900 * 1000,
+      });
+    }
 
     return code;
   }
 
   async verifyOtp(email: string, code: string): Promise<PendingRegistration> {
-    if (!this.isRedisReady) {
-      throw new AuthError('Registration service temporarily unavailable', 503);
-    }
-
     const normalizedEmail = email.toLowerCase().trim();
     const pendingKey = `pending_registration:${normalizedEmail}`;
 
-    // Verify OTP using shared OtpService
     await this.otpService.verifyOtp(normalizedEmail, 'email_otp', code);
 
-    // Code is correct — retrieve pending registration
-    const pendingRaw = await this.redis!.get(pendingKey);
+    let pendingRaw: string | null = null;
+    if (this.isRedisReady) {
+      pendingRaw = await this.redis!.get(pendingKey);
+    } else {
+      const entry = EmailVerificationService.memoryPendingStore.get(pendingKey);
+      if (entry && entry.expiresAt > Date.now()) {
+        pendingRaw = entry.data;
+      }
+    }
+
     if (!pendingRaw) {
       throw new AuthError('Registration expired, please start again', 400);
     }
 
     const pending = JSON.parse(pendingRaw) as PendingRegistration;
 
-    // Delete pending registration key
-    await this.redis!.del(pendingKey);
+    if (this.isRedisReady) {
+      await this.redis!.del(pendingKey);
+    } else {
+      EmailVerificationService.memoryPendingStore.delete(pendingKey);
+    }
 
     return pending;
   }
 
   async resendOtp(email: string): Promise<string> {
-    if (!this.isRedisReady) {
-      throw new AuthError('Registration service temporarily unavailable', 503);
-    }
-
     const normalizedEmail = email.toLowerCase().trim();
     const pendingKey = `pending_registration:${normalizedEmail}`;
 
-    // Verify registration exists
-    const pendingRaw = await this.redis!.get(pendingKey);
+    let pendingRaw: string | null = null;
+    if (this.isRedisReady) {
+      pendingRaw = await this.redis!.get(pendingKey);
+    } else {
+      const entry = EmailVerificationService.memoryPendingStore.get(pendingKey);
+      if (entry && entry.expiresAt > Date.now()) {
+        pendingRaw = entry.data;
+      }
+    }
+
     if (!pendingRaw) {
       throw new AuthError('Please restart registration', 400);
     }
 
-    // Rate limiting using shared OtpService
     await this.otpService.checkRateLimit(normalizedEmail, 'resend');
 
-    // Store OTP using shared OtpService
     const code = await this.otpService.storeOtp(normalizedEmail, 'email_otp', {}, 600);
 
-    // Update hourly count & cooldown using shared OtpService
     await this.otpService.incrementRateLimit(normalizedEmail, 'resend');
 
     return code;
   }
 }
-
