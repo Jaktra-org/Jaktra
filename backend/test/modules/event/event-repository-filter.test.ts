@@ -33,18 +33,18 @@ describe('EventRepository - Filtering and Pagination', () => {
     testEventIds = [];
 
     const uniqueSuffix = crypto.randomUUID().substring(0, 8);
-    const [t1] = await db.insert(tenants).values({ name: 'Tenant A', slug: `ta-${uniqueSuffix}` }).returning();
-    const [t2] = await db.insert(tenants).values({ name: 'Tenant B', slug: `tb-${uniqueSuffix}` }).returning();
-    
-    tenantId1 = t1.id;
-    tenantId2 = t2.id;
-    testTenantIds.push(t1.id, t2.id);
+    tenantId1 = crypto.randomUUID();
+    tenantId2 = crypto.randomUUID();
+    await db.insert(tenants).values({ id: tenantId1, name: 'Tenant A', slug: `ta-${uniqueSuffix}` });
+    await db.insert(tenants).values({ id: tenantId2, name: 'Tenant B', slug: `tb-${uniqueSuffix}` });
+    testTenantIds.push(tenantId1, tenantId2);
 
     entityId1 = crypto.randomUUID();
 
     // Insert mock events for tenant 1
     const mockEvents = [
       {
+        id: crypto.randomUUID(),
         tenantId: tenantId1,
         entityType: 'invoice',
         entityId: entityId1,
@@ -54,47 +54,52 @@ describe('EventRepository - Filtering and Pagination', () => {
         createdAt: new Date('2026-06-22T01:00:00Z'),
       },
       {
+        id: crypto.randomUUID(),
         tenantId: tenantId1,
         entityType: 'invoice',
         entityId: entityId1,
         actionType: 'invoice.status_changed',
-        source: 'ui',
-        eventType: 'status_changed',
+        source: 'system',
+        eventType: 'invoice.status_changed',
         createdAt: new Date('2026-06-22T02:00:00Z'),
       },
       {
+        id: crypto.randomUUID(),
         tenantId: tenantId1,
         entityType: 'invoice',
         entityId: entityId1,
         actionType: 'followup.sent',
         source: 'agent',
-        eventType: 'email_sent',
+        eventType: 'reminder_sent',
         createdAt: new Date('2026-06-22T03:00:00Z'),
       },
       {
+        id: crypto.randomUUID(),
         tenantId: tenantId1,
         entityType: 'invoice',
         entityId: entityId1,
         actionType: 'payment.received',
-        source: 'webhook',
+        source: 'stripe',
         eventType: 'payment_received',
         createdAt: new Date('2026-06-22T04:00:00Z'),
       },
     ];
 
-    // Insert events one by one or in batch
-    const createdEvents = await db.insert(events).values(mockEvents).returning();
-    testEventIds.push(...createdEvents.map((e: any) => e.id));
+    // Insert events
+    await db.insert(events).values(mockEvents);
+    testEventIds.push(...mockEvents.map((e) => e.id));
 
     // Insert mock event for tenant 2 to test isolation
-    const [t2Event] = await db.insert(events).values({
+    const t2Event = {
+      id: crypto.randomUUID(),
       tenantId: tenantId2,
       entityType: 'invoice',
       entityId: entityId1, // same entity id, different tenant
       actionType: 'invoice.created',
       source: 'ui',
       eventType: 'invoice.created',
-    }).returning();
+    };
+    await db.insert(events).values(t2Event);
     testEventIds.push(t2Event.id);
   });
 
