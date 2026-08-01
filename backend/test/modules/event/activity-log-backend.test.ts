@@ -140,43 +140,45 @@ describe('EventRepository.findTenantEventsPaginated (Tenant Isolation Smoke Test
     testEventIds = [];
 
     const uniqueSuffix = crypto.randomUUID().substring(0, 8);
-    const [tA] = await db.insert(tenants).values({ name: 'Tenant A', slug: `ta-${uniqueSuffix}` }).returning();
-    const [tB] = await db.insert(tenants).values({ name: 'Tenant B', slug: `tb-${uniqueSuffix}` }).returning();
-    
-    tenantAId = tA.id;
-    tenantBId = tB.id;
-    testTenantIds.push(tA.id, tB.id);
+    tenantAId = crypto.randomUUID();
+    tenantBId = crypto.randomUUID();
+    await db.insert(tenants).values({ id: tenantAId, name: 'Tenant A', slug: `ta-${uniqueSuffix}` });
+    await db.insert(tenants).values({ id: tenantBId, name: 'Tenant B', slug: `tb-${uniqueSuffix}` });
+    testTenantIds.push(tenantAId, tenantBId);
 
     // Insert events for Tenant A
-    const evtsA = await db.insert(events).values([
-      {
-        tenantId: tenantAId,
-        entityType: 'settings',
-        entityId: tenantAId,
-        actionType: 'settings.updated',
-        source: 'ui',
-        eventType: 'settings.updated',
-      },
-      {
-        tenantId: tenantAId,
-        entityType: 'user',
-        entityId: crypto.randomUUID(),
-        actionType: 'user.invited',
-        source: 'ui',
-        eventType: 'user.invited',
-      }
-    ]).returning();
-    testEventIds.push(...evtsA.map((e: any) => e.id));
+    const evtA1 = {
+      id: crypto.randomUUID(),
+      tenantId: tenantAId,
+      entityType: 'settings',
+      entityId: tenantAId,
+      actionType: 'settings.updated',
+      source: 'ui',
+      eventType: 'settings.updated',
+    };
+    const evtA2 = {
+      id: crypto.randomUUID(),
+      tenantId: tenantAId,
+      entityType: 'user',
+      entityId: crypto.randomUUID(),
+      actionType: 'user.invited',
+      source: 'ui',
+      eventType: 'user.invited',
+    };
+    await db.insert(events).values([evtA1, evtA2]);
+    testEventIds.push(evtA1.id, evtA2.id);
 
     // Insert event for Tenant B
-    const [evtB] = await db.insert(events).values({
+    const evtB = {
+      id: crypto.randomUUID(),
       tenantId: tenantBId,
       entityType: 'settings',
       entityId: tenantBId,
       actionType: 'settings.webhook_token_rotated',
       source: 'ui',
       eventType: 'settings.webhook_token_rotated',
-    }).returning();
+    };
+    await db.insert(events).values(evtB);
     testEventIds.push(evtB.id);
   });
 
