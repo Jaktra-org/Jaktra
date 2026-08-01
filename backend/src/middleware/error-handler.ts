@@ -8,13 +8,13 @@ import { mapErrorToDisplayMessage } from '../shared/utils/error-mapper.js';
 export function sanitizeTechnicalMessage(message: string): string {
   let sanitized = message;
 
-  // 1. Redact environment variable assignments (run first to avoid matching spaces in other redacted placeholders)
+  // 1. Redact environment variable assignments 
   sanitized = sanitized.replace(/[A-Z0-9_]*(?:KEY|SECRET|PASSWORD|TOKEN|URL)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'`<>]+)/gi, '[env redacted]');
 
   // 2. Redact connection strings
   sanitized = sanitized.replace(/(?:postgresql|postgres|redis|mongodb|mysql|amqp):\/\/[^\s"'`<>]+/gi, '[connection-string redacted]');
 
-  // 3. Redact absolute file paths (Unix and Windows)
+  // 3. Redact absolute file paths 
   sanitized = sanitized.replace(/(?:[a-z]:\\|\/(?:home|app|var|usr|opt|etc|node_modules|dist|src)\/)[^\s"'`<>:]+/gi, '[path redacted]');
 
   // 4. Redact common secrets and keys
@@ -73,7 +73,6 @@ export function errorHandler(
     displayMessage = 'Invalid request data';
     technicalMessage = JSON.stringify(err.issues);
   } else {
-    // Check if it's database, network, axios, etc.
     const errString = String(err);
     const errMsg = err.message || errString;
     displayMessage = mapErrorToDisplayMessage(err);
@@ -95,7 +94,7 @@ export function errorHandler(
     }
   }
 
-  // Developer logging (server logs)
+
   logger.error(`[Error] Request ID: ${requestId} | Code: ${errorCode} | Technical Message: ${technicalMessage} | Path: ${req.method} ${req.path}`, {
     stackTrace: err.stack,
   });
@@ -122,12 +121,9 @@ export function errorHandler(
     }
   };
 
-  // Dev only — never in production/staging/test
   if (process.env.NODE_ENV === 'development') {
     errorResponse.error.details = sanitizeTechnicalMessage(technicalMessage);
-    if (err.stack) {
-      errorResponse.error.stack = sanitizeTechnicalMessage(err.stack);
-    }
+    errorResponse.error.stack = err.stack;
   }
 
   res.status(statusCode).json(errorResponse);
