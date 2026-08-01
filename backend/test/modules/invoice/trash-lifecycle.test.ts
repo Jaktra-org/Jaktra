@@ -42,8 +42,8 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
     testTenantIds = [];
 
     const uniqueSuffix = crypto.randomUUID().substring(0, 8);
-    const [t] = await db.insert(tenants).values({ name: 'Trash Test Tenant', slug: `ttt-${uniqueSuffix}` }).returning();
-    tenantId = t.id;
+    tenantId = crypto.randomUUID();
+    await db.insert(tenants).values({ id: tenantId, name: 'Trash Test Tenant', slug: `ttt-${uniqueSuffix}` });
     testTenantIds.push(tenantId);
 
     // Initialize tenant settings
@@ -69,25 +69,27 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
 
   it('should move an invoice to Trash and verify findTrashed lists it', async () => {
     const invoiceNo = `INV-${crypto.randomUUID().substring(0, 8)}`;
-    const [inv] = await db.insert(invoices).values({
+    const invId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: invId,
       tenantId,
       invoiceNo,
       clientName: 'Client Alpha',
       invoiceAmount: '1500.00',
       dueDate: '2026-08-31',
       contactEmail: 'client@example.com',
-    }).returning();
-    testInvoiceIds.push(inv.id);
+    });
+    testInvoiceIds.push(invId);
 
     // Soft delete (move to trash)
-    await invoiceRepo.softDelete(inv.id, tenantId);
+    await invoiceRepo.softDelete(invId, tenantId);
 
     // Fetch active
-    const activeResult = await invoiceRepo.findById(inv.id);
+    const activeResult = await invoiceRepo.findById(invId);
     expect(activeResult).toBeUndefined();
 
     // Fetch trashed
-    const trashedResult = await invoiceRepo.findByIdIncludingTrashed(inv.id);
+    const trashedResult = await invoiceRepo.findByIdIncludingTrashed(invId);
     expect(trashedResult).not.toBeNull();
     expect(trashedResult?.deletedAt).not.toBeNull();
 
@@ -99,12 +101,14 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
       sortBy: 'createdAt',
       sortOrder: 'desc',
     });
-    expect(trashedList.data.some(i => i.id === inv.id)).toBe(true);
+    expect(trashedList.data.some(i => i.id === invId)).toBe(true);
   });
 
   it('should restore an invoice from Trash', async () => {
     const invoiceNo = `INV-${crypto.randomUUID().substring(0, 8)}`;
-    const [inv] = await db.insert(invoices).values({
+    const invId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: invId,
       tenantId,
       invoiceNo,
       clientName: 'Client Beta',
@@ -112,20 +116,22 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
       dueDate: '2026-08-31',
       contactEmail: 'client@example.com',
       deletedAt: new Date(),
-    }).returning();
-    testInvoiceIds.push(inv.id);
+    });
+    testInvoiceIds.push(invId);
 
     // Restore
-    await invoiceRepo.restore(inv.id, tenantId);
+    await invoiceRepo.restore(invId, tenantId);
 
-    const activeResult = await invoiceRepo.findById(inv.id);
+    const activeResult = await invoiceRepo.findById(invId);
     expect(activeResult).not.toBeNull();
     expect(activeResult?.deletedAt).toBeNull();
   });
 
   it('should permanently delete an invoice in two stages: Trash -> Hard Delete', async () => {
     const invoiceNo = `INV-${crypto.randomUUID().substring(0, 8)}`;
-    const [inv] = await db.insert(invoices).values({
+    const invId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: invId,
       tenantId,
       invoiceNo,
       clientName: 'Client Gamma',
@@ -133,14 +139,14 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
       dueDate: '2026-08-31',
       contactEmail: 'client@example.com',
       deletedAt: new Date(),
-    }).returning();
-    testInvoiceIds.push(inv.id);
+    });
+    testInvoiceIds.push(invId);
 
     // Hard delete
-    await invoiceRepo.hardDelete(inv.id, tenantId);
+    await invoiceRepo.hardDelete(invId, tenantId);
 
     // Verify row actually removed from DB
-    const result = await db.select().from(invoices).where(eq(invoices.id, inv.id)).limit(1);
+    const result = await db.select().from(invoices).where(eq(invoices.id, invId)).limit(1);
     expect(result.length).toBe(0);
   });
 
@@ -148,7 +154,9 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
     const suffix = crypto.randomUUID().substring(0, 8);
     
     // 1. Non-expired trashed invoice (deleted 3 days ago, retention is 14 days)
-    const [nonExpired] = await db.insert(invoices).values({
+    const nonExpiredId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: nonExpiredId,
       tenantId,
       invoiceNo: `INV-NEW-${suffix}`,
       clientName: 'Client Delta',
@@ -156,11 +164,13 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
       dueDate: '2026-08-31',
       contactEmail: 'client@example.com',
       deletedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-    }).returning();
-    testInvoiceIds.push(nonExpired.id);
+    });
+    testInvoiceIds.push(nonExpiredId);
 
     // 2. Expired trashed invoice (deleted 15 days ago, retention is 14 days)
-    const [expired] = await db.insert(invoices).values({
+    const expiredId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: expiredId,
       tenantId,
       invoiceNo: `INV-OLD-${suffix}`,
       clientName: 'Client Epsilon',
@@ -168,18 +178,17 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
       dueDate: '2026-08-31',
       contactEmail: 'client@example.com',
       deletedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
-    }).returning();
-    // Do not add expired.id to testInvoiceIds to avoid trying to delete it in cleanup if it's already purged!
+    });
 
     // Run background purge
     await purgeService.runPurge();
 
     // Verify expired invoice was hard-deleted
-    const expiredCheck = await db.select().from(invoices).where(eq(invoices.id, expired.id)).limit(1);
+    const expiredCheck = await db.select().from(invoices).where(eq(invoices.id, expiredId)).limit(1);
     expect(expiredCheck.length).toBe(0);
 
     // Verify non-expired invoice is STILL in trash
-    const nonExpiredCheck = await db.select().from(invoices).where(eq(invoices.id, nonExpired.id)).limit(1);
+    const nonExpiredCheck = await db.select().from(invoices).where(eq(invoices.id, nonExpiredId)).limit(1);
     expect(nonExpiredCheck.length).toBe(1);
     expect(nonExpiredCheck[0].deletedAt).not.toBeNull();
   });
@@ -191,7 +200,9 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
     await db.update(tenantSettings).set({ autoPurgeDays: 3 }).where(eq(tenantSettings.tenantId, tenantId));
 
     // Expired trashed invoice (deleted 5 days ago, settings say 3, but floor is 7)
-    const [inv] = await db.insert(invoices).values({
+    const invId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: invId,
       tenantId,
       invoiceNo: `INV-FLOOR-${suffix}`,
       clientName: 'Client Zeta',
@@ -199,14 +210,14 @@ describe('Invoice Trash & Auto-Purge Lifecycle', () => {
       dueDate: '2026-08-31',
       contactEmail: 'client@example.com',
       deletedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-    }).returning();
-    testInvoiceIds.push(inv.id);
+    });
+    testInvoiceIds.push(invId);
 
     // Run purge
     await purgeService.runPurge();
 
     // Verify invoice was NOT purged because the tenant was skipped due to floor check!
-    const check = await db.select().from(invoices).where(eq(invoices.id, inv.id)).limit(1);
+    const check = await db.select().from(invoices).where(eq(invoices.id, invId)).limit(1);
     expect(check.length).toBe(1);
   });
 });
