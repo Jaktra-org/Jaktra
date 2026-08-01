@@ -18,3 +18,5 @@ fastapi
 uvicorn[standard]
 pydantic-settings
 httpx
+joblib
+scikit-learn
