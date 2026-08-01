@@ -32,7 +32,7 @@ export class HealthController {
       status,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env['NODE_ENV'] ?? 'development',
+      environment: 'production',
       checks: {
         database: dbHealthy ? 'ok' : 'down',
         aiml_service: !this.aimlService
