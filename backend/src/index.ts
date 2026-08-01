@@ -3,6 +3,13 @@ import { config } from './config/index.js';
 import { createApp } from './app.js';
 import { createDatabaseClient } from './db/index.js';
 import { logger } from './shared/logger.js';
+import { runMigrations } from './db/migrate.js';
+
+// Auto-run migrations on startup
+await runMigrations().catch((err) => {
+  logger.error('Failed to run database migrations on startup:', err);
+  process.exit(1);
+});
 
 const db = createDatabaseClient({ connectionString: config.DATABASE_URL });
 
