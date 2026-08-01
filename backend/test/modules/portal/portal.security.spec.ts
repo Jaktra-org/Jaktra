@@ -15,6 +15,7 @@ describe('Portal Token Security & Isolation Tests', () => {
   let tenantBId: string;
   let invoiceAId: string;
   let invoiceBId: string;
+  let invoiceA2Id: string;
   let testTenantIds: string[] = [];
   let testInvoiceIds: string[] = [];
   let testLinkIds: string[] = [];
@@ -65,10 +66,11 @@ describe('Portal Token Security & Isolation Tests', () => {
     const uniqueB = crypto.randomUUID().substring(0, 8);
 
     // Create Tenant A
-    const [tA] = await db.insert(tenants).values({ name: 'Tenant A', slug: `tenant-a-${uniqueA}` }).returning();
-    tenantAId = tA.id;
+    tenantAId = crypto.randomUUID();
+    await db.insert(tenants).values({ id: tenantAId, name: 'Tenant A', slug: `tenant-a-${uniqueA}` });
     testTenantIds.push(tenantAId);
     await db.insert(tenantSettings).values({
+      id: crypto.randomUUID(),
       tenantId: tenantAId,
       companyName: 'Company A Inc',
       senderName: 'Billing A',
@@ -76,10 +78,11 @@ describe('Portal Token Security & Isolation Tests', () => {
     });
 
     // Create Tenant B
-    const [tB] = await db.insert(tenants).values({ name: 'Tenant B', slug: `tenant-b-${uniqueB}` }).returning();
-    tenantBId = tB.id;
+    tenantBId = crypto.randomUUID();
+    await db.insert(tenants).values({ id: tenantBId, name: 'Tenant B', slug: `tenant-b-${uniqueB}` });
     testTenantIds.push(tenantBId);
     await db.insert(tenantSettings).values({
+      id: crypto.randomUUID(),
       tenantId: tenantBId,
       companyName: 'Company B Ltd',
       senderName: 'Billing B',
@@ -87,7 +90,9 @@ describe('Portal Token Security & Isolation Tests', () => {
     });
 
     // Create Invoice A
-    const [invA] = await db.insert(invoices).values({
+    invoiceAId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: invoiceAId,
       tenantId: tenantAId,
       invoiceNo: `INV-A-${uniqueA}`,
       clientName: 'Client A',
@@ -97,12 +102,13 @@ describe('Portal Token Security & Isolation Tests', () => {
       contactEmail: 'clienta@example.com',
       paymentStatus: 'Pending',
       paymentStatusChangedAt: new Date(),
-    }).returning();
-    invoiceAId = invA.id;
+    });
     testInvoiceIds.push(invoiceAId);
 
     // Create Invoice B
-    const [invB] = await db.insert(invoices).values({
+    invoiceBId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: invoiceBId,
       tenantId: tenantBId,
       invoiceNo: `INV-B-${uniqueB}`,
       clientName: 'Client B',
@@ -112,20 +118,39 @@ describe('Portal Token Security & Isolation Tests', () => {
       contactEmail: 'clientb@example.com',
       paymentStatus: 'Pending',
       paymentStatusChangedAt: new Date(),
-    }).returning();
-    invoiceBId = invB.id;
+    });
     testInvoiceIds.push(invoiceBId);
+
+    // Create Invoice A2 (for status/expiry tests)
+    invoiceA2Id = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: invoiceA2Id,
+      tenantId: tenantAId,
+      invoiceNo: `INV-A2-${uniqueA}`,
+      clientName: 'Client A2',
+      invoiceAmount: '500.00',
+      currency: 'INR',
+      dueDate: '2026-12-31',
+      contactEmail: 'clienta2@example.com',
+      paymentStatus: 'Paid',
+      paymentStatusChangedAt: new Date(),
+    });
+    testInvoiceIds.push(invoiceA2Id);
   });
 
   const createTestLink = async (tenantId: string, invoiceId: string, rawToken: string) => {
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-    const [link] = await db.insert(invoicePortalLinks).values({
+    const linkId = crypto.randomUUID();
+    const linkObj = {
+      id: linkId,
       tenantId,
       invoiceId,
       tokenHash,
-    }).returning();
-    testLinkIds.push(link.id);
-    return link;
+      viewedAt: null as Date | null,
+    };
+    await db.insert(invoicePortalLinks).values(linkObj);
+    testLinkIds.push(linkId);
+    return linkObj;
   };
 
   describe('GET /public/portal/:token', () => {
@@ -143,7 +168,7 @@ describe('Portal Token Security & Isolation Tests', () => {
     it('should record viewedAt on first load but preserve it on subsequent requests', async () => {
       const rawToken = crypto.randomBytes(32).toString('hex');
       const link = await createTestLink(tenantAId, invoiceAId, rawToken);
-      expect(link.viewedAt).toBeNull();
+      expect(link.viewedAt).toBeFalsy();
 
       // First request
       const res1 = await request(app).get(`/public/portal/${rawToken}`);
@@ -571,52 +596,58 @@ describe('Portal Token Security & Isolation Tests', () => {
 
     beforeEach(async () => {
       // Create Manager User
-      const [mU] = await db.insert(users).values({
+      managerId = crypto.randomUUID();
+      const mUData = {
+        id: managerId,
         tenantId: tenantAId,
         name: 'Manager User',
         email: `manager-${crypto.randomUUID().substring(0, 8)}@example.com`,
         passwordHash: 'dummy_hash',
-        role: 'manager',
-      }).returning();
-      managerId = mU.id;
+        role: 'manager' as const,
+      };
+      await db.insert(users).values(mUData);
       testUserIds.push(managerId);
       managerToken = jwt.sign({
-        userId: mU.id,
+        userId: managerId,
         tenantId: tenantAId,
-        name: mU.name,
-        email: mU.email,
-        role: mU.role,
+        name: mUData.name,
+        email: mUData.email,
+        role: mUData.role,
       }, config.JWT_SECRET);
 
       // Create Viewer User
-      const [vU] = await db.insert(users).values({
+      viewerId = crypto.randomUUID();
+      const vUData = {
+        id: viewerId,
         tenantId: tenantAId,
         name: 'Viewer User',
         email: `viewer-${crypto.randomUUID().substring(0, 8)}@example.com`,
         passwordHash: 'dummy_hash',
-        role: 'viewer',
-      }).returning();
-      viewerId = vU.id;
+        role: 'viewer' as const,
+      };
+      await db.insert(users).values(vUData);
       testUserIds.push(viewerId);
       viewerToken = jwt.sign({
-        userId: vU.id,
+        userId: viewerId,
         tenantId: tenantAId,
-        name: vU.name,
-        email: vU.email,
-        role: vU.role,
+        name: vUData.name,
+        email: vUData.email,
+        role: vUData.role,
       }, config.JWT_SECRET);
     });
 
     it('should list pending payment plan requests for the tenant', async () => {
       // Create a pending request
-      const [plan] = await db.insert(paymentPlanRequests).values({
+      const planId = crypto.randomUUID();
+      await db.insert(paymentPlanRequests).values({
+        id: planId,
         tenantId: tenantAId,
         invoiceId: invoiceAId,
         installments: 6,
         proposedAmountPerMonth: '166.67',
         status: 'pending',
-      }).returning();
-      testPlanIds.push(plan.id);
+      });
+      testPlanIds.push(planId);
 
       const res = await request(app)
         .get('/api/invoices/payment-plans/pending')
@@ -625,30 +656,32 @@ describe('Portal Token Security & Isolation Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThanOrEqual(1);
-      const item = res.body.data.find((d: any) => d.id === plan.id);
+      const item = res.body.data.find((d: any) => d.id === planId);
       expect(item).toBeDefined();
       expect(item.invoiceNo).toBeDefined();
     });
 
     it('should approve a pending plan, setting hasActivePaymentPlan=true and excluding from TriageService', async () => {
-      const [plan] = await db.insert(paymentPlanRequests).values({
+      const planId = crypto.randomUUID();
+      await db.insert(paymentPlanRequests).values({
+        id: planId,
         tenantId: tenantAId,
         invoiceId: invoiceAId,
         installments: 6,
         proposedAmountPerMonth: '166.67',
         status: 'pending',
-      }).returning();
-      testPlanIds.push(plan.id);
+      });
+      testPlanIds.push(planId);
 
       const res = await request(app)
-        .post(`/api/invoices/payment-plans/${plan.id}/approve`)
+        .post(`/api/invoices/payment-plans/${planId}/approve`)
         .set('Authorization', `Bearer ${managerToken}`)
         .set('x-tenant-id', tenantAId);
 
       expect(res.status).toBe(204);
 
       // Verify DB
-      const [updatedPlan] = await db.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, plan.id));
+      const [updatedPlan] = await db.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, planId));
       expect(updatedPlan.status).toBe('approved');
       expect(updatedPlan.reviewedBy).toBe(managerId);
 
@@ -662,24 +695,26 @@ describe('Portal Token Security & Isolation Tests', () => {
     });
 
     it('should deny a plan request and NOT touch hasActivePaymentPlan', async () => {
-      const [plan] = await db.insert(paymentPlanRequests).values({
+      const planId = crypto.randomUUID();
+      await db.insert(paymentPlanRequests).values({
+        id: planId,
         tenantId: tenantAId,
         invoiceId: invoiceAId,
         installments: 6,
         proposedAmountPerMonth: '166.67',
         status: 'pending',
-      }).returning();
-      testPlanIds.push(plan.id);
+      });
+      testPlanIds.push(planId);
 
       const res = await request(app)
-        .post(`/api/invoices/payment-plans/${plan.id}/deny`)
+        .post(`/api/invoices/payment-plans/${planId}/deny`)
         .set('Authorization', `Bearer ${managerToken}`)
         .set('x-tenant-id', tenantAId);
 
       expect(res.status).toBe(204);
 
       // Verify DB
-      const [updatedPlan] = await db.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, plan.id));
+      const [updatedPlan] = await db.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, planId));
       expect(updatedPlan.status).toBe('denied');
 
       const [updatedInvoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceAId));
@@ -694,14 +729,16 @@ describe('Portal Token Security & Isolation Tests', () => {
 
     it('should manually cancel an active approved plan, reverting hasActivePaymentPlan to false and resuming triage', async () => {
       // Create approved request
-      const [plan] = await db.insert(paymentPlanRequests).values({
+      const planId = crypto.randomUUID();
+      await db.insert(paymentPlanRequests).values({
+        id: planId,
         tenantId: tenantAId,
         invoiceId: invoiceAId,
         installments: 6,
         proposedAmountPerMonth: '166.67',
         status: 'approved',
-      }).returning();
-      testPlanIds.push(plan.id);
+      });
+      testPlanIds.push(planId);
 
       // Make invoice active
       await db.update(invoices).set({ hasActivePaymentPlan: true }).where(eq(invoices.id, invoiceAId));
@@ -714,7 +751,7 @@ describe('Portal Token Security & Isolation Tests', () => {
       expect(res.status).toBe(204);
 
       // Verify DB
-      const [updatedPlan] = await db.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, plan.id));
+      const [updatedPlan] = await db.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, planId));
       expect(updatedPlan.status).toBe('cancelled');
 
       const [updatedInvoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceAId));
@@ -728,25 +765,27 @@ describe('Portal Token Security & Isolation Tests', () => {
     });
 
     it('should prevent non-admin/manager roles (viewer) from executing actions', async () => {
-      const [plan] = await db.insert(paymentPlanRequests).values({
+      const planId = crypto.randomUUID();
+      await db.insert(paymentPlanRequests).values({
+        id: planId,
         tenantId: tenantAId,
         invoiceId: invoiceAId,
         installments: 6,
         proposedAmountPerMonth: '166.67',
         status: 'pending',
-      }).returning();
-      testPlanIds.push(plan.id);
+      });
+      testPlanIds.push(planId);
 
       // Approve
       const resApprove = await request(app)
-        .post(`/api/invoices/payment-plans/${plan.id}/approve`)
+        .post(`/api/invoices/payment-plans/${planId}/approve`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .set('x-tenant-id', tenantAId);
       expect(resApprove.status).toBe(403);
 
       // Deny
       const resDeny = await request(app)
-        .post(`/api/invoices/payment-plans/${plan.id}/deny`)
+        .post(`/api/invoices/payment-plans/${planId}/deny`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .set('x-tenant-id', tenantAId);
       expect(resDeny.status).toBe(403);
@@ -760,21 +799,23 @@ describe('Portal Token Security & Isolation Tests', () => {
     });
 
     it('should automatically cancel pending plan requests when status changes to Paid (Auto-cancel trigger check)', async () => {
-      const [plan] = await db.insert(paymentPlanRequests).values({
+      const planId = crypto.randomUUID();
+      await db.insert(paymentPlanRequests).values({
+        id: planId,
         tenantId: tenantAId,
         invoiceId: invoiceAId,
         installments: 6,
         proposedAmountPerMonth: '166.67',
         status: 'pending',
-      }).returning();
-      testPlanIds.push(plan.id);
+      });
+      testPlanIds.push(planId);
 
       // Trigger status change via repository
       const invoiceRepo = app.locals.paymentService.invoiceRepo;
       await invoiceRepo.updatePaymentStatus(invoiceAId, 'Paid');
 
       // Verify request is cancelled
-      const [updatedPlan] = await db.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, plan.id));
+      const [updatedPlan] = await db.select().from(paymentPlanRequests).where(eq(paymentPlanRequests.id, planId));
       expect(updatedPlan.status).toBe('cancelled');
     });
 
@@ -910,39 +951,43 @@ describe('Portal Token Security & Isolation Tests', () => {
 
     beforeEach(async () => {
       // Create Manager User
-      const [mU] = await db.insert(users).values({
+      managerId = crypto.randomUUID();
+      const mUData = {
+        id: managerId,
         tenantId: tenantAId,
         name: 'Manager User',
         email: `manager-${crypto.randomUUID().substring(0, 8)}@example.com`,
         passwordHash: 'dummy_hash',
-        role: 'manager',
-      }).returning();
-      managerId = mU.id;
+        role: 'manager' as const,
+      };
+      await db.insert(users).values(mUData);
       testUserIds.push(managerId);
       managerToken = jwt.sign({
-        userId: mU.id,
+        userId: managerId,
         tenantId: tenantAId,
-        name: mU.name,
-        email: mU.email,
-        role: mU.role,
+        name: mUData.name,
+        email: mUData.email,
+        role: mUData.role,
       }, config.JWT_SECRET);
 
       // Create Viewer User
-      const [vU] = await db.insert(users).values({
+      viewerId = crypto.randomUUID();
+      const vUData = {
+        id: viewerId,
         tenantId: tenantAId,
         name: 'Viewer User',
         email: `viewer-${crypto.randomUUID().substring(0, 8)}@example.com`,
         passwordHash: 'dummy_hash',
-        role: 'viewer',
-      }).returning();
-      viewerId = vU.id;
+        role: 'viewer' as const,
+      };
+      await db.insert(users).values(vUData);
       testUserIds.push(viewerId);
       viewerToken = jwt.sign({
-        userId: vU.id,
+        userId: viewerId,
         tenantId: tenantAId,
-        name: vU.name,
-        email: vU.email,
-        role: vU.role,
+        name: vUData.name,
+        email: vUData.email,
+        role: vUData.role,
       }, config.JWT_SECRET);
     });
 
