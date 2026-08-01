@@ -108,7 +108,7 @@ describe('EmailVerificationService & AuthService Registration Integration', () =
       );
     });
 
-    it('should throw safe generic error if email is already taken in Postgres', async () => {
+    it('should throw safe generic error if email is already taken in Database', async () => {
       mockUserRepo.findFirstByEmail.mockResolvedValue({ id: 'existing-user' });
 
       await expect(
@@ -125,7 +125,7 @@ describe('EmailVerificationService & AuthService Registration Integration', () =
   });
 
   describe('Registration Phase 2 (verifyEmail)', () => {
-    it('should successfully verify, create Postgres tenant and admin user, delete Redis keys, and return JWT', async () => {
+    it('should successfully verify, create Database tenant and admin user, delete Redis keys, and return JWT', async () => {
       const email = 'verify@example.com';
       const plainCode = '123456';
       const hashedCode = crypto.createHash('sha256').update(plainCode).digest('hex');
