@@ -34,9 +34,9 @@ describe('Audit Atomicity and Transaction Control', () => {
     testEventIds = [];
 
     const uniqueSuffix = crypto.randomUUID().substring(0, 8);
-    const [t] = await db.insert(tenants).values({ name: 'Tenant Atomicity', slug: `atom-${uniqueSuffix}` }).returning();
-    tenantId = t.id;
-    testTenantIds.push(t.id);
+    tenantId = crypto.randomUUID();
+    await db.insert(tenants).values({ id: tenantId, name: 'Tenant Atomicity', slug: `atom-${uniqueSuffix}` });
+    testTenantIds.push(tenantId);
   });
 
   afterEach(async () => {
@@ -164,8 +164,9 @@ describe('Audit Atomicity and Transaction Control', () => {
       mockPortalService
     );
 
-    // Insert an invoice first
-    const [invoice] = await db.insert(invoices).values({
+    const invoiceId = crypto.randomUUID();
+    await db.insert(invoices).values({
+      id: invoiceId,
       tenantId,
       invoiceNo: 'INV-ATOM-001',
       clientName: 'Background test',
@@ -173,13 +174,13 @@ describe('Audit Atomicity and Transaction Control', () => {
       dueDate: '2026-06-30',
       contactEmail: 'bg@example.com',
       paymentStatus: 'Pending',
-    }).returning();
-    testInvoiceIds.push(invoice.id);
+    });
+    testInvoiceIds.push(invoiceId);
 
     // Call triggerSingleInvoice with a mock ActorContext (so it calls emitEvent which throws)
     // The call should succeed despite eventService throwing!
     await expect(
-      agentService.triggerSingleInvoice(invoice.id, tenantId, undefined, {
+      agentService.triggerSingleInvoice(invoiceId, tenantId, undefined, {
         source: 'ui',
         userId: '123e4567-e89b-12d3-a456-426614174000',
         name: 'User',
@@ -188,7 +189,7 @@ describe('Audit Atomicity and Transaction Control', () => {
       })
     ).resolves.toBeDefined();
 
-    expect(mockPortalService.getOrCreatePortalLink).toHaveBeenCalledWith(tenantId, invoice.id);
+    expect(mockPortalService.getOrCreatePortalLink).toHaveBeenCalledWith(tenantId, invoiceId);
 
     // Verify logger.error was called for the failed event log
     expect(loggerErrorSpy).toHaveBeenCalled();
