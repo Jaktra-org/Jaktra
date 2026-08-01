@@ -48,30 +48,36 @@ describe('TeamService Integration', () => {
     testUserIds = [];
 
     const uniqueSuffix = crypto.randomUUID().substring(0, 8);
-    const [t1] = await db.insert(tenants).values({ name: 'Tenant 1', slug: `t1-${uniqueSuffix}` }).returning();
-    const [t2] = await db.insert(tenants).values({ name: 'Tenant 2', slug: `t2-${uniqueSuffix}` }).returning();
-    tenantId1 = t1.id;
-    testTenantIds.push(t1.id, t2.id);
+    const tenant1Data = { id: crypto.randomUUID(), name: 'Tenant 1', slug: `t1-${uniqueSuffix}` };
+    const tenant2Data = { id: crypto.randomUUID(), name: 'Tenant 2', slug: `t2-${uniqueSuffix}` };
+    await db.insert(tenants).values(tenant1Data);
+    await db.insert(tenants).values(tenant2Data);
+    tenantId1 = tenant1Data.id;
+    testTenantIds.push(tenant1Data.id, tenant2Data.id);
 
-    const [u1] = await db.insert(users).values({
+    const user1Data = {
+      id: crypto.randomUUID(),
       tenantId: tenantId1,
       email: 'admin1@t1.com',
       name: 'Admin 1',
       passwordHash: 'hash',
-      role: 'admin',
-    }).returning();
-    adminId1 = u1.id;
-    testUserIds.push(u1.id);
+      role: 'admin' as const,
+    };
+    await db.insert(users).values(user1Data);
+    adminId1 = user1Data.id;
+    testUserIds.push(user1Data.id);
 
-    const [u2] = await db.insert(users).values({
+    const user2Data = {
+      id: crypto.randomUUID(),
       tenantId: tenantId1,
       email: 'admin2@t1.com',
       name: 'Admin 2',
       passwordHash: 'hash',
-      role: 'admin',
-    }).returning();
-    adminId2 = u2.id;
-    testUserIds.push(u2.id);
+      role: 'admin' as const,
+    };
+    await db.insert(users).values(user2Data);
+    adminId2 = user2Data.id;
+    testUserIds.push(user2Data.id);
   });
 
   afterEach(async () => {
