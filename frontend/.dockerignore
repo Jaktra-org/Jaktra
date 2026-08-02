@@ -1,8 +1,0 @@
-node_modules
-dist
-test
-tests
-.git
-.gitignore
-*.md
-eslint.config.js
