@@ -10,14 +10,14 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/jaktra
+      - DATABASE_URL=mysql://root:root@mysql:3306/jaktra
       - JWT_SECRET=supersecretjwtsecretkeysupersecretjwtsecretkey
       - CORS_ORIGINS=http://localhost:5173,http://localhost
       - AI_ML_SERVICE_URL=http://ai-service:8000
       - AI_ML_SERVICE_KEY=dev_key
       - ENCRYPTION_KEY=Z3VpZGVsaW5lc3NhZmV0eWtleWJ5dGVzMTIzNDU2Nzg=
     depends_on:
-      - postgres
+      - mysql
       - ai-service
 
   ai-service:
@@ -43,16 +43,15 @@ services:
     depends_on:
       - backend
 
-  postgres:
-    image: postgres:15-alpine
+  mysql:
+    image: mysql:8.0
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=jaktra
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=jaktra
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
 
 volumes:
-  pgdata:
+  mysql_data:
