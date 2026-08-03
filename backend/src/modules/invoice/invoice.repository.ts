@@ -4,6 +4,7 @@ import type { DatabaseClient, DatabaseOrTransaction } from '../../db/index.js';
 import type { Invoice, NewInvoice } from '../../db/index.js';
 import { EventService } from '../event/event.service.js';
 import { logger } from '../../shared/logger.js';
+import crypto from 'crypto';
 
 export class InvoiceRepository {
   constructor(
@@ -34,7 +35,6 @@ export class InvoiceRepository {
       .limit(1);
     return rows[0];
   }
-
 
   async updateFollowupCount(invoiceId: string, count: number): Promise<void> {
     await this.db
@@ -130,12 +130,15 @@ export class InvoiceRepository {
 
   async create(data: NewInvoice, tx?: DatabaseOrTransaction): Promise<Invoice> {
     const dbClient = tx || this.db;
+    const id = data.id || crypto.randomUUID();
     const insertData = {
       ...data,
+      id,
       paymentStatusChangedAt: data.paymentStatusChangedAt || new Date(),
     };
-    const rows = await dbClient.insert(invoices).values(insertData).returning();
-    return rows[0]!;
+    await dbClient.insert(invoices).values(insertData);
+    const [row] = await dbClient.select().from(invoices).where(eq(invoices.id, id)).limit(1);
+    return row!;
   }
 
   async createMany(data: NewInvoice[], tx?: DatabaseOrTransaction): Promise<Invoice[]> {
@@ -143,9 +146,12 @@ export class InvoiceRepository {
     const dbClient = tx || this.db;
     const formattedData = data.map((item) => ({
       ...item,
+      id: item.id || crypto.randomUUID(),
       paymentStatusChangedAt: item.paymentStatusChangedAt || new Date(),
     }));
-    return dbClient.insert(invoices).values(formattedData).returning();
+    const ids = formattedData.map((item) => item.id);
+    await dbClient.insert(invoices).values(formattedData);
+    return await dbClient.select().from(invoices).where(inArray(invoices.id, ids));
   }
 
   async findMany(params: {
@@ -171,9 +177,6 @@ export class InvoiceRepository {
       conditions.push(ilike(invoices.clientName, `%${params.clientName}%`));
     }
     
-    // days_overdue = today - due_date
-    // so due_date <= today - daysOverdueMin
-    // due_date >= today - daysOverdueMax
     if (params.daysOverdueMin !== undefined) {
       const targetDate = new Date();
       targetDate.setDate(targetDate.getDate() - params.daysOverdueMin);
@@ -225,27 +228,26 @@ export class InvoiceRepository {
       }
     }
 
-    const rows = await dbClient
+    await dbClient
       .update(invoices)
       .set(updateData)
-      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
-      .returning();
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)));
 
     if (data.paymentStatus) {
       await this.autoCancelPendingPaymentPlans(invoiceId, data.paymentStatus as 'Pending' | 'Paid' | 'Overdue' | 'Written Off', dbClient);
     }
 
-    return rows[0];
+    const [row] = await dbClient.select().from(invoices).where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId))).limit(1);
+    return row;
   }
 
   async softDelete(invoiceId: string, tenantId: string, tx?: DatabaseOrTransaction): Promise<boolean> {
     const dbClient = tx || this.db;
-    const rows = await dbClient
+    await dbClient
       .update(invoices)
       .set({ deletedAt: new Date() })
-      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
-      .returning();
-    return rows.length > 0;
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)));
+    return true;
   }
 
   async findByIdIncludingTrashed(invoiceId: string): Promise<Invoice | undefined> {
@@ -259,34 +261,32 @@ export class InvoiceRepository {
 
   async hardDelete(invoiceId: string, tenantId: string, tx?: DatabaseOrTransaction): Promise<boolean> {
     const dbClient = tx || this.db;
-    const rows = await dbClient
+    await dbClient
       .delete(invoices)
       .where(and(
         eq(invoices.id, invoiceId),
         eq(invoices.tenantId, tenantId),
         isNotNull(invoices.deletedAt)
-      ))
-      .returning();
-    return rows.length > 0;
+      ));
+    return true;
   }
 
   async restore(invoiceId: string, tenantId: string, tx?: DatabaseOrTransaction): Promise<Invoice | undefined> {
     const dbClient = tx || this.db;
-    const rows = await dbClient
+    await dbClient
       .update(invoices)
       .set({ deletedAt: null, updatedAt: new Date() })
       .where(and(
         eq(invoices.id, invoiceId),
         eq(invoices.tenantId, tenantId),
         isNotNull(invoices.deletedAt)
-      ))
-      .returning();
-    return rows[0];
+      ));
+    const [row] = await dbClient.select().from(invoices).where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId))).limit(1);
+    return row;
   }
 
   async upsertByInvoiceNo(data: NewInvoice, tx?: DatabaseOrTransaction): Promise<{ invoice: Invoice; wasUpdated: boolean }> {
     const dbClient = tx || this.db;
-    // Find using the same client/transaction
     const rowsFound = await dbClient
       .select()
       .from(invoices)
@@ -317,17 +317,17 @@ export class InvoiceRepository {
         updateData.paymentStatusChangedAt = new Date();
       }
 
-      const rows = await dbClient
+      await dbClient
         .update(invoices)
         .set(updateData)
-        .where(eq(invoices.id, existing.id))
-        .returning();
+        .where(eq(invoices.id, existing.id));
 
       if (statusChanged) {
         await this.autoCancelPendingPaymentPlans(existing.id, data.paymentStatus!, dbClient);
       }
 
-      return { invoice: rows[0]!, wasUpdated: true };
+      const [updated] = await dbClient.select().from(invoices).where(eq(invoices.id, existing.id)).limit(1);
+      return { invoice: updated!, wasUpdated: true };
     }
 
     const invoice = await this.create(data, dbClient);
@@ -354,17 +354,23 @@ export class InvoiceRepository {
     dbClient: DatabaseOrTransaction
   ): Promise<void> {
     if (status === 'Paid' || status === 'Written Off') {
-      const rows = await dbClient
-        .update(paymentPlanRequests)
-        .set({ status: 'cancelled', reviewedAt: new Date() })
+      const pendingPlans = await dbClient
+        .select()
+        .from(paymentPlanRequests)
         .where(and(
           eq(paymentPlanRequests.invoiceId, invoiceId),
           eq(paymentPlanRequests.status, 'pending')
-        ))
-        .returning();
+        ));
 
-      if (rows.length > 0) {
-        // Find tenantId for this invoice
+      if (pendingPlans.length > 0) {
+        await dbClient
+          .update(paymentPlanRequests)
+          .set({ status: 'cancelled', reviewedAt: new Date() })
+          .where(and(
+            eq(paymentPlanRequests.invoiceId, invoiceId),
+            eq(paymentPlanRequests.status, 'pending')
+          ));
+
         const [inv] = await dbClient
           .select({ tenantId: invoices.tenantId })
           .from(invoices)
@@ -373,7 +379,7 @@ export class InvoiceRepository {
 
         const tenantId = inv?.tenantId;
         if (tenantId) {
-          for (const row of rows) {
+          for (const row of pendingPlans) {
             await this.eventService.emitEvent(
               'invoice',
               invoiceId,
