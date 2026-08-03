@@ -1,0 +1,74 @@
+set -euo pipefail
+
+log() { echo "[jaktra-userdata] $*" | tee -a /var/log/jaktra-init.log; }
+
+log "═══════ Jaktra Dev EC2 Bootstrap ═══════"
+
+mkdir -p /opt/jaktra
+chmod 750 /opt/jaktra
+
+log "▶ Writing docker-compose.yml..."
+cat > /opt/jaktra/docker-compose.yml << 'COMPOSE_EOF'
+${compose_content}
+COMPOSE_EOF
+log "  ✓ docker-compose.yml written"
+
+log "▶ Writing start.sh..."
+cat > /opt/jaktra/start.sh << 'START_EOF'
+${start_sh_content}
+START_EOF
+chmod +x /opt/jaktra/start.sh
+log "  ✓ start.sh written"
+
+log "▶ Installing Docker & dependencies..."
+dnf install -y docker python3 curl awscli || true
+systemctl enable docker
+systemctl start docker
+usermod -aG docker ec2-user
+log "  ✓ Docker installed"
+
+log "▶ Installing Docker Compose plugin..."
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -sSL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+log "  ✓ Docker Compose $(docker compose version --short 2>/dev/null || echo 'installed') installed"
+
+log "▶ Creating systemd service..."
+cat > /etc/systemd/system/jaktra.service << 'SYSTEMD_EOF'
+[Unit]
+Description=Jaktra Development Services (Redis + Backend + AI-Service)
+Documentation=https://github.com/${github_repo}
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/jaktra
+ExecStart=/opt/jaktra/start.sh
+ExecStop=/usr/bin/docker compose -f /opt/jaktra/docker-compose.yml down --remove-orphans
+TimeoutStartSec=300
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=jaktra
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_EOF
+
+systemctl daemon-reload
+systemctl enable jaktra.service
+log "  ✓ systemd jaktra.service enabled (starts on every boot)"
+
+cat > /opt/jaktra/reload.sh << 'RELOAD_EOF'
+#!/usr/bin/env bash
+cd /opt/jaktra
+docker compose pull
+docker compose up -d --remove-orphans
+docker compose ps
+RELOAD_EOF
+chmod +x /opt/jaktra/reload.sh
+
+log "═══════ Bootstrap complete ═══════"
