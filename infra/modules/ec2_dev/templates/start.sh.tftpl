@@ -1,0 +1,76 @@
+set -euo pipefail
+
+REGION="${aws_region}"
+BACKEND_SECRET_ID="${backend_secret_id}"
+AI_SERVICE_SECRET_ID="${ai_service_secret_id}"
+ECR_REGISTRY="${ecr_registry}"
+COMPOSE_FILE="/opt/jaktra/docker-compose.yml"
+WORK_DIR="/opt/jaktra"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+log "═══════════════════════════════════════════"
+log "  Jaktra Dev Services — Startup"
+log "  Region  : $REGION"
+log "  ECR     : $ECR_REGISTRY"
+log "═══════════════════════════════════════════"
+
+cd "$WORK_DIR"
+
+log "▶ Fetching backend secrets from Secrets Manager..."
+aws secretsmanager get-secret-value \
+  --secret-id "$BACKEND_SECRET_ID" \
+  --region "$REGION" \
+  --query SecretString \
+  --output text \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for k, v in data.items():
+    # Escape any double-quotes in the value
+    v_escaped = str(v).replace('\"', '\\\\\"')
+    print(f'{k}=\"{v_escaped}\"')
+" > "$WORK_DIR/.env.backend"
+
+log "▶ Fetching ai-service secrets from Secrets Manager..."
+aws secretsmanager get-secret-value \
+  --secret-id "$AI_SERVICE_SECRET_ID" \
+  --region "$REGION" \
+  --query SecretString \
+  --output text \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for k, v in data.items():
+    v_escaped = str(v).replace('\"', '\\\\\"')
+    print(f'{k}=\"{v_escaped}\"')
+" > "$WORK_DIR/.env.ai-service"
+
+chmod 600 "$WORK_DIR/.env.backend" "$WORK_DIR/.env.ai-service"
+log "  ✓ Secrets written to .env files"
+
+log "▶ Authenticating Docker to ECR..."
+aws ecr get-login-password --region "$REGION" \
+  | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+log "  ✓ Docker authenticated to ECR"
+
+log "▶ Pulling latest images from ECR..."
+docker compose -f "$COMPOSE_FILE" pull
+log "  ✓ Images pulled"
+
+log "▶ Stopping existing services gracefully (35s timeout)..."
+docker compose -f "$COMPOSE_FILE" stop -t 35 2>/dev/null || true
+docker compose -f "$COMPOSE_FILE" rm -f 2>/dev/null || true
+
+log "▶ Starting services..."
+docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+
+log "  ✓ Services started"
+log ""
+
+log "▶ Service status:"
+docker compose -f "$COMPOSE_FILE" ps
+log ""
+log "Jaktra dev services running."
+log "   Backend  → http://$(curl -sf http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo '<public-ip>'):${backend_port}"
+log "   AI-svc   → http://$(curl -sf http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo '<public-ip>'):${ai_service_port}"
