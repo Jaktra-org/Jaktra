@@ -1,0 +1,72 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - redis_data:/data
+    networks:
+      - jaktra
+
+
+  backend:
+    image: ${backend_image}
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy   
+    env_file: /opt/jaktra/.env.backend 
+    environment:
+      - NODE_ENV=production
+      - PORT=${backend_port}
+      - JWT_EXPIRES_IN=7d
+      - REDIS_URL=redis://redis:6379         
+      - AI_ML_SERVICE_URL=http://ai-service:${ai_service_port}
+      - AUTH_LOCKOUT_THRESHOLD=5
+      - AUTH_LOCKOUT_BASE_MINUTES=15
+      - AUTH_LOCKOUT_MAX_MINUTES=1440
+      - AUTH_MFA_MAX_ATTEMPTS=5
+      - DISPUTE_LIMIT_PER_TENANT_HOURLY=100
+      - DISPUTE_LIMIT_PER_SENDER_HOURLY=15
+    ports:
+      - "${backend_port}:${backend_port}"
+    stop_grace_period: 35s
+    networks:
+      - jaktra
+
+  ai-service:
+    image: ${ai_service_image}
+    restart: unless-stopped
+    env_file: /opt/jaktra/.env.ai-service  
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - ENVIRONMENT=production      
+      - SERVICE_HOST=0.0.0.0
+      - SERVICE_PORT=${ai_service_port}
+      - LLM_PROVIDER=groq
+      - LLM_MODEL=llama-3.1-8b-instant
+      - LLM_TEMPERATURE=0.4
+      - LLM_MAX_TOKENS=1024
+      - LLM_TIMEOUT_SECONDS=30
+      - RISK_MODEL_PATH=src/models/risk_scorer.joblib
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    ports:
+      - "${ai_service_port}:${ai_service_port}"
+    stop_grace_period: 15s
+    networks:
+      - jaktra
+
+networks:
+  jaktra:
+    driver: bridge
+
+volumes:
+  redis_data:    
