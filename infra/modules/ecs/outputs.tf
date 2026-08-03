@@ -1,0 +1,10 @@
+output "cluster_name"    { value = aws_ecs_cluster.main.name }
+output "cluster_arn"     { value = aws_ecs_cluster.main.arn }
+output "backend_service_name"       { value = aws_ecs_service.backend.name }
+output "ai_service_service_name"    { value = aws_ecs_service.ai_service.name }
+output "backend_task_family"        { value = aws_ecs_task_definition.backend.family }
+output "ai_service_task_family"     { value = aws_ecs_task_definition.ai_service.family }
+output "backend_log_group_name"     { value = aws_cloudwatch_log_group.backend.name }
+output "ai_service_log_group_name"  { value = aws_cloudwatch_log_group.ai_service.name }
+output "service_discovery_namespace"{ value = aws_service_discovery_private_dns_namespace.main.name }
+output "ai_service_internal_url"    { value = local.ai_service_internal_url }
