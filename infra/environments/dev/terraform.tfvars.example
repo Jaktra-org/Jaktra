@@ -1,0 +1,12 @@
+project_name = "jaktra"
+environment  = "dev"
+aws_region   = "ap-south-1"
+
+github_org  = "YOUR_GITHUB_USERNAME"
+github_repo = "Jaktra"
+
+create_github_oidc_provider = false
+
+ssh_public_key   = "ssh-rsa AAAA..."
+ssh_allowed_cidr = "0.0.0.0/0"
+alert_email      = "you@example.com"
