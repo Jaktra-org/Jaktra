@@ -1,0 +1,12 @@
+project_name = "jaktra"
+environment  = "production"
+aws_region   = "ap-south-1"
+
+github_org  = "YOUR_GITHUB_USERNAME"
+github_repo = "Jaktra"
+
+create_github_oidc_provider = true
+
+domain_name   = ""       # e.g. "jaktra.com" — leave blank to use AWS URLs
+api_subdomain = "api"
+alert_email   = "you@example.com"
