@@ -46,6 +46,11 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names jaktra/base/backend || \
+          aws ecr create-repository --repository-name jaktra/base/backend --image-scanning-configuration scanOnPush=true
+
       - name: Set image tag
         id: meta
         run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
@@ -57,8 +62,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ${{ steps.ecr.outputs.registry }}/jaktra-base-backend:${{ steps.meta.outputs.tag }}
-            ${{ steps.ecr.outputs.registry }}/jaktra-base-backend:latest
+            ${{ steps.ecr.outputs.registry }}/jaktra/base/backend:${{ steps.meta.outputs.tag }}
+            ${{ steps.ecr.outputs.registry }}/jaktra/base/backend:latest
 
   build-ai-service:
     needs: [test]
@@ -82,6 +87,11 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names jaktra/base/ai-service || \
+          aws ecr create-repository --repository-name jaktra/base/ai-service --image-scanning-configuration scanOnPush=true
+
       - name: Set image tag
         id: meta
         run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
@@ -93,8 +103,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ${{ steps.ecr.outputs.registry }}/jaktra-base-ai-service:${{ steps.meta.outputs.tag }}
-            ${{ steps.ecr.outputs.registry }}/jaktra-base-ai-service:latest
+            ${{ steps.ecr.outputs.registry }}/jaktra/base/ai-service:${{ steps.meta.outputs.tag }}
+            ${{ steps.ecr.outputs.registry }}/jaktra/base/ai-service:latest
 
   build-frontend:
     needs: [test]
