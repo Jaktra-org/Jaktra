@@ -152,7 +152,49 @@ jobs:
         run: |
           DIST_ID="${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
           if [ -z "$DIST_ID" ] || [ "$DIST_ID" == "null" ]; then
-            DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[0].Id" --output text)
+            DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[0].Id" --output text 2>/dev/null || echo "")
           fi
-          echo "Invalidating CloudFront CDN cache..."
-          aws cloudfront create-invalidation --distribution-id "${DIST_ID}" --paths "/*"
+          if [ -n "$DIST_ID" ]; then
+            echo "Invalidating CloudFront CDN cache..."
+            aws cloudfront create-invalidation --distribution-id "${DIST_ID}" --paths "/*"
+          fi
+
+  trigger-active-deployments:
+    needs: [build-backend, build-ai-service, deploy-frontend]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Detect active environment and trigger pull
+        run: |
+          # 1. Detect Production ECS Cluster
+          ECS_STATUS=$(aws ecs describe-services --cluster jaktra-production --services backend --query 'services[0].status' --output text 2>/dev/null || echo "INACTIVE")
+          if [ "$ECS_STATUS" == "ACTIVE" ]; then
+            echo "⚡ Active ECS Production Cluster detected! Triggering rolling deployment..."
+            aws ecs update-service --cluster jaktra-production --service backend --force-new-deployment --no-cli-pager || true
+            aws ecs update-service --cluster jaktra-production --service ai-service --force-new-deployment --no-cli-pager || true
+          else
+            echo "ℹ️ No active ECS Production cluster running."
+          fi
+
+          # 2. Detect Dev EC2 Instance
+          EC2_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=jaktra-dev-instance" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null || echo "None")
+
+          if [ "$EC2_ID" != "None" ] && [ -n "$EC2_ID" ]; then
+            echo "⚡ Active Dev EC2 Instance ($EC2_ID) detected! Triggering docker pull via AWS SSM..."
+            aws ssm send-command \
+              --instance-ids "$EC2_ID" \
+              --document-name "AWS-RunShellScript" \
+              --parameters 'commands=["cd /app && docker compose pull && docker compose up -d"]' || true
+          else
+            echo "ℹ️ No active Dev EC2 instance running."
+          fi
