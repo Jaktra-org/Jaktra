@@ -178,8 +178,8 @@ jobs:
           ECS_STATUS=$(aws ecs describe-services --cluster jaktra-production --services jaktra-production-backend --query 'services[0].status' --output text 2>/dev/null || echo "INACTIVE")
           if [ "$ECS_STATUS" == "ACTIVE" ]; then
             echo "⚡ Active ECS Production Cluster detected! Triggering rolling container update..."
-            aws ecs update-service --cluster jaktra-production --service jaktra-production-backend --force-new-deployment --no-cli-pager || true
-            aws ecs update-service --cluster jaktra-production --service jaktra-production-ai-service --force-new-deployment --no-cli-pager || true
+            aws ecs update-service --cluster jaktra-production --service jaktra-production-backend --force-new-deployment --no-cli-pager > /dev/null || true
+            aws ecs update-service --cluster jaktra-production --service jaktra-production-ai-service --force-new-deployment --no-cli-pager > /dev/null || true
           else
             echo "ℹ️ No active ECS Production cluster running."
           fi
