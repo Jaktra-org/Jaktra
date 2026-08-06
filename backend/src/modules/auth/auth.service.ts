@@ -130,13 +130,13 @@ export class AuthService {
     const user = await this.userRepo.findFirstByEmail(normalizedEmail);
     if (!user) {
       await this.lockoutService.recordFailure(normalizedEmail);
-      throw new AuthError('Invalid email or password', 401);
+      throw new AuthError('Incorrect email address or password entered', 401);
     }
 
     const valid = await bcrypt.compare(input.password, user.passwordHash);
     if (!valid) {
       await this.lockoutService.recordFailure(normalizedEmail, user.tenantId, user.id);
-      throw new AuthError('Invalid email or password', 401);
+      throw new AuthError('Incorrect email address or password entered', 401);
     }
     await this.lockoutService.clearFailures(normalizedEmail);
 
@@ -255,11 +255,11 @@ export class AuthService {
 
     const user = await this.userRepo.findById(userId);
     if (!user || !user.mfaEnabled) {
-      throw new AuthError('Invalid email or password', 401);
+      throw new AuthError('Incorrect email address or password entered', 401);
     }
 
     if (!user.mfaSecret || !user.mfaSecretIv || !user.mfaSecretAuthTag || user.mfaSecretKeyVersion == null) {
-      throw new AuthError('Invalid email or password', 401);
+      throw new AuthError('Incorrect email address or password entered', 401);
     }
 
     const secret = decrypt(

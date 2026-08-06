@@ -17,7 +17,7 @@ import type { EventRepository } from '../event/event.repository.js';
 // This is the correct trade-off: we accept the edge-case side effect in exchange for
 // actual brute-force protection on real accounts. No fix planned for v1.
 
-const GENERIC_AUTH_ERROR = 'Invalid email or password';
+const GENERIC_AUTH_ERROR = 'Incorrect email address or password entered';
 
 interface LockoutConfig {
   threshold: number;      // failures before lockout

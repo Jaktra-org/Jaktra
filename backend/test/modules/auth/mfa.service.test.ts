@@ -336,7 +336,7 @@ describe('AuthService.verifyMfaCode', () => {
   it('blocks even correct code after MFA lockout (deny-list)', async () => {
     vi.mocked(jwt.verify).mockReturnValue({ userId: 'user-1', mfaPending: true } as never);
     const lockout = makeLockout();
-    lockout.checkMfaLockout.mockRejectedValue(new AuthError('Invalid email or password', 401));
+    lockout.checkMfaLockout.mockRejectedValue(new AuthError('Incorrect email address or password entered', 401));
 
     const repo = makeRepo();
     repo.findById.mockResolvedValue(mfaUser);

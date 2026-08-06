@@ -32,7 +32,7 @@ export class ValidationError extends AppError {
 }
 
 export class AuthError extends AppError {
-  constructor(displayMessage = 'Invalid email or password', statusCode = 401, technicalMessage?: string) {
+  constructor(displayMessage = 'Incorrect email address or password entered', statusCode = 401, technicalMessage?: string) {
     let errorCode = 'AUTH_INVALID_CREDENTIALS';
     if (statusCode === 409) errorCode = 'CONFLICT';
     if (statusCode === 404) errorCode = 'NOT_FOUND';
