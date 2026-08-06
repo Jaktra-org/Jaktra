@@ -51,19 +51,19 @@ log "  ✓ Secrets written to .env files"
 
 log "▶ Authenticating Docker to ECR..."
 aws ecr get-login-password --region "$REGION" \
-  | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+  | sudo docker login --username AWS --password-stdin "$ECR_REGISTRY"
 log "  ✓ Docker authenticated to ECR"
 
 log "▶ Pulling latest images from ECR..."
-docker compose -f "$COMPOSE_FILE" pull
+sudo docker compose -f "$COMPOSE_FILE" pull
 log "  ✓ Images pulled"
 
 log "▶ Stopping existing services gracefully (35s timeout)..."
-docker compose -f "$COMPOSE_FILE" stop -t 35 2>/dev/null || true
-docker compose -f "$COMPOSE_FILE" rm -f 2>/dev/null || true
+sudo docker compose -f "$COMPOSE_FILE" stop -t 35 2>/dev/null || true
+sudo docker compose -f "$COMPOSE_FILE" rm -f 2>/dev/null || true
 
 log "▶ Starting services..."
-docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+sudo docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 
 log "  ✓ Services started"
 log ""

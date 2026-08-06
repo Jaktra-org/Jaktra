@@ -21,7 +21,7 @@ chmod +x /opt/jaktra/start.sh
 log "  ✓ start.sh written"
 
 log "▶ Installing Docker & dependencies..."
-dnf install -y docker python3 curl awscli || true
+dnf install -y docker python3 awscli --allowerasing || true
 systemctl enable docker
 systemctl start docker
 usermod -aG docker ec2-user
@@ -60,7 +60,8 @@ SYSTEMD_EOF
 
 systemctl daemon-reload
 systemctl enable jaktra.service
-log "  ✓ systemd jaktra.service enabled (starts on every boot)"
+systemctl start jaktra.service || /opt/jaktra/start.sh || true
+log "  ✓ systemd jaktra.service enabled and started"
 
 cat > /opt/jaktra/reload.sh << 'RELOAD_EOF'
 #!/usr/bin/env bash

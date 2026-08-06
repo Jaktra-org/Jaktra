@@ -225,7 +225,7 @@ cd "\$WORK_DIR"
 
 if ! command -v docker &> /dev/null; then
   echo "Installing Docker..."
-  sudo dnf install -y docker python3 curl awscli
+  sudo dnf install -y docker python3 awscli --allowerasing
   sudo systemctl enable --now docker
   sudo usermod -aG docker ec2-user || true
 fi
@@ -269,11 +269,11 @@ chmod 600 "\$WORK_DIR/.env.backend" "\$WORK_DIR/.env.ai-service"
 
 echo "[2/4] Logging into ECR & pulling images..."
 aws ecr get-login-password --region "\$REGION" \
-  | docker login --username AWS --password-stdin "\$ECR_REGISTRY"
-docker compose pull
+  | sudo docker login --username AWS --password-stdin "\$ECR_REGISTRY"
+sudo docker compose pull
 
 echo "[3/4] Starting ordered container stack (Redis -> AI-Service -> Backend)..."
-docker compose up -d --remove-orphans
+sudo docker compose up -d --remove-orphans
 
 echo "[4/4] Verifying End-to-End System Health (/api/health)..."
 MAX_WAIT=60; WAITED=0
