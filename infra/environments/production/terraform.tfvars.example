@@ -7,6 +7,6 @@ github_repo = "Jaktra"
 
 create_github_oidc_provider = true
 
-domain_name   = ""       # e.g. "jaktra.com" — leave blank to use AWS URLs
+domain_name   = ""       # e.g. "jaktra.site" — leave blank to use AWS URLs
 api_subdomain = "api"
 alert_email   = "you@example.com"
