@@ -55,7 +55,7 @@ jobs:
         id: meta
         run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push
+      - name: Build and push backend to ECR
         uses: docker/build-push-action@v6
         with:
           context: ./backend
@@ -96,7 +96,7 @@ jobs:
         id: meta
         run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push
+      - name: Build and push AI service to ECR
         uses: docker/build-push-action@v6
         with:
           context: ./ai-service
@@ -106,7 +106,7 @@ jobs:
             ${{ steps.ecr.outputs.registry }}/jaktra/base/ai-service:${{ steps.meta.outputs.tag }}
             ${{ steps.ecr.outputs.registry }}/jaktra/base/ai-service:latest
 
-  build-frontend:
+  deploy-frontend:
     needs: [test]
     if: ${{ needs.test.result == 'success' || needs.test.result == 'skipped' }}
     runs-on: ubuntu-latest
@@ -156,177 +156,3 @@ jobs:
           fi
           echo "Invalidating CloudFront CDN cache..."
           aws cloudfront create-invalidation --distribution-id "${DIST_ID}" --paths "/*"
-
-  deploy-backend:
-    needs: [build-backend]
-    runs-on: ubuntu-latest
-    outputs:
-      prev_task_def: ${{ steps.prev.outputs.task_def }}
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Save current task definition for rollback
-        id: prev
-        run: |
-          PREV=$(aws ecs describe-services \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --services "${{ secrets.BACKEND_SERVICE_NAME }}" \
-            --query 'services[0].taskDefinition' --output text)
-          echo "task_def=${PREV}" >> "$GITHUB_OUTPUT"
-
-      - name: Register new task definition
-        id: task
-        run: |
-          TASK_DEF=$(aws ecs describe-task-definition \
-            --task-definition "${{ secrets.BACKEND_TASK_FAMILY }}" \
-            --query 'taskDefinition' --output json)
-
-          NEW_TASK=$(echo "$TASK_DEF" \
-            | jq --arg img "${{ secrets.ECR_BACKEND_REPO_URL }}:${{ needs.build-backend.outputs.image_tag }}" \
-              '.containerDefinitions[0].image = $img
-               | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
-                     .placementConstraints, .compatibilities, .registeredAt, .registeredBy)')
-
-          ARN=$(aws ecs register-task-definition \
-            --cli-input-json "$NEW_TASK" \
-            --query 'taskDefinition.taskDefinitionArn' --output text)
-          echo "arn=${ARN}" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --service "${{ secrets.BACKEND_SERVICE_NAME }}" \
-            --task-definition "${{ steps.task.outputs.arn }}" \
-            --force-new-deployment \
-            --no-cli-pager > /dev/null
-
-      - name: Wait for stability
-        run: |
-          aws ecs wait services-stable \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --services "${{ secrets.BACKEND_SERVICE_NAME }}"
-
-  deploy-ai-service:
-    needs: [build-ai-service]
-    runs-on: ubuntu-latest
-    outputs:
-      prev_task_def: ${{ steps.prev.outputs.task_def }}
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Save current task definition for rollback
-        id: prev
-        run: |
-          PREV=$(aws ecs describe-services \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --services "${{ secrets.AI_SERVICE_SERVICE_NAME }}" \
-            --query 'services[0].taskDefinition' --output text)
-          echo "task_def=${PREV}" >> "$GITHUB_OUTPUT"
-
-      - name: Register new task definition
-        id: task
-        run: |
-          TASK_DEF=$(aws ecs describe-task-definition \
-            --task-definition "${{ secrets.AI_SERVICE_TASK_FAMILY }}" \
-            --query 'taskDefinition' --output json)
-
-          NEW_TASK=$(echo "$TASK_DEF" \
-            | jq --arg img "${{ secrets.ECR_AI_SERVICE_REPO_URL }}:${{ needs.build-ai-service.outputs.image_tag }}" \
-              '.containerDefinitions[0].image = $img
-               | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
-                     .placementConstraints, .compatibilities, .registeredAt, .registeredBy)')
-
-          ARN=$(aws ecs register-task-definition \
-            --cli-input-json "$NEW_TASK" \
-            --query 'taskDefinition.taskDefinitionArn' --output text)
-          echo "arn=${ARN}" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --service "${{ secrets.AI_SERVICE_SERVICE_NAME }}" \
-            --task-definition "${{ steps.task.outputs.arn }}" \
-            --force-new-deployment \
-            --no-cli-pager > /dev/null
-
-      - name: Wait for stability
-        run: |
-          aws ecs wait services-stable \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --services "${{ secrets.AI_SERVICE_SERVICE_NAME }}"
-
-  smoke-test:
-    needs: [deploy-backend, deploy-ai-service, build-frontend]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Health check — Backend
-        run: |
-          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
-            "${{ secrets.VITE_API_BASE_URL }}/api/health" || echo "000")
-          echo "Backend health: ${STATUS}"
-          [[ "$STATUS" == "200" ]] || exit 1
-
-      - name: Health check — Frontend
-        run: |
-          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
-            "https://$(echo '${{ secrets.VITE_API_BASE_URL }}' | sed 's|https\?://||')" || echo "000")
-          echo "Frontend: ${STATUS}"
-
-  rollback:
-    needs: [smoke-test, deploy-backend, deploy-ai-service]
-    if: ${{ failure() && needs.smoke-test.result == 'failure' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Rollback backend
-        if: ${{ needs.deploy-backend.outputs.prev_task_def != '' }}
-        run: |
-          echo "Rolling back backend to: ${{ needs.deploy-backend.outputs.prev_task_def }}"
-          aws ecs update-service \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --service "${{ secrets.BACKEND_SERVICE_NAME }}" \
-            --task-definition "${{ needs.deploy-backend.outputs.prev_task_def }}" \
-            --force-new-deployment \
-            --no-cli-pager > /dev/null
-
-      - name: Rollback ai-service
-        if: ${{ needs.deploy-ai-service.outputs.prev_task_def != '' }}
-        run: |
-          echo "Rolling back ai-service to: ${{ needs.deploy-ai-service.outputs.prev_task_def }}"
-          aws ecs update-service \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --service "${{ secrets.AI_SERVICE_SERVICE_NAME }}" \
-            --task-definition "${{ needs.deploy-ai-service.outputs.prev_task_def }}" \
-            --force-new-deployment \
-            --no-cli-pager > /dev/null
-
-      - name: Wait for rollback stability
-        run: |
-          aws ecs wait services-stable \
-            --cluster "${{ secrets.ECS_CLUSTER_NAME }}" \
-            --services "${{ secrets.BACKEND_SERVICE_NAME }}" "${{ secrets.AI_SERVICE_SERVICE_NAME }}"
