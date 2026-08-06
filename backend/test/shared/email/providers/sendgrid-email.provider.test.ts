@@ -25,18 +25,18 @@ describe('SendGridEmailProvider', () => {
     const provider = new SendGridEmailProvider({ apiKey: 'sg-test-api-key' });
     const result = await provider.send({
       to: 'recipient@sendgrid.com',
-      from: { name: 'Jaktra SG', email: 'sg@jaktra.com' },
+      from: { name: 'Jaktra SG', email: 'sg@jaktra.site' },
       subject: 'SendGrid Test',
       html: '<h1>Hi</h1>',
-      replyTo: 'reply@jaktra.com',
+      replyTo: 'reply@jaktra.site',
     });
 
     expect(result.success).toBe(true);
     expect(result.providerMessageId).toBe('sg-msg-999');
     expect(sgMail.send).toHaveBeenCalledWith({
       to: 'recipient@sendgrid.com',
-      from: { name: 'Jaktra SG', email: 'sg@jaktra.com' },
-      replyTo: { email: 'reply@jaktra.com' },
+      from: { name: 'Jaktra SG', email: 'sg@jaktra.site' },
+      replyTo: { email: 'reply@jaktra.site' },
       subject: 'SendGrid Test',
       html: '<h1>Hi</h1>',
       text: undefined,
@@ -48,7 +48,7 @@ describe('SendGridEmailProvider', () => {
     const provider = new SendGridEmailProvider({ apiKey: 'sg-test-api-key' });
     const result = await provider.send({
       to: 'recipient@sendgrid.com',
-      from: { name: 'Jaktra SG', email: 'sg@jaktra.com' },
+      from: { name: 'Jaktra SG', email: 'sg@jaktra.site' },
       subject: 'SendGrid Test',
       html: '<h1>Hi</h1>',
       trackingSettings: {
@@ -60,7 +60,7 @@ describe('SendGridEmailProvider', () => {
     expect(result.success).toBe(true);
     expect(sgMail.send).toHaveBeenCalledWith({
       to: 'recipient@sendgrid.com',
-      from: { name: 'Jaktra SG', email: 'sg@jaktra.com' },
+      from: { name: 'Jaktra SG', email: 'sg@jaktra.site' },
       replyTo: undefined,
       subject: 'SendGrid Test',
       html: '<h1>Hi</h1>',
