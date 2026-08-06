@@ -114,7 +114,7 @@ export class SettingsService {
       await this.redis.set(latestKey, testToken, { EX: 86400 });
     }
 
-    const inboundDomain = config.INBOUND_PARSE_DOMAIN || 'replies.jaktra.com';
+    const inboundDomain = config.INBOUND_PARSE_DOMAIN || 'replies.jaktra.site';
     const replyTo = `reply+test-${testToken}@${inboundDomain}`;
 
     await platformMailer.sendInboundVerificationTestEmail(userEmail, replyTo);
@@ -166,7 +166,7 @@ export class SettingsService {
       dnsVerifiedAt: settings.dnsVerifiedAt ? settings.dnsVerifiedAt.toISOString() : null,
       hasRealCapture,
       latestTest,
-      inboundParseDomain: config.INBOUND_PARSE_DOMAIN || 'replies.jaktra.com',
+      inboundParseDomain: config.INBOUND_PARSE_DOMAIN || 'replies.jaktra.site',
     };
   }
 }

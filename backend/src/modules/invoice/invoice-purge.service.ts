@@ -50,7 +50,7 @@ export class InvoicePurgeService {
               await this.eventService.emitEvent('invoice', invoice.id, tenantId, 'invoice.permanently_deleted', {
                 source: 'system',
                 name: 'Auto-Purge',
-                email: 'system@jaktra.com',
+                email: 'system@jaktra.site',
                 role: 'admin'
               }, {
                 description: `Invoice #${invoice.invoiceNo} permanently deleted via automated auto-purge policy`,

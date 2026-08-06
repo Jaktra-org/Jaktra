@@ -54,7 +54,7 @@ describe('Disputes page reviews and actions', () => {
     dnsVerifiedAt: '2026-07-01T00:00:00.000Z',
     hasRealCapture: true,
     latestTest: null,
-    inboundParseDomain: 'parse.jaktra.com',
+    inboundParseDomain: 'parse.jaktra.site',
   };
 
   beforeEach(() => {
