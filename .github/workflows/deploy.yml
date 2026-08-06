@@ -175,18 +175,18 @@ jobs:
       - name: Detect active environment and trigger pull
         run: |
           # 1. Detect Production ECS Cluster
-          ECS_STATUS=$(aws ecs describe-services --cluster jaktra-production --services backend --query 'services[0].status' --output text 2>/dev/null || echo "INACTIVE")
+          ECS_STATUS=$(aws ecs describe-services --cluster jaktra-production --services jaktra-production-backend --query 'services[0].status' --output text 2>/dev/null || echo "INACTIVE")
           if [ "$ECS_STATUS" == "ACTIVE" ]; then
-            echo "⚡ Active ECS Production Cluster detected! Triggering rolling deployment..."
-            aws ecs update-service --cluster jaktra-production --service backend --force-new-deployment --no-cli-pager || true
-            aws ecs update-service --cluster jaktra-production --service ai-service --force-new-deployment --no-cli-pager || true
+            echo "⚡ Active ECS Production Cluster detected! Triggering rolling container update..."
+            aws ecs update-service --cluster jaktra-production --service jaktra-production-backend --force-new-deployment --no-cli-pager || true
+            aws ecs update-service --cluster jaktra-production --service jaktra-production-ai-service --force-new-deployment --no-cli-pager || true
           else
             echo "ℹ️ No active ECS Production cluster running."
           fi
 
           # 2. Detect Dev EC2 Instance
           EC2_ID=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=jaktra-dev-instance" "Name=instance-state-name,Values=running" \
+            --filters "Name=tag:Name,Values=jaktra-dev-ec2,jaktra-dev-instance" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null || echo "None")
 
           if [ "$EC2_ID" != "None" ] && [ -n "$EC2_ID" ]; then
