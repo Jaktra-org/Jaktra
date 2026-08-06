@@ -1,30 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { PaymentGatewayFactory } from '../../modules/payment/gateway.factory.js';
-import type { WebhookService } from './webhook.service.js';
-import { logger } from '../../shared/logger.js';
 import type { SendgridWebhookService } from './providers/sendgrid.webhook.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
-import type { PaymentService } from '../payment/payment.service.js';
-import { AppError, AuthError, ValidationError, NotFoundError, ForbiddenError } from '../../shared/errors/index.js';
 import type { DisputeService } from '../dispute/dispute.service.js';
 import { timingSafeCompare, extractEmail } from '../dispute/dispute.service.js';
 import { config } from '../../config/index.js';
 import type { RedisClientType } from 'redis';
+import { logger } from '../../shared/logger.js';
+import { AuthError, ValidationError, ForbiddenError, AppError } from '../../shared/errors/index.js';
 
-// Rate-limit config for invalid webhook token attempts.
-// Threshold is intentionally generous: legitimate traffic from SendGrid will always
-// carry the correct secret (no retry storm), so only brute-force probes hit this.
-// During secret rotation, deploy the new secret before updating the SendGrid URL
-// to avoid triggering the limit on real traffic.
 const WEBHOOK_RATE_LIMIT_THRESHOLD = 15;
 const WEBHOOK_RATE_LIMIT_WINDOW_SECONDS = 15 * 60; // 15 minutes
 
-export class WebhookController {
+export class SendgridWebhookController {
   constructor(
-    private gatewayFactory: PaymentGatewayFactory,
-    private webhookService: WebhookService,
-    private paymentService: PaymentService,
     private settingsRepo: SettingsRepository,
     private sendgridService?: SendgridWebhookService,
     private disputeService?: DisputeService,
@@ -167,66 +156,6 @@ export class WebhookController {
     logger.info(`Tenant ${testData.tenantId} inbound reply capture verified via self-test token ${token}`);
   }
 
-  handlePayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const webhookToken = req.params.webhookToken as string;
-    const provider = req.params.provider as string;
-    
-    if (!webhookToken || !provider) {
-      next(new NotFoundError('Invalid webhook URL'));
-      return;
-    }
-
-    const settings = await this.settingsRepo.findByWebhookToken(webhookToken);
-    if (!settings) {
-      next(new NotFoundError('Invalid webhook URL'));
-      return;
-    }
-    const tenantId = settings.tenantId;
-
-    const rawBody = req.body;
-    if (!rawBody || !Buffer.isBuffer(rawBody)) {
-      logger.error(`Raw body is missing or not a buffer for provider ${provider}. Is express.raw() configured?`);
-      next(new ValidationError('Invalid request body'));
-      return;
-    }
-
-    const sigHeader = req.headers['x-razorpay-signature'] || req.headers['stripe-signature'];
-    const rawSignature = Array.isArray(sigHeader) ? sigHeader[0] : sigHeader;
-    
-    if (!rawSignature || typeof rawSignature !== 'string') {
-      logger.warn(`Missing signature header for provider ${provider}`);
-      next(new ValidationError('Missing signature'));
-      return;
-    }
-    const signature: string = rawSignature;
-
-    try {
-      let payload;
-      try {
-        payload = JSON.parse(rawBody.toString('utf8'));
-      } catch {
-        next(new ValidationError('Invalid JSON body'));
-        return;
-      }
-
-      const result = await this.paymentService.processPaymentCaptured(tenantId as string, provider as 'razorpay', payload, rawBody, signature as string);
-      res.status(200).json(result);
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      logger.warn(`Failed to process payment capture webhook: ${errMsg}`);
-      if (errMsg === 'Invalid signature' || errMsg.includes('not registered')) {
-        next(new AuthError('Payment capture webhook verification failed', 401, errMsg));
-        return;
-      }
-      next(error);
-    }
-  };
-
-  // ── Webhook rate-limiting helpers (Redis-backed, fail-open) ─────────
-  // Follows the same fail-open pattern as LockoutService: if Redis is
-  // unavailable, brute-force throttling is skipped but structured logging
-  // still fires on every invalid attempt, keeping attacks detectable.
-
   private async checkWebhookRateLimit(ip: string): Promise<boolean> {
     if (!this.redisClient || !this.redisClient.isOpen) {
       logger.warn({
@@ -243,7 +172,6 @@ export class WebhookController {
       if (raw === null) return false;
       return parseInt(raw, 10) >= WEBHOOK_RATE_LIMIT_THRESHOLD;
     } catch {
-      // Redis error — fail-open
       return false;
     }
   }
@@ -258,8 +186,7 @@ export class WebhookController {
         await this.redisClient.expire(key, WEBHOOK_RATE_LIMIT_WINDOW_SECONDS);
       }
     } catch {
-      // Redis error — fail-open, structured logging on the attempt itself
-      // still fires regardless.
+      // fail-open
     }
   }
 }
