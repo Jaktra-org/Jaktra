@@ -28,15 +28,15 @@ def test_sanitize_input():
     assert sanitize_input(non_printable) == "HelloWorld"
 
 def test_untrusted_domain_validation_in_email():
-    payment_link = "https://trusted.jaktra.com/pay/999"
+    payment_link = "https://trusted.jaktra.site/pay/999"
     
     # Happy path: exact match
-    text_ok = "Subject: Payment Reminder\nBody:\nPlease pay at https://trusted.jaktra.com/pay/999. Thank you."
+    text_ok = "Subject: Payment Reminder\nBody:\nPlease pay at https://trusted.jaktra.site/pay/999. Thank you."
     sub, body = validate_email_output(text_ok, payment_link)
     assert sub == "Payment Reminder"
     
     # Happy path: subdomain match
-    text_sub = "Subject: Payment Reminder\nBody:\nPlease pay at https://sub.trusted.jaktra.com/pay/999. Thank you."
+    text_sub = "Subject: Payment Reminder\nBody:\nPlease pay at https://sub.trusted.jaktra.site/pay/999. Thank you."
     sub, body = validate_email_output(text_sub, payment_link)
     assert sub == "Payment Reminder"
     

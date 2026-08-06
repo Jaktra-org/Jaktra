@@ -23,7 +23,7 @@ async def test_generate_followup_email_happy_path(async_client, mock_litellm_com
         "urgency_tier": "stage_1_warm",
         "channel": "email",
         "followup_count": 1,
-        "payment_link": "https://trusted.jaktra.com/pay/123",
+        "payment_link": "https://trusted.jaktra.site/pay/123",
         "sender_name": "Finance Dept"
     }
     
@@ -39,7 +39,7 @@ async def test_generate_followup_email_happy_path(async_client, mock_litellm_com
 
 @pytest.mark.anyio
 async def test_generate_followup_sms_happy_path(async_client, mock_litellm_completion):
-    llm_content = "Payment of $1500.00 for INV-101 is now overdue. Please pay at: https://trusted.jaktra.com/pay/123."
+    llm_content = "Payment of $1500.00 for INV-101 is now overdue. Please pay at: https://trusted.jaktra.site/pay/123."
     mock_litellm_completion.return_value = mock_litellm_completion.create_response(content=llm_content)
     
     headers = {"X-Service-Key": "test-service-key"}
@@ -54,7 +54,7 @@ async def test_generate_followup_sms_happy_path(async_client, mock_litellm_compl
         "days_overdue": 5,
         "urgency_tier": "stage_1_warm",
         "channel": "sms",
-        "payment_link": "https://trusted.jaktra.com/pay/123"
+        "payment_link": "https://trusted.jaktra.site/pay/123"
     }
     
     response = await async_client.post("/followup", json=payload, headers=headers)
@@ -66,7 +66,7 @@ async def test_generate_followup_sms_happy_path(async_client, mock_litellm_compl
 
 @pytest.mark.anyio
 async def test_generate_followup_whatsapp_happy_path(async_client, mock_litellm_completion):
-    llm_content = "Hello Acme Corp. This is a WhatsApp reminder that invoice INV-101 for $1500.00 is overdue. Pay at: https://trusted.jaktra.com/pay/123"
+    llm_content = "Hello Acme Corp. This is a WhatsApp reminder that invoice INV-101 for $1500.00 is overdue. Pay at: https://trusted.jaktra.site/pay/123"
     mock_litellm_completion.return_value = mock_litellm_completion.create_response(content=llm_content)
     
     headers = {"X-Service-Key": "test-service-key"}
@@ -81,7 +81,7 @@ async def test_generate_followup_whatsapp_happy_path(async_client, mock_litellm_
         "days_overdue": 5,
         "urgency_tier": "stage_1_warm",
         "channel": "whatsapp",
-        "payment_link": "https://trusted.jaktra.com/pay/123"
+        "payment_link": "https://trusted.jaktra.site/pay/123"
     }
     
     response = await async_client.post("/followup", json=payload, headers=headers)
