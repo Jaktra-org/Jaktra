@@ -41,6 +41,11 @@ resource "aws_iam_role" "ec2_instance" {
   tags = { Name = "${local.name_prefix}-ec2-instance-role" }
 }
 
+resource "aws_iam_role_policy_attachment" "ssm_managed_instance" {
+  role       = aws_iam_role.ec2_instance.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_role_policy" "ec2_instance" {
   name = "ecr-and-secrets"
   role = aws_iam_role.ec2_instance.id
