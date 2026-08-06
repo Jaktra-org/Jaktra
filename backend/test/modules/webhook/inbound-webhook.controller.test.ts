@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
-import { WebhookController } from '../../../src/modules/webhook/webhook.controller.js';
+import { SendgridWebhookController } from '../../../src/modules/webhook/sendgrid-webhook.controller.js';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
@@ -89,13 +89,10 @@ function makeReq(
 const VALID_SECRET = 'correct-secret-token-abc123';
 const INVALID_SECRET = 'wrong-token-xyz';
 
-function makeController(redisClient: any = null): WebhookController {
+function makeController(redisClient: any = null): SendgridWebhookController {
   // Provide minimal stubs for required constructor deps; inbound handler
   // doesn't touch most of them.
-  return new WebhookController(
-    {} as any,      // gatewayFactory
-    {} as any,      // webhookService
-    {} as any,      // paymentService
+  return new SendgridWebhookController(
     {} as any,      // settingsRepo
     undefined,      // sendgridService
     undefined,      // disputeService
@@ -105,7 +102,7 @@ function makeController(redisClient: any = null): WebhookController {
 
 // ── Tests ────────────────────────────────────────────────────────────
 
-describe('WebhookController.handleSendgridInbound — security hardening', () => {
+describe('SendgridWebhookController.handleSendgridInbound — security hardening', () => {
   const next: NextFunction = vi.fn();
 
   beforeEach(() => {

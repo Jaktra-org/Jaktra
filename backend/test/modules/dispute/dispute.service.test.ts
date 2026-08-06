@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DisputeService, timingSafeCompare, extractEmail } from '../../../src/modules/dispute/dispute.service.js';
 import { DisputeController } from '../../../src/modules/dispute/dispute.controller.js';
-import { WebhookController } from '../../../src/modules/webhook/webhook.controller.js';
+import { SendgridWebhookController } from '../../../src/modules/webhook/sendgrid-webhook.controller.js';
 import { CommunicationService } from '../../../src/modules/communication/communication.service.js';
 import type { ActorContext } from '../../../src/modules/event/event.service.js';
 import type { PlatformMailer } from '../../../src/modules/platform-mail/platform-mailer.js';
@@ -84,7 +84,7 @@ describe('CommunicationService Outbound replyTo Injection', () => {
   });
 
   it('should override replyTo with sub-address when INBOUND_PARSE_DOMAIN is configured', async () => {
-    config.INBOUND_PARSE_DOMAIN = 'replies.jaktra.com';
+    config.INBOUND_PARSE_DOMAIN = 'replies.jaktra.site';
     const invoiceId = '123e4567-e89b-12d3-a456-426614174000';
 
     await commService.send({
@@ -98,7 +98,7 @@ describe('CommunicationService Outbound replyTo Injection', () => {
     expect(mockTenantMailer.sendCollectionEmail).toHaveBeenCalledWith(
       'tenant-123',
       expect.objectContaining({
-        replyTo: `reply+${invoiceId}@replies.jaktra.com`,
+        replyTo: `reply+${invoiceId}@replies.jaktra.site`,
       }),
       { invoiceId }
     );
@@ -231,7 +231,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
     await disputeService.processInboundEmail({
       from: 'client@test.com',
-      to: `reply+${invoiceId}@replies.jaktra.com`,
+      to: `reply+${invoiceId}@replies.jaktra.site`,
       subject: 'Re: Collection Mail',
       text: 'I already paid this amount.',
     });
@@ -274,7 +274,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
     await disputeService.processInboundEmail({
       from: 'client@test.com',
-      to: `reply+${invalidInvoiceId}@replies.jaktra.com`,
+      to: `reply+${invalidInvoiceId}@replies.jaktra.site`,
       subject: 'Re: Collection Mail',
       text: 'I already paid this amount.',
     });
@@ -292,7 +292,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
     await disputeService.processInboundEmail({
       from: 'client@test.com',
-      to: `reply+${invoiceId}@replies.jaktra.com`,
+      to: `reply+${invoiceId}@replies.jaktra.site`,
       subject: 'Re: Collection Mail',
       text: 'I already paid this amount.',
     });
@@ -309,7 +309,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
     await disputeService.processInboundEmail({
       from: 'attacker@evil.com',
-      to: `reply+${invoiceId}@replies.jaktra.com`,
+      to: `reply+${invoiceId}@replies.jaktra.site`,
       subject: 'Fake dispute',
       text: 'I will dispute this invoice',
     });
@@ -330,7 +330,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
     await disputeService.processInboundEmail({
       from: '  client@test.com',
-      to: `reply+${invoiceId}@replies.jaktra.com`,
+      to: `reply+${invoiceId}@replies.jaktra.site`,
       subject: 'Re: Collection Mail',
       text: 'I already paid this amount.',
     });
@@ -352,7 +352,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
     await disputeService.processInboundEmail({
       from: 'ap-dept@test.com',
-      to: `reply+${invoiceId}@replies.jaktra.com`,
+      to: `reply+${invoiceId}@replies.jaktra.site`,
       subject: 'Re: Collection Mail',
       text: 'Disputing this amount.',
     });
@@ -392,7 +392,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
       await localDisputeService.processInboundEmail({
         from: 'client@test.com',
-        to: `reply+${invoiceId}@replies.jaktra.com`,
+        to: `reply+${invoiceId}@replies.jaktra.site`,
         subject: 'Re: Collection Mail',
         text: 'I already paid this amount.',
       });
@@ -417,7 +417,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
       await localDisputeService.processInboundEmail({
         from: 'client@test.com',
-        to: `reply+${invoiceId}@replies.jaktra.com`,
+        to: `reply+${invoiceId}@replies.jaktra.site`,
         subject: 'Re: Collection Mail',
         text: 'I already paid this amount.',
       });
@@ -439,7 +439,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
       await localDisputeService.processInboundEmail({
         from: 'client@test.com',
-        to: `reply+${invoiceId}@replies.jaktra.com`,
+        to: `reply+${invoiceId}@replies.jaktra.site`,
         subject: 'Re: Collection Mail',
         text: 'I already paid this amount.',
       });
@@ -461,7 +461,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
       await localDisputeService.processInboundEmail({
         from: 'client@test.com',
-        to: `reply+${invoiceId}@replies.jaktra.com`,
+        to: `reply+${invoiceId}@replies.jaktra.site`,
         subject: 'Re: Collection Mail',
         text: 'I already paid this amount.',
       });
@@ -484,7 +484,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
 
       await localDisputeService.processInboundEmail({
         from: 'client@test.com',
-        to: `reply+${invoiceId}@replies.jaktra.com`,
+        to: `reply+${invoiceId}@replies.jaktra.site`,
         subject: 'Re: Collection Mail',
         text: 'I already paid this amount.',
       });
@@ -590,8 +590,8 @@ describe('DisputeService Approve & Discard Actions', () => {
   });
 });
 
-describe('WebhookController Inbound Parse Authentication Checks', () => {
-  let controller: WebhookController;
+describe('SendgridWebhookController Inbound Parse Authentication Checks', () => {
+  let controller: SendgridWebhookController;
   let mockDisputeService: any;
   let mockReq: any;
   let mockRes: any;
@@ -602,12 +602,9 @@ describe('WebhookController Inbound Parse Authentication Checks', () => {
     mockDisputeService = {
       processInboundEmail: vi.fn().mockResolvedValue(true),
     };
-    controller = new WebhookController(
+    controller = new SendgridWebhookController(
       {} as any,
-      {} as any,
-      {} as any,
-      {} as any,
-      {} as any,
+      undefined,
       mockDisputeService
     );
     mockRes = {
@@ -667,19 +664,16 @@ describe('WebhookController Inbound Parse Authentication Checks', () => {
       updateSettings: vi.fn().mockResolvedValue({}),
     };
     
-    const testController = new WebhookController(
-      {} as any,
-      {} as any,
-      {} as any,
+    const testController = new SendgridWebhookController(
       mockSettingsRepo as any,
-      {} as any,
+      undefined,
       mockDisputeService,
       mockRedis as any
     );
 
     mockReq = {
       params: { secretToken: 'correct-secret-123' },
-      body: { from: 'admin@company.com', to: 'reply+test-abcdef12@replies.jaktra.com', subject: 'Re: Test' },
+      body: { from: 'admin@company.com', to: 'reply+test-abcdef12@replies.jaktra.site', subject: 'Re: Test' },
       ip: '10.0.0.1',
     };
 

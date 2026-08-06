@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WebhookController } from '../../../src/modules/webhook/webhook.controller.js';
+import { PaymentWebhookController } from '../../../src/modules/webhook/payment-webhook.controller.js';
 import type { Request, Response } from 'express';
 import { NotFoundError, ValidationError, AuthError } from '../../../src/shared/errors/index.js';
 
-describe('WebhookController', () => {
-  let controller: WebhookController;
+describe('PaymentWebhookController', () => {
+  let controller: PaymentWebhookController;
   let mockPaymentService: any;
   let mockSettingsRepo: any;
   let mockReq: Partial<Request>;
@@ -18,7 +18,7 @@ describe('WebhookController', () => {
     mockSettingsRepo = {
       findByWebhookToken: vi.fn(),
     };
-    controller = new WebhookController(
+    controller = new PaymentWebhookController(
       {} as any,
       {} as any,
       mockPaymentService as any,
