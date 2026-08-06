@@ -31,12 +31,16 @@ describe('PlatformMailer', () => {
         password: 'password',
         secure: true,
       }),
+      resolveSender: vi.fn().mockResolvedValue({
+        fromEmail: 'no-reply@jaktra.site',
+        fromName: 'Jaktra',
+      }),
     };
   });
 
   it('should resolve config and send team invitation email successfully', async () => {
     const platformMailer = new PlatformMailer(mockResolver);
-    const result = await platformMailer.sendTeamInviteEmail('invited@example.com', 'https://jaktra.com/invite#token=abc');
+    const result = await platformMailer.sendTeamInviteEmail('invited@example.com', 'https://jaktra.site/invite#token=abc');
 
     expect(mockResolver.resolve).toHaveBeenCalled();
     expect(createEmailProvider).toHaveBeenCalledWith({
@@ -50,9 +54,9 @@ describe('PlatformMailer', () => {
     
     expect(mockProviderInstance.send).toHaveBeenCalledWith({
       to: 'invited@example.com',
-      from: { name: 'Jaktra', email: 'noreply@jaktra.com' },
+      from: { name: 'Jaktra', email: 'no-reply@jaktra.site' },
       subject: 'You have been invited to join Jaktra',
-      html: expect.stringContaining('https://jaktra.com/invite#token=abc'),
+      html: expect.stringContaining('https://jaktra.site/invite#token=abc'),
     });
 
     expect(result.success).toBe(true);
@@ -63,7 +67,7 @@ describe('PlatformMailer', () => {
     mockResolver.resolve = vi.fn().mockRejectedValue(new Error('Connection failure'));
     
     const platformMailer = new PlatformMailer(mockResolver);
-    const result = await platformMailer.sendTeamInviteEmail('invited@example.com', 'https://jaktra.com/invite#token=abc');
+    const result = await platformMailer.sendTeamInviteEmail('invited@example.com', 'https://jaktra.site/invite#token=abc');
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('Connection failure');
@@ -76,7 +80,7 @@ describe('PlatformMailer', () => {
     expect(mockResolver.resolve).toHaveBeenCalled();
     expect(mockProviderInstance.send).toHaveBeenCalledWith({
       to: 'test@example.com',
-      from: { name: 'Jaktra', email: 'noreply@jaktra.com' },
+      from: { name: 'Jaktra', email: 'no-reply@jaktra.site' },
       subject: 'Verify your email address',
       html: expect.stringContaining('123456'),
     });
