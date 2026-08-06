@@ -21,7 +21,8 @@ chmod +x /opt/jaktra/start.sh
 log "  ✓ start.sh written"
 
 log "▶ Installing Docker & dependencies..."
-dnf install -y docker python3 awscli --allowerasing || true
+dnf install -y docker python3 awscli amazon-ssm-agent --allowerasing || true
+systemctl enable --now amazon-ssm-agent || true
 systemctl enable docker
 systemctl start docker
 usermod -aG docker ec2-user

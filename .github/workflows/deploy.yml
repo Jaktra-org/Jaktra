@@ -185,18 +185,18 @@ jobs:
           fi
 
           # 2. Detect Dev EC2 Instance
-          EC2_ID=$(aws ec2 describe-instances \
+          EC2_ID=$(aws ec2 describe-instances --region ap-south-1 \
             --filters "Name=tag:Name,Values=jaktra-dev-ec2,jaktra-dev-instance" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null || echo "None")
 
           if [ "$EC2_ID" != "None" ] && [ -n "$EC2_ID" ]; then
-            SSM_ONLINE=$(aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$EC2_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null || echo "Offline")
+            SSM_ONLINE=$(aws ssm describe-instance-information --region ap-south-1 --filters "Key=InstanceIds,Values=$EC2_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null || echo "Offline")
             if [ "$SSM_ONLINE" == "Online" ]; then
               echo "⚡ Active Dev EC2 Instance ($EC2_ID) is SSM-Online! Triggering docker pull..."
-              aws ssm send-command \
+              aws ssm send-command --region ap-south-1 \
                 --instance-ids "$EC2_ID" \
                 --document-name "AWS-RunShellScript" \
-                --parameters 'commands=["cd /app && docker compose pull && docker compose up -d"]' || true
+                --parameters 'commands=["cd /opt/jaktra && sudo docker compose pull && sudo docker compose up -d"]' || true
             else
               echo "ℹ️ Dev EC2 Instance ($EC2_ID) detected but SSM Agent is currently offline/stopped."
             fi
