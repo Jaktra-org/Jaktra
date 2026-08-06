@@ -30,7 +30,8 @@ import { AnalyticsController } from './modules/analytics/analytics.controller.js
 import { createSettingsRouter } from './modules/settings/settings.routes.js';
 import { SettingsController } from './modules/settings/settings.controller.js';
 import { createWebhookRouter } from './modules/webhook/webhook.routes.js';
-import { WebhookController } from './modules/webhook/webhook.controller.js';
+import { SendgridWebhookController } from './modules/webhook/sendgrid-webhook.controller.js';
+import { PaymentWebhookController } from './modules/webhook/payment-webhook.controller.js';
 import { createTeamRouter } from './modules/team/team.routes.js';
 import { TeamController } from './modules/team/team.controller.js';
 import { DisputeRepository } from './modules/dispute/dispute.repository.js';
@@ -228,7 +229,20 @@ export function createApp(config: AppConfig): Application {
     const webhookService = new WebhookService(invoiceRepo, eventService);
     const sendgridService = new SendgridWebhookService(communicationService, config.sendgridWebhookPublicKey);
     
-    app.use('/api/webhooks', createWebhookRouter(new WebhookController(gatewayFactory, webhookService, paymentService, settingsRepo, sendgridService, disputeService, lockoutRedis as unknown as RedisClientType | null)));
+    const sendgridWebhookController = new SendgridWebhookController(
+      settingsRepo,
+      sendgridService,
+      disputeService,
+      lockoutRedis as unknown as RedisClientType | null
+    );
+    const paymentWebhookController = new PaymentWebhookController(
+      gatewayFactory,
+      webhookService,
+      paymentService,
+      settingsRepo
+    );
+
+    app.use('/api/webhooks', createWebhookRouter(sendgridWebhookController, paymentWebhookController));
     app.use('/public/portal', createPortalRouter(portalController, portalTokenAuth));
 
     if (config.jwtSecret) {
