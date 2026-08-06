@@ -46,11 +46,11 @@ const schema = z.object({
   }, { message: "ENCRYPTION_KEY must be a valid base64 string exactly 32 bytes long." }),
 }).refine((data) => {
   if (data.NODE_ENV === 'production') {
-    return !!data.SENDGRID_WEBHOOK_PUBLIC_KEY && !!data.RAZORPAY_WEBHOOK_SECRET;
+    return !!data.RAZORPAY_WEBHOOK_SECRET;
   }
   return true;
 }, {
-  message: "In production, SENDGRID_WEBHOOK_PUBLIC_KEY and RAZORPAY_WEBHOOK_SECRET are strictly required.",
+  message: "In production, RAZORPAY_WEBHOOK_SECRET is strictly required.",
   path: ["NODE_ENV"]
 });
 
