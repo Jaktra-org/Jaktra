@@ -190,11 +190,16 @@ jobs:
             --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null || echo "None")
 
           if [ "$EC2_ID" != "None" ] && [ -n "$EC2_ID" ]; then
-            echo "⚡ Active Dev EC2 Instance ($EC2_ID) detected! Triggering docker pull via AWS SSM..."
-            aws ssm send-command \
-              --instance-ids "$EC2_ID" \
-              --document-name "AWS-RunShellScript" \
-              --parameters 'commands=["cd /app && docker compose pull && docker compose up -d"]' || true
+            SSM_ONLINE=$(aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$EC2_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null || echo "Offline")
+            if [ "$SSM_ONLINE" == "Online" ]; then
+              echo "⚡ Active Dev EC2 Instance ($EC2_ID) is SSM-Online! Triggering docker pull..."
+              aws ssm send-command \
+                --instance-ids "$EC2_ID" \
+                --document-name "AWS-RunShellScript" \
+                --parameters 'commands=["cd /app && docker compose pull && docker compose up -d"]' || true
+            else
+              echo "ℹ️ Dev EC2 Instance ($EC2_ID) detected but SSM Agent is currently offline/stopped."
+            fi
           else
             echo "ℹ️ No active Dev EC2 instance running."
           fi
