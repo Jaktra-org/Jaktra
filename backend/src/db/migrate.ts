@@ -9,16 +9,34 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+interface JournalEntry {
+  idx: number;
+  version: string;
+  when: number;
+  tag: string;
+  breakpoints?: boolean;
+}
+
+interface Journal {
+  version: string;
+  dialect: string;
+  entries: JournalEntry[];
+}
+
 function isSchemaAlreadyExistsError(error: unknown): boolean {
   if (!error) return false;
-  const errAny = error as any;
+
+  const errRecord = typeof error === 'object' && error !== null ? (error as Record<string, unknown>) : {};
+  const causeRecord = typeof errRecord['cause'] === 'object' && errRecord['cause'] !== null
+    ? (errRecord['cause'] as Record<string, unknown>)
+    : {};
+
   const combinedStr = [
-    errAny.message,
-    errAny.cause?.message,
-    errAny.cause?.sqlMessage,
-    errAny.cause?.code,
+    typeof errRecord['message'] === 'string' ? errRecord['message'] : '',
+    typeof causeRecord['message'] === 'string' ? causeRecord['message'] : '',
+    typeof causeRecord['sqlMessage'] === 'string' ? causeRecord['sqlMessage'] : '',
+    typeof causeRecord['code'] === 'string' ? causeRecord['code'] : '',
     String(error),
-    JSON.stringify(error),
   ].join(' ');
 
   return (
@@ -54,9 +72,9 @@ export async function runMigrations(): Promise<void> {
         const journalPath = path.join(migrationsFolder, 'meta', '_journal.json');
         
         if (fs.existsSync(journalPath)) {
-          const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
+          const journal: Journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
           
-          await (db as any).$client.query(
+          await db.$pool.query(
             `CREATE TABLE IF NOT EXISTS \`__drizzle_migrations\` (
               \`id\` serial PRIMARY KEY,
               \`hash\` text NOT NULL,
@@ -70,13 +88,13 @@ export async function runMigrations(): Promise<void> {
               const sqlContent = fs.readFileSync(sqlPath, 'utf8');
               const hash = crypto.createHash('sha256').update(sqlContent).digest('hex');
               
-              const [rows] = await (db as any).$client.query(
+              const [rows] = await db.$pool.query(
                 `SELECT id FROM \`__drizzle_migrations\` WHERE \`created_at\` = ?`,
                 [entry.when]
               );
 
               if (!Array.isArray(rows) || rows.length === 0) {
-                await (db as any).$client.query(
+                await db.$pool.query(
                   `INSERT INTO \`__drizzle_migrations\` (\`hash\`, \`created_at\`) VALUES (?, ?)`,
                   [hash, entry.when]
                 );
