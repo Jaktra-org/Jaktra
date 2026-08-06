@@ -1,4 +1,4 @@
-CREATE TABLE `agent_run_chunks` (
+CREATE TABLE IF NOT EXISTS `agent_run_chunks` (
 	`id` varchar(36) NOT NULL,
 	`run_id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE `agent_run_chunks` (
 	CONSTRAINT `agent_run_chunks_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `agent_runs` (
+CREATE TABLE IF NOT EXISTS `agent_runs` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`status` varchar(50) NOT NULL DEFAULT 'running',
@@ -32,7 +32,7 @@ CREATE TABLE `agent_runs` (
 	CONSTRAINT `agent_runs_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `communications` (
+CREATE TABLE IF NOT EXISTS `communications` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`invoice_id` varchar(36) NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE `communications` (
 	CONSTRAINT `communications_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `dlq_entries` (
+CREATE TABLE IF NOT EXISTS `dlq_entries` (
 	`invoice_id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`consecutive_failures` int NOT NULL DEFAULT 1,
@@ -60,7 +60,7 @@ CREATE TABLE `dlq_entries` (
 	CONSTRAINT `dlq_entries_invoice_id` PRIMARY KEY(`invoice_id`)
 );
 --> statement-breakpoint
-CREATE TABLE `events` (
+CREATE TABLE IF NOT EXISTS `events` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`entity_type` varchar(50) NOT NULL DEFAULT 'invoice',
@@ -80,7 +80,7 @@ CREATE TABLE `events` (
 	CONSTRAINT `events_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `inbound_emails` (
+CREATE TABLE IF NOT EXISTS `inbound_emails` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`invoice_id` varchar(36),
@@ -100,7 +100,7 @@ CREATE TABLE `inbound_emails` (
 	CONSTRAINT `inbound_emails_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `invoice_payment_links` (
+CREATE TABLE IF NOT EXISTS `invoice_payment_links` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`invoice_id` varchar(36) NOT NULL,
@@ -119,7 +119,7 @@ CREATE TABLE `invoice_payment_links` (
 	CONSTRAINT `invoice_payment_links_tenant_invoice_provider_uniq` UNIQUE(`tenant_id`,`invoice_id`,`provider`)
 );
 --> statement-breakpoint
-CREATE TABLE `invoice_portal_links` (
+CREATE TABLE IF NOT EXISTS `invoice_portal_links` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`invoice_id` varchar(36) NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE `invoice_portal_links` (
 	CONSTRAINT `invoice_portal_links_token_hash_unique` UNIQUE(`token_hash`)
 );
 --> statement-breakpoint
-CREATE TABLE `invoices` (
+CREATE TABLE IF NOT EXISTS `invoices` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`invoice_no` varchar(255) NOT NULL,
@@ -154,7 +154,7 @@ CREATE TABLE `invoices` (
 	CONSTRAINT `invoices_invoice_no_tenant_id_uniq` UNIQUE(`invoice_no`,`tenant_id`)
 );
 --> statement-breakpoint
-CREATE TABLE `payment_plan_requests` (
+CREATE TABLE IF NOT EXISTS `payment_plan_requests` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`invoice_id` varchar(36) NOT NULL,
@@ -168,7 +168,7 @@ CREATE TABLE `payment_plan_requests` (
 	CONSTRAINT `payment_plan_requests_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `payment_webhook_events` (
+CREATE TABLE IF NOT EXISTS `payment_webhook_events` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`provider` enum('sendgrid','smtp','razorpay') NOT NULL,
@@ -183,7 +183,7 @@ CREATE TABLE `payment_webhook_events` (
 	CONSTRAINT `payment_webhook_events_tenant_provider_external_event_uniq` UNIQUE(`tenant_id`,`provider`,`external_event_id`)
 );
 --> statement-breakpoint
-CREATE TABLE `team_invitations` (
+CREATE TABLE IF NOT EXISTS `team_invitations` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`email` varchar(255) NOT NULL,
@@ -202,7 +202,7 @@ CREATE TABLE `team_invitations` (
 	CONSTRAINT `team_invitations_token_hash_unique` UNIQUE(`token_hash`)
 );
 --> statement-breakpoint
-CREATE TABLE `tenant_integrations` (
+CREATE TABLE IF NOT EXISTS `tenant_integrations` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`provider` enum('sendgrid','smtp','razorpay') NOT NULL,
@@ -219,7 +219,7 @@ CREATE TABLE `tenant_integrations` (
 	CONSTRAINT `tenant_integrations_tenant_provider_uniq` UNIQUE(`tenant_id`,`provider`)
 );
 --> statement-breakpoint
-CREATE TABLE `tenant_settings` (
+CREATE TABLE IF NOT EXISTS `tenant_settings` (
 	`tenant_id` varchar(36) NOT NULL,
 	`company_name` text NOT NULL DEFAULT ('Company'),
 	`sender_name` text NOT NULL,
@@ -243,7 +243,7 @@ CREATE TABLE `tenant_settings` (
 	CONSTRAINT `tenant_settings_tenant_id` PRIMARY KEY(`tenant_id`)
 );
 --> statement-breakpoint
-CREATE TABLE `tenants` (
+CREATE TABLE IF NOT EXISTS `tenants` (
 	`id` varchar(36) NOT NULL,
 	`name` text NOT NULL,
 	`slug` varchar(255) NOT NULL,
@@ -252,7 +252,7 @@ CREATE TABLE `tenants` (
 	CONSTRAINT `tenants_slug_unique` UNIQUE(`slug`)
 );
 --> statement-breakpoint
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(36) NOT NULL,
 	`name` text NOT NULL,

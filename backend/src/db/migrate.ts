@@ -2,10 +2,35 @@ import { migrate } from 'drizzle-orm/mysql2/migrator';
 import { createDatabaseClient } from './client.js';
 import { logger } from '../shared/logger.js';
 import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function isSchemaAlreadyExistsError(error: unknown): boolean {
+  if (!error) return false;
+  const errAny = error as any;
+  const combinedStr = [
+    errAny.message,
+    errAny.cause?.message,
+    errAny.cause?.sqlMessage,
+    errAny.cause?.code,
+    String(error),
+    JSON.stringify(error),
+  ].join(' ');
+
+  return (
+    combinedStr.includes('already exists') ||
+    combinedStr.includes('Duplicate foreign key constraint') ||
+    combinedStr.includes('Duplicate key') ||
+    combinedStr.includes('ER_DUP_KEY') ||
+    combinedStr.includes('ER_TABLE_EXISTS_ERROR') ||
+    combinedStr.includes('ER_FK_DUP_NAME') ||
+    combinedStr.includes('ER_DUP_KEYNAME')
+  );
+}
 
 export async function runMigrations(): Promise<void> {
   const connectionString = process.env['DATABASE_URL'];
@@ -22,8 +47,52 @@ export async function runMigrations(): Promise<void> {
     await migrate(db, { migrationsFolder });
     logger.info('Database migrations applied successfully.');
   } catch (error) {
-    logger.error('Error applying database migrations:', error);
-    throw error;
+    if (isSchemaAlreadyExistsError(error)) {
+      logger.warn('Database schema or constraints already present. Syncing __drizzle_migrations tracking table...');
+      try {
+        const migrationsFolder = path.resolve(__dirname, '../../migrations');
+        const journalPath = path.join(migrationsFolder, 'meta', '_journal.json');
+        
+        if (fs.existsSync(journalPath)) {
+          const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
+          
+          await (db as any).$client.query(
+            `CREATE TABLE IF NOT EXISTS \`__drizzle_migrations\` (
+              \`id\` serial PRIMARY KEY,
+              \`hash\` text NOT NULL,
+              \`created_at\` bigint
+            )`
+          );
+
+          for (const entry of journal.entries || []) {
+            const sqlPath = path.join(migrationsFolder, `${entry.tag}.sql`);
+            if (fs.existsSync(sqlPath)) {
+              const sqlContent = fs.readFileSync(sqlPath, 'utf8');
+              const hash = crypto.createHash('sha256').update(sqlContent).digest('hex');
+              
+              const [rows] = await (db as any).$client.query(
+                `SELECT id FROM \`__drizzle_migrations\` WHERE \`created_at\` = ?`,
+                [entry.when]
+              );
+
+              if (!Array.isArray(rows) || rows.length === 0) {
+                await (db as any).$client.query(
+                  `INSERT INTO \`__drizzle_migrations\` (\`hash\`, \`created_at\`) VALUES (?, ?)`,
+                  [hash, entry.when]
+                );
+              }
+            }
+          }
+          logger.info('Successfully synced existing database schema with __drizzle_migrations.');
+          return;
+        }
+      } catch (recoveryErr) {
+        logger.error('Failed to sync __drizzle_migrations tracking table:', recoveryErr);
+      }
+    } else {
+      logger.error('Error applying database migrations:', error);
+      throw error;
+    }
   } finally {
     await db.$pool.end();
   }
