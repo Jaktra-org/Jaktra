@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import type { SendgridWebhookService } from './providers/sendgrid.webhook.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
 import type { DisputeService } from '../dispute/dispute.service.js';
-import { timingSafeCompare, extractEmail } from '../dispute/dispute.service.js';
+import { timingSafeCompare } from '../dispute/dispute.service.js';
 import { config } from '../../config/index.js';
 import type { RedisClientType } from 'redis';
 import { logger } from '../../shared/logger.js';
@@ -97,19 +97,6 @@ export class SendgridWebhookController {
 
     const { from, to, subject, text, html } = req.body;
 
-    const recipientEmail = extractEmail(to);
-    if (recipientEmail) {
-      const testTokenMatch = recipientEmail.match(/reply\+test-([a-zA-Z0-9]+)@/);
-      if (testTokenMatch && testTokenMatch[1]) {
-        const token = testTokenMatch[1];
-        this.handleTestReply(token).catch((err) => {
-          logger.error('Failed to handle verification test reply:', err);
-        });
-        res.status(200).json({ status: 'success', type: 'test' });
-        return;
-      }
-    }
-
     if (!this.disputeService) {
       logger.error('DisputeService not configured on WebhookController');
       res.status(200).json({ status: 'ignored', reason: 'service_not_configured' });
@@ -128,33 +115,6 @@ export class SendgridWebhookController {
 
     res.status(200).json({ status: 'success' });
   };
-
-  private async handleTestReply(token: string): Promise<void> {
-    if (!this.redisClient || !this.redisClient.isOpen) {
-      logger.error('Redis client not available or closed in WebhookController for verification test reply');
-      return;
-    }
-
-    const key = `reply_test:${token}`;
-    const testDataRaw = await this.redisClient.get(key);
-    if (!testDataRaw) {
-      logger.warn(`Verification test reply received with expired or invalid token: ${token}`);
-      return;
-    }
-
-    const testData = JSON.parse(testDataRaw);
-    testData.status = 'passed';
-    testData.verifiedAt = Date.now();
-
-    // 1. Keep status in Redis as 'passed' (expiry 1 hour so the UI has time to read it)
-    await this.redisClient.set(key, JSON.stringify(testData), { EX: 3600 });
-
-    // 2. Save dns_verified_at in DB
-    await this.settingsRepo.updateSettings(testData.tenantId, {
-      dnsVerifiedAt: new Date()
-    });
-    logger.info(`Tenant ${testData.tenantId} inbound reply capture verified via self-test token ${token}`);
-  }
 
   private async checkWebhookRateLimit(ip: string): Promise<boolean> {
     if (!this.redisClient || !this.redisClient.isOpen) {

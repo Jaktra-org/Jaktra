@@ -134,8 +134,6 @@ export class UserRepository {
         .values({
           tenantId: newTenant.id,
           companyName: tenantData.name,
-          senderName: userData.name || 'Finance Team',
-          senderEmail: userData.email,
         });
 
       return {

@@ -49,9 +49,9 @@ export class AgentService {
    */
   private async assertEmailConfigured(tenantId: string): Promise<void> {
     const settings = await this.communicationRepo.getSettings(tenantId);
-    if (!settings?.defaultEmailProvider || !settings?.senderEmail) {
+    if (!settings?.defaultEmailProvider) {
       throw new CommunicationError(
-        'Email is not set up. Please configure a sender email and connect SendGrid or SMTP in Settings → Integrations before running the agent.',
+        'Email provider is not set up. Please select a provider and configure settings in Settings → Email Configuration before running the agent.',
         400
       );
     }

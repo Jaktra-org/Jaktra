@@ -175,12 +175,12 @@ export function createApp(config: AppConfig): Application {
     const dlqService = new DlqService(dlqRepo);
     const agentRepo = new AgentRepository(config.db);
 
-    // Shared Services
-    const integrationService = new IntegrationService(integrationRepo, lockoutRedis as unknown as RedisClientType | null);
-
     // Platform & Tenant Mailers
     const platformEmailConfigResolver = new EnvPlatformEmailConfigResolver();
     const platformMailer = new PlatformMailer(platformEmailConfigResolver);
+
+    // Shared Services
+    const integrationService = new IntegrationService(integrationRepo, lockoutRedis as unknown as RedisClientType | null, platformMailer);
 
     const tenantEmailConfigResolver = new DbTenantEmailConfigResolver(integrationService, communicationRepo);
     const tenantMailer = new TenantMailer(tenantEmailConfigResolver, communicationRepo, invoiceRepo, eventService, dlqRepo);
@@ -188,7 +188,7 @@ export function createApp(config: AppConfig): Application {
     const portalRepo = new PortalRepository(config.db);
     const portalService = new PortalService(portalRepo);
 
-    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, tenantMailer, portalService, eventService, dlqRepo);
+    const communicationService = new CommunicationService(communicationRepo, invoiceRepo, tenantMailer, portalService, eventService, dlqRepo, integrationService);
     app.locals.communicationService = communicationService;
     
     const gatewayFactory = new PaymentGatewayFactory();
@@ -282,7 +282,7 @@ export function createApp(config: AppConfig): Application {
       const analyticsService = new AnalyticsService(analyticsRepo);
       app.use('/api/analytics', createAnalyticsRouter(new AnalyticsController(analyticsService), authMiddleware, tenantScoped));
 
-      const settingsService = new SettingsService(settingsRepo, lockoutRedis as unknown as RedisClientType | null);
+      const settingsService = new SettingsService(settingsRepo, lockoutRedis as unknown as RedisClientType | null, integrationService);
       app.use('/api/settings', createSettingsRouter(new SettingsController(settingsService, eventService, dlqService), authMiddleware, tenantScoped));
 
       const reconcilerService = new ReconcilerService(invoiceRepo, communicationRepo, config.db);
