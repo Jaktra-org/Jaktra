@@ -132,6 +132,40 @@ export class PlatformMailer {
     }
   }
 
+  async sendMailboxVerificationOtpEmail(to: string, code: string): Promise<EmailSendResult> {
+    try {
+      const provider = await this.getProvider();
+      if (!provider) {
+        return { success: false, error: 'Platform SMTP not configured' };
+      }
+      
+      const sender = await this.getSender();
+      const message: EmailMessage = {
+        to,
+        from: { name: `${sender.fromName} Support`, email: sender.fromEmail },
+        subject: `Verify Your Mailbox (${to}) — Code: ${code}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; color: #334155;">
+            <h2 style="color: #0f172a; margin-bottom: 16px;">Mailbox Ownership Verification</h2>
+            <p style="font-size: 14px; line-height: 1.6;">You are configuring <strong>${to}</strong> as your receiving email address on ${sender.fromName}.</p>
+            <p style="font-size: 14px; line-height: 1.6;">Please enter the following 6-digit verification code in Jaktra to confirm that this inbox is active and able to receive customer replies:</p>
+            <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 16px 28px; border-radius: 8px; display: inline-block; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #0f172a; margin: 16px 0;">
+              ${code}
+            </div>
+            <p style="color: #64748b; font-size: 12px; margin-top: 20px;">This verification code will expire in 10 minutes. If you did not request this configuration, you can safely ignore this email.</p>
+          </div>
+        `,
+      };
+
+      return await provider.send(message);
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
   async sendPasswordResetOtpEmail(to: string, code: string): Promise<EmailSendResult> {
     try {
       const provider = await this.getProvider();
