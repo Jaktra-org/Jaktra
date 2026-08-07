@@ -71,8 +71,7 @@ export class CommunicationController {
         return;
       }
 
-      const { senderName, senderEmail, replyTo, idempotencyWindowHours } = parsed.data;
-      const settings = await this.communicationService.updateSettings(tenantId, senderName, senderEmail, replyTo, idempotencyWindowHours);
+      const settings = await this.communicationService.getSettings(tenantId);
       res.status(200).json(settings);
     } catch (err: unknown) {
       next(err);

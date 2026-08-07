@@ -23,7 +23,7 @@ export class DbTenantEmailConfigResolver implements TenantEmailConfigResolver {
 
   async resolve(tenantId: string): Promise<ResolvedEmailConfig> {
     const settings = await this.communicationRepo.getSettings(tenantId);
-    if (!settings || !settings.senderEmail) {
+    if (!settings) {
       throw new CommunicationError('Communication settings not configured for this tenant', 400);
     }
 

@@ -35,6 +35,8 @@ export interface SendCommunicationOptions {
   invoiceId?: string;
 }
 
+import type { IntegrationService } from '../settings/integration.service.js';
+
 export class CommunicationService {
   constructor(
     private readonly communicationRepo: CommunicationRepository,
@@ -42,7 +44,8 @@ export class CommunicationService {
     private readonly tenantMailer: TenantMailer,
     private readonly portalService: PortalService,
     private readonly eventService: EventService,
-    private readonly dlqRepo: DlqRepository
+    private readonly dlqRepo: DlqRepository,
+    private readonly integrationService?: IntegrationService
   ) { }
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['findByInvoiceId']>>> {
@@ -170,7 +173,6 @@ export class CommunicationService {
     }
   }
 
-
   async send(options: SendCommunicationOptions): Promise<boolean> {
     const { tenantId, to, subject, html, channel = 'email', invoiceId } = options;
 
@@ -184,11 +186,26 @@ export class CommunicationService {
     await this.validateRecipientEmail(to);
 
     const settings = await this.communicationRepo.getSettings(tenantId);
-    if (!settings || !settings.senderEmail) {
+    if (!settings || !settings.defaultEmailProvider) {
       throw new CommunicationError('Communication settings not configured for this tenant', 400);
     }
 
-    let customReplyTo = settings.replyTo || undefined;
+    let senderName = 'Finance Team';
+    let senderEmail = '';
+    let replyTo: string | null = null;
+
+    if (this.integrationService) {
+      const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId, settings.defaultEmailProvider);
+      senderName = senderConfig.senderName;
+      senderEmail = senderConfig.senderEmail;
+      replyTo = senderConfig.replyTo;
+    }
+
+    if (!senderEmail) {
+      throw new CommunicationError('Sender email is not configured for active email provider', 400);
+    }
+
+    let customReplyTo = replyTo || undefined;
     if (config.INBOUND_PARSE_DOMAIN && invoiceId) {
       customReplyTo = `reply+${invoiceId}@${config.INBOUND_PARSE_DOMAIN}`;
     }
@@ -204,7 +221,7 @@ export class CommunicationService {
 
     const message: EmailMessage = {
       to,
-      from: { name: settings.senderName, email: settings.senderEmail },
+      from: { name: senderName, email: senderEmail },
       replyTo: customReplyTo,
       subject,
       html,
@@ -240,15 +257,6 @@ export class CommunicationService {
 
   async getSettings(tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['getSettings']>>> {
     return await this.communicationRepo.getSettings(tenantId);
-  }
-
-  async updateSettings(tenantId: string, senderName: string, senderEmail: string, replyTo?: string, idempotencyWindowHours: number = 20): Promise<Awaited<ReturnType<CommunicationRepository['upsertSettings']>>> {
-    return await this.communicationRepo.upsertSettings(tenantId, {
-      senderName,
-      senderEmail,
-      replyTo: replyTo || null,
-      idempotencyWindowHours,
-    });
   }
 
   async setDefaultEmailProvider(tenantId: string, provider: 'sendgrid' | 'smtp' | null): Promise<void> {
