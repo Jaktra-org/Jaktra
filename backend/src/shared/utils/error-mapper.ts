@@ -17,6 +17,28 @@ export function mapErrorToDisplayMessage(error: unknown): string {
     return 'AI service temporarily unavailable';
   }
 
+  // Email validation, sender identity, recipient validation, and delivery bounces (safe to show directly)
+  if (
+    errMsg.includes('Sender email') ||
+    errMsg.includes('Sender Identity') ||
+    errMsg.includes('Sender identity') ||
+    errMsg.includes('Reply-To Email') ||
+    errMsg.includes('verified') ||
+    errMsg.includes('Verified') ||
+    errMsg.includes('Recipient domain') ||
+    errMsg.includes('recipient email') ||
+    errMsg.includes('mailbox') ||
+    errMsg.includes('Mailbox') ||
+    errMsg.includes('bounced') ||
+    errMsg.includes('bounce') ||
+    errMsg.includes('does not exist') ||
+    errMsg.includes('Delivery failed') ||
+    errMsg.includes('MX records') ||
+    errMsg.includes('MX record')
+  ) {
+    return errMsg;
+  }
+
   // SMTP connection / sendgrid provider failures
   if (
     errMsg.includes('SMTP') || 
@@ -26,21 +48,6 @@ export function mapErrorToDisplayMessage(error: unknown): string {
     errMsg.includes('SendGrid')
   ) {
     return 'Email service unavailable';
-  }
-
-  // Email validation, recipient validation, and delivery bounces (safe to show directly)
-  if (
-    errMsg.includes('Recipient domain') ||
-    errMsg.includes('recipient email') ||
-    errMsg.includes('mailbox') ||
-    errMsg.includes('Mailbox') ||
-    errMsg.includes('bounced') ||
-    errMsg.includes('bounce') ||
-    errMsg.includes('does not exist') ||
-    errMsg.includes('Delivery failed') ||
-    errMsg.includes('MX records')
-  ) {
-    return errMsg;
   }
 
   // Network / Connection
