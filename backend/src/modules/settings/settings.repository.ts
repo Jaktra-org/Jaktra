@@ -1,7 +1,7 @@
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import type { DatabaseClient } from '../../db/index.js';
-import { tenantSettings, tenants, users, inboundEmails, type TenantSettings } from '../../db/schema.js';
+import { tenantSettings, tenants, inboundEmails, type TenantSettings } from '../../db/schema.js';
 
 export class SettingsRepository {
   constructor(private db: DatabaseClient) {}
@@ -59,21 +59,12 @@ export class SettingsRepository {
       .where(eq(tenants.id, tenantId))
       .limit(1);
     const tenant = tenantResult[0];
-    
-    const adminResult = await this.db
-      .select()
-      .from(users)
-      .where(and(eq(users.tenantId, tenantId), eq(users.role, 'admin')))
-      .limit(1);
-    const adminUser = adminResult[0];
 
     await this.db
       .insert(tenantSettings)
       .values({
         tenantId,
         companyName: tenant?.name || 'Company',
-        senderName: adminUser?.name || 'Finance Team',
-        senderEmail: adminUser?.email || 'billing@example.com',
         dlqThreshold: 3,
       });
 
