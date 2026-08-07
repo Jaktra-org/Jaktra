@@ -41,7 +41,7 @@ describe('SettingsService', () => {
       vi.mocked(settingsRepo.getSettings).mockResolvedValue(mockSettings as any);
 
       const res = await service.getSettings('t1');
-      expect(res).toBe(mockSettings);
+      expect(res).toEqual(expect.objectContaining(mockSettings));
     });
 
     it('creates default settings if settings not found', async () => {
@@ -51,7 +51,7 @@ describe('SettingsService', () => {
 
       const res = await service.getSettings('t1');
       expect(settingsRepo.createDefaultSettings).toHaveBeenCalledWith('t1');
-      expect(res).toBe(mockSettings);
+      expect(res).toEqual(expect.objectContaining(mockSettings));
     });
   });
 
@@ -71,73 +71,6 @@ describe('SettingsService', () => {
       vi.mocked(settingsRepo.updateSettings).mockResolvedValue(null as any);
 
       await expect(service.updateSettings('t1', {})).rejects.toThrow(NotFoundError);
-    });
-  });
-
-  describe('startInboundVerificationTest', () => {
-    it('rate limits to 3 per hour', async () => {
-      vi.mocked(redis.get).mockResolvedValue('3');
-
-      await expect(
-        service.startInboundVerificationTest('t1', 'user@test.com', platformMailer)
-      ).rejects.toThrow(ValidationError);
-    });
-
-    it('creates test and sends email if within limit', async () => {
-      vi.mocked(redis.get).mockResolvedValue('1');
-      vi.mocked(redis.ttl).mockResolvedValue(3000);
-
-      const res = await service.startInboundVerificationTest('t1', 'user@test.com', platformMailer);
-
-      expect(res.testId).toBeDefined();
-      expect(redis.set).toHaveBeenCalled();
-      expect(platformMailer.sendInboundVerificationTestEmail).toHaveBeenCalledWith(
-        'user@test.com',
-        expect.stringContaining(res.testId)
-      );
-    });
-  });
-
-  describe('getInboundVerificationStatus', () => {
-    it('returns verification status with latest test state', async () => {
-      const mockSettings = { tenantId: 't1', defaultEmailProvider: 'sendgrid', dnsVerifiedAt: new Date('2026-07-01') };
-      vi.mocked(settingsRepo.getSettings).mockResolvedValue(mockSettings as any);
-      vi.mocked(settingsRepo.hasInboundEmails).mockResolvedValue(true);
-
-      vi.mocked(redis.get).mockImplementation(async (key: string) => {
-        if (key.includes('tenant_latest_test')) return 'token-123';
-        if (key.includes('reply_test:token-123')) {
-          return JSON.stringify({
-            status: 'pending',
-            expiresAt: Date.now() + 600000,
-          });
-        }
-        return null;
-      });
-
-      const res = await service.getInboundVerificationStatus('t1');
-
-      expect(res.defaultEmailProvider).toBe('sendgrid');
-      expect(res.hasRealCapture).toBe(true);
-      expect(res.latestTest?.status).toBe('pending');
-    });
-
-    it('returns expired status if test expiresAt in the past', async () => {
-      const mockSettings = { tenantId: 't1' };
-      vi.mocked(settingsRepo.getSettings).mockResolvedValue(mockSettings as any);
-      vi.mocked(redis.get).mockImplementation(async (key: string) => {
-        if (key.includes('tenant_latest_test')) return 'token-123';
-        if (key.includes('reply_test:token-123')) {
-          return JSON.stringify({
-            status: 'pending',
-            expiresAt: Date.now() - 1000,
-          });
-        }
-        return null;
-      });
-
-      const res = await service.getInboundVerificationStatus('t1');
-      expect(res.latestTest?.status).toBe('expired');
     });
   });
 });

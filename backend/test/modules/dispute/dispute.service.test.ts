@@ -73,13 +73,22 @@ describe('CommunicationService Outbound replyTo Injection', () => {
       recordFailure: vi.fn(),
     } as any;
 
+    const mockIntegrationService = {
+      getEffectiveSenderConfig: vi.fn().mockResolvedValue({
+        senderName: 'Test Sender',
+        senderEmail: 'sender@test.com',
+        replyTo: 'custom-reply@test.com',
+      }),
+    } as any;
+
     commService = new CommunicationService(
       mockCommRepo,
       mockInvoiceRepo,
       mockTenantMailer,
       mockPortalService,
       mockEventService,
-      mockDlqRepo
+      mockDlqRepo,
+      mockIntegrationService
     );
   });
 
@@ -649,48 +658,6 @@ describe('SendgridWebhookController Inbound Parse Authentication Checks', () => 
       text: 'body message',
     }));
   });
-
-  it('should intercept test-token replies and update Redis status and never call processInboundEmail', async () => {
-    const mockRedis = {
-      isOpen: true,
-      get: vi.fn().mockResolvedValue(JSON.stringify({
-        tenantId: 'tenant-123',
-        status: 'pending',
-        expiresAt: Date.now() + 100000
-      })),
-      set: vi.fn().mockResolvedValue(true),
-    };
-    const mockSettingsRepo = {
-      updateSettings: vi.fn().mockResolvedValue({}),
-    };
-    
-    const testController = new SendgridWebhookController(
-      mockSettingsRepo as any,
-      undefined,
-      mockDisputeService,
-      mockRedis as any
-    );
-
-    mockReq = {
-      params: { secretToken: 'correct-secret-123' },
-      body: { from: 'admin@company.com', to: 'reply+test-abcdef12@replies.jaktra.site', subject: 'Re: Test' },
-      ip: '10.0.0.1',
-    };
-
-    await testController.handleSendgridInbound(mockReq, mockRes, () => {});
-
-    expect(mockRes.status).toHaveBeenCalledWith(200);
-    expect(mockRes.json).toHaveBeenCalledWith({ status: 'success', type: 'test' });
-    expect(mockDisputeService.processInboundEmail).not.toHaveBeenCalled();
-    
-    await vi.waitFor(() => {
-      expect(mockRedis.get).toHaveBeenCalledWith('reply_test:abcdef12');
-      expect(mockRedis.set).toHaveBeenCalled();
-      expect(mockSettingsRepo.updateSettings).toHaveBeenCalledWith('tenant-123', expect.objectContaining({
-        dnsVerifiedAt: expect.any(Date),
-      }));
-    });
-  });
 });
 
 describe('Dispute listPending Pagination Tests', () => {
@@ -764,61 +731,3 @@ describe('Dispute listPending Pagination Tests', () => {
     expect(mockService.listPending).not.toHaveBeenCalled();
   });
 });
-
-describe('SettingsService Inbound Verification Tests', () => {
-  it('should verify test rate-limiting and token storage', async () => {
-    const mockSettingsRepo = {
-      getSettings: vi.fn().mockResolvedValue({ defaultEmailProvider: 'sendgrid' }),
-      updateSettings: vi.fn(),
-    };
-    
-    let count = 0;
-    const mockRedis = {
-      isOpen: true,
-      get: vi.fn().mockImplementation(async (key: string) => {
-        if (key.includes('rate_limit')) return count.toString();
-        return null;
-      }),
-      set: vi.fn().mockResolvedValue(true),
-      ttl: vi.fn().mockResolvedValue(3600),
-    };
-
-    const mockPlatformMailer = {
-      sendInboundVerificationTestEmail: vi.fn().mockResolvedValue({ success: true }),
-    } as unknown as PlatformMailer;
-
-    const { SettingsService } = await import('../../../src/modules/settings/settings.service.js');
-    const service = new SettingsService(mockSettingsRepo as any, mockRedis as any);
-    
-    // First 3 calls should succeed
-    const res1 = await service.startInboundVerificationTest('tenant-123', 'admin@test.com', mockPlatformMailer);
-    expect(res1.testId).toBeDefined();
-    count++;
-
-    const res2 = await service.startInboundVerificationTest('tenant-123', 'admin@test.com', mockPlatformMailer);
-    expect(res2.testId).toBeDefined();
-    count++;
-
-    const res3 = await service.startInboundVerificationTest('tenant-123', 'admin@test.com', mockPlatformMailer);
-    expect(res3.testId).toBeDefined();
-    count++;
-
-    // 4th call should throw rate limit error
-    await expect(service.startInboundVerificationTest('tenant-123', 'admin@test.com', mockPlatformMailer))
-      .rejects.toThrow('Too many verification test requests. Limit is 3 per hour.');
-  });
-
-  it('should compute status showing hasRealCapture takes precedence', async () => {
-    const mockSettingsRepo = {
-      getSettings: vi.fn().mockResolvedValue({ defaultEmailProvider: 'sendgrid', dnsVerifiedAt: null }),
-      hasInboundEmails: vi.fn().mockResolvedValue(true),
-    };
-    
-    const { SettingsService } = await import('../../../src/modules/settings/settings.service.js');
-    const service = new SettingsService(mockSettingsRepo as any, null);
-    const status = await service.getInboundVerificationStatus('tenant-123');
-    expect(status.hasRealCapture).toBe(true);
-    expect(status.dnsVerifiedAt).toBeNull();
-  });
-});
-

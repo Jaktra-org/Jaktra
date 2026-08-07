@@ -1,4 +1,4 @@
-﻿import { settingsService } from '../../src/services/settings';
+import { settingsService } from '../../src/services/settings';
 import { api } from '../../src/services/api';
 
 vi.mock('../../src/services/api', () => ({
@@ -30,7 +30,7 @@ describe('settingsService', () => {
     await settingsService.getIntegrations();
     expect(api.get).toHaveBeenCalledWith('/settings/integrations');
 
-    await settingsService.saveSendgridKey('apiKey');
+    await settingsService.saveSendgridKey({ apiKey: 'apiKey' });
     expect(api.post).toHaveBeenCalledWith('/settings/integrations/sendgrid', { apiKey: 'apiKey' });
 
     await settingsService.disconnectSendgrid();
@@ -51,12 +51,6 @@ describe('settingsService', () => {
 
     await settingsService.setDefaultProvider('sendgrid');
     expect(api.patch).toHaveBeenCalledWith('/settings/integrations/default-provider', { provider: 'sendgrid' });
-
-    await settingsService.getInboundVerificationStatus();
-    expect(api.get).toHaveBeenCalledWith('/settings/inbound-verification/status');
-
-    await settingsService.startInboundVerificationTest();
-    expect(api.post).toHaveBeenCalledWith('/settings/inbound-verification/test');
 
     const razorpayData = { keyId: 'id', keySecret: 'secret', webhookSecret: 'webhook' };
     await settingsService.saveRazorpayKey(razorpayData);

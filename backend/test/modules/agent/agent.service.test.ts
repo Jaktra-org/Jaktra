@@ -191,7 +191,7 @@ describe('AgentService - triggerRun', () => {
     mockCommunicationRepo.getSettings.mockResolvedValue(null);
 
     await expect(agentService.triggerRun('tenant-1')).rejects.toThrow(
-      'Email is not set up. Please configure a sender email'
+      'Email provider is not set up'
     );
   });
 

@@ -42,7 +42,7 @@ const next = vi.fn();
 
 function makeIntegrationService(): any {
   return {
-    validateAndSaveSendgridKey: vi.fn().mockResolvedValue(undefined),
+    validateAndSaveSendgridKey: vi.fn().mockResolvedValue({ requiresOtp: false, message: 'Saved' }),
     deleteSendgridIntegration: vi.fn().mockResolvedValue(undefined),
     getIntegrationStatus: vi.fn().mockResolvedValue({ isConfigured: false, lastValidationResult: null }),
     getIntegrationStatusRazorpay: vi.fn().mockResolvedValue({ isConfigured: false }),

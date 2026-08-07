@@ -26,16 +26,8 @@ describe('DbTenantEmailConfigResolver', () => {
     );
   });
 
-  it('should throw CommunicationError when senderEmail is missing in settings', async () => {
-    mockCommunicationRepo.getSettings.mockResolvedValue({ senderEmail: '' });
-
-    await expect(resolver.resolve('tenant-1')).rejects.toThrow(
-      new CommunicationError('Communication settings not configured for this tenant', 400)
-    );
-  });
-
   it('should throw CommunicationError when defaultEmailProvider is missing in settings', async () => {
-    mockCommunicationRepo.getSettings.mockResolvedValue({ senderEmail: 'test@example.com' });
+    mockCommunicationRepo.getSettings.mockResolvedValue({ defaultEmailProvider: null });
 
     await expect(resolver.resolve('tenant-1')).rejects.toThrow(
       new CommunicationError('EMAIL_PROVIDER_NOT_CONFIGURED', 400)
