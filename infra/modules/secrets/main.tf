@@ -18,10 +18,6 @@ resource "aws_secretsmanager_secret_version" "backend" {
     DATABASE_URL                  = var.database_url
     JWT_SECRET                    = var.jwt_secret
     ENCRYPTION_KEY                = var.encryption_key
-    SENDGRID_API_KEY              = var.sendgrid_api_key
-    SENDGRID_WEBHOOK_PUBLIC_KEY   = var.sendgrid_webhook_public_key
-    STRIPE_WEBHOOK_SECRET         = var.stripe_webhook_secret
-    RAZORPAY_WEBHOOK_SECRET       = var.razorpay_webhook_secret
     SENDGRID_INBOUND_PARSE_SECRET = var.sendgrid_inbound_parse_secret
     INBOUND_PARSE_DOMAIN          = var.inbound_parse_domain
     AI_ML_SERVICE_KEY             = var.ai_ml_service_key
@@ -29,6 +25,9 @@ resource "aws_secretsmanager_secret_version" "backend" {
     FRONTEND_URL                  = var.frontend_url
     PLATFORM_SMTP_URL             = var.platform_smtp_url
     PLATFORM_EMAIL_PROVIDER       = var.platform_email_provider
+    PLATFORM_SENDGRID_API_KEY     = var.platform_sendgrid_api_key
+    PLATFORM_FROM_EMAIL           = var.platform_from_email
+    PLATFORM_FROM_NAME            = var.platform_from_name
   })
 
   # lifecycle {
@@ -66,10 +65,6 @@ locals {
     DATABASE_URL                  = "${local.backend_arn}:DATABASE_URL::"
     JWT_SECRET                    = "${local.backend_arn}:JWT_SECRET::"
     ENCRYPTION_KEY                = "${local.backend_arn}:ENCRYPTION_KEY::"
-    SENDGRID_API_KEY              = "${local.backend_arn}:SENDGRID_API_KEY::"
-    SENDGRID_WEBHOOK_PUBLIC_KEY   = "${local.backend_arn}:SENDGRID_WEBHOOK_PUBLIC_KEY::"
-    STRIPE_WEBHOOK_SECRET         = "${local.backend_arn}:STRIPE_WEBHOOK_SECRET::"
-    RAZORPAY_WEBHOOK_SECRET       = "${local.backend_arn}:RAZORPAY_WEBHOOK_SECRET::"
     SENDGRID_INBOUND_PARSE_SECRET = "${local.backend_arn}:SENDGRID_INBOUND_PARSE_SECRET::"
     INBOUND_PARSE_DOMAIN          = "${local.backend_arn}:INBOUND_PARSE_DOMAIN::"
     AI_ML_SERVICE_KEY             = "${local.backend_arn}:AI_ML_SERVICE_KEY::"
@@ -77,6 +72,9 @@ locals {
     FRONTEND_URL                  = "${local.backend_arn}:FRONTEND_URL::"
     PLATFORM_SMTP_URL             = "${local.backend_arn}:PLATFORM_SMTP_URL::"
     PLATFORM_EMAIL_PROVIDER       = "${local.backend_arn}:PLATFORM_EMAIL_PROVIDER::"
+    PLATFORM_SENDGRID_API_KEY     = "${local.backend_arn}:PLATFORM_SENDGRID_API_KEY::"
+    PLATFORM_FROM_EMAIL           = "${local.backend_arn}:PLATFORM_FROM_EMAIL::"
+    PLATFORM_FROM_NAME            = "${local.backend_arn}:PLATFORM_FROM_NAME::"
   }
 
   ai_service_secrets_map = {

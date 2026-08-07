@@ -26,28 +26,22 @@ variable "encryption_key" {
   sensitive = true
 }
 
-variable "sendgrid_api_key" {
+# Platform Configuration
+
+variable "platform_sendgrid_api_key" {
   type      = string
   sensitive = true
   default   = "REPLACE_ME"
 }
 
-variable "sendgrid_webhook_public_key" {
-  type      = string
-  sensitive = true
-  default   = "REPLACE_ME"
+variable "platform_from_email" {
+  type    = string
+  default = "no-reply@jaktra.site"
 }
 
-variable "stripe_webhook_secret" {
-  type      = string
-  sensitive = true
-  default   = "REPLACE_ME"
-}
-
-variable "razorpay_webhook_secret" {
-  type      = string
-  sensitive = true
-  default   = "REPLACE_ME"
+variable "platform_from_name" {
+  type    = string
+  default = "Jaktra"
 }
 
 variable "sendgrid_inbound_parse_secret" {
