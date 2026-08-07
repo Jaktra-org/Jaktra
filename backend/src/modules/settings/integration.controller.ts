@@ -5,6 +5,7 @@ import { CommunicationService } from '../communication/communication.service.js'
 import { DlqService } from '../dlq/dlq.service.js';
 import { z } from 'zod';
 import { ValidationError } from '../../shared/errors/index.js';
+import { verifyEmailDomainMx } from '../../shared/email/mx-verifier.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
 
 const razorpayCredsSchema = z.object({
@@ -54,14 +55,43 @@ export class IntegrationController {
   saveSendgridKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      const { apiKey } = req.body;
+      const { apiKey, senderName, senderEmail, replyTo, otpCode } = req.body;
 
-      if (!apiKey || typeof apiKey !== 'string' || apiKey.length > 200) {
-        next(new ValidationError('Invalid API Key format'));
+      if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim().startsWith('SG.')) {
+        next(new ValidationError('Invalid SendGrid API Key format. Must start with SG.'));
         return;
       }
 
-      await this.integrationService.validateAndSaveSendgridKey(tenantId, apiKey);
+      if (senderName !== undefined || senderEmail !== undefined) {
+        if (!senderName || typeof senderName !== 'string' || !senderName.trim()) {
+          next(new ValidationError('Sender Name is required'));
+          return;
+        }
+        if (!senderEmail || typeof senderEmail !== 'string' || !senderEmail.trim() || !senderEmail.includes('@')) {
+          next(new ValidationError('Valid Sender Email is required'));
+          return;
+        }
+
+        const targetEmail = replyTo && typeof replyTo === 'string' && replyTo.trim() !== '' ? replyTo.trim() : senderEmail.trim();
+        await verifyEmailDomainMx(targetEmail);
+      }
+
+      const result = await this.integrationService.validateAndSaveSendgridKey(tenantId, {
+        apiKey: apiKey.trim(),
+        senderName: senderName ? senderName.trim() : undefined,
+        senderEmail: senderEmail ? senderEmail.trim() : undefined,
+        replyTo: replyTo && typeof replyTo === 'string' && replyTo.trim() !== '' ? replyTo.trim() : undefined,
+        otpCode: otpCode && typeof otpCode === 'string' ? otpCode.trim() : undefined,
+      });
+
+      if (result.requiresOtp) {
+        res.json({
+          requiresOtp: true,
+          targetEmail: result.targetEmail,
+          message: result.message,
+        });
+        return;
+      }
 
       // Clear DLQ entries on recovery / credentials update
       if (this.dlqService) {
@@ -81,7 +111,7 @@ export class IntegrationController {
         metadata: { integration: 'sendgrid' },
       });
 
-      res.json({ message: 'SendGrid integration saved successfully' });
+      res.json({ requiresOtp: false, message: result.message || 'SendGrid integration saved successfully' });
     } catch (error) {
       next(error);
     }
@@ -144,6 +174,20 @@ export class IntegrationController {
         return;
       }
 
+      const { senderName, username } = req.body;
+      if (senderName !== undefined || username !== undefined) {
+        if (!senderName || typeof senderName !== 'string' || !senderName.trim()) {
+          next(new ValidationError('Sender Name is required'));
+          return;
+        }
+        if (!username || typeof username !== 'string' || !username.trim() || !username.includes('@')) {
+          next(new ValidationError('Valid Username (email) is required'));
+          return;
+        }
+
+        await verifyEmailDomainMx(username.trim());
+      }
+
       await this.integrationService.validateAndSaveSmtpConfig(tenantId, req.body);
 
       // Clear DLQ entries on recovery / credentials update
@@ -191,15 +235,14 @@ export class IntegrationController {
         password: config.password,
         secure: config.securityMode === 'implicit_tls'
       });
-      const settings = await this.communicationService.getSettings(tenantId);
-      
-      if (!settings || !settings.senderEmail) {
-        next(new ValidationError('Communication settings (Sender Email) not configured'));
+      const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId, 'smtp');
+      if (!senderConfig.senderEmail) {
+        next(new ValidationError('SMTP Sender Email is not configured'));
         return;
       }
 
-      const from = { name: settings.senderName, email: settings.senderEmail };
-      const replyTo = settings.replyTo || undefined;
+      const from = { name: senderConfig.senderName, email: senderConfig.senderEmail };
+      const replyTo = senderConfig.replyTo || undefined;
 
       const result = await provider.send({
         to,
@@ -334,18 +377,18 @@ export class IntegrationController {
   getSendgridHealth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      const settings = await this.communicationService.getSettings(tenantId);
-      if (!settings || !settings.senderEmail) {
+      const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId, 'sendgrid');
+      if (!senderConfig.senderEmail) {
         res.json({
           senderVerified: 'check_failed',
           domainAuthenticated: 'check_failed',
           checkedAt: new Date().toISOString(),
-          reasons: ['Sender Email is not configured under Email Configuration.'],
+          reasons: ['Sender Email is not configured under SendGrid configuration.'],
         });
         return;
       }
 
-      const health = await this.integrationService.getConfigurationHealth(tenantId, settings.senderEmail);
+      const health = await this.integrationService.getConfigurationHealth(tenantId, senderConfig.senderEmail);
       res.json(health);
     } catch (error) {
       next(error);

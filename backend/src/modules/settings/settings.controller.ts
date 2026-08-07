@@ -131,46 +131,4 @@ export class SettingsController {
       next(error);
     }
   };
-
-  startInboundVerificationTest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const tenantId = res.locals.tenantId as string;
-      if (!tenantId) {
-        next(new AuthError('Tenant ID required', 401));
-        return;
-      }
-
-      const authReq = req as AuthenticatedRequest;
-      const userEmail = authReq.user?.email;
-      if (!userEmail) {
-        next(new AuthError('User email required', 401));
-        return;
-      }
-
-      if (!this.platformMailer) {
-        next(new ValidationError('Platform mailer not configured'));
-        return;
-      }
-
-      const result = await this.settingsService.startInboundVerificationTest(tenantId, userEmail, this.platformMailer);
-      res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  getInboundVerificationStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const tenantId = res.locals.tenantId as string;
-      if (!tenantId) {
-        next(new AuthError('Tenant ID required', 401));
-        return;
-      }
-
-      const result = await this.settingsService.getInboundVerificationStatus(tenantId);
-      res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  };
 }
