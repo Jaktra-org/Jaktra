@@ -1,0 +1,1 @@
+ALTER TABLE `tenant_settings` DROP COLUMN `dns_verified_at`;

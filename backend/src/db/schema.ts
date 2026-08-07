@@ -307,9 +307,6 @@ export const tenantSettings = mysqlTable('tenant_settings', {
     .primaryKey()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   companyName: text('company_name').notNull().default('Company'),
-  senderName: text('sender_name').notNull(),
-  senderEmail: varchar('sender_email', { length: 255 }).notNull(),
-  replyTo: varchar('reply_to', { length: 255 }),
   paymentLink: text('payment_link'),
   bankDetails: text('bank_details'),
   timezone: varchar('timezone', { length: 100 }).notNull().default('UTC'),
@@ -325,7 +322,6 @@ export const tenantSettings = mysqlTable('tenant_settings', {
   autoPurgeDays: int('auto_purge_days').notNull().default(30),
   dlqThreshold: int('dlq_threshold').notNull().default(3),
   mfaRequired: boolean('mfa_required').notNull().default(false),
-  dnsVerifiedAt: datetime('dns_verified_at', { mode: 'date' }),
   inboundBlockedByAdmin: boolean('inbound_blocked_by_admin').notNull().default(false),
 });
 
