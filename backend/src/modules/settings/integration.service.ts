@@ -6,6 +6,11 @@ import { IntegrationErrors, IntegrationError } from './integration.errors.js';
 import { logger } from '../../shared/logger.js';
 import type { TenantIntegration } from '../../db/index.js';
 import { SmtpConnectionFactory, SmtpConfig } from '../../shared/email/providers/smtp-email.provider.js';
+import { verifyEmailDomainMx } from '../../shared/email/mx-verifier.js';
+import { ValidationError } from '../../shared/errors/index.js';
+import type { PlatformMailer } from '../platform-mail/platform-mailer.js';
+
+const memoryOtpStore = new Map<string, { code: string; targetEmail: string; payload: SendgridConfigPayload; expiresAt: number }>();
 
 export interface IntegrationStatus {
   provider: 'sendgrid' | 'smtp';
@@ -26,10 +31,24 @@ export interface RazorpayIntegrationStatus {
   maskedKeyId?: string;
 }
 
+export interface SendgridConfigPayload {
+  apiKey: string;
+  senderName?: string;
+  senderEmail?: string;
+  replyTo?: string | null;
+}
+
+export interface EffectiveSenderConfig {
+  senderName: string;
+  senderEmail: string;
+  replyTo: string | null;
+}
+
 export class IntegrationService {
   constructor(
     private readonly repo: IntegrationRepository,
-    private readonly redis: RedisClientType | null = null
+    private readonly redis: RedisClientType | null = null,
+    private readonly platformMailer: PlatformMailer | null = null
   ) {}
 
   private getAadContext(tenantId: string, provider: string, version: number): string {
@@ -100,19 +119,61 @@ export class IntegrationService {
     };
   }
 
-  async validateAndSaveSendgridKey(tenantId: string, apiKey: string): Promise<void> {
-    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
+  async getEffectiveSenderConfig(
+    tenantId: string,
+    defaultProvider: 'sendgrid' | 'smtp' | null | undefined
+  ): Promise<EffectiveSenderConfig> {
+    const defaultFrom = process.env.PLATFORM_FROM_EMAIL || 'billing@example.com';
+    if (defaultProvider === 'sendgrid') {
+      try {
+        const sgConfig = await this.getDecryptedSendgridConfig(tenantId);
+        return {
+          senderName: sgConfig.senderName || 'Finance Team',
+          senderEmail: sgConfig.senderEmail || defaultFrom,
+          replyTo: sgConfig.replyTo || null,
+        };
+      } catch {
+        return { senderName: 'Finance Team', senderEmail: defaultFrom, replyTo: null };
+      }
+    } else if (defaultProvider === 'smtp') {
+      try {
+        const smtpConfig = await this.getDecryptedSmtpConfig(tenantId);
+        return {
+          senderName: (smtpConfig as { senderName?: string }).senderName || 'Finance Team',
+          senderEmail: smtpConfig.username || defaultFrom,
+          replyTo: null,
+        };
+      } catch {
+        return { senderName: 'Finance Team', senderEmail: defaultFrom, replyTo: null };
+      }
+    }
+
+    return { senderName: 'Finance Team', senderEmail: defaultFrom, replyTo: null };
+  }
+
+  async validateAndSaveSendgridKey(
+    tenantId: string,
+    data: { apiKey: string; senderName?: string; senderEmail?: string; replyTo?: string | null; otpCode?: string }
+  ): Promise<{ requiresOtp?: boolean; targetEmail?: string; message: string }> {
+    let apiKeyToSave = data.apiKey;
+    const existingIntegration = await this.repo.getIntegration(tenantId, 'sendgrid');
+
+    if (existingIntegration && (!apiKeyToSave || apiKeyToSave === 'SG.placeholder')) {
+      const existingConfig = await this.getDecryptedSendgridConfig(tenantId);
+      apiKeyToSave = existingConfig.apiKey;
+    }
+
+    if (!apiKeyToSave || typeof apiKeyToSave !== 'string' || apiKeyToSave.trim() === '') {
       throw IntegrationErrors.CREDENTIAL_INVALID();
     }
 
-    sgClient.setApiKey(apiKey);
+    sgClient.setApiKey(apiKeyToSave.trim());
     const request = {
       method: 'GET' as const,
       url: '/v3/scopes',
     };
 
     let validationResult: TenantIntegration['lastValidationResult'] = 'unknown';
-    let errorCode: string | undefined;
 
     try {
       await sgClient.request(request);
@@ -120,7 +181,6 @@ export class IntegrationService {
     } catch (error: unknown) {
       const errObj = error as { code?: string | number; response?: { statusCode?: number } } | null;
       const status = errObj?.code || errObj?.response?.statusCode;
-      errorCode = String(status);
 
       logger.warn(`SendGrid validation failed for tenant ${tenantId}. Status: ${status}`);
 
@@ -133,8 +193,92 @@ export class IntegrationService {
       }
     }
 
+    let existingPayload: SendgridConfigPayload = { apiKey: apiKeyToSave.trim() };
+    if (existingIntegration) {
+      try {
+        existingPayload = await this.getDecryptedSendgridConfig(tenantId);
+      } catch {
+        // ignore
+      }
+    }
+
+    const payloadToSave: SendgridConfigPayload = {
+      apiKey: apiKeyToSave.trim(),
+      senderName: data.senderName ?? existingPayload.senderName,
+      senderEmail: data.senderEmail ?? existingPayload.senderEmail,
+      replyTo: data.replyTo !== undefined ? data.replyTo : existingPayload.replyTo,
+    };
+
+    const senderEmail = (payloadToSave.senderEmail || '').trim();
+    const replyTo = (payloadToSave.replyTo || '').trim();
+
+    if (!senderEmail || !senderEmail.includes('@')) {
+      throw new ValidationError('Valid Sender Email is required for SendGrid configuration.');
+    }
+    await verifyEmailDomainMx(senderEmail);
+
+    if (replyTo) {
+      if (!replyTo.includes('@')) {
+        throw new ValidationError('Valid Reply-To Email is required.');
+      }
+      await verifyEmailDomainMx(replyTo);
+    }
+
+    const health = await this.performSendgridIdentityCheck(apiKeyToSave.trim(), senderEmail);
+    if (health.senderVerified === false) {
+      throw new ValidationError(`Sender email "${senderEmail}" is not configured as a verified Sender Identity in your SendGrid account. Please create and verify this sender identity in SendGrid before saving.`);
+    }
+
+    const targetEmail = replyTo || senderEmail;
+    const otpCacheKey = `sendgrid:otp:${tenantId}`;
+
+    if (data.otpCode) {
+      let storedOtpData: { code: string; targetEmail: string; payload: SendgridConfigPayload } | null = null;
+      if (this.redis && this.redis.isOpen) {
+        const cached = await this.redis.get(otpCacheKey);
+        if (cached) storedOtpData = JSON.parse(cached);
+      } else {
+        const mem = memoryOtpStore.get(otpCacheKey);
+        if (mem && mem.expiresAt > Date.now()) {
+          storedOtpData = mem;
+        }
+      }
+
+      if (!storedOtpData || storedOtpData.code !== data.otpCode.trim()) {
+        throw new ValidationError('Invalid or expired verification code. Please check your inbox or request a new code.');
+      }
+
+      if (this.redis && this.redis.isOpen) {
+        await this.redis.del(otpCacheKey);
+      } else {
+        memoryOtpStore.delete(otpCacheKey);
+      }
+    } else {
+      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+      const otpPayload = { code: otpCode, targetEmail, payload: payloadToSave };
+
+      if (this.redis && this.redis.isOpen) {
+        await this.redis.set(otpCacheKey, JSON.stringify(otpPayload), { EX: 600 });
+      } else {
+        memoryOtpStore.set(otpCacheKey, { ...otpPayload, expiresAt: Date.now() + 600000 });
+      }
+
+      if (this.platformMailer) {
+        const mailResult = await this.platformMailer.sendMailboxVerificationOtpEmail(targetEmail, otpCode);
+        if (!mailResult.success) {
+          logger.warn(`Failed to send mailbox verification OTP email to ${targetEmail}: ${mailResult.error}`);
+        }
+      }
+
+      return {
+        requiresOtp: true,
+        targetEmail,
+        message: `Verification code sent to ${targetEmail}. Please check your inbox to complete configuration.`,
+      };
+    }
+
     const version = 1;
-    const encrypted = encrypt(apiKey, this.getAadContext(tenantId, 'sendgrid', version));
+    const encrypted = encrypt(JSON.stringify(payloadToSave), this.getAadContext(tenantId, 'sendgrid', version));
 
     await this.repo.upsertIntegration({
       tenantId,
@@ -145,15 +289,19 @@ export class IntegrationService {
       keyVersion: version,
       lastValidatedAt: new Date(),
       lastValidationResult: validationResult,
-      lastOperationalErrorCode: errorCode,
     });
+
+    return {
+      requiresOtp: false,
+      message: 'SendGrid email integration configured successfully.',
+    };
   }
 
   async deleteSendgridIntegration(tenantId: string): Promise<void> {
     await this.repo.deleteIntegration(tenantId, 'sendgrid');
   }
 
-  async getDecryptedSendgridKey(tenantId: string): Promise<string> {
+  async getDecryptedSendgridConfig(tenantId: string): Promise<SendgridConfigPayload> {
     const integration = await this.repo.getIntegration(tenantId, 'sendgrid');
     if (!integration) {
       throw IntegrationErrors.NOT_CONFIGURED();
@@ -161,19 +309,29 @@ export class IntegrationService {
 
     try {
       const aadContext = this.getAadContext(tenantId, 'sendgrid', integration.keyVersion);
-      return decrypt({
+      const decrypted = decrypt({
         ciphertext: integration.ciphertext,
         iv: integration.iv,
         authTag: integration.authTag,
         keyVersion: integration.keyVersion,
       }, aadContext);
+
+      if (decrypted.startsWith('{')) {
+        return JSON.parse(decrypted);
+      }
+      return { apiKey: decrypted };
     } catch {
       logger.error(`Decryption failed for tenant ${tenantId} SendGrid integration.`);
       throw IntegrationErrors.CREDENTIAL_INVALID();
     }
   }
 
-  async getDecryptedSmtpConfig(tenantId: string): Promise<SmtpConfig> {
+  async getDecryptedSendgridKey(tenantId: string): Promise<string> {
+    const config = await this.getDecryptedSendgridConfig(tenantId);
+    return config.apiKey;
+  }
+
+  async getDecryptedSmtpConfig(tenantId: string): Promise<SmtpConfig & { senderName?: string }> {
     const integration = await this.repo.getIntegration(tenantId, 'smtp');
     if (!integration) {
       throw IntegrationErrors.NOT_CONFIGURED();
@@ -189,23 +347,26 @@ export class IntegrationService {
       }, aadContext);
       
       const payload = JSON.parse(decryptedString);
-      return await SmtpConnectionFactory.validatePayload(payload);
+      const validated = await SmtpConnectionFactory.validatePayload(payload);
+      if (payload.senderName) {
+        (validated as { senderName?: string }).senderName = payload.senderName;
+      }
+      return validated;
     } catch {
       logger.error(`Decryption failed for tenant ${tenantId} SMTP integration.`);
       throw IntegrationErrors.CREDENTIAL_INVALID();
     }
   }
 
-  async validateAndSaveSmtpConfig(tenantId: string, updateData: Partial<SmtpConfig>): Promise<void> {
+  async validateAndSaveSmtpConfig(tenantId: string, updateData: Partial<SmtpConfig> & { senderName?: string }): Promise<void> {
     const existingIntegration = await this.repo.getIntegration(tenantId, 'smtp');
-    let candidateConfig: Partial<SmtpConfig> & { payloadVersion: number } = { payloadVersion: 1, ...updateData };
+    let candidateConfig: Partial<SmtpConfig> & { senderName?: string; payloadVersion: number } = { payloadVersion: 1, ...updateData };
 
     if (!existingIntegration) {
       if (!updateData.password) {
         throw new IntegrationError('Password is required for initial SMTP setup', 'INTEGRATION_BAD_REQUEST', 400);
       }
     } else {
-      // Merge with existing
       try {
         const existingConfig = await this.getDecryptedSmtpConfig(tenantId);
         candidateConfig = { ...existingConfig, ...updateData };
@@ -217,6 +378,13 @@ export class IntegrationService {
     }
 
     const validatedConfig = await SmtpConnectionFactory.validatePayload(candidateConfig);
+    if (candidateConfig.senderName) {
+      (validatedConfig as { senderName?: string }).senderName = candidateConfig.senderName;
+    }
+
+    if (validatedConfig.username && validatedConfig.username.includes('@')) {
+      await verifyEmailDomainMx(validatedConfig.username.trim());
+    }
 
     let transporter;
     try {
@@ -229,7 +397,6 @@ export class IntegrationService {
       if (transporter) transporter.close();
     }
 
-    // Save
     const version = 1;
     const encrypted = encrypt(JSON.stringify(validatedConfig), this.getAadContext(tenantId, 'smtp', version));
     
@@ -410,6 +577,27 @@ export class IntegrationService {
       };
     }
 
+    const healthResult = await this.performSendgridIdentityCheck(apiKey, senderEmail);
+
+    if (this.redis && this.redis.isOpen) {
+      if (healthResult.senderVerified !== 'check_failed' && healthResult.domainAuthenticated !== 'check_failed') {
+        try {
+          await this.redis.set(cacheKey, JSON.stringify(healthResult), { EX: 600 });
+        } catch (err) {
+          logger.error(`Failed to cache SendGrid health status for tenant ${tenantId}:`, err);
+        }
+      }
+    }
+
+    return healthResult;
+  }
+
+  private async performSendgridIdentityCheck(apiKey: string, senderEmail: string): Promise<{
+    senderVerified: boolean | 'insufficient_permissions' | 'check_failed';
+    domainAuthenticated: boolean | 'insufficient_permissions' | 'check_failed';
+    checkedAt: Date;
+    reasons: string[];
+  }> {
     let senderVerified: boolean | 'insufficient_permissions' | 'check_failed' = 'check_failed';
     let domainAuthenticated: boolean | 'insufficient_permissions' | 'check_failed' = 'check_failed';
     const reasons: string[] = [];
@@ -434,7 +622,7 @@ export class IntegrationService {
     const senderRes = await makeRequest('/v3/verified_senders');
     if (senderRes.success) {
       const results = (senderRes.body as { results?: Array<{ from_email?: string; verified?: boolean }> })?.results || [];
-      const foundSender = results.find((s: { from_email?: string; verified?: boolean }) => s.from_email === senderEmail);
+      const foundSender = results.find((s: { from_email?: string; verified?: boolean }) => s.from_email?.toLowerCase() === senderEmail.toLowerCase());
       if (foundSender) {
         senderVerified = foundSender.verified === true;
         if (!senderVerified) {
@@ -480,27 +668,11 @@ export class IntegrationService {
       reasons.push(`Failed to query SendGrid domain authentication API (Status: ${domainRes.status}).`);
     }
 
-    const healthResult = {
+    return {
       senderVerified,
       domainAuthenticated,
       checkedAt: new Date(),
       reasons,
     };
-
-    // Cache ONLY if no checks failed transiently
-    if (
-      senderVerified !== 'check_failed' &&
-      domainAuthenticated !== 'check_failed' &&
-      this.redis &&
-      this.redis.isOpen
-    ) {
-      try {
-        await this.redis.set(cacheKey, JSON.stringify(healthResult), { EX: 300 });
-      } catch (err) {
-        logger.error(`Failed to write SendGrid health cache for tenant ${tenantId}:`, err);
-      }
-    }
-
-    return healthResult;
   }
 }
