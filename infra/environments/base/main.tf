@@ -114,10 +114,6 @@ module "secrets_dev" {
   database_url                  = module.rds.connection_url
   jwt_secret                    = try(local.secrets_dev.jwt_secret, "")
   encryption_key                = try(local.secrets_dev.encryption_key, "")
-  sendgrid_api_key              = try(local.secrets_dev.sendgrid_api_key, "REPLACE_ME")
-  sendgrid_webhook_public_key   = try(local.secrets_dev.sendgrid_webhook_public_key, "REPLACE_ME")
-  stripe_webhook_secret         = try(local.secrets_dev.stripe_webhook_secret, "REPLACE_ME")
-  razorpay_webhook_secret       = try(local.secrets_dev.razorpay_webhook_secret, "REPLACE_ME")
   sendgrid_inbound_parse_secret = try(local.secrets_dev.sendgrid_inbound_parse_secret, "REPLACE_ME")
   inbound_parse_domain          = try(local.secrets_dev.inbound_parse_domain, "REPLACE_ME")
   ai_ml_service_key             = try(local.secrets_dev.ai_ml_service_key, "")
@@ -125,6 +121,9 @@ module "secrets_dev" {
   frontend_url                  = var.domain_name != "" ? "https://${var.domain_name}" : module.s3_cloudfront.frontend_url
   platform_smtp_url             = try(local.secrets_dev.platform_smtp_url, "REPLACE_ME")
   platform_email_provider       = try(local.secrets_dev.platform_email_provider, "smtp")
+  platform_sendgrid_api_key     = try(local.secrets_dev.platform_sendgrid_api_key, "REPLACE_ME")
+  platform_from_email           = try(local.secrets_dev.platform_from_email, "no-reply@jaktra.site")
+  platform_from_name            = try(local.secrets_dev.platform_from_name, "Jaktra")
 
   llm_api_key  = try(local.secrets_dev.llm_api_key, "")
   llm_provider = try(local.secrets_dev.llm_provider, "groq")
@@ -142,10 +141,6 @@ module "secrets_production" {
   database_url                  = module.rds.connection_url
   jwt_secret                    = try(local.secrets_prod.jwt_secret, "")
   encryption_key                = try(local.secrets_prod.encryption_key, "")
-  sendgrid_api_key              = try(local.secrets_prod.sendgrid_api_key, "REPLACE_ME")
-  sendgrid_webhook_public_key   = try(local.secrets_prod.sendgrid_webhook_public_key, "REPLACE_ME")
-  stripe_webhook_secret         = try(local.secrets_prod.stripe_webhook_secret, "REPLACE_ME")
-  razorpay_webhook_secret       = try(local.secrets_prod.razorpay_webhook_secret, "REPLACE_ME")
   sendgrid_inbound_parse_secret = try(local.secrets_prod.sendgrid_inbound_parse_secret, "REPLACE_ME")
   inbound_parse_domain          = try(local.secrets_prod.inbound_parse_domain, "REPLACE_ME")
   ai_ml_service_key             = try(local.secrets_prod.ai_ml_service_key, "")
@@ -153,6 +148,9 @@ module "secrets_production" {
   frontend_url                  = var.domain_name != "" ? "https://${var.domain_name}" : module.s3_cloudfront.frontend_url
   platform_smtp_url             = try(local.secrets_prod.platform_smtp_url, "REPLACE_ME")
   platform_email_provider       = try(local.secrets_prod.platform_email_provider, "smtp")
+  platform_sendgrid_api_key     = try(local.secrets_prod.platform_sendgrid_api_key, "REPLACE_ME")
+  platform_from_email           = try(local.secrets_prod.platform_from_email, "no-reply@jaktra.site")
+  platform_from_name            = try(local.secrets_prod.platform_from_name, "Jaktra")
 
   llm_api_key  = try(local.secrets_prod.llm_api_key, "")
   llm_provider = try(local.secrets_prod.llm_provider, "groq")
