@@ -110,9 +110,6 @@ export interface AppConfig {
   jwtExpiresIn?: string;
   aimlServiceUrl?: string;
   aimlServiceKey?: string;
-  sendgridApiKey?: string;
-  razorpayWebhookSecret?: string;
-  sendgridWebhookPublicKey?: string;
 }
 
 export function createApp(config: AppConfig): Application {
@@ -227,7 +224,7 @@ export function createApp(config: AppConfig): Application {
     app.locals.portalService = portalService;
 
     const webhookService = new WebhookService(invoiceRepo, eventService);
-    const sendgridService = new SendgridWebhookService(communicationService, config.sendgridWebhookPublicKey);
+    const sendgridService = new SendgridWebhookService(communicationService);
     
     const sendgridWebhookController = new SendgridWebhookController(
       settingsRepo,

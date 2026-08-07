@@ -17,10 +17,6 @@ const schema = z.object({
 
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
 
-  SENDGRID_API_KEY: z.string().optional(),
-  SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
   SENDGRID_INBOUND_PARSE_SECRET: z.string().optional(),
   INBOUND_PARSE_DOMAIN: z.string().optional(),
 
@@ -44,14 +40,6 @@ const schema = z.object({
       return false;
     }
   }, { message: "ENCRYPTION_KEY must be a valid base64 string exactly 32 bytes long." }),
-}).refine((data) => {
-  if (data.NODE_ENV === 'production') {
-    return !!data.RAZORPAY_WEBHOOK_SECRET;
-  }
-  return true;
-}, {
-  message: "In production, RAZORPAY_WEBHOOK_SECRET is strictly required.",
-  path: ["NODE_ENV"]
 });
 
 function parseConfig(): z.infer<typeof schema> {

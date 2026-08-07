@@ -20,9 +20,6 @@ const app = createApp({
   jwtExpiresIn: config.JWT_EXPIRES_IN,
   aimlServiceUrl: config.AI_ML_SERVICE_URL,
   aimlServiceKey: config.AI_ML_SERVICE_KEY,
-  sendgridApiKey: config.SENDGRID_API_KEY,
-  razorpayWebhookSecret: config.RAZORPAY_WEBHOOK_SECRET,
-  sendgridWebhookPublicKey: config.SENDGRID_WEBHOOK_PUBLIC_KEY,
 });
 
 const server = app.listen(config.PORT, () => {
