@@ -17,8 +17,8 @@ export const settingsService = {
     return response.data;
   },
 
-  saveSendgridKey: async (apiKey: string): Promise<{ message: string }> => {
-    const response = await api.post('/settings/integrations/sendgrid', { apiKey });
+  saveSendgridKey: async (data: { apiKey: string; senderName?: string; senderEmail?: string; replyTo?: string | null; otpCode?: string }): Promise<{ requiresOtp?: boolean; targetEmail?: string; message: string }> => {
+    const response = await api.post('/settings/integrations/sendgrid', data);
     return response.data;
   },
 
@@ -31,7 +31,7 @@ export const settingsService = {
     return response.data;
   },
 
-  saveSmtpConfig: async (config: SmtpConfig): Promise<{ message: string }> => {
+  saveSmtpConfig: async (config: SmtpConfig & { senderName?: string }): Promise<{ message: string }> => {
     const response = await api.post('/settings/integrations/smtp', config);
     return response.data;
   },
@@ -47,22 +47,6 @@ export const settingsService = {
 
   setDefaultProvider: async (provider: 'sendgrid' | 'smtp' | null): Promise<{ message: string }> => {
     const response = await api.patch('/settings/integrations/default-provider', { provider });
-    return response.data;
-  },
-
-  getInboundVerificationStatus: async (): Promise<{
-    defaultEmailProvider: string | null;
-    dnsVerifiedAt: string | null;
-    hasRealCapture: boolean;
-    latestTest: { status: 'pending' | 'passed' | 'failed' | 'expired'; expiresAt: string } | null;
-    inboundParseDomain: string;
-  }> => {
-    const response = await api.get('/settings/inbound-verification/status');
-    return response.data;
-  },
-
-  startInboundVerificationTest: async (): Promise<{ testId: string; expiresAt: string }> => {
-    const response = await api.post('/settings/inbound-verification/test');
     return response.data;
   },
 

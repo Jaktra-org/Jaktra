@@ -46,6 +46,18 @@ export function getErrorMessage(error: unknown): string {
   }
 
   const lowerMsg = sanitizedMessage.toLowerCase();
+  if (
+    lowerMsg.includes('sender email') ||
+    lowerMsg.includes('sender identity') ||
+    lowerMsg.includes('reply-to') ||
+    lowerMsg.includes('unverified') ||
+    lowerMsg.includes('verified') ||
+    lowerMsg.includes('mx record') ||
+    lowerMsg.includes('mx records') ||
+    lowerMsg.includes('mailbox')
+  ) {
+    return sanitizedMessage;
+  }
   if (lowerMsg.includes('querymx') || lowerMsg.includes('unreachable or invalid') || lowerMsg.includes('does not have valid mail servers')) {
     return 'Recipient email domain is invalid or does not exist';
   }
