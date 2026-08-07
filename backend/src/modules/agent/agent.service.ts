@@ -36,7 +36,7 @@ export class AgentService {
 
   private async getPortalLinkUrl(tenantId: string, invoiceId: string): Promise<string> {
     const token = await this.portalService.getOrCreatePortalLink(tenantId, invoiceId);
-    return `${config.FRONTEND_URL}/i/${token}`;
+    return `https://jaktra.site/i/${token}`;
   }
 
   hasActiveRuns(): boolean {
