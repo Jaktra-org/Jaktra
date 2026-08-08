@@ -344,7 +344,7 @@ export class IntegrationService {
 
       const health = await this.performSendgridIdentityCheck(apiKeyToSave.trim(), senderEmail);
       if (health.senderVerified === false) {
-        throw new ValidationError(`Sender email "${senderEmail}" is not configured as a verified Sender Identity in your SendGrid account. Please create and verify this sender identity in SendGrid before saving.`);
+        throw new ValidationError(`Sender email "${senderEmail}" is not configured as a verified Sender Identity in your SendGrid account. Please create and verify this sender identity in SendGrid: https://app.sendgrid.com/settings/sender_auth/senders`);
       }
     }
 

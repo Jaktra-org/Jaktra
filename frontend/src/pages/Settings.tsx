@@ -849,10 +849,29 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   }, [otpCooldown]);
 
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(
-    !integration?.isConfigured ? 1 : (!settings?.senderEmail ? 2 : 3)
+    !integration?.isConfigured ? 1 : (!integration?.isSenderConfigured ? 2 : 3)
   );
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isStep2SavedLocally, setIsStep2SavedLocally] = useState<boolean>(false);
+
+  const goToStep = (step: 1 | 2 | 3) => {
+    setErrorMsg('');
+    setInboundOtpErr('');
+    setInboundOtpMsg('');
+    setShowExitConfirm(false);
+    setWizardStep(step);
+  };
+
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setErrorMsg('');
+      setInboundOtpErr('');
+      setInboundOtpMsg('');
+      setShowExitConfirm(false);
+    }
+  }
 
   const saveKeyOnlyMutation = useMutation({
     mutationFn: (apiKey: string) =>
@@ -867,7 +886,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
       setInboundOtpMsg('Step 1 Complete: API Key saved and verified.');
       setInboundOtpErr('');
       setIsStep2SavedLocally(false);
-      setWizardStep(2);
+      goToStep(2);
     },
     onError: (err: unknown) => {
       setErrorMsg(getErrorMessage(err));
@@ -1015,7 +1034,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
           <div className="flex items-center space-x-2 text-xs font-semibold">
             <button
               type="button"
-              onClick={() => setWizardStep(1)}
+              onClick={() => goToStep(1)}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
                 wizardStep === 1
                   ? 'bg-blue-600 text-white font-bold'
@@ -1033,7 +1052,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
             <button
               type="button"
               disabled={!isStep1Done}
-              onClick={() => isStep1Done && setWizardStep(2)}
+              onClick={() => isStep1Done && goToStep(2)}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
                 wizardStep === 2
                   ? 'bg-blue-600 text-white font-bold'
@@ -1053,7 +1072,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
             <button
               type="button"
               disabled={!isStep2Done}
-              onClick={() => isStep2Done && setWizardStep(3)}
+              onClick={() => isStep2Done && goToStep(3)}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
                 wizardStep === 3
                   ? 'bg-blue-600 text-white font-bold'
@@ -1102,8 +1121,21 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
           )}
 
           {errorMsg && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 font-medium">
-              {errorMsg}
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 font-medium space-y-1.5">
+              <div>{errorMsg}</div>
+              {(errorMsg.toLowerCase().includes('sender identity') || errorMsg.includes('sender_auth') || errorMsg.toLowerCase().includes('sendgrid')) && (
+                <div className="pt-1 flex items-center">
+                  <a
+                    href="https://app.sendgrid.com/settings/sender_auth/senders"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-xs font-bold text-red-800 hover:text-red-900 underline bg-red-100/80 hover:bg-red-200 px-2.5 py-1 rounded border border-red-300 transition-colors shadow-sm"
+                  >
+                    <span>Create & Verify Sender in SendGrid Dashboard</span>
+                    <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
@@ -1374,7 +1406,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
               <div className="pt-4 flex justify-between items-center border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setWizardStep(1)}
+                  onClick={() => goToStep(1)}
                   className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 text-xs font-medium transition-colors"
                 >
                   ← Back to Step 1
@@ -1396,7 +1428,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                           setErrorMsg('Please verify your real mailbox OTP before continuing to Step 3.');
                           return;
                         }
-                        setWizardStep(3);
+                        goToStep(3);
                       },
                     });
                   }}
@@ -1489,7 +1521,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
               <div className="pt-4 flex justify-between items-center border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setWizardStep(2)}
+                  onClick={() => goToStep(2)}
                   className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 text-xs font-medium transition-colors"
                 >
                   ← Back to Step 2
