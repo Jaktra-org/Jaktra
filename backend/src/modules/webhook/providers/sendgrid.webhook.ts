@@ -65,27 +65,7 @@ export class SendgridWebhookService {
       const tenantId = tenant_id || '';
       const dateVal = eventTimestamp ? new Date(eventTimestamp * 1000) : new Date();
 
-      if (['opened', 'open'].includes(eventType)) {
-        await this.communicationService.handleEmailEvent(
-          tenantId,
-          communication_id,
-          invoice_id,
-          'opened',
-          dateVal,
-          event,
-          run_id
-        );
-      } else if (['clicked', 'click'].includes(eventType)) {
-        await this.communicationService.handleEmailEvent(
-          tenantId,
-          communication_id,
-          invoice_id,
-          'clicked',
-          dateVal,
-          event,
-          run_id
-        );
-      } else if (['bounced', 'bounce'].includes(eventType)) {
+      if (['bounced', 'bounce'].includes(eventType)) {
         await this.communicationService.handleEmailEvent(
           tenantId,
           communication_id,

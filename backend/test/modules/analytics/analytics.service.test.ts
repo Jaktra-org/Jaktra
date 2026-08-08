@@ -16,7 +16,6 @@ describe('AnalyticsService', () => {
       getChannelBreakdown: vi.fn(),
       getTierEffectiveness: vi.fn(),
       getEmailVolume: vi.fn(),
-      getCommunicationStats: vi.fn(),
     } as unknown as AnalyticsRepository;
 
     service = new AnalyticsService(analyticsRepo);

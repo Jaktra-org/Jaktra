@@ -8,7 +8,7 @@ import { tenantSettings, type TenantSettings, type NewTenantSettings } from '../
 export class CommunicationRepository {
   constructor(private db: DatabaseClient) {}
 
-  async findByInvoiceId(invoiceId: string): Promise<(Pick<Communication, 'id' | 'invoiceId' | 'tenantId' | 'channel' | 'subject' | 'body' | 'status' | 'sentAt' | 'openedAt' | 'clickedAt' | 'error' | 'createdAt'> & { recipient: string | null; errorMsg: string | null })[]> {
+  async findByInvoiceId(invoiceId: string): Promise<(Pick<Communication, 'id' | 'invoiceId' | 'tenantId' | 'channel' | 'subject' | 'body' | 'status' | 'sentAt' | 'error' | 'createdAt'> & { recipient: string | null; errorMsg: string | null })[]> {
     const rows = await this.db
       .select({
         id: communications.id,
@@ -19,8 +19,6 @@ export class CommunicationRepository {
         body: communications.body,
         status: communications.status,
         sentAt: communications.sentAt,
-        openedAt: communications.openedAt,
-        clickedAt: communications.clickedAt,
         error: communications.error,
         createdAt: communications.createdAt,
         recipient: invoices.contactEmail,
@@ -70,20 +68,6 @@ export class CommunicationRepository {
     await this.db.insert(communications).values(insertData);
     const [row] = await this.db.select().from(communications).where(eq(communications.id, id)).limit(1);
     return row!;
-  }
-
-  async updateOpenedAt(id: string, openedAt: Date): Promise<void> {
-    await this.db
-      .update(communications)
-      .set({ openedAt })
-      .where(eq(communications.id, id));
-  }
-
-  async updateClickedAt(id: string, clickedAt: Date): Promise<void> {
-    await this.db
-      .update(communications)
-      .set({ clickedAt })
-      .where(eq(communications.id, id));
   }
 
   async markFailed(id: string, error: string): Promise<void> {

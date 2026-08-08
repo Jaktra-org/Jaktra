@@ -297,34 +297,4 @@ export class AnalyticsRepository {
       emailsSent: Number(row.emailsSent || 0),
     }));
   }
-
-  async getCommunicationStats(tenantId: string, fromDate?: Date, toDate?: Date): Promise<{ totalSent: number; totalOpened: number; totalClicked: number }> {
-    let baseConditions = and(
-      eq(invoices.tenantId, tenantId),
-      isNull(invoices.deletedAt)
-    );
-    if (fromDate) {
-      baseConditions = and(baseConditions, gte(communications.sentAt, fromDate));
-    }
-    if (toDate) {
-      baseConditions = and(baseConditions, lte(communications.sentAt, toDate));
-    }
-
-    const result = await this.db
-      .select({
-        totalSent: sql<number>`COUNT(*)`,
-        totalOpened: sql<number>`COALESCE(SUM(CASE WHEN ${communications.openedAt} IS NOT NULL THEN 1 ELSE 0 END), 0)`,
-        totalClicked: sql<number>`COALESCE(SUM(CASE WHEN ${communications.clickedAt} IS NOT NULL THEN 1 ELSE 0 END), 0)`,
-      })
-      .from(communications)
-      .innerJoin(invoices, eq(communications.invoiceId, invoices.id))
-      .where(and(baseConditions, eq(communications.status, 'sent')));
-
-    const row = result[0];
-    return {
-      totalSent: Number(row?.totalSent || 0),
-      totalOpened: Number(row?.totalOpened || 0),
-      totalClicked: Number(row?.totalClicked || 0),
-    };
-  }
 }

@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { AnalyticsSummary, AgingTier, AgentPerformance, EmailVolume, ChannelBreakdown, TierEffectiveness, CommunicationStats } from '../types/api';
+import type { AnalyticsSummary, AgingTier, AgentPerformance, EmailVolume, ChannelBreakdown, TierEffectiveness } from '../types/api';
 
 export const analyticsService = {
   getSummary: async (): Promise<AnalyticsSummary> => {
@@ -24,10 +24,6 @@ export const analyticsService = {
   },
   getTierEffectiveness: async (): Promise<TierEffectiveness[]> => {
     const response = await api.get('/analytics/agent/tier-effectiveness');
-    return response.data;
-  },
-  getCommunicationStats: async (): Promise<CommunicationStats> => {
-    const response = await api.get('/analytics/agent/communication-stats');
     return response.data;
   },
 };

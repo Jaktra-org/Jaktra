@@ -15,7 +15,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { EditInvoiceModal } from "../components/invoices/EditInvoiceModal";
 import { Modal } from "../components/ui/Modal";
 import { CommunicationList } from "../components/invoices/CommunicationList";
-import { CommunicationStats } from "../components/invoices/CommunicationStats";
 import { getErrorMessage } from "../utils/error-utils";
 import type { InvoiceEvent } from "../types/api";
 import {
@@ -1342,13 +1341,7 @@ export function InvoiceDetail() {
                     <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                   </div>
                 ) : (
-                  <div>
-                    <CommunicationStats 
-                      communications={communications || []} 
-                      defaultEmailProvider={settings?.defaultEmailProvider} 
-                    />
-                    <CommunicationList communications={communications || []} />
-                  </div>
+                  <CommunicationList communications={communications || []} />
                 )
               )}
             </CardContent>

@@ -78,16 +78,12 @@ export class CommunicationService {
     tenantId: string,
     communicationId: string,
     invoiceId: string,
-    eventType: 'opened' | 'clicked' | 'bounced' | 'dropped',
+    eventType: 'bounced' | 'dropped',
     timestamp: Date,
     rawEvent: Record<string, unknown>,
     runId?: string
   ): Promise<void> {
-    if (eventType === 'opened') {
-      await this.communicationRepo.updateOpenedAt(communicationId, timestamp);
-    } else if (eventType === 'clicked') {
-      await this.communicationRepo.updateClickedAt(communicationId, timestamp);
-    } else if (eventType === 'bounced' || eventType === 'dropped') {
+    if (eventType === 'bounced' || eventType === 'dropped') {
       const reason = (rawEvent.reason as string | undefined) || 'Email bounced or dropped';
       await this.communicationRepo.markFailed(communicationId, reason);
 
@@ -119,31 +115,18 @@ export class CommunicationService {
 
     if (this.eventService) {
       const resolvedRunId = runId || rawEvent?.run_id || rawEvent?.runId;
-      const isBounceOrDrop = eventType === 'bounced' || eventType === 'dropped';
       
-      let actionType: ActionType;
-      let description: string;
-      if (eventType === 'opened') {
-        actionType = 'followup.email_opened';
-        description = 'Follow-up email opened';
-      } else if (eventType === 'clicked') {
-        actionType = 'followup.email_clicked';
-        description = 'Link in follow-up email clicked';
-      } else {
-        actionType = 'followup.bounced';
-        description = `Follow-up email delivery failed (${eventType})`;
-      }
+      const actionType: ActionType = 'followup.bounced';
+      const description = `Follow-up email delivery failed (${eventType})`;
 
       const recipientEmail = (rawEvent.email || rawEvent.recipient || rawEvent.to) as string | undefined;
-      const payload = isBounceOrDrop
-        ? {
-            reason: eventType === 'dropped' ? 'mail_dropped' : 'mail_bounced',
-            error: rawEvent.reason || 'Email bounced or dropped',
-            recipient: recipientEmail,
-            contactEmail: recipientEmail,
-            runId: resolvedRunId,
-          }
-        : { ...rawEvent, recipient: recipientEmail, contactEmail: recipientEmail, runId: resolvedRunId };
+      const payload = {
+        reason: eventType === 'dropped' ? 'mail_dropped' : 'mail_bounced',
+        error: rawEvent.reason || 'Email bounced or dropped',
+        recipient: recipientEmail,
+        contactEmail: recipientEmail,
+        runId: resolvedRunId,
+      };
 
       await this.eventService.emitEvent(
         'invoice',

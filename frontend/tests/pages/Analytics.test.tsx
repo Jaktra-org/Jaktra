@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { screen, act, waitFor } from '../test-utils';
 import { renderWithProviders } from '../test-utils';
 import { Analytics } from '../../src/pages/Analytics';
@@ -14,7 +14,6 @@ vi.mock('../../src/services/analytics', () => ({
     getEmailVolume: vi.fn(),
     getChannelBreakdown: vi.fn(),
     getTierEffectiveness: vi.fn(),
-    getCommunicationStats: vi.fn(),
   },
 }));
 
@@ -45,19 +44,10 @@ describe('Analytics page tabs and metric queries', () => {
     totalOverdue: 15000,
   };
 
-  const mockCommStats = {
-    totalSent: 100,
-    totalOpened: 80,
-    totalClicked: 40,
-    openRate: 80.0,
-    clickRate: 40.0,
-  };
-
   it('toggles tabs and renders metric aggregations', async () => {
     vi.mocked(settingsService.getSettings).mockResolvedValue({} as any);
     vi.mocked(analyticsService.getSummary).mockResolvedValue(mockSummary);
     vi.mocked(analyticsService.getAging).mockResolvedValue([]);
-    vi.mocked(analyticsService.getCommunicationStats).mockResolvedValue(mockCommStats);
     vi.mocked(analyticsService.getAgentPerformance).mockResolvedValue({
       totalRuns: 10,
       invoicesProcessed: 50,

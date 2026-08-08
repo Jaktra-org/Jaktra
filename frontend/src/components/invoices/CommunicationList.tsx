@@ -115,20 +115,11 @@ export function CommunicationList({ communications }: CommunicationListProps) {
               </div>
               
               {/* Detailed Timestamps footer */}
-              <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
-                {comm.sentAt && (
-                  <div>Sent: <span className="font-medium text-slate-700">{new Date(comm.sentAt).toLocaleString()}</span></div>
-                )}
-                {comm.deliveredAt && (
-                  <div>Delivered: <span className="font-medium text-slate-700">{new Date(comm.deliveredAt).toLocaleString()}</span></div>
-                )}
-                {comm.openedAt && (
-                  <div>Opened: <span className="font-medium text-slate-700">{new Date(comm.openedAt).toLocaleString()}</span></div>
-                )}
-                {comm.clickedAt && (
-                  <div>Clicked: <span className="font-medium text-slate-700">{new Date(comm.clickedAt).toLocaleString()}</span></div>
-                )}
-              </div>
+              {comm.sentAt && (
+                <div className="mt-4 text-xs text-slate-500">
+                  Sent: <span className="font-medium text-slate-700">{new Date(comm.sentAt).toLocaleString()}</span>
+                </div>
+              )}
             </div>
           )}
         </div>

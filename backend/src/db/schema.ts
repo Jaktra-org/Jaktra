@@ -159,8 +159,6 @@ export const communications = mysqlTable(
     body: text('body'),
     status: communicationStatusEnum('status').notNull().default('pending'),
     sentAt: datetime('sent_at', { mode: 'date' }),
-    openedAt: datetime('opened_at', { mode: 'date' }),
-    clickedAt: datetime('clicked_at', { mode: 'date' }),
     error: text('error'),
     createdAt: datetime('created_at', { mode: 'date' })
       .notNull()

@@ -19,7 +19,6 @@ export function createAnalyticsRouter(
   router.get('/agent/email-volume', validateQuery(DateRangeSchema), analyticsController.getEmailVolume);
   router.get('/agent/channel-breakdown', validateQuery(DateRangeSchema), analyticsController.getChannelBreakdown);
   router.get('/agent/tier-effectiveness', validateQuery(DateRangeSchema), analyticsController.getTierEffectiveness);
-  router.get('/agent/communication-stats', validateQuery(DateRangeSchema), analyticsController.getCommunicationStats);
 
   return router;
 }

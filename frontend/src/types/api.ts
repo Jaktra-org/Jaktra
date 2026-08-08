@@ -152,14 +152,6 @@ export interface TierEffectiveness {
   successRate: number;
 }
 
-export interface CommunicationStats {
-  totalSent: number;
-  totalOpened: number;
-  totalClicked: number;
-  openRate: number;
-  clickRate: number;
-}
-
 export interface AgentRun {
   id: string;
   status: string;
@@ -223,13 +215,10 @@ export interface Communication {
   recipient: string;
   subject: string | null;
   body: string;
-  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'opened' | 'clicked';
+  status: 'pending' | 'sent' | 'failed';
   errorMsg: string | null;
   providerMessageId: string | null;
   sentAt: string | null;
-  deliveredAt: string | null;
-  openedAt: string | null;
-  clickedAt: string | null;
   createdAt: string;
 }
 

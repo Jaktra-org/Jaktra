@@ -63,14 +63,4 @@ export class AnalyticsController {
       next(err);
     }
   };
-
-  getCommunicationStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const tenantId = res.locals.tenantId as string;
-      const stats = await this.analyticsService.getCommunicationStats(tenantId, req.query);
-      res.status(200).json(stats);
-    } catch (err: unknown) {
-      next(err);
-    }
-  };
 }

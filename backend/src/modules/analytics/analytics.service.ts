@@ -172,24 +172,4 @@ export class AnalyticsService {
     const { fromDate, toDate } = this.parseDateRange(query);
     return this.analyticsRepo.getEmailVolume(tenantId, fromDate, toDate);
   }
-
-  async getCommunicationStats(tenantId: string, query: DateRange): Promise<{ totalSent: number; totalOpened: number; totalClicked: number; openRate: number; clickRate: number }> {
-    const { fromDate, toDate } = this.parseDateRange(query);
-    const data = await this.analyticsRepo.getCommunicationStats(tenantId, fromDate, toDate);
-    
-    let openRate = 0;
-    let clickRate = 0;
-    if (data.totalSent > 0) {
-      openRate = (data.totalOpened / data.totalSent) * 100;
-      clickRate = (data.totalClicked / data.totalSent) * 100;
-    }
-
-    return {
-      totalSent: data.totalSent,
-      totalOpened: data.totalOpened,
-      totalClicked: data.totalClicked,
-      openRate: Math.round(openRate * 10) / 10,
-      clickRate: Math.round(clickRate * 10) / 10
-    };
-  }
 }

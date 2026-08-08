@@ -1,4 +1,4 @@
-﻿import { analyticsService } from '../../src/services/analytics';
+import { analyticsService } from '../../src/services/analytics';
 import { api } from '../../src/services/api';
 
 vi.mock('../../src/services/api', () => ({
@@ -32,8 +32,5 @@ describe('analyticsService', () => {
 
     await analyticsService.getTierEffectiveness();
     expect(api.get).toHaveBeenCalledWith('/analytics/agent/tier-effectiveness');
-
-    await analyticsService.getCommunicationStats();
-    expect(api.get).toHaveBeenCalledWith('/analytics/agent/communication-stats');
   });
 });

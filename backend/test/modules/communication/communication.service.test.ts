@@ -10,8 +10,6 @@ describe('CommunicationService', () => {
 
   beforeEach(() => {
     mockCommRepo = {
-      updateOpenedAt: vi.fn(),
-      updateClickedAt: vi.fn(),
       markFailed: vi.fn(),
     };
     mockInvoiceRepo = {
@@ -39,60 +37,6 @@ describe('CommunicationService', () => {
       mockPortalService as any,
       mockEventService as any,
       mockDlqRepo as any
-    );
-  });
-
-  it('should handle opened email events', async () => {
-    const timestamp = new Date('2026-06-22T01:00:00Z');
-    const rawEvent = { run_id: 'run-123' };
-
-    await communicationService.handleEmailEvent(
-      'tenant-1',
-      'comm-1',
-      'invoice-1',
-      'opened',
-      timestamp,
-      rawEvent
-    );
-
-    expect(mockCommRepo.updateOpenedAt).toHaveBeenCalledWith('comm-1', timestamp);
-    expect(mockEventService.emitEvent).toHaveBeenCalledWith(
-      'invoice',
-      'invoice-1',
-      'tenant-1',
-      'followup.email_opened',
-      { source: 'webhook' },
-      {
-        description: 'Follow-up email opened',
-        payload: { ...rawEvent, runId: 'run-123' },
-      }
-    );
-  });
-
-  it('should handle clicked email events', async () => {
-    const timestamp = new Date('2026-06-22T01:00:00Z');
-    const rawEvent = { runId: 'run-123' };
-
-    await communicationService.handleEmailEvent(
-      'tenant-1',
-      'comm-1',
-      'invoice-1',
-      'clicked',
-      timestamp,
-      rawEvent
-    );
-
-    expect(mockCommRepo.updateClickedAt).toHaveBeenCalledWith('comm-1', timestamp);
-    expect(mockEventService.emitEvent).toHaveBeenCalledWith(
-      'invoice',
-      'invoice-1',
-      'tenant-1',
-      'followup.email_clicked',
-      { source: 'webhook' },
-      {
-        description: 'Link in follow-up email clicked',
-        payload: { ...rawEvent, runId: 'run-123' },
-      }
     );
   });
 
