@@ -46,7 +46,10 @@ function isSchemaAlreadyExistsError(error: unknown): boolean {
     combinedStr.includes('ER_DUP_KEY') ||
     combinedStr.includes('ER_TABLE_EXISTS_ERROR') ||
     combinedStr.includes('ER_FK_DUP_NAME') ||
-    combinedStr.includes('ER_DUP_KEYNAME')
+    combinedStr.includes('ER_DUP_KEYNAME') ||
+    combinedStr.includes("Can't DROP") ||
+    combinedStr.includes('check that column/key exists') ||
+    combinedStr.includes('ER_CANT_DROP_FIELD_OR_KEY')
   );
 }
 
@@ -94,6 +97,15 @@ export async function runMigrations(): Promise<void> {
               );
 
               if (!Array.isArray(rows) || rows.length === 0) {
+                const statements = sqlContent.split(/--> statement-breakpoint|;/).map((s) => s.trim()).filter(Boolean);
+                for (const statement of statements) {
+                  try {
+                    await db.$pool.query(statement);
+                  } catch (stmtErr) {
+                    logger.warn(`Idempotent migration statement skipped (${entry.tag}): ${statement} — ${(stmtErr as Error)?.message || stmtErr}`);
+                  }
+                }
+
                 await db.$pool.query(
                   `INSERT INTO \`__drizzle_migrations\` (\`hash\`, \`created_at\`) VALUES (?, ?)`,
                   [hash, entry.when]
