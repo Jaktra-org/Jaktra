@@ -796,6 +796,13 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   const [inboundOtpMsg, setInboundOtpMsg] = useState('');
   const [inboundOtpErr, setInboundOtpErr] = useState('');
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setInterval(() => setOtpCooldown((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [otpCooldown]);
 
   const saveMutation = useMutation({
     mutationFn: (data: { apiKey: string; senderName: string; senderEmail: string; replyTo?: string | null; otpCode?: string }) =>
@@ -836,6 +843,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
     onSuccess: (data) => {
       setInboundOtpMsg(data.message);
       setInboundOtpErr('');
+      setOtpCooldown(60);
     },
     onError: (err: unknown) => {
       setInboundOtpErr(getErrorMessage(err));
@@ -849,6 +857,18 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
       setInboundOtpMsg(data.message);
       setInboundOtpErr('');
       setInboundOtpInput('');
+    },
+    onError: (err: unknown) => {
+      setInboundOtpErr(getErrorMessage(err));
+    },
+  });
+
+  const verifyInboundWebhookMutation = useMutation({
+    mutationFn: () => settingsService.verifyInboundWebhook(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['integrations'] });
+      setInboundOtpMsg(data.message);
+      setInboundOtpErr('');
     },
     onError: (err: unknown) => {
       setInboundOtpErr(getErrorMessage(err));
@@ -1064,6 +1084,14 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                     </button>
                     <button
                       type="button"
+                      onClick={() => verifyInboundWebhookMutation.mutate()}
+                      disabled={verifyInboundWebhookMutation.isPending || inboundParse?.isVerified}
+                      className="px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
+                    >
+                      {verifyInboundWebhookMutation.isPending ? 'Verifying...' : inboundParse?.isVerified ? 'Verified ✅' : 'Verify Webhook'}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => rotateTokenMutation.mutate()}
                       disabled={rotateTokenMutation.isPending}
                       className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md text-xs font-medium shrink-0 transition-colors disabled:opacity-50"
@@ -1177,10 +1205,14 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                           <button
                             type="button"
                             onClick={() => sendInboundOtpMutation.mutate()}
-                            disabled={sendInboundOtpMutation.isPending || !replyMailboxEmail}
+                            disabled={sendInboundOtpMutation.isPending || !replyMailboxEmail || otpCooldown > 0}
                             className="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded font-semibold transition-colors disabled:opacity-50"
                           >
-                            {sendInboundOtpMutation.isPending ? 'Sending...' : 'Send 6-Digit OTP'}
+                            {sendInboundOtpMutation.isPending
+                              ? 'Sending...'
+                              : otpCooldown > 0
+                              ? `Send OTP (${otpCooldown}s)`
+                              : 'Send 6-Digit OTP'}
                           </button>
                         </div>
 
@@ -1210,25 +1242,27 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                 {inboundOtpMsg && <p className="text-[11px] text-emerald-600 font-medium">{inboundOtpMsg}</p>}
                 {inboundOtpErr && <p className="text-[11px] text-red-600 font-medium">{inboundOtpErr}</p>}
 
-                {/* SendGrid Instructions */}
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-1.5 text-xs text-slate-600">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-900">SendGrid Setup Instructions:</span>
-                    <a
-                      href={sendgridSettingsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center"
-                    >
-                      Open SendGrid Parse Settings <ExternalLink className="w-3 h-3 ml-1" />
-                    </a>
+                {/* SendGrid Instructions - Automatically hides when inbound parse is verified */}
+                {!inboundParse?.isVerified && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-1.5 text-xs text-slate-600">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-900">SendGrid Setup Instructions:</span>
+                      <a
+                        href={sendgridSettingsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center"
+                      >
+                        Open SendGrid Parse Settings <ExternalLink className="w-3 h-3 ml-1" />
+                      </a>
+                    </div>
+                    <ol className="list-decimal list-inside text-[11px] text-slate-500 space-y-0.5">
+                      <li>Click the link above to open SendGrid Inbound Parse.</li>
+                      <li>Click <strong>Add Host & URL</strong>.</li>
+                      <li>Select your email domain and paste your copied Webhook URL into the <strong>URL</strong> field.</li>
+                    </ol>
                   </div>
-                  <ol className="list-decimal list-inside text-[11px] text-slate-500 space-y-0.5">
-                    <li>Click the link above to open SendGrid Inbound Parse.</li>
-                    <li>Click <strong>Add Host & URL</strong>.</li>
-                    <li>Select your email domain and paste your copied Webhook URL into the <strong>URL</strong> field.</li>
-                  </ol>
-                </div>
+                )}
               </div>
 
               {/* TEST EMAIL SECTION IF CONFIGURED */}

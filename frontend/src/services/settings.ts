@@ -93,4 +93,9 @@ export const settingsService = {
     const response = await api.post('/settings/integrations/sendgrid/reply-mailbox/verify-otp', { otp });
     return response.data;
   },
+
+  verifyInboundWebhook: async (): Promise<{ message: string; isVerified: boolean }> => {
+    const response = await api.post('/settings/integrations/sendgrid/inbound/verify');
+    return response.data;
+  },
 };
