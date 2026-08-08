@@ -262,10 +262,17 @@ export interface RazorpayIntegrationStatus extends BaseIntegrationStatus {
   lastWebhookReceivedAt?: string | null;
 }
 
+export interface InboundParseIntegrationStatus {
+  webhookUrl: string;
+  sendgridSettingsUrl: string;
+  isVerified: boolean;
+}
+
 export interface IntegrationsResponse {
   sendgrid: SendgridIntegrationStatus;
   smtp: SmtpIntegrationStatus;
   razorpay: RazorpayIntegrationStatus;
+  inboundParse?: InboundParseIntegrationStatus;
 }
 
 export interface TeamMember {
