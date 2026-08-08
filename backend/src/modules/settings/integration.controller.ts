@@ -68,8 +68,9 @@ export class IntegrationController {
       ]);
 
       let webhookToken = tenantId;
+      let settings = null;
       if (this.settingsRepo) {
-        let settings = await this.settingsRepo.getSettings(tenantId);
+        settings = await this.settingsRepo.getSettings(tenantId);
         if (!settings?.webhookToken) {
           settings = await this.settingsRepo.rotateWebhookToken(tenantId);
         }
@@ -90,8 +91,108 @@ export class IntegrationController {
           webhookUrl: inboundWebhookUrl,
           sendgridSettingsUrl: 'https://app.sendgrid.com/settings/parse',
           isVerified: hasInbound,
+          replyMode: settings?.replyMode || 'webhook_only',
+          replyMailboxEmail: settings?.replyMailboxEmail || null,
+          replyMailboxVerified: settings?.replyMailboxVerified || false,
         },
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  setReplyMode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const { replyMode, replyMailboxEmail } = req.body;
+
+      if (!['real_mailbox', 'webhook_only'].includes(replyMode)) {
+        throw new ValidationError('Invalid reply mode. Must be real_mailbox or webhook_only.');
+      }
+
+      if (replyMode === 'real_mailbox' && !replyMailboxEmail) {
+        throw new ValidationError('Reply mailbox email is required for real_mailbox mode.');
+      }
+
+      if (!this.settingsRepo) {
+        res.status(500).json({ error: { message: 'Settings repository not configured' } });
+        return;
+      }
+
+      const updated = await this.settingsRepo.setReplyMode(tenantId, replyMode, replyMailboxEmail);
+
+      res.json({
+        message: 'Reply mode updated successfully',
+        replyMode: updated.replyMode,
+        replyMailboxEmail: updated.replyMailboxEmail,
+        replyMailboxVerified: updated.replyMailboxVerified,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  sendReplyMailboxOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      if (!this.settingsRepo) {
+        res.status(500).json({ error: { message: 'Settings repository not configured' } });
+        return;
+      }
+
+      const settings = await this.settingsRepo.getSettings(tenantId);
+      if (!settings || settings.replyMode !== 'real_mailbox' || !settings.replyMailboxEmail) {
+        throw new ValidationError('Tenant is not configured for real mailbox reply mode.');
+      }
+
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      await this.settingsRepo.saveReplyMailboxOtp(tenantId, otpCode, expiresAt);
+
+      if (this.communicationService) {
+        await this.communicationService.send({
+          tenantId,
+          to: settings.replyMailboxEmail,
+          subject: 'Jaktra Mailbox Verification Code',
+          html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
+            <h2 style="color: #1e293b; margin-top: 0;">Verify Your Reply Mailbox</h2>
+            <p style="color: #475569;">Enter the following 6-digit OTP code in Jaktra Settings to verify ownership of <strong>${settings.replyMailboxEmail}</strong>:</p>
+            <div style="background-color: #f1f5f9; padding: 16px; text-align: center; border-radius: 6px; font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #2563eb; margin: 20px 0;">
+              ${otpCode}
+            </div>
+            <p style="color: #64748b; font-size: 13px;">This verification code expires in 10 minutes.</p>
+          </div>`,
+        });
+      }
+
+      res.json({ message: `Verification OTP sent to ${settings.replyMailboxEmail}` });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyReplyMailboxOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const { otp } = req.body;
+
+      if (!otp || typeof otp !== 'string' || otp.trim().length !== 6) {
+        throw new ValidationError('6-digit OTP code is required.');
+      }
+
+      if (!this.settingsRepo) {
+        res.status(500).json({ error: { message: 'Settings repository not configured' } });
+        return;
+      }
+
+      const result = await this.settingsRepo.verifyReplyMailboxOtp(tenantId, otp);
+      if (!result.success) {
+        res.status(400).json({ error: { message: result.message } });
+        return;
+      }
+
+      res.json({ message: 'Reply mailbox verified successfully!', replyMailboxVerified: true });
     } catch (error) {
       next(error);
     }

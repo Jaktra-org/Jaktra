@@ -92,8 +92,33 @@ describe('CommunicationService Outbound replyTo Injection', () => {
     );
   });
 
-  it('should override replyTo with sub-address when INBOUND_PARSE_DOMAIN is configured', async () => {
+  it('should sub-address replyTo using tenant replyTo domain when invoiceId is present', async () => {
+    const invoiceId = '123e4567-e89b-12d3-a456-426614174000';
+
+    await commService.send({
+      tenantId: 'tenant-123',
+      to: 'client@test.com',
+      subject: 'Urgent Pay',
+      html: '<p>Pay now</p>',
+      invoiceId,
+    });
+
+    expect(mockTenantMailer.sendCollectionEmail).toHaveBeenCalledWith(
+      'tenant-123',
+      expect.objectContaining({
+        replyTo: `reply+${invoiceId}@test.com`,
+      }),
+      { invoiceId }
+    );
+  });
+
+  it('should fallback to INBOUND_PARSE_DOMAIN if sender email domain is not available', async () => {
     config.INBOUND_PARSE_DOMAIN = 'replies.jaktra.site';
+    (commService as any).integrationService.getEffectiveSenderConfig = vi.fn().mockResolvedValue({
+      senderName: 'Test Sender',
+      senderEmail: 'invalid-no-domain',
+      replyTo: null,
+    });
     const invoiceId = '123e4567-e89b-12d3-a456-426614174000';
 
     await commService.send({
@@ -108,27 +133,6 @@ describe('CommunicationService Outbound replyTo Injection', () => {
       'tenant-123',
       expect.objectContaining({
         replyTo: `reply+${invoiceId}@replies.jaktra.site`,
-      }),
-      { invoiceId }
-    );
-  });
-
-  it('should use settings replyTo if INBOUND_PARSE_DOMAIN is not configured', async () => {
-    config.INBOUND_PARSE_DOMAIN = undefined;
-    const invoiceId = '123e4567-e89b-12d3-a456-426614174000';
-
-    await commService.send({
-      tenantId: 'tenant-123',
-      to: 'client@test.com',
-      subject: 'Urgent Pay',
-      html: '<p>Pay now</p>',
-      invoiceId,
-    });
-
-    expect(mockTenantMailer.sendCollectionEmail).toHaveBeenCalledWith(
-      'tenant-123',
-      expect.objectContaining({
-        replyTo: 'custom-reply@test.com',
       }),
       { invoiceId }
     );

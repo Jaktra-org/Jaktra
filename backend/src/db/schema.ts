@@ -321,6 +321,11 @@ export const tenantSettings = mysqlTable('tenant_settings', {
   dlqThreshold: int('dlq_threshold').notNull().default(3),
   mfaRequired: boolean('mfa_required').notNull().default(false),
   inboundBlockedByAdmin: boolean('inbound_blocked_by_admin').notNull().default(false),
+  replyMode: varchar('reply_mode', { length: 32 }).notNull().default('webhook_only'),
+  replyMailboxEmail: varchar('reply_mailbox_email', { length: 255 }),
+  replyMailboxVerified: boolean('reply_mailbox_verified').notNull().default(false),
+  replyMailboxOtp: varchar('reply_mailbox_otp', { length: 255 }),
+  replyMailboxOtpExpiresAt: datetime('reply_mailbox_otp_expires_at', { mode: 'date' }),
 });
 
 export const tenantIntegrations = mysqlTable('tenant_integrations', {

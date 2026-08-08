@@ -26,6 +26,9 @@ describe('GET /api/settings/integrations/ Routing & Role Restrictions', () => {
       setDefaultProvider: dummyHandler,
       saveRazorpayKey: dummyHandler,
       disconnectRazorpay: dummyHandler,
+      setReplyMode: dummyHandler,
+      sendReplyMailboxOtp: dummyHandler,
+      verifyReplyMailboxOtp: dummyHandler,
     };
 
     const authMiddleware = (req: any, res: any, next: any): void => {

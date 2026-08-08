@@ -170,6 +170,34 @@ export class DisputeService {
       body: emailBody,
       source: 'email',
     }, invoice);
+
+    // Auto-forward copy to real tenant mailbox if configured and verified
+    try {
+      const [settings] = await this.db
+        .select()
+        .from(tenantSettings)
+        .where(eq(tenantSettings.tenantId, tenantId))
+        .limit(1);
+
+      if (
+        settings?.replyMode === 'real_mailbox' &&
+        settings?.replyMailboxVerified &&
+        settings?.replyMailboxEmail &&
+        this.communicationService
+      ) {
+        logger.info(`Auto-forwarding inbound email for invoice ${invoiceId} to verified tenant mailbox: ${settings.replyMailboxEmail}`);
+        await this.communicationService.forwardInboundEmail({
+          tenantId,
+          to: settings.replyMailboxEmail,
+          from: senderEmail,
+          subject: params.subject,
+          text: params.text,
+          html: params.html,
+        });
+      }
+    } catch (fwdErr) {
+      logger.error(`Failed to execute auto-forwarding for tenant ${tenantId}:`, fwdErr);
+    }
   }
 
   async createDisputeRecord(

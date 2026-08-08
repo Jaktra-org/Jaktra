@@ -29,6 +29,20 @@
       "when": 1785090000000,
       "tag": "0003_remove_email_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1785133589847,
+      "tag": "0004_watery_iron_monger",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1785137000000,
+      "tag": "0005_sendgrid_dual_reply_mode",
+      "breakpoints": true
     }
   ]
 }

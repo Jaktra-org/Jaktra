@@ -192,8 +192,18 @@ export class CommunicationService {
     }
 
     let customReplyTo = replyTo || undefined;
-    if (config.INBOUND_PARSE_DOMAIN && invoiceId) {
-      customReplyTo = `reply+${invoiceId}@${config.INBOUND_PARSE_DOMAIN}`;
+
+    let replyDomain = '';
+    if (replyTo && replyTo.includes('@')) {
+      replyDomain = replyTo.split('@')[1];
+    } else if (senderEmail && senderEmail.includes('@')) {
+      replyDomain = senderEmail.split('@')[1];
+    } else if (config.INBOUND_PARSE_DOMAIN) {
+      replyDomain = config.INBOUND_PARSE_DOMAIN;
+    }
+
+    if (invoiceId && replyDomain) {
+      customReplyTo = `reply+${invoiceId}@${replyDomain}`;
     }
 
     // Generate portal link if it doesn't exist yet (so a row is created when email goes out)
@@ -239,6 +249,61 @@ export class CommunicationService {
       subject: 'Integration Test',
       html: '<p>Your email integration is working correctly.</p>',
     });
+  }
+
+  async forwardInboundEmail(params: {
+    tenantId: string;
+    to: string;
+    from: string;
+    subject: string;
+    text?: string;
+    html?: string;
+  }): Promise<boolean> {
+    const { tenantId, to, from, subject, text, html } = params;
+    let senderName = 'Jaktra Inbound Forwarder';
+    let senderEmail = '';
+
+    if (this.integrationService) {
+      try {
+        const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId, 'sendgrid');
+        senderName = senderConfig.senderName || senderName;
+        senderEmail = senderConfig.senderEmail || '';
+      } catch (err) {
+        logger.warn(`Failed to fetch sender config for forwarding (tenant: ${tenantId}):`, err);
+      }
+    }
+
+    if (!senderEmail) {
+      senderEmail = 'noreply@jaktra.site';
+    }
+
+    const forwardHtml = html
+      ? `<div style="background-color: #f8fafc; padding: 12px; border-left: 4px solid #3b82f6; margin-bottom: 16px; font-family: sans-serif;">
+           <strong>Forwarded Customer Reply</strong><br/>
+           <strong>From:</strong> ${from}<br/>
+           <strong>Subject:</strong> ${subject}
+         </div>${html}`
+      : `<div style="background-color: #f8fafc; padding: 12px; border-left: 4px solid #3b82f6; margin-bottom: 16px; font-family: sans-serif;">
+           <strong>Forwarded Customer Reply</strong><br/>
+           <strong>From:</strong> ${from}<br/>
+           <strong>Subject:</strong> ${subject}
+         </div><pre style="font-family: inherit;">${text || ''}</pre>`;
+
+    const message: EmailMessage = {
+      to,
+      from: { name: senderName, email: senderEmail },
+      replyTo: from,
+      subject: `[Fwd] ${subject}`,
+      html: forwardHtml,
+    };
+
+    try {
+      const result = await this.tenantMailer.sendCollectionEmail(tenantId, message);
+      return result.success;
+    } catch (err) {
+      logger.error(`Failed to forward inbound email for tenant ${tenantId}:`, err);
+      return false;
+    }
   }
 
   async getSettings(tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['getSettings']>>> {
