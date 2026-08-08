@@ -20,6 +20,9 @@ export interface IntegrationStatus {
   maskedUsername?: string;
   port?: number;
   securityMode?: string;
+  senderName?: string | null;
+  senderEmail?: string | null;
+  replyTo?: string | null;
 }
 
 export interface RazorpayIntegrationStatus {
@@ -35,6 +38,7 @@ export interface SendgridConfigPayload {
   senderName?: string;
   senderEmail?: string;
   replyTo?: string | null;
+  isSenderConfigured?: boolean;
 }
 
 export interface EffectiveSenderConfig {
@@ -171,7 +175,19 @@ export class IntegrationService {
     }
 
     let extraConfig = {};
-    if (provider === 'smtp') {
+    if (provider === 'sendgrid') {
+      try {
+        const config = await this.getDecryptedSendgridConfig(tenantId);
+        extraConfig = {
+          senderName: config.senderName || null,
+          senderEmail: config.senderEmail || null,
+          replyTo: config.replyTo || null,
+          isSenderConfigured: !!config.isSenderConfigured,
+        };
+      } catch (e) {
+        logger.error(`Failed to decrypt SendGrid config for status check (tenant: ${tenantId}):`, e);
+      }
+    } else if (provider === 'smtp') {
       try {
         const config = await this.getDecryptedSmtpConfig(tenantId);
         extraConfig = {
@@ -305,31 +321,31 @@ export class IntegrationService {
       }
     }
 
+    const isExplicitSenderSave = data.senderEmail !== undefined && data.senderEmail.trim() !== '';
+
     const payloadToSave: SendgridConfigPayload = {
       apiKey: apiKeyToSave.trim(),
       senderName: data.senderName ?? existingPayload.senderName,
       senderEmail: data.senderEmail ?? existingPayload.senderEmail,
       replyTo: data.replyTo !== undefined ? data.replyTo : existingPayload.replyTo,
+      isSenderConfigured: isExplicitSenderSave ? true : (data.apiKey && !data.senderEmail ? false : existingPayload.isSenderConfigured ?? false),
     };
 
-    const senderEmail = (payloadToSave.senderEmail || '').trim();
-    const replyTo = (payloadToSave.replyTo || '').trim();
+    // Only perform sender email & SendGrid identity verification if data.senderEmail was EXPLICITLY passed in this request!
+    if (data.senderEmail !== undefined && data.senderEmail.trim() !== '') {
+      const senderEmail = data.senderEmail.trim();
+      const replyTo = data.replyTo !== undefined && data.replyTo ? data.replyTo.trim() : '';
 
-    if (!senderEmail || !senderEmail.includes('@')) {
-      throw new ValidationError('Valid Sender Email is required for SendGrid configuration.');
-    }
-    await verifyEmailDomainMx(senderEmail);
+      await verifyEmailDomainMx(senderEmail);
 
-    if (replyTo) {
-      if (!replyTo.includes('@')) {
-        throw new ValidationError('Valid Reply-To Email is required.');
+      if (replyTo && replyTo.includes('@')) {
+        await verifyEmailDomainMx(replyTo);
       }
-      await verifyEmailDomainMx(replyTo);
-    }
 
-    const health = await this.performSendgridIdentityCheck(apiKeyToSave.trim(), senderEmail);
-    if (health.senderVerified === false) {
-      throw new ValidationError(`Sender email "${senderEmail}" is not configured as a verified Sender Identity in your SendGrid account. Please create and verify this sender identity in SendGrid before saving.`);
+      const health = await this.performSendgridIdentityCheck(apiKeyToSave.trim(), senderEmail);
+      if (health.senderVerified === false) {
+        throw new ValidationError(`Sender email "${senderEmail}" is not configured as a verified Sender Identity in your SendGrid account. Please create and verify this sender identity in SendGrid before saving.`);
+      }
     }
 
     const version = 1;

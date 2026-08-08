@@ -246,6 +246,10 @@ export interface BaseIntegrationStatus {
 
 export interface SendgridIntegrationStatus extends BaseIntegrationStatus {
   provider: 'sendgrid';
+  senderName?: string | null;
+  senderEmail?: string | null;
+  replyTo?: string | null;
+  isSenderConfigured?: boolean;
 }
 
 export interface SmtpIntegrationStatus extends BaseIntegrationStatus {

@@ -22,7 +22,15 @@ export const settingsService = {
     return response.data;
   },
 
-  saveSendgridKey: async (data: { apiKey: string; senderName?: string; senderEmail?: string; replyTo?: string | null; otpCode?: string }): Promise<{ requiresOtp?: boolean; targetEmail?: string; message: string }> => {
+  saveSendgridKey: async (data: {
+    apiKey: string;
+    senderName?: string;
+    senderEmail?: string;
+    replyTo?: string | null;
+    replyMode?: 'real_mailbox' | 'webhook_only';
+    replyMailboxEmail?: string;
+    otpCode?: string;
+  }): Promise<{ requiresOtp?: boolean; targetEmail?: string; message: string }> => {
     const response = await api.post('/settings/integrations/sendgrid', data);
     return response.data;
   },

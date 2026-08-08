@@ -244,7 +244,7 @@ export class IntegrationController {
   saveSendgridKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      const { apiKey, senderName, senderEmail, replyTo, otpCode } = req.body;
+      const { apiKey, senderName, senderEmail, replyTo, replyMode, replyMailboxEmail, otpCode } = req.body;
 
       if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim().startsWith('SG.')) {
         next(new ValidationError('Invalid SendGrid API Key format. Must start with SG.'));
@@ -263,6 +263,10 @@ export class IntegrationController {
 
         const targetEmail = replyTo && typeof replyTo === 'string' && replyTo.trim() !== '' ? replyTo.trim() : senderEmail.trim();
         await verifyEmailDomainMx(targetEmail);
+      }
+
+      if (replyMode && ['real_mailbox', 'webhook_only'].includes(replyMode) && this.settingsRepo) {
+        await this.settingsRepo.setReplyMode(tenantId, replyMode, replyMailboxEmail);
       }
 
       const result = await this.integrationService.validateAndSaveSendgridKey(tenantId, {

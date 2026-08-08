@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../services/settings';
 import { authService } from '../services/auth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
-import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon, Trash2, X, RefreshCw, ExternalLink } from 'lucide-react';
+import { Loader2, Save, Building, Clock, DollarSign, Settings as SettingsIcon, Mail, Link as LinkIcon, Users, CreditCard, User as UserIcon, Trash2, X, RefreshCw, ExternalLink, Key } from 'lucide-react';
 import type { TenantSettings, IntegrationsResponse, SmtpConfig } from '../types/api';
 import { getErrorMessage } from '../utils/error-utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -452,43 +452,89 @@ function EmailSettings() {
           </div>
 
           {/* Line 3: SendGrid API Row */}
-          <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <span className={`w-3 h-3 rounded-full flex-shrink-0 ${sendgrid?.isConfigured ? (sendgrid.lastValidationResult === 'valid' ? 'bg-emerald-500' : 'bg-red-500') : 'bg-slate-300'}`} />
-              <div>
-                <h4 className="text-sm font-semibold text-slate-900 flex items-center">
-                  SendGrid API
-                  {sendgrid?.isConfigured && sendgrid.lastValidationResult === 'valid' && (
-                    <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">Active</span>
+          {(() => {
+            const isSendgridFullyActive =
+              !!sendgrid?.isConfigured &&
+              sendgrid.lastValidationResult === 'valid' &&
+              !!sendgrid?.isSenderConfigured &&
+              !!integrations?.inboundParse?.isVerified;
+
+            const isSendgridPartial =
+              !!sendgrid?.isConfigured && !isSendgridFullyActive;
+
+            const nextStep = !sendgrid?.isSenderConfigured ? 2 : 3;
+
+            return (
+              <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center space-x-3">
+                  <span
+                    className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                      isSendgridFullyActive
+                        ? 'bg-emerald-500'
+                        : sendgrid?.isConfigured && sendgrid.lastValidationResult !== 'valid'
+                        ? 'bg-red-500'
+                        : isSendgridPartial
+                        ? 'bg-amber-500'
+                        : 'bg-slate-300'
+                    }`}
+                  />
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 flex items-center">
+                      SendGrid API
+                      {isSendgridFullyActive && (
+                        <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                          Active ✓
+                        </span>
+                      )}
+                      {isSendgridPartial && (
+                        <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                          Incomplete Setup (Step {nextStep} of 3)
+                        </span>
+                      )}
+                      {sendgrid?.isConfigured && sendgrid.lastValidationResult !== 'valid' && (
+                        <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">
+                          Invalid Key
+                        </span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {isSendgridFullyActive
+                        ? `Connected (${sendgrid?.senderEmail || settings?.senderEmail || 'Sender set'})`
+                        : isSendgridPartial
+                        ? `API Key validated — Complete Step ${nextStep} to activate email sending.`
+                        : 'Not configured — connect your SendGrid API key and sender identity.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <button
+                    onClick={() => setSendgridModalOpen(true)}
+                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-md shadow-sm transition-colors ${
+                      isSendgridFullyActive
+                        ? 'text-slate-700 bg-white border border-slate-300 hover:bg-slate-50'
+                        : isSendgridPartial
+                        ? 'text-white bg-blue-600 hover:bg-blue-700 border border-blue-600'
+                        : 'text-slate-700 bg-white border border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    {isSendgridFullyActive
+                      ? 'Configure Settings'
+                      : isSendgridPartial
+                      ? `Continue Setup (Step ${nextStep})`
+                      : 'Set Up SendGrid'}
+                  </button>
+                  {sendgrid?.isConfigured && (
+                    <button
+                      onClick={() => disconnectSendgridMutation.mutate()}
+                      className="px-3.5 py-1.5 text-xs font-semibold text-red-600 bg-white border border-slate-300 hover:bg-red-50 rounded-md shadow-sm transition-colors"
+                    >
+                      Remove
+                    </button>
                   )}
-                  {sendgrid?.isConfigured && sendgrid.lastValidationResult !== 'valid' && (
-                    <span className="ml-2 text-[10px] uppercase font-bold tracking-wider text-red-700 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">Invalid</span>
-                  )}
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {sendgrid?.isConfigured
-                    ? `API Key Configured (${settings?.senderEmail || 'No sender set'})`
-                    : 'Not configured — connect your SendGrid API key and sender identity.'}
-                </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-2 flex-shrink-0">
-              <button
-                onClick={() => setSendgridModalOpen(true)}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md shadow-sm transition-colors"
-              >
-                {sendgrid?.isConfigured ? 'Configure Settings' : 'Set Up SendGrid'}
-              </button>
-              {sendgrid?.isConfigured && (
-                <button
-                  onClick={() => disconnectSendgridMutation.mutate()}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-red-600 bg-white border border-slate-300 hover:bg-red-50 rounded-md shadow-sm transition-colors"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
+            );
+          })()}
         </CardContent>
       </Card>
 
@@ -778,12 +824,7 @@ interface SendGridSetupModalProps {
 
 function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail, inboundParse }: SendGridSetupModalProps) {
   const queryClient = useQueryClient();
-  const [step, setStep] = useState<'config' | 'otp'>('config');
-  const [targetOtpEmail, setTargetOtpEmail] = useState('');
-  const [otpCodeInput, setOtpCodeInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [testEmailInput, setTestEmailInput] = useState(userEmail || '');
 
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [senderName, setSenderName] = useState(settings?.senderName || 'Finance Team');
@@ -807,58 +848,53 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
     return () => clearInterval(timer);
   }, [otpCooldown]);
 
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(
+    !integration?.isConfigured ? 1 : (!settings?.senderEmail ? 2 : 3)
+  );
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isStep2SavedLocally, setIsStep2SavedLocally] = useState<boolean>(false);
+
   const saveKeyOnlyMutation = useMutation({
     mutationFn: (apiKey: string) =>
       settingsService.saveSendgridKey({
         apiKey,
-        senderName: senderName.trim() || 'Finance Team',
-        senderEmail: senderEmail.trim() || userEmail,
-        replyTo: replyTo.trim() || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
       queryClient.invalidateQueries({ queryKey: ['sendgrid-health'] });
       setErrorMsg('');
-      setInboundOtpMsg('SendGrid API Key saved successfully!');
+      setInboundOtpMsg('Step 1 Complete: API Key saved and verified.');
       setInboundOtpErr('');
+      setIsStep2SavedLocally(false);
+      setWizardStep(2);
     },
     onError: (err: unknown) => {
       setErrorMsg(getErrorMessage(err));
     },
   });
 
-  const saveMutation = useMutation({
-    mutationFn: (data: { apiKey: string; senderName: string; senderEmail: string; replyTo?: string | null; otpCode?: string }) =>
-      settingsService.saveSendgridKey(data),
-    onSuccess: (res) => {
-      if (res.requiresOtp) {
-        setStep('otp');
-        setTargetOtpEmail(res.targetEmail || '');
-        setErrorMsg('');
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['integrations'] });
-        queryClient.invalidateQueries({ queryKey: ['settings'] });
-        queryClient.invalidateQueries({ queryKey: ['sendgrid-health'] });
-        setErrorMsg('');
-        onClose();
-      }
-    },
-    onError: (err: unknown) => {
-      setErrorMsg(getErrorMessage(err));
-    },
-  });
-
-  const replyModeMutation = useMutation({
-    mutationFn: (data: { replyMode: 'real_mailbox' | 'webhook_only'; replyMailboxEmail?: string }) =>
-      settingsService.setReplyMode(data),
+  const saveSenderDetailsMutation = useMutation({
+    mutationFn: () =>
+      settingsService.saveSendgridKey({
+        apiKey: apiKeyInput.trim() || 'SG.placeholder',
+        senderName: senderName.trim(),
+        senderEmail: senderEmail.trim(),
+        replyTo: replyTo.trim() || null,
+        replyMode: replyMode,
+        replyMailboxEmail: replyMode === 'real_mailbox' ? replyMailboxEmail.trim() : undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
-      setInboundOtpMsg('Reply mode saved. If real mailbox mode was selected, please verify ownership with an OTP.');
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['sendgrid-health'] });
+      setErrorMsg('');
+      setInboundOtpMsg('Step 2 Complete: Outbound Sender identity & reply mode saved successfully!');
       setInboundOtpErr('');
+      setIsStep2SavedLocally(true);
     },
     onError: (err: unknown) => {
-      setInboundOtpErr(getErrorMessage(err));
+      setErrorMsg(getErrorMessage(err));
     },
   });
 
@@ -911,17 +947,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
     },
   });
 
-  const testEmailMutation = useMutation({
-    mutationFn: (to: string) => settingsService.testEmail(to),
-    onMutate: () => setTestEmailStatus('sending'),
-    onSuccess: () => {
-      setTestEmailStatus('success');
-      setTimeout(() => setTestEmailStatus('idle'), 5000);
-    },
-    onError: () => {
-      setTestEmailStatus('error');
-    },
-  });
+
 
   const checkSendGridKeyConfigured = () => {
     if (!integration?.isConfigured && !apiKeyInput.trim()) {
@@ -939,518 +965,580 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
     setTimeout(() => setCopiedWebhook(false), 2500);
   };
 
-  const handleSaveReplyMode = (mode: 'real_mailbox' | 'webhook_only') => {
-    if (!checkSendGridKeyConfigured()) return;
-    setReplyMode(mode);
-    replyModeMutation.mutate({
-      replyMode: mode,
-      replyMailboxEmail: mode === 'real_mailbox' ? replyMailboxEmail : undefined,
-    });
-  };
 
-  const handleSaveMailboxEmail = () => {
-    if (!checkSendGridKeyConfigured()) return;
-    if (!replyMailboxEmail.trim()) {
-      setInboundOtpErr('Please enter a valid mailbox email address.');
-      return;
-    }
-    replyModeMutation.mutate({
-      replyMode: 'real_mailbox',
-      replyMailboxEmail: replyMailboxEmail.trim(),
-    });
-  };
 
-  const handleSave = () => {
-    if (step === 'config') {
-      if (!apiKeyInput.trim() && !integration?.isConfigured) {
-        setErrorMsg('SendGrid API Key is required.');
-        return;
-      }
-      if (apiKeyInput.trim() && !apiKeyInput.trim().startsWith('SG.')) {
-        setErrorMsg('Invalid SendGrid key format. Key must start with SG.');
-        return;
-      }
-      if (!senderName.trim()) {
-        setErrorMsg('Sender Name is required.');
-        return;
-      }
-      if (!senderEmail.trim() || !senderEmail.includes('@')) {
-        setErrorMsg('Valid Sender Email is required.');
-        return;
-      }
 
-      saveMutation.mutate({
-        apiKey: apiKeyInput.trim() || 'SG.placeholder',
-        senderName: senderName.trim(),
-        senderEmail: senderEmail.trim(),
-        replyTo: replyTo.trim() || null,
-      });
-    } else {
-      if (!otpCodeInput.trim() || otpCodeInput.trim().length !== 6) {
-        setErrorMsg('Please enter the 6-digit verification code sent to your inbox.');
-        return;
-      }
-
-      saveMutation.mutate({
-        apiKey: apiKeyInput.trim() || 'SG.placeholder',
-        senderName: senderName.trim(),
-        senderEmail: senderEmail.trim(),
-        replyTo: replyTo.trim() || null,
-        otpCode: otpCodeInput.trim(),
-      });
-    }
-  };
 
   const isConfigured = integration?.isConfigured;
-  const hasKeyInput = apiKeyInput.trim().startsWith('SG.') && apiKeyInput.trim().length >= 15;
-  const isUnlocked = isConfigured || hasKeyInput;
   const webhookUrl = inboundParse?.webhookUrl || 'https://www.jaktra.site/api/webhooks/sendgrid/inbound/webhook-token';
   const sendgridSettingsUrl = inboundParse?.sendgridSettingsUrl || 'https://app.sendgrid.com/settings/parse';
+
+  const isStep1Done = !!isConfigured;
+
+  const isSenderSavedOnServer = !!integration?.isSenderConfigured;
+
+  const isStep2Done =
+    isStep1Done &&
+    (isStep2SavedLocally || isSenderSavedOnServer) &&
+    (replyMode === 'real_mailbox' ? !!inboundParse?.replyMailboxVerified : true);
+  const isStep3Done = isStep1Done && isStep2Done && isVerified;
+  const isAllDone = isStep1Done && isStep2Done && isStep3Done;
+
+  const handleAttemptClose = () => {
+    if (isAllDone) {
+      onClose();
+    } else {
+      setShowExitConfirm(true);
+    }
+  };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
-              {step === 'config' ? 'SendGrid Complete Setup (Outbound & Inbound)' : 'Verify Outbound Sender Email'}
-            </h3>
+            <h3 className="text-base font-bold text-slate-900">SendGrid Integration Setup</h3>
             <p className="text-xs text-slate-500">
-              {step === 'config'
-                ? 'Configure API Key, Sender Identity, and Inbound Webhook Parse at once.'
-                : `Verification code sent to ${targetOtpEmail}`}
+              Step {wizardStep} of 3 — Complete all 3 steps to activate outbound email & inbound webhook.
             </p>
           </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-md transition-colors">
+          <button onClick={handleAttemptClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-md transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Wizard Step Navigation Bar */}
+        <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setWizardStep(1)}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
+                wizardStep === 1
+                  ? 'bg-blue-600 text-white font-bold'
+                  : isStep1Done
+                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                  : 'bg-slate-200 text-slate-600'
+              }`}
+            >
+              <span>1. API Key</span>
+              {isStep1Done && <span>✓</span>}
+            </button>
+
+            <span className="text-slate-400">→</span>
+
+            <button
+              type="button"
+              disabled={!isStep1Done}
+              onClick={() => isStep1Done && setWizardStep(2)}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
+                wizardStep === 2
+                  ? 'bg-blue-600 text-white font-bold'
+                  : isStep2Done
+                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                  : !isStep1Done
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+              }`}
+            >
+              <span>2. Sender & Mode</span>
+              {isStep2Done && <span>✓</span>}
+            </button>
+
+            <span className="text-slate-400">→</span>
+
+            <button
+              type="button"
+              disabled={!isStep2Done}
+              onClick={() => isStep2Done && setWizardStep(3)}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-colors ${
+                wizardStep === 3
+                  ? 'bg-blue-600 text-white font-bold'
+                  : isStep3Done
+                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                  : !isStep2Done
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+              }`}
+            >
+              <span>3. Webhook</span>
+              {isStep3Done && <span>✓</span>}
+            </button>
+          </div>
+
+          <span className="text-xs font-bold text-slate-500">Step {wizardStep} of 3</span>
+        </div>
+
+        {/* Modal Body */}
         <div className="p-6 space-y-6 overflow-y-auto">
+          {showExitConfirm && (
+            <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg space-y-2">
+              <p className="text-xs text-amber-900 font-semibold">
+                ⚠️ SendGrid setup is incomplete. Are you sure you want to exit before completing all 3 steps?
+              </p>
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowExitConfirm(false)}
+                  className="px-3 py-1.5 bg-amber-600 text-white text-xs font-semibold rounded hover:bg-amber-700 transition-colors"
+                >
+                  Continue Setup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExitConfirm(false);
+                    onClose();
+                  }}
+                  className="px-3 py-1.5 bg-slate-200 text-slate-800 text-xs font-semibold rounded hover:bg-slate-300 transition-colors"
+                >
+                  Exit Anyway
+                </button>
+              </div>
+            </div>
+          )}
+
           {errorMsg && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 font-medium">
               {errorMsg}
             </div>
           )}
 
-          {step === 'config' ? (
-            <>
-              {/* SECTION 1: OUTBOUND SENDGRID API KEY & SENDER IDENTITY */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center justify-between">
-                  <span className="flex items-center">
-                    <Mail className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
-                    1. Outbound SendGrid API & Sender Identity
-                  </span>
-                  {isConfigured && (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-semibold">
-                      API Key Configured ✓
-                    </span>
-                  )}
+          {/* STEP 1 VIEW */}
+          {wizardStep === 1 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center">
+                  <Key className="w-4 h-4 mr-2 text-blue-600" />
+                  Step 1 of 3: Save SendGrid API Key
                 </h4>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">SendGrid API Key</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="password"
-                      value={apiKeyInput}
-                      onChange={(e) => {
-                        setApiKeyInput(e.target.value);
-                        setErrorMsg('');
-                      }}
-                      className="flex-1 p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder={isConfigured ? '•••••••••••••••••••••••••••• (Key Saved)' : 'SG.xxxxxxxxxxxxxxxxxx'}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const key = apiKeyInput.trim();
-                        if (!key && isConfigured) return;
-                        if (!key || !key.startsWith('SG.')) {
-                          setErrorMsg('SendGrid API Key must start with SG.');
-                          return;
-                        }
-                        saveKeyOnlyMutation.mutate(key);
-                      }}
-                      disabled={saveKeyOnlyMutation.isPending || (!apiKeyInput.trim() && isConfigured)}
-                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 flex items-center"
-                    >
-                      {saveKeyOnlyMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
-                      {saveKeyOnlyMutation.isPending ? 'Saving Key...' : 'Save API Key'}
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-slate-500">Must be a restricted key starting with SG. with Mail Send permissions.</p>
-                </div>
-
-                <div className={!isUnlocked ? 'opacity-50 pointer-events-none select-none' : ''}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700">Sender Name</label>
-                      <input
-                        type="text"
-                        value={senderName}
-                        onChange={(e) => setSenderName(e.target.value)}
-                        disabled={!isUnlocked}
-                        className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g. Acme Billing"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700">Sender Email</label>
-                      <input
-                        type="email"
-                        value={senderEmail}
-                        onChange={(e) => setSenderEmail(e.target.value)}
-                        disabled={!isUnlocked}
-                        className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="billing@acme.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 mt-4">
-                    <label className="text-xs font-semibold text-slate-700">Reply-To Email (Optional Override)</label>
-                    <input
-                      type="email"
-                      value={replyTo}
-                      onChange={(e) => setReplyTo(e.target.value)}
-                      disabled={!isUnlocked}
-                      className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="support@acme.com"
-                    />
-                    <p className="text-[11px] text-slate-500">If left blank, replies will use your Sender Email domain.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 2: INBOUND EMAIL PARSE WEBHOOK & DUAL REPLY MODE */}
-              <div className={`space-y-4 pt-4 border-t border-slate-200 ${!isUnlocked ? 'opacity-50 pointer-events-none select-none' : ''}`}>
-                {!isUnlocked && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 font-medium">
-                    🔒 Enter and save your SendGrid API Key starting with SG. above to unlock sender identity and inbound parse settings.
-                  </div>
-                )}
-
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center justify-between">
-                  <span className="flex items-center">
-                    <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
-                    2. Inbound Reply Webhook & Mailbox Mode
+                {isStep1Done && (
+                  <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-300">
+                    API Key Configured & Valid ✓
                   </span>
-                  {isVerified ? (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-semibold">
-                      Inbound Active & Verified ✅
-                    </span>
-                  ) : (
-                    <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full font-semibold">
-                      Awaiting Webhook Setup
-                    </span>
-                  )}
-                </h4>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Your Copyable Inbound Webhook URL</label>
-                  <div className="flex items-center space-x-2">
-                    <code className="flex-1 p-2 bg-slate-50 border border-slate-300 rounded-md text-xs font-mono text-slate-800 break-all select-all">
-                      {webhookUrl}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={handleCopyWebhookUrl}
-                      className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-xs font-medium shrink-0 transition-colors"
-                    >
-                      {copiedWebhook ? 'Copied!' : 'Copy URL'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (checkSendGridKeyConfigured()) {
-                          verifyInboundWebhookMutation.mutate();
-                        }
-                      }}
-                      disabled={verifyInboundWebhookMutation.isPending || isVerified || !isUnlocked}
-                      className="px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
-                    >
-                      {verifyInboundWebhookMutation.isPending ? 'Verifying...' : isVerified ? 'Verified ✅' : 'Verify Webhook'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => rotateTokenMutation.mutate()}
-                      disabled={rotateTokenMutation.isPending || !isUnlocked}
-                      className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md text-xs font-medium shrink-0 transition-colors disabled:opacity-50"
-                      title="Rotate Token"
-                    >
-                      Rotate
-                    </button>
-                  </div>
-                </div>
-
-                {/* Reply Mode Selector */}
-                <div className="space-y-2 pt-2">
-                  <label className="text-xs font-semibold text-slate-700 block">
-                    Select Reply Handling Mode (Mandatory)
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div
-                      onClick={() => isUnlocked && handleSaveReplyMode('real_mailbox')}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                        replyMode === 'real_mailbox'
-                          ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2 mb-1">
-                        <input
-                          type="radio"
-                          name="setupReplyMode"
-                          checked={replyMode === 'real_mailbox'}
-                          onChange={() => isUnlocked && handleSaveReplyMode('real_mailbox')}
-                          disabled={!isUnlocked}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="font-semibold text-slate-900 text-xs">Mode 1: Real Mailbox</span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 pl-5 leading-tight">
-                        Replies go to Jaktra AI <strong>AND</strong> get auto-forwarded to your verified mailbox. Requires 6-digit OTP verification.
-                      </p>
-                    </div>
-
-                    <div
-                      onClick={() => isUnlocked && handleSaveReplyMode('webhook_only')}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                        replyMode === 'webhook_only'
-                          ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2 mb-1">
-                        <input
-                          type="radio"
-                          name="setupReplyMode"
-                          checked={replyMode === 'webhook_only'}
-                          onChange={() => isUnlocked && handleSaveReplyMode('webhook_only')}
-                          disabled={!isUnlocked}
-                          className="text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="font-semibold text-slate-900 text-xs">Mode 2: Virtual Sub-Address</span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 pl-5 leading-tight">
-                        Replies flow directly into Jaktra AI Dispute Engine. No mailbox or OTP verification required.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mode 2 Info Notice */}
-                {replyMode === 'webhook_only' && (
-                  <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-md text-xs text-emerald-800 font-medium">
-                    ✓ <strong>Mode 2 Selected:</strong> Customer email replies flow directly into Jaktra AI Dispute Engine via your Inbound Webhook. No real mailbox or OTP verification required.
-                  </div>
-                )}
-
-                {/* Real Mailbox OTP Section (Only visible in Mode 1) */}
-                {replyMode === 'real_mailbox' && (
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex-1">
-                        <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                          Real Mailbox Email Address
-                        </label>
-                        <div className="flex space-x-2">
-                          <input
-                            type="email"
-                            value={replyMailboxEmail}
-                            onChange={(e) => setReplyMailboxEmail(e.target.value)}
-                            disabled={!isUnlocked}
-                            placeholder="support@company.com"
-                            className="flex-1 px-2.5 py-1.5 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleSaveMailboxEmail}
-                            disabled={replyModeMutation.isPending || !isUnlocked}
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 pt-1">
-                        {inboundParse?.replyMailboxVerified ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                            Verified ✅
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-                            Unverified OTP
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {!inboundParse?.replyMailboxVerified && (
-                      <div className="p-2.5 bg-white border border-amber-200 rounded-md space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-slate-800 font-semibold">
-                            Step 2: Verify {replyMailboxEmail || 'your mailbox'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (checkSendGridKeyConfigured()) {
-                                sendInboundOtpMutation.mutate();
-                              }
-                            }}
-                            disabled={sendInboundOtpMutation.isPending || !replyMailboxEmail || otpCooldown > 0 || !isUnlocked}
-                            className="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded font-semibold transition-colors disabled:opacity-50"
-                          >
-                            {sendInboundOtpMutation.isPending
-                              ? 'Sending...'
-                              : otpCooldown > 0
-                              ? `Send OTP (${otpCooldown}s)`
-                              : 'Send 6-Digit OTP'}
-                          </button>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="text"
-                            maxLength={6}
-                            value={inboundOtpInput}
-                            onChange={(e) => setInboundOtpInput(e.target.value)}
-                            disabled={!isUnlocked}
-                            placeholder="6-digit OTP"
-                            className="w-32 px-2.5 py-1.5 border border-slate-300 rounded-md text-xs font-mono text-center tracking-widest focus:ring-2 focus:ring-blue-500"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (checkSendGridKeyConfigured()) {
-                                verifyInboundOtpMutation.mutate(inboundOtpInput);
-                              }
-                            }}
-                            disabled={verifyInboundOtpMutation.isPending || inboundOtpInput.trim().length !== 6 || !isUnlocked}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold transition-colors disabled:opacity-50"
-                          >
-                            {verifyInboundOtpMutation.isPending ? 'Verifying...' : 'Verify OTP'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {inboundOtpMsg && <p className="text-[11px] text-emerald-600 font-medium">{inboundOtpMsg}</p>}
-                {inboundOtpErr && <p className="text-[11px] text-red-600 font-medium">{inboundOtpErr}</p>}
-
-                {/* SendGrid Instructions - Automatically hides when inbound parse is verified */}
-                {!isVerified && (
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-1.5 text-xs text-slate-600">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-900">SendGrid Setup Instructions:</span>
-                      <a
-                        href={sendgridSettingsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center"
-                      >
-                        Open SendGrid Parse Settings <ExternalLink className="w-3 h-3 ml-1" />
-                      </a>
-                    </div>
-                    <ol className="list-decimal list-inside text-[11px] text-slate-500 space-y-0.5">
-                      <li>Click the link above to open SendGrid Inbound Parse.</li>
-                      <li>Click <strong>Add Host & URL</strong>.</li>
-                      <li>Select your email domain and paste your copied Webhook URL into the <strong>URL</strong> field.</li>
-                    </ol>
-                  </div>
                 )}
               </div>
 
-              {/* TEST EMAIL SECTION IF CONFIGURED */}
-              {isConfigured && (
-                <div className="pt-4 border-t border-slate-100">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Send Test Email</h4>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      value={testEmailInput}
-                      onChange={(e) => setTestEmailInput(e.target.value)}
-                      className="flex-1 p-2 border border-slate-300 rounded-md text-sm focus:ring-blue-500"
-                      placeholder="recipient@example.com"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => testEmailInput && testEmailMutation.mutate(testEmailInput)}
-                      disabled={testEmailStatus === 'sending' || !testEmailInput}
-                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-semibold transition-colors flex items-center disabled:opacity-50"
-                    >
-                      {testEmailStatus === 'sending' ? (
-                        <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Sending...</>
-                      ) : testEmailStatus === 'success' ? (
-                        <><span className="text-emerald-400 font-bold mr-1.5">✓</span> Sent</>
-                      ) : testEmailStatus === 'error' ? (
-                        <><span className="text-red-400 font-bold mr-1.5">✕</span> Failed</>
-                      ) : (
-                        <><Mail className="w-3.5 h-3.5 mr-1.5" /> Send Test</>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="space-y-4 py-2">
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
-                <p className="font-semibold mb-1">📬 Verification Code Sent!</p>
-                <p>
-                  A 6-digit verification code has been emailed to <strong>{targetOtpEmail}</strong>. Please check your inbox and enter the code below to confirm that this mailbox is active and receives emails.
-                </p>
-              </div>
+              <p className="text-xs text-slate-600">
+                Enter your SendGrid API Key to connect your account. Must be a restricted API Key starting with <code>SG.</code> containing <strong>Mail Send</strong> permissions.
+              </p>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Enter 6-Digit Verification Code</label>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">SendGrid API Key</label>
                 <input
-                  type="text"
-                  maxLength={6}
-                  value={otpCodeInput}
-                  onChange={(e) => setOtpCodeInput(e.target.value.replace(/\D/g, ''))}
-                  className="w-full p-3 border border-slate-300 rounded-lg text-center text-xl font-mono tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="123456"
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={(e) => {
+                    setApiKeyInput(e.target.value);
+                    setErrorMsg('');
+                  }}
+                  className="w-full p-2.5 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 font-mono"
+                  placeholder={isConfigured ? '•••••••••••••••••••••••••••• (Key Saved)' : 'SG.xxxxxxxxxxxxxxxxxx'}
                 />
               </div>
 
-              <div className="flex justify-between items-center text-xs pt-2">
+              {inboundOtpMsg && <p className="text-[11px] text-emerald-600 font-medium">{inboundOtpMsg}</p>}
+
+              <div className="pt-4 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setStep('config')}
-                  className="text-slate-500 hover:text-slate-800 font-medium underline"
+                  onClick={() => {
+                    const key = apiKeyInput.trim();
+                    if (!key && isConfigured) {
+                      setWizardStep(2);
+                      return;
+                    }
+                    if (!key || !key.startsWith('SG.')) {
+                      setErrorMsg('SendGrid API Key must start with SG.');
+                      return;
+                    }
+                    saveKeyOnlyMutation.mutate(key);
+                  }}
+                  disabled={saveKeyOnlyMutation.isPending}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-bold transition-all shadow-sm flex items-center disabled:opacity-50"
                 >
-                  Back to Configuration
+                  {saveKeyOnlyMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {saveKeyOnlyMutation.isPending ? 'Validating Key...' : 'Save Key & Continue to Step 2 →'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2 VIEW */}
+          {wizardStep === 2 && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center">
+                  <Mail className="w-4 h-4 mr-2 text-blue-600" />
+                  Step 2 of 3: Sender Identity & Reply Handling Mode
+                </h4>
+                {isStep2Done ? (
+                  <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-300">
+                    Step 2 Completed ✓
+                  </span>
+                ) : (
+                  <span className="text-xs bg-amber-100 text-amber-800 font-semibold px-2.5 py-0.5 rounded-full border border-amber-300">
+                    Step 2 Awaiting Action ⏳
+                  </span>
+                )}
+              </div>
+
+              {/* Mode Selection */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700 block">
+                  Select Reply Handling Mode (Mandatory)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => setReplyMode('real_mailbox')}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      replyMode === 'real_mailbox'
+                        ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 mb-1">
+                      <input
+                        type="radio"
+                        name="wizardReplyMode"
+                        checked={replyMode === 'real_mailbox'}
+                        onChange={() => setReplyMode('real_mailbox')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="font-semibold text-slate-900 text-xs">Mode 1: Real Mailbox</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 pl-5 leading-tight">
+                      Replies go to Jaktra AI <strong>AND</strong> get auto-forwarded to your verified mailbox. Requires 6-digit OTP verification.
+                    </p>
+                  </div>
+
+                  <div
+                    onClick={() => setReplyMode('webhook_only')}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      replyMode === 'webhook_only'
+                        ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 mb-1">
+                      <input
+                        type="radio"
+                        name="wizardReplyMode"
+                        checked={replyMode === 'webhook_only'}
+                        onChange={() => setReplyMode('webhook_only')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="font-semibold text-slate-900 text-xs">Mode 2: Virtual Sub-Address</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 pl-5 leading-tight">
+                      Replies flow directly into Jaktra AI Dispute Engine via sub-addressing. No mailbox or OTP verification required.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sender Details */}
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Outbound Sender Name</label>
+                    <input
+                      type="text"
+                      value={senderName}
+                      onChange={(e) => setSenderName(e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+                      placeholder="e.g. Acme Billing"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Outbound Sender Email</label>
+                    <input
+                      type="email"
+                      value={senderEmail}
+                      onChange={(e) => setSenderEmail(e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+                      placeholder="billing@acme.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Reply-To Email (Optional Override)</label>
+                  <input
+                    type="email"
+                    value={replyTo}
+                    onChange={(e) => setReplyTo(e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+                    placeholder="support@acme.com"
+                  />
+                </div>
+              </div>
+
+              {/* Mode 2 Info Notice */}
+              {replyMode === 'webhook_only' && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md text-xs text-emerald-800 font-medium">
+                  ✓ <strong>Mode 2 Selected:</strong> Customer replies flow directly into Jaktra AI Dispute Engine via Webhook. No real mailbox or OTP verification required.
+                </div>
+              )}
+
+              {/* Mode 1 Real Mailbox OTP Section */}
+              {replyMode === 'real_mailbox' && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex-1">
+                      <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                        Real Mailbox Email Address
+                      </label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="email"
+                          value={replyMailboxEmail}
+                          onChange={(e) => setReplyMailboxEmail(e.target.value)}
+                          placeholder="support@company.com"
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 pt-1">
+                      {inboundParse?.replyMailboxVerified ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          Verified ✅
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                          Unverified OTP
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {!inboundParse?.replyMailboxVerified && (
+                    <div className="p-2.5 bg-white border border-amber-200 rounded-md space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-slate-800 font-semibold">
+                          Verify ownership of {replyMailboxEmail || 'your mailbox'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (checkSendGridKeyConfigured()) {
+                              sendInboundOtpMutation.mutate();
+                            }
+                          }}
+                          disabled={sendInboundOtpMutation.isPending || !replyMailboxEmail || otpCooldown > 0}
+                          className="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded font-semibold transition-colors disabled:opacity-50"
+                        >
+                          {sendInboundOtpMutation.isPending
+                            ? 'Sending...'
+                            : otpCooldown > 0
+                            ? `Send OTP (${otpCooldown}s)`
+                            : 'Send 6-Digit OTP'}
+                        </button>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          value={inboundOtpInput}
+                          onChange={(e) => setInboundOtpInput(e.target.value)}
+                          placeholder="6-digit OTP"
+                          className="w-32 px-2.5 py-1.5 border border-slate-300 rounded-md text-xs font-mono text-center tracking-widest focus:ring-2 focus:ring-blue-500 bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (checkSendGridKeyConfigured()) {
+                              verifyInboundOtpMutation.mutate(inboundOtpInput);
+                            }
+                          }}
+                          disabled={verifyInboundOtpMutation.isPending || inboundOtpInput.trim().length !== 6}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
+                        >
+                          {verifyInboundOtpMutation.isPending ? 'Verifying...' : 'Verify OTP'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {inboundOtpMsg && <p className="text-[11px] text-emerald-600 font-medium">{inboundOtpMsg}</p>}
+              {inboundOtpErr && <p className="text-[11px] text-red-600 font-medium">{inboundOtpErr}</p>}
+
+              {/* Navigation */}
+              <div className="pt-4 flex justify-between items-center border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(1)}
+                  className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 text-xs font-medium transition-colors"
+                >
+                  ← Back to Step 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!senderName || !senderName.trim()) {
+                      setErrorMsg('Outbound Sender Name is required for Step 2.');
+                      return;
+                    }
+                    if (!senderEmail || !senderEmail.includes('@')) {
+                      setErrorMsg('Valid Outbound Sender Email is required for Step 2.');
+                      return;
+                    }
+                    saveSenderDetailsMutation.mutate(undefined, {
+                      onSuccess: () => {
+                        if (replyMode === 'real_mailbox' && !inboundParse?.replyMailboxVerified) {
+                          setErrorMsg('Please verify your real mailbox OTP before continuing to Step 3.');
+                          return;
+                        }
+                        setWizardStep(3);
+                      },
+                    });
+                  }}
+                  disabled={saveSenderDetailsMutation.isPending}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-bold transition-all shadow-sm flex items-center disabled:opacity-50"
+                >
+                  {saveSenderDetailsMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {saveSenderDetailsMutation.isPending ? 'Saving Sender Details...' : 'Save & Continue to Step 3 →'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 VIEW */}
+          {wizardStep === 3 && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center">
+                  <RefreshCw className="w-4 h-4 mr-2 text-blue-600" />
+                  Step 3 of 3: Inbound Webhook Parse Setup
+                </h4>
+                {isStep3Done ? (
+                  <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-300">
+                    Inbound Webhook Verified ✅
+                  </span>
+                ) : (
+                  <span className="text-xs bg-amber-100 text-amber-800 font-semibold px-2.5 py-0.5 rounded-full border border-amber-300">
+                    Awaiting Webhook Setup ⏳
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Your Copyable Inbound Webhook URL</label>
+                <div className="flex items-center space-x-2">
+                  <code className="flex-1 p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs font-mono text-slate-800 break-all select-all">
+                    {webhookUrl}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyWebhookUrl}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-xs font-medium shrink-0 transition-colors"
+                  >
+                    {copiedWebhook ? 'Copied!' : 'Copy URL'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => verifyInboundWebhookMutation.mutate()}
+                    disabled={verifyInboundWebhookMutation.isPending || isVerified}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
+                  >
+                    {verifyInboundWebhookMutation.isPending ? 'Verifying...' : isVerified ? 'Verified ✅' : 'Verify Webhook'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => rotateTokenMutation.mutate()}
+                    disabled={rotateTokenMutation.isPending}
+                    className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md text-xs font-medium shrink-0 transition-colors disabled:opacity-50"
+                    title="Rotate Token"
+                  >
+                    Rotate
+                  </button>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              {!isVerified && (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-md space-y-2 text-xs text-slate-600">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-900">SendGrid Parse Instructions:</span>
+                    <a
+                      href={sendgridSettingsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center"
+                    >
+                      Open SendGrid Parse Settings <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                    </a>
+                  </div>
+                  <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-600">
+                    <li>Click the link above to open SendGrid Inbound Parse settings in a new tab.</li>
+                    <li>Click <strong>Add Host & URL</strong>.</li>
+                    <li>Select your domain (e.g. <code>jaktra.site</code>) and paste your copied Webhook URL into the <strong>URL</strong> field.</li>
+                    <li>Return here and click <strong>Verify Webhook</strong>.</li>
+                  </ol>
+                </div>
+              )}
+
+              {/* Navigation */}
+              <div className="pt-4 flex justify-between items-center border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(2)}
+                  className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 text-xs font-medium transition-colors"
+                >
+                  ← Back to Step 2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isAllDone) {
+                      onClose();
+                    } else {
+                      setErrorMsg('Please click Verify Webhook above to confirm inbound parse setup.');
+                    }
+                  }}
+                  className={`px-5 py-2.5 rounded-md text-xs font-bold transition-all shadow-sm ${
+                    isAllDone
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                      : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  }`}
+                >
+                  {isAllDone ? 'Setup Complete & Connected ✓' : 'Verify Webhook To Finish'}
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-xs font-medium text-slate-600">
+            <span>Overall Progress:</span>
+            <span className={isStep1Done ? 'text-emerald-700 font-bold' : 'text-amber-700 font-semibold'}>
+              Step 1 {isStep1Done ? '✓' : '⏳'}
+            </span>
+            <span>|</span>
+            <span className={isStep2Done ? 'text-emerald-700 font-bold' : 'text-amber-700 font-semibold'}>
+              Step 2 {isStep2Done ? '✓' : '⏳'}
+            </span>
+            <span>|</span>
+            <span className={isStep3Done ? 'text-emerald-700 font-bold' : 'text-amber-700 font-semibold'}>
+              Step 3 {isStep3Done ? '✓' : '⏳'}
+            </span>
+          </div>
+
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md text-xs font-medium transition-colors"
+            onClick={handleAttemptClose}
+            className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 text-xs font-medium transition-colors"
           >
             Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold transition-colors flex items-center shadow-sm disabled:opacity-50"
-          >
-            {saveMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}
-            {step === 'config' ? 'Save & Connect SendGrid' : 'Verify Code & Finish'}
           </button>
         </div>
       </div>
