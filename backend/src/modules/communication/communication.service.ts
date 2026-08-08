@@ -208,7 +208,7 @@ export class CommunicationService {
         );
       }
 
-      const rawToken = crypto.randomBytes(24).toString('base64url');
+      const rawToken = crypto.randomBytes(24).toString('hex');
       await this.communicationRepo.createReplyToken({
         rawToken,
         tenantId,

@@ -22,12 +22,18 @@ export function timingSafeCompare(a: string, b: string): boolean {
 
 export function extractEmail(rawHeader: string | undefined): string | null {
   if (!rawHeader) return null;
+  let emailStr = rawHeader;
   const match = rawHeader.match(/<([^>]+)>/);
   if (match && match[1]) {
-    return match[1].trim().toLowerCase();
+    emailStr = match[1].trim();
+  } else {
+    emailStr = rawHeader.split(',')[0].trim();
   }
-  const firstPart = rawHeader.split(',')[0];
-  return firstPart.trim().toLowerCase();
+  const atIndex = emailStr.lastIndexOf('@');
+  if (atIndex === -1) return emailStr.toLowerCase();
+  const localPart = emailStr.slice(0, atIndex);
+  const domainPart = emailStr.slice(atIndex + 1).toLowerCase();
+  return `${localPart}@${domainPart}`;
 }
 
 export function getEmailDomain(email: string): string {
@@ -43,7 +49,7 @@ export class DisputeService {
     private readonly communicationRepo: CommunicationRepository,
     private readonly communicationService: CommunicationService,
     private readonly eventService: EventService,
-    private readonly redisClient: RedisClientType | null
+    private readonly redisClient?: RedisClientType | null
   ) { }
 
   // NOTE (v1 limitation): No rate limiting exists on inbound processing volume per tenant/sender.
@@ -67,7 +73,7 @@ export class DisputeService {
 
     const tokenMatch = recipientEmail.match(/^r_([a-zA-Z0-9_-]+)@/);
     if (tokenMatch && tokenMatch[1]) {
-      const rawToken = tokenMatch[1];
+      const rawToken = tokenMatch[1].toLowerCase();
       const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
 
       const [replyTokenRecord] = await this.db

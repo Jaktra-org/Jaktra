@@ -15,7 +15,7 @@ export class CommunicationRepository {
     invoiceId?: string;
     expiresAt?: Date;
   }): Promise<string> {
-    const tokenHash = crypto.createHash('sha256').update(params.rawToken).digest('hex');
+    const tokenHash = crypto.createHash('sha256').update(params.rawToken.toLowerCase()).digest('hex');
     await this.db.insert(replyTokens).values({
       tokenHash,
       tenantId: params.tenantId,
