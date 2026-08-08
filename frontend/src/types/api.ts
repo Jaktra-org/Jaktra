@@ -266,6 +266,9 @@ export interface InboundParseIntegrationStatus {
   webhookUrl: string;
   sendgridSettingsUrl: string;
   isVerified: boolean;
+  replyMode?: 'real_mailbox' | 'webhook_only';
+  replyMailboxEmail?: string | null;
+  replyMailboxVerified?: boolean;
 }
 
 export interface IntegrationsResponse {

@@ -73,4 +73,24 @@ export const settingsService = {
     const response = await api.get('/settings/integrations/sendgrid/health');
     return response.data;
   },
+
+  setReplyMode: async (data: { replyMode: 'real_mailbox' | 'webhook_only'; replyMailboxEmail?: string }): Promise<{
+    message: string;
+    replyMode: 'real_mailbox' | 'webhook_only';
+    replyMailboxEmail?: string;
+    replyMailboxVerified: boolean;
+  }> => {
+    const response = await api.post('/settings/integrations/sendgrid/reply-mode', data);
+    return response.data;
+  },
+
+  sendReplyMailboxOtp: async (): Promise<{ message: string }> => {
+    const response = await api.post('/settings/integrations/sendgrid/reply-mailbox/send-otp');
+    return response.data;
+  },
+
+  verifyReplyMailboxOtp: async (otp: string): Promise<{ message: string; replyMailboxVerified: boolean }> => {
+    const response = await api.post('/settings/integrations/sendgrid/reply-mailbox/verify-otp', { otp });
+    return response.data;
+  },
 };
