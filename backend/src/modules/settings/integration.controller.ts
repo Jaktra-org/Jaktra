@@ -91,7 +91,7 @@ export class IntegrationController {
         inboundParse: {
           webhookUrl: inboundWebhookUrl,
           sendgridSettingsUrl: 'https://app.sendgrid.com/settings/parse',
-          isVerified: hasInbound,
+          isVerified: !!settings?.inboundParseVerified || hasInbound,
           replyMode: settings?.replyMode || 'webhook_only',
           replyMailboxEmail: settings?.replyMailboxEmail || null,
           replyMailboxVerified: settings?.replyMailboxVerified || false,

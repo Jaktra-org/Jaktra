@@ -950,10 +950,13 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
       queryClient.invalidateQueries({ queryKey: ['settings'] });
       setInboundOtpMsg(data.message);
       setInboundOtpErr('');
+      setErrorMsg('');
     },
     onError: (err: unknown) => {
       setIsVerifiedLocal(false);
-      setInboundOtpErr(getErrorMessage(err));
+      const msg = getErrorMessage(err);
+      setInboundOtpErr(msg);
+      setErrorMsg(msg);
       setInboundOtpMsg('');
     },
   });
@@ -1496,6 +1499,17 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                   </button>
                 </div>
               </div>
+
+              {inboundOtpErr && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 font-medium leading-relaxed">
+                  ❌ {inboundOtpErr}
+                </div>
+              )}
+              {inboundOtpMsg && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md text-xs text-emerald-700 font-medium leading-relaxed">
+                  ✅ {inboundOtpMsg}
+                </div>
+              )}
 
               {/* Instructions */}
               {!isVerified && (
