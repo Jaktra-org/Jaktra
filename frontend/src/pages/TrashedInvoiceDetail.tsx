@@ -227,6 +227,48 @@ export function TrashedInvoiceDetail() {
     return 'bg-slate-50 text-slate-500 border-slate-200';
   };
 
+  const getRecipientEmail = (event: GroupedInvoiceEvent) => {
+    const explicit = event.payload?.recipient || 
+                     event.payload?.recipientEmail || 
+                     event.payload?.contactEmail || 
+                     event.payload?.to || 
+                     event.payload?.email;
+    if (typeof explicit === 'string' && explicit.trim()) {
+      return explicit;
+    }
+
+    if (accumulatedTimeline.length > 0) {
+      const eventTime = new Date(event.createdAt).getTime();
+
+      const updateAfter = accumulatedTimeline
+        .filter(e => new Date(e.createdAt).getTime() > eventTime && e.actionType === 'invoice.updated' && e.oldValues?.contactEmail)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+
+      if (updateAfter?.oldValues?.contactEmail) {
+        return String(updateAfter.oldValues.contactEmail);
+      }
+
+      const updateBefore = accumulatedTimeline
+        .filter(e => new Date(e.createdAt).getTime() <= eventTime && e.actionType === 'invoice.updated' && e.newValues?.contactEmail)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+      if (updateBefore?.newValues?.contactEmail) {
+        return String(updateBefore.newValues.contactEmail);
+      }
+
+      const creationEvent = accumulatedTimeline.find(e => 
+        (e.actionType === 'invoice.created' || e.actionType === 'invoice.imported' || e.actionType === 'invoice.bulk_imported') && 
+        (e.newValues?.contactEmail || e.oldValues?.contactEmail)
+      );
+      if (creationEvent) {
+        const email = creationEvent.newValues?.contactEmail || creationEvent.oldValues?.contactEmail;
+        if (email) return String(email);
+      }
+    }
+
+    return invoice?.contactEmail || '';
+  };
+
   const getEventHeading = (event: GroupedInvoiceEvent) => {
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
@@ -320,7 +362,7 @@ export function TrashedInvoiceDetail() {
     }
 
     if (type === 'invoice.created') {
-      return <span>{actor} created this invoice for <span className="font-bold text-slate-950 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span></span>;
+      return <span>{actor} created this invoice for <span className="font-bold text-slate-955 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span></span>;
     }
     if (type === 'invoice.trashed') {
       return <span>{actor} moved this invoice to Trash</span>;
@@ -345,7 +387,8 @@ export function TrashedInvoiceDetail() {
       return <span>{actor} triggered AI follow-up (tone: <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[11px] border border-slate-200">{tone}</span>)</span>;
     }
     if (type === 'followup.sent') {
-      return <span>AI agent sent follow-up email to <span className="font-semibold text-slate-900">{invoice?.contactEmail}</span></span>;
+      const recipient = getRecipientEmail(event);
+      return <span>AI agent sent follow-up email to <span className="font-semibold text-slate-900">{recipient}</span></span>;
     }
     if (type === 'followup.skipped') {
       return <span>AI follow-up skipped (already contacted recently)</span>;
@@ -372,9 +415,10 @@ export function TrashedInvoiceDetail() {
       );
     }
     if (type === 'followup.bounced') {
+      const recipient = getRecipientEmail(event);
       return (
         <span className="text-red-700">
-          Email to {invoice?.contactEmail} bounced
+          Email to {recipient} bounced
         </span>
       );
     }

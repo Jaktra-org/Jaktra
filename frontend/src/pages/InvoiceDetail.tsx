@@ -358,6 +358,48 @@ export function InvoiceDetail() {
     return 'bg-slate-50 text-slate-500 border-slate-200';
   };
 
+  const getRecipientEmail = (event: GroupedInvoiceEvent) => {
+    const explicit = event.payload?.recipient || 
+                     event.payload?.recipientEmail || 
+                     event.payload?.contactEmail || 
+                     event.payload?.to || 
+                     event.payload?.email;
+    if (typeof explicit === 'string' && explicit.trim()) {
+      return explicit;
+    }
+
+    if (accumulatedTimeline.length > 0) {
+      const eventTime = new Date(event.createdAt).getTime();
+
+      const updateAfter = accumulatedTimeline
+        .filter(e => new Date(e.createdAt).getTime() > eventTime && e.actionType === 'invoice.updated' && e.oldValues?.contactEmail)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+
+      if (updateAfter?.oldValues?.contactEmail) {
+        return String(updateAfter.oldValues.contactEmail);
+      }
+
+      const updateBefore = accumulatedTimeline
+        .filter(e => new Date(e.createdAt).getTime() <= eventTime && e.actionType === 'invoice.updated' && e.newValues?.contactEmail)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+      if (updateBefore?.newValues?.contactEmail) {
+        return String(updateBefore.newValues.contactEmail);
+      }
+
+      const creationEvent = accumulatedTimeline.find(e => 
+        (e.actionType === 'invoice.created' || e.actionType === 'invoice.imported' || e.actionType === 'invoice.bulk_imported') && 
+        (e.newValues?.contactEmail || e.oldValues?.contactEmail)
+      );
+      if (creationEvent) {
+        const email = creationEvent.newValues?.contactEmail || creationEvent.oldValues?.contactEmail;
+        if (email) return String(email);
+      }
+    }
+
+    return invoice?.contactEmail || '';
+  };
+
   const getEventHeading = (event: GroupedInvoiceEvent) => {
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
@@ -431,7 +473,7 @@ export function InvoiceDetail() {
           if (isFirstTime) {
             return (
               <span>
-                {actor} set the invoice amount to <span className="font-bold text-slate-950 font-mono">{formatCurrency(newVal)}</span>
+                {actor} set the invoice amount to <span className="font-bold text-slate-955 font-mono">{formatCurrency(newVal)}</span>
               </span>
             );
           }
@@ -458,40 +500,54 @@ export function InvoiceDetail() {
         }
 
         if (key === 'paymentStatus') {
-          if (newVal === 'Paid') {
-            return (
-              <span>
-                {actor} marked this invoice as <span className="font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-xs border border-emerald-100">Paid</span>
-              </span>
-            );
-          }
           if (isFirstTime) {
             return (
               <span>
-                {actor} set status to <span className="font-bold text-slate-955">{String(newVal)}</span>
+                {actor} set payment status to <span className="font-bold text-slate-955">{String(newVal)}</span>
               </span>
             );
           }
           return (
             <span>
-              {actor} changed status from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span>
+              {actor} changed payment status from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span>
             </span>
           );
         }
-        
-        // Sanity-check: Ambiguous "subject" -> "invoice description"
-        const displayLabel = key === 'subject' ? 'invoice description' : key.replace(/([A-Z])/g, ' $1').toLowerCase();
-        
-        if (isFirstTime) {
+
+        if (key === 'clientName') {
+          if (isFirstTime) {
+            return (
+              <span>
+                {actor} set client name to <span className="font-bold text-slate-955">{String(newVal)}</span>
+              </span>
+            );
+          }
           return (
             <span>
-              {actor} set the {displayLabel} to <span className="font-bold text-slate-955">{String(newVal ?? '—')}</span>
+              {actor} updated client name from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-bold text-slate-955">{String(newVal)}</span>
             </span>
           );
         }
+
+        if (key === 'contactEmail') {
+          if (isFirstTime) {
+            return (
+              <span>
+                {actor} set contact email to <span className="font-semibold text-slate-900">{String(newVal)}</span>
+              </span>
+            );
+          }
+          return (
+            <span>
+              {actor} updated contact email from <span className="line-through text-slate-400">{String(oldVal)}</span> to <span className="font-semibold text-slate-900">{String(newVal)}</span>
+            </span>
+          );
+        }
+
+        // Fallback for single unknown field
         return (
           <span>
-            {actor} updated {displayLabel} from <span className="line-through text-slate-400">{String(oldVal ?? '—')}</span> to <span className="font-bold text-slate-955">{String(newVal ?? '—')}</span>
+            {actor} updated <span className="font-semibold text-slate-900">{key}</span>
           </span>
         );
       } else if (keys.length > 1) {
@@ -507,7 +563,7 @@ export function InvoiceDetail() {
     if (type === 'invoice.created') {
       return (
         <span>
-          {actor} created this invoice for <span className="font-bold text-slate-950 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span>
+          {actor} created this invoice for <span className="font-bold text-slate-955 font-mono">{formatCurrency(invoice?.invoiceAmount ?? 0)}</span>
         </span>
       );
     }
@@ -562,9 +618,10 @@ export function InvoiceDetail() {
       );
     }
     if (type === 'followup.sent') {
+      const recipient = getRecipientEmail(event);
       return (
         <span>
-          AI agent sent follow-up email to <span className="font-semibold text-slate-900">{invoice?.contactEmail}</span>
+          AI agent sent follow-up email to <span className="font-semibold text-slate-900">{recipient}</span>
         </span>
       );
     }
@@ -597,9 +654,10 @@ export function InvoiceDetail() {
       );
     }
     if (type === 'followup.bounced') {
+      const recipient = getRecipientEmail(event);
       return (
         <span className="text-red-700">
-          Email to {invoice?.contactEmail} bounced
+          Email to {recipient} bounced
         </span>
       );
     }
