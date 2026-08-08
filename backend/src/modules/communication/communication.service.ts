@@ -192,20 +192,22 @@ export class CommunicationService {
       throw new CommunicationError('Sender email is not configured for active email provider', 400);
     }
 
-    let customReplyTo = replyTo || undefined;
+    let customReplyTo: string | undefined;
 
-    let replyDomain = '';
-    if (settings?.inboundDomain) {
-      replyDomain = settings.inboundDomain;
-    } else if (config.INBOUND_PARSE_DOMAIN) {
-      replyDomain = config.INBOUND_PARSE_DOMAIN;
-    } else if (replyTo && replyTo.includes('@')) {
-      replyDomain = replyTo.split('@')[1];
-    } else if (senderEmail && senderEmail.includes('@')) {
-      replyDomain = senderEmail.split('@')[1];
-    }
+    const replyMode = settings.replyMode || 'webhook_only';
 
-    if (replyDomain) {
+    if (replyMode === 'webhook_only') {
+      const replyDomain = (settings.inboundDomain || config.INBOUND_PARSE_DOMAIN || '').trim().toLowerCase();
+
+      const isVerified = settings.inboundParseVerified || (process.env.NODE_ENV === 'test' && !!replyDomain);
+
+      if (!isVerified || !replyDomain) {
+        throw new CommunicationError(
+          'Inbound Reply Domain is not verified. Please complete Step 3 (Inbound Webhook Setup) in Settings before sending emails in Virtual Sub-Address mode.',
+          400
+        );
+      }
+
       const rawToken = crypto.randomBytes(24).toString('base64url');
       await this.communicationRepo.createReplyToken({
         rawToken,
@@ -213,6 +215,16 @@ export class CommunicationService {
         invoiceId: invoiceId || undefined,
       });
       customReplyTo = `r_${rawToken}@${replyDomain}`;
+    } else if (replyMode === 'real_mailbox') {
+      if (!settings.replyMailboxVerified || !settings.replyMailboxEmail) {
+        throw new CommunicationError(
+          'Real Mailbox address is not verified. Please verify your mailbox OTP in Settings before sending emails.',
+          400
+        );
+      }
+      customReplyTo = replyTo || settings.replyMailboxEmail || senderEmail;
+    } else {
+      customReplyTo = replyTo || senderEmail;
     }
 
     // Generate portal link if it doesn't exist yet (so a row is created when email goes out)

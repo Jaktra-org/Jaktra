@@ -294,7 +294,7 @@ describe('Portal Token Security & Isolation Tests', () => {
       // Mock the tenantMailer to prevent EMAIL_PROVIDER_NOT_CONFIGURED error during integration test
       const originalSend = (commService as any).tenantMailer.sendCollectionEmail;
       (commService as any).tenantMailer.sendCollectionEmail = async () => ({ success: true });
-      await db.update(tenantSettings).set({ defaultEmailProvider: 'sendgrid' }).where(eq(tenantSettings.tenantId, tenantAId));
+      await db.update(tenantSettings).set({ defaultEmailProvider: 'sendgrid', inboundParseVerified: true, inboundDomain: 'reply.jaktra.site' }).where(eq(tenantSettings.tenantId, tenantAId));
 
       try {
         // Send first follow-up email

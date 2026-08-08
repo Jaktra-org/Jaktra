@@ -51,6 +51,9 @@ describe('CommunicationService Outbound replyTo Injection', () => {
         senderEmail: 'sender@test.com',
         replyTo: 'custom-reply@test.com',
         defaultEmailProvider: 'sendgrid',
+        replyMode: 'webhook_only',
+        inboundDomain: 'test.com',
+        inboundParseVerified: true,
       }),
       create: vi.fn().mockResolvedValue({ id: 'comm-123' }),
       createReplyToken: vi.fn().mockResolvedValue({ tokenHash: 'mock-hash' }),
@@ -115,6 +118,15 @@ describe('CommunicationService Outbound replyTo Injection', () => {
 
   it('should fallback to INBOUND_PARSE_DOMAIN if sender email domain is not available', async () => {
     config.INBOUND_PARSE_DOMAIN = 'replies.jaktra.site';
+    mockCommRepo.getSettings.mockResolvedValueOnce({
+      senderName: 'Test Sender',
+      senderEmail: 'invalid-no-domain',
+      replyTo: null,
+      defaultEmailProvider: 'sendgrid',
+      replyMode: 'webhook_only',
+      inboundDomain: null,
+      inboundParseVerified: true,
+    });
     (commService as any).integrationService.getEffectiveSenderConfig = vi.fn().mockResolvedValue({
       senderName: 'Test Sender',
       senderEmail: 'invalid-no-domain',

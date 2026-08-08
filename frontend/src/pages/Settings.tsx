@@ -1335,16 +1335,27 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Reply-To Email (Optional Override)</label>
-                  <input
-                    type="email"
-                    value={replyTo}
-                    onChange={(e) => setReplyTo(e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
-                    placeholder="support@acme.com"
-                  />
-                </div>
+                {replyMode === 'real_mailbox' ? (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Reply-To Email (Optional Override)</label>
+                    <input
+                      type="email"
+                      value={replyTo}
+                      onChange={(e) => setReplyTo(e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
+                      placeholder="support@acme.com"
+                    />
+                  </div>
+                ) : (
+                  <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-md text-xs text-blue-900 space-y-1">
+                    <p className="font-bold flex items-center">
+                      <span className="mr-1">ℹ️</span> Automatic Virtual Reply-To (Mode 2):
+                    </p>
+                    <p className="text-[11px] text-blue-800 leading-relaxed">
+                      In Virtual Sub-Address mode, Jaktra automatically sets the <strong>Reply-To</strong> header of every outbound email to a unique virtual address (e.g. <code>r_f8QkL9Xn...@reply.jakhar.xyz</code>). Manual Reply-To override is disabled so customer replies are guaranteed to flow back into Jaktra via Inbound Parse.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Mode 2 Info Notice */}
