@@ -53,6 +53,7 @@ describe('CommunicationService Outbound replyTo Injection', () => {
         defaultEmailProvider: 'sendgrid',
       }),
       create: vi.fn().mockResolvedValue({ id: 'comm-123' }),
+      createReplyToken: vi.fn().mockResolvedValue({ tokenHash: 'mock-hash' }),
     };
     mockInvoiceRepo = {
       findById: vi.fn(),
@@ -106,7 +107,7 @@ describe('CommunicationService Outbound replyTo Injection', () => {
     expect(mockTenantMailer.sendCollectionEmail).toHaveBeenCalledWith(
       'tenant-123',
       expect.objectContaining({
-        replyTo: `reply+${invoiceId}@test.com`,
+        replyTo: expect.stringMatching(/^r_[a-zA-Z0-9_-]+@test\.com$/),
       }),
       { invoiceId }
     );
@@ -132,7 +133,7 @@ describe('CommunicationService Outbound replyTo Injection', () => {
     expect(mockTenantMailer.sendCollectionEmail).toHaveBeenCalledWith(
       'tenant-123',
       expect.objectContaining({
-        replyTo: `reply+${invoiceId}@replies.jaktra.site`,
+        replyTo: expect.stringMatching(/^r_[a-zA-Z0-9_-]+@replies\.jaktra\.site$/),
       }),
       { invoiceId }
     );
@@ -276,7 +277,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
     });
 
     expect(mockDisputeRepo.create).not.toHaveBeenCalled();
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('did not match tracking sub-address pattern'));
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('did not match tracking sub-address or token pattern'));
   });
 
   it('should drop email if sub-address matches pattern but invoice ID is not found in database', async () => {

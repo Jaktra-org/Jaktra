@@ -3,16 +3,40 @@ import { ValidationError } from '../errors/index.js';
 import { logger } from '../logger.js';
 
 /**
- * Validates that an email address has a domain with active MX records capable of receiving email.
+ * Validates that an inbound reply domain string is a valid domain name (not an email address).
+ */
+export function validateInboundDomainFormat(domainInput: string): string {
+  const trimmed = domainInput.trim().toLowerCase();
+  if (!trimmed) {
+    throw new ValidationError('Inbound reply domain is required.');
+  }
+  if (trimmed.includes('@')) {
+    throw new ValidationError('Inbound reply domain cannot be an email address. Enter a domain name such as reply.acme.com.');
+  }
+  if (trimmed.includes('/') || trimmed.includes(':') || trimmed.includes(' ')) {
+    throw new ValidationError('Inbound reply domain must be a valid domain name (e.g., reply.acme.com).');
+  }
+  return trimmed;
+}
+
+/**
+ * Validates that an email address or domain name has active MX records capable of receiving email.
  * If MX lookup fails or returns empty, throws a ValidationError.
  */
-export async function verifyEmailDomainMx(email: string): Promise<string> {
-  const parts = email.trim().split('@');
-  if (parts.length !== 2 || !parts[0] || !parts[1]) {
-    throw new ValidationError('Invalid email format');
+export async function verifyEmailDomainMx(emailOrDomain: string): Promise<string> {
+  const trimmed = emailOrDomain.trim().toLowerCase();
+  let domain = trimmed;
+  if (trimmed.includes('@')) {
+    const parts = trimmed.split('@');
+    if (parts.length !== 2 || !parts[1]) {
+      throw new ValidationError('Invalid email format');
+    }
+    domain = parts[1];
   }
 
-  const domain = parts[1].toLowerCase();
+  if (!domain) {
+    throw new ValidationError('Domain name cannot be empty');
+  }
 
   try {
     const mxRecords = await dns.resolveMx(domain);

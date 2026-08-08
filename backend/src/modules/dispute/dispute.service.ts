@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { eq, and, isNull } from 'drizzle-orm';
-import { invoices, tenantSettings } from '../../db/index.js';
+import { invoices, tenantSettings, replyTokens } from '../../db/index.js';
 import type { DatabaseClient, Invoice } from '../../db/index.js';
 import type { DisputeRepository, PendingDisputeItem } from './dispute.repository.js';
 import type { AimlService } from '../agent/aiml.service.js';
@@ -62,22 +62,72 @@ export class DisputeService {
       return;
     }
 
-    // Try to extract invoiceId from sub-addressed recipient (e.g. reply+<uuid>@domain)
-    const subAddressMatch = recipientEmail.match(/reply\+([0-9a-fA-F-]{36})@/);
-    if (!subAddressMatch || !subAddressMatch[1]) {
-      logger.warn(`Inbound email to ${recipientEmail} did not match tracking sub-address pattern — dropping`);
-      return;
+    let invoice: Invoice | undefined;
+    let extractedId: string | undefined;
+
+    const tokenMatch = recipientEmail.match(/^r_([a-zA-Z0-9_-]+)@/);
+    if (tokenMatch && tokenMatch[1]) {
+      const rawToken = tokenMatch[1];
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      const [replyTokenRecord] = await this.db
+        .select()
+        .from(replyTokens)
+        .where(
+          and(
+            eq(replyTokens.tokenHash, tokenHash),
+            isNull(replyTokens.revokedAt)
+          )
+        )
+        .limit(1);
+
+      if (!replyTokenRecord) {
+        logger.warn(`Inbound email to ${recipientEmail} matched token pattern but active token hash was not found — dropping`);
+        return;
+      }
+
+      if (replyTokenRecord.expiresAt && replyTokenRecord.expiresAt < new Date()) {
+        logger.warn(`Inbound email to ${recipientEmail} matched token hash but token is expired — dropping`);
+        return;
+      }
+
+      // Update token usage analytics
+      await this.db
+        .update(replyTokens)
+        .set({
+          lastUsedAt: new Date(),
+          replyCount: (replyTokenRecord.replyCount || 0) + 1,
+        })
+        .where(eq(replyTokens.tokenHash, tokenHash));
+
+      if (replyTokenRecord.invoiceId) {
+        extractedId = replyTokenRecord.invoiceId;
+        const [foundInvoice] = await this.db
+          .select()
+          .from(invoices)
+          .where(and(eq(invoices.id, extractedId), isNull(invoices.deletedAt)))
+          .limit(1);
+        invoice = foundInvoice;
+      }
+    } else {
+      // Legacy fallback: sub-addressing reply+<uuid>@domain
+      const subAddressMatch = recipientEmail.match(/reply\+([0-9a-fA-F-]{36})@/);
+      if (!subAddressMatch || !subAddressMatch[1]) {
+        logger.warn(`Inbound email to ${recipientEmail} did not match tracking sub-address or token pattern — dropping`);
+        return;
+      }
+
+      extractedId = subAddressMatch[1];
+      const [foundInvoice] = await this.db
+        .select()
+        .from(invoices)
+        .where(and(eq(invoices.id, extractedId), isNull(invoices.deletedAt)))
+        .limit(1);
+      invoice = foundInvoice;
     }
 
-    const extractedId = subAddressMatch[1];
-    const [invoice] = await this.db
-      .select()
-      .from(invoices)
-      .where(and(eq(invoices.id, extractedId), isNull(invoices.deletedAt)))
-      .limit(1);
-
     if (!invoice) {
-      logger.warn(`Inbound email matched tracking sub-address pattern but invoice ID ${extractedId} was not found — dropping`);
+      logger.warn(`Inbound email matched tracking sub-address pattern but invoice ID ${extractedId || 'unknown'} was not found — dropping`);
       return;
     }
 

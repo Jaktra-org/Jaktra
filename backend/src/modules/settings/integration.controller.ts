@@ -92,6 +92,7 @@ export class IntegrationController {
           webhookUrl: inboundWebhookUrl,
           sendgridSettingsUrl: 'https://app.sendgrid.com/settings/parse',
           isVerified: !!settings?.inboundParseVerified || hasInbound,
+          inboundDomain: settings?.inboundDomain || null,
           replyMode: settings?.replyMode || 'webhook_only',
           replyMailboxEmail: settings?.replyMailboxEmail || null,
           replyMailboxVerified: settings?.replyMailboxVerified || false,
@@ -234,7 +235,8 @@ export class IntegrationController {
   verifyInboundParse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      const result = await this.integrationService.verifyInboundParse(tenantId);
+      const { inboundDomain } = req.body || {};
+      const result = await this.integrationService.verifyInboundParse(tenantId, inboundDomain);
       res.json({ message: result.message, isVerified: true });
     } catch (error) {
       next(error);
@@ -260,9 +262,6 @@ export class IntegrationController {
           next(new ValidationError('Valid Sender Email is required'));
           return;
         }
-
-        const targetEmail = replyTo && typeof replyTo === 'string' && replyTo.trim() !== '' ? replyTo.trim() : senderEmail.trim();
-        await verifyEmailDomainMx(targetEmail);
       }
 
       if (replyMode && ['real_mailbox', 'webhook_only'].includes(replyMode) && this.settingsRepo) {

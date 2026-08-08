@@ -13,6 +13,7 @@ export {
   inboundEmails,
   invoicePortalLinks,
   paymentPlanRequests,
+  replyTokens,
 } from './schema.js';
 
 export {
@@ -59,6 +60,8 @@ export type {
   NewInvoicePortalLink,
   PaymentPlanRequest,
   NewPaymentPlanRequest,
+  ReplyToken,
+  NewReplyToken,
 } from './schema.js';
 
 export { createDatabaseClient } from './client.js';

@@ -327,6 +327,7 @@ export const tenantSettings = mysqlTable('tenant_settings', {
   replyMailboxOtp: varchar('reply_mailbox_otp', { length: 255 }),
   replyMailboxOtpExpiresAt: datetime('reply_mailbox_otp_expires_at', { mode: 'date' }),
   inboundParseVerified: boolean('inbound_parse_verified').notNull().default(false),
+  inboundDomain: varchar('inbound_domain', { length: 255 }),
 });
 
 export const tenantIntegrations = mysqlTable('tenant_integrations', {
@@ -434,6 +435,22 @@ export const inboundEmails = mysqlTable('inbound_emails', {
   index('inbound_emails_tenant_id_status_idx').on(table.tenantId, table.status),
   index('inbound_emails_invoice_id_idx').on(table.invoiceId),
 ]);
+
+export const replyTokens = mysqlTable('reply_tokens', {
+  tokenHash: varchar('token_hash', { length: 64 }).primaryKey(),
+  tenantId: varchar('tenant_id', { length: 36 }).notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  communicationId: varchar('communication_id', { length: 36 }),
+  invoiceId: varchar('invoice_id', { length: 36 }).references(() => invoices.id, { onDelete: 'cascade' }),
+  expiresAt: datetime('expires_at', { mode: 'date' }),
+  revokedAt: datetime('revoked_at', { mode: 'date' }),
+  lastUsedAt: datetime('last_used_at', { mode: 'date' }),
+  replyCount: int('reply_count').notNull().default(0),
+  createdAt: datetime('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  tenantCommIdx: index('reply_tokens_tenant_comm_idx').on(table.tenantId, table.communicationId),
+  tenantInvIdx: index('reply_tokens_tenant_inv_idx').on(table.tenantId, table.invoiceId),
+  expiresAtIdx: index('reply_tokens_expires_at_idx').on(table.expiresAt),
+}));
 
 export const invoicePortalLinks = mysqlTable('invoice_portal_links', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -601,6 +618,21 @@ export const paymentPlanRequestsRelations = relations(paymentPlanRequests, ({ on
   }),
 }));
 
+export const replyTokensRelations = relations(replyTokens, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [replyTokens.tenantId],
+    references: [tenants.id],
+  }),
+  communication: one(communications, {
+    fields: [replyTokens.communicationId],
+    references: [communications.id],
+  }),
+  invoice: one(invoices, {
+    fields: [replyTokens.invoiceId],
+    references: [invoices.id],
+  }),
+}));
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -633,3 +665,5 @@ export type InvoicePortalLink = typeof invoicePortalLinks.$inferSelect;
 export type NewInvoicePortalLink = typeof invoicePortalLinks.$inferInsert;
 export type PaymentPlanRequest = typeof paymentPlanRequests.$inferSelect;
 export type NewPaymentPlanRequest = typeof paymentPlanRequests.$inferInsert;
+export type ReplyToken = typeof replyTokens.$inferSelect;
+export type NewReplyToken = typeof replyTokens.$inferInsert;

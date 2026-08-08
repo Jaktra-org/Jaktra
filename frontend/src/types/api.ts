@@ -270,6 +270,7 @@ export interface InboundParseIntegrationStatus {
   webhookUrl: string;
   sendgridSettingsUrl: string;
   isVerified: boolean;
+  inboundDomain?: string | null;
   replyMode?: 'real_mailbox' | 'webhook_only';
   replyMailboxEmail?: string | null;
   replyMailboxVerified?: boolean;

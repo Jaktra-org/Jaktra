@@ -3,6 +3,7 @@ import { config as envConfig } from './config/index.js';
 import cors from 'cors';
 import cron from 'node-cron';
 import { InvoicePurgeService } from './modules/invoice/invoice-purge.service.js';
+import { ReplyTokenCleanupService } from './modules/communication/reply-token-cleanup.service.js';
 import { createHealthRouter } from './modules/health/health.routes.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
@@ -160,12 +161,16 @@ export function createApp(config: AppConfig): Application {
     const integrationRepo = new IntegrationRepository(config.db);
     const settingsRepo = new SettingsRepository(config.db);
     const invoicePurgeService = new InvoicePurgeService(invoiceRepo, settingsRepo, eventService);
+    const replyTokenCleanupService = new ReplyTokenCleanupService(config.db);
     app.locals.invoicePurgeService = invoicePurgeService;
 
     // Daily auto-purge task at 2 AM UTC
     cron.schedule('0 2 * * *', () => {
       invoicePurgeService.runPurge().catch((err) => {
         logger.error(err, '[Cron] Auto-purge task execution failed');
+      });
+      replyTokenCleanupService.cleanupExpiredTokens().catch((err) => {
+        logger.error(err, '[Cron] Reply token cleanup task execution failed');
       });
     }, {
       timezone: 'UTC'

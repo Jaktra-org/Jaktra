@@ -15,14 +15,18 @@ export class IntegrationRepository {
     return !!row;
   }
 
-  async verifyInboundParse(tenantId: string): Promise<void> {
+  async verifyInboundParse(tenantId: string, inboundDomain?: string): Promise<void> {
     const { tenantSettings } = await import('../../db/index.js');
+    const updateData: Record<string, unknown> = {
+      inboundParseVerified: true,
+      updatedAt: new Date(),
+    };
+    if (inboundDomain && inboundDomain.trim()) {
+      updateData.inboundDomain = inboundDomain.trim().toLowerCase();
+    }
     await this.db
       .update(tenantSettings)
-      .set({
-        inboundParseVerified: true,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(tenantSettings.tenantId, tenantId));
   }
 

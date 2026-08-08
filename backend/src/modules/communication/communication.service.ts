@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { z } from 'zod';
 import type { CommunicationRepository } from './communication.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
@@ -194,16 +195,24 @@ export class CommunicationService {
     let customReplyTo = replyTo || undefined;
 
     let replyDomain = '';
-    if (replyTo && replyTo.includes('@')) {
+    if (settings?.inboundDomain) {
+      replyDomain = settings.inboundDomain;
+    } else if (config.INBOUND_PARSE_DOMAIN) {
+      replyDomain = config.INBOUND_PARSE_DOMAIN;
+    } else if (replyTo && replyTo.includes('@')) {
       replyDomain = replyTo.split('@')[1];
     } else if (senderEmail && senderEmail.includes('@')) {
       replyDomain = senderEmail.split('@')[1];
-    } else if (config.INBOUND_PARSE_DOMAIN) {
-      replyDomain = config.INBOUND_PARSE_DOMAIN;
     }
 
-    if (invoiceId && replyDomain) {
-      customReplyTo = `reply+${invoiceId}@${replyDomain}`;
+    if (replyDomain) {
+      const rawToken = crypto.randomBytes(24).toString('base64url');
+      await this.communicationRepo.createReplyToken({
+        rawToken,
+        tenantId,
+        invoiceId: invoiceId || undefined,
+      });
+      customReplyTo = `r_${rawToken}@${replyDomain}`;
     }
 
     // Generate portal link if it doesn't exist yet (so a row is created when email goes out)

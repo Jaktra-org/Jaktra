@@ -1,12 +1,31 @@
 import { eq, desc, and, count } from 'drizzle-orm';
 import crypto from 'crypto';
-import { communications, invoices } from '../../db/index.js';
+import { communications, invoices, replyTokens } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { Communication, NewCommunication } from '../../db/index.js';
 import { tenantSettings, type TenantSettings, type NewTenantSettings } from '../../db/schema.js';
 
 export class CommunicationRepository {
   constructor(private db: DatabaseClient) {}
+
+  async createReplyToken(params: {
+    rawToken: string;
+    tenantId: string;
+    communicationId?: string;
+    invoiceId?: string;
+    expiresAt?: Date;
+  }): Promise<string> {
+    const tokenHash = crypto.createHash('sha256').update(params.rawToken).digest('hex');
+    await this.db.insert(replyTokens).values({
+      tokenHash,
+      tenantId: params.tenantId,
+      communicationId: params.communicationId ?? null,
+      invoiceId: params.invoiceId ?? null,
+      expiresAt: params.expiresAt ?? null,
+      createdAt: new Date(),
+    });
+    return tokenHash;
+  }
 
   async findByInvoiceId(invoiceId: string): Promise<(Pick<Communication, 'id' | 'invoiceId' | 'tenantId' | 'channel' | 'subject' | 'body' | 'status' | 'sentAt' | 'error' | 'createdAt'> & { recipient: string | null; errorMsg: string | null })[]> {
     const rows = await this.db

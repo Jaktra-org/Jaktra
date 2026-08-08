@@ -102,8 +102,8 @@ export const settingsService = {
     return response.data;
   },
 
-  verifyInboundWebhook: async (): Promise<{ message: string; isVerified: boolean }> => {
-    const response = await api.post('/settings/integrations/sendgrid/inbound/verify');
+  verifyInboundWebhook: async (data?: { inboundDomain?: string }): Promise<{ message: string; isVerified: boolean }> => {
+    const response = await api.post('/settings/integrations/sendgrid/inbound/verify', data || {});
     return response.data;
   },
 };

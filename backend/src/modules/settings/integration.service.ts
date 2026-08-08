@@ -6,7 +6,7 @@ import { IntegrationErrors, IntegrationError } from './integration.errors.js';
 import { logger } from '../../shared/logger.js';
 import type { TenantIntegration } from '../../db/index.js';
 import { SmtpConnectionFactory, SmtpConfig } from '../../shared/email/providers/smtp-email.provider.js';
-import { verifyEmailDomainMx } from '../../shared/email/mx-verifier.js';
+import { verifyEmailDomainMx, validateInboundDomainFormat } from '../../shared/email/mx-verifier.js';
 import { ValidationError } from '../../shared/errors/index.js';
 import type { PlatformMailer } from '../platform-mail/platform-mailer.js';
 
@@ -62,15 +62,19 @@ export class IntegrationService {
     return this.repo.hasInboundEmails(tenantId);
   }
 
-  async verifyInboundParse(tenantId: string): Promise<{ success: boolean; message: string }> {
-    // 1. If an actual inbound email has already arrived for this tenant, verify immediately
-    const hasInbound = await this.repo.hasInboundEmails(tenantId);
-    if (hasInbound) {
-      await this.repo.verifyInboundParse(tenantId);
-      return { success: true, message: 'Inbound Webhook verified successfully!' };
+  async verifyInboundParse(tenantId: string, inboundDomainInput?: string): Promise<{ success: boolean; message: string }> {
+    // Stage 1: Domain Format Validation
+    let domainToVerify: string | undefined;
+    if (inboundDomainInput && inboundDomainInput.trim()) {
+      domainToVerify = validateInboundDomainFormat(inboundDomainInput);
     }
 
-    // 2. Fetch decrypted SendGrid API key for this tenant
+    // Stage 2: MX Routing Verification
+    if (domainToVerify) {
+      await verifyEmailDomainMx(domainToVerify);
+    }
+
+    // Stage 3 & 4: Fetch decrypted SendGrid API key & check parse settings
     let apiKey: string;
     try {
       apiKey = await this.getDecryptedSendgridKey(tenantId);
@@ -107,7 +111,7 @@ export class IntegrationService {
 
       if (parseSettings.length === 0) {
         throw new ValidationError(
-          'No Inbound Parse settings found in your SendGrid account. Please click "Open SendGrid Parse Settings", click "Add Host & URL", paste your copied Webhook URL, and then click Verify Webhook again.'
+          'No Inbound Parse settings found in your SendGrid account. Please click "Open SendGrid Parse Settings", click "Add Host & URL", paste your copied Webhook URL, and then click Re-check DNS & Webhook again.'
         );
       }
 
@@ -118,12 +122,12 @@ export class IntegrationService {
 
       if (!matchingSetting) {
         throw new ValidationError(
-          'Inbound Webhook URL not found or does not match your active token in SendGrid. Please open SendGrid Parse Settings, update the URL field with your new Webhook URL above, then click Verify Webhook again.'
+          'Inbound Webhook URL not found or does not match your active token in SendGrid. Please open SendGrid Parse Settings, update the URL field with your new Webhook URL above, then click Re-check DNS & Webhook again.'
         );
       }
 
-      // Match found! Save verification state in database
-      await this.repo.verifyInboundParse(tenantId);
+      // Stage 5: Save verification state in database
+      await this.repo.verifyInboundParse(tenantId, domainToVerify);
       const hostMsg = matchingSetting.hostname ? ` (Host: ${matchingSetting.hostname})` : '';
       return { success: true, message: `SendGrid Inbound Parse configuration verified successfully!${hostMsg}` };
     } catch (err: unknown) {
@@ -310,16 +314,9 @@ export class IntegrationService {
       isSenderConfigured: isExplicitSenderSave ? true : (data.apiKey && !data.senderEmail ? false : existingPayload.isSenderConfigured ?? false),
     };
 
-    // Only perform sender email & SendGrid identity verification if data.senderEmail was EXPLICITLY passed in this request!
+    // Only perform SendGrid sender identity verification if data.senderEmail was EXPLICITLY passed in this request!
     if (data.senderEmail !== undefined && data.senderEmail.trim() !== '') {
       const senderEmail = data.senderEmail.trim();
-      const replyTo = data.replyTo !== undefined && data.replyTo ? data.replyTo.trim() : '';
-
-      await verifyEmailDomainMx(senderEmail);
-
-      if (replyTo && replyTo.includes('@')) {
-        await verifyEmailDomainMx(replyTo);
-      }
 
       const health = await this.performSendgridIdentityCheck(apiKeyToSave.trim(), senderEmail);
       if (health.senderVerified === false) {
