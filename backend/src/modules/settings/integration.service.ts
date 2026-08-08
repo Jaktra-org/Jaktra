@@ -59,8 +59,74 @@ export class IntegrationService {
     return this.repo.hasInboundEmails(tenantId);
   }
 
-  async verifyInboundParse(tenantId: string): Promise<void> {
-    await this.repo.verifyInboundParse(tenantId);
+  async verifyInboundParse(tenantId: string): Promise<{ success: boolean; message: string }> {
+    // 1. If an actual inbound email has already arrived for this tenant, verify immediately
+    const hasInbound = await this.repo.hasInboundEmails(tenantId);
+    if (hasInbound) {
+      await this.repo.verifyInboundParse(tenantId);
+      return { success: true, message: 'Inbound Webhook verified successfully!' };
+    }
+
+    // 2. Fetch decrypted SendGrid API key for this tenant
+    let apiKey: string;
+    try {
+      apiKey = await this.getDecryptedSendgridKey(tenantId);
+    } catch {
+      throw new ValidationError('SendGrid API Key is not configured. Please save your SendGrid API key first.');
+    }
+
+    // 3. Retrieve tenant webhook token
+    const webhookToken = (await this.repo.getWebhookToken(tenantId)) || tenantId;
+
+    // 4. Query SendGrid REST API for Inbound Parse settings
+    try {
+      const response = await fetch('https://api.sendgrid.com/v3/user/webhooks/parse/settings', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new ValidationError(
+            'Your SendGrid API Key lacks permission to read Inbound Parse settings. Please ensure your SendGrid key has "Inbound Parse" permissions.'
+          );
+        }
+        const errorText = await response.text();
+        logger.warn(`SendGrid parse settings check failed (${response.status}): ${errorText}`);
+        throw new ValidationError(`SendGrid API error (${response.status}). Could not verify parse settings.`);
+      }
+
+      const data = (await response.json()) as { result?: Array<{ url?: string; hostname?: string }> };
+      const parseSettings = Array.isArray(data.result) ? data.result : [];
+
+      // Look for a parse setting matching this tenant's webhook Token or URL path
+      const matchingSetting = parseSettings.find(
+        (setting) =>
+          setting.url &&
+          (setting.url.includes(webhookToken) || setting.url.includes('/api/webhooks/sendgrid/inbound/'))
+      );
+
+      if (!matchingSetting) {
+        throw new ValidationError(
+          'Inbound Webhook URL not found in SendGrid. Please open SendGrid, add Host & URL with your copied Webhook URL, then click Verify Webhook again.'
+        );
+      }
+
+      // Match found! Save verification state in database
+      await this.repo.verifyInboundParse(tenantId);
+      return { success: true, message: 'SendGrid Inbound Parse configuration verified successfully!' };
+    } catch (err: unknown) {
+      if (err instanceof ValidationError) {
+        throw err;
+      }
+      logger.error(`Error verifying SendGrid inbound parse for tenant ${tenantId}:`, err);
+      throw new ValidationError(
+        `Failed to verify with SendGrid: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
   }
 
   getPlatformMailer(): PlatformMailer | null {

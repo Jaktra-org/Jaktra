@@ -797,6 +797,9 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   const [inboundOtpErr, setInboundOtpErr] = useState('');
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
+  const [isVerifiedLocal, setIsVerifiedLocal] = useState<boolean | null>(null);
+
+  const isVerified = isVerifiedLocal !== null ? isVerifiedLocal : !!inboundParse?.isVerified;
 
   useEffect(() => {
     if (otpCooldown <= 0) return;
@@ -866,12 +869,16 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   const verifyInboundWebhookMutation = useMutation({
     mutationFn: () => settingsService.verifyInboundWebhook(),
     onSuccess: (data) => {
+      setIsVerifiedLocal(true);
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
       setInboundOtpMsg(data.message);
       setInboundOtpErr('');
     },
     onError: (err: unknown) => {
+      setIsVerifiedLocal(false);
       setInboundOtpErr(getErrorMessage(err));
+      setInboundOtpMsg('');
     },
   });
 
@@ -1058,7 +1065,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
                     2. Inbound Reply Webhook & Mailbox Mode
                   </span>
-                  {inboundParse?.isVerified ? (
+                  {isVerified ? (
                     <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-semibold">
                       Inbound Active & Verified ✅
                     </span>
@@ -1085,10 +1092,10 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                     <button
                       type="button"
                       onClick={() => verifyInboundWebhookMutation.mutate()}
-                      disabled={verifyInboundWebhookMutation.isPending || inboundParse?.isVerified}
+                      disabled={verifyInboundWebhookMutation.isPending || isVerified}
                       className="px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
                     >
-                      {verifyInboundWebhookMutation.isPending ? 'Verifying...' : inboundParse?.isVerified ? 'Verified ✅' : 'Verify Webhook'}
+                      {verifyInboundWebhookMutation.isPending ? 'Verifying...' : isVerified ? 'Verified ✅' : 'Verify Webhook'}
                     </button>
                     <button
                       type="button"
@@ -1243,7 +1250,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                 {inboundOtpErr && <p className="text-[11px] text-red-600 font-medium">{inboundOtpErr}</p>}
 
                 {/* SendGrid Instructions - Automatically hides when inbound parse is verified */}
-                {!inboundParse?.isVerified && (
+                {!isVerified && (
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-1.5 text-xs text-slate-600">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-900">SendGrid Setup Instructions:</span>

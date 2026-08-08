@@ -230,8 +230,8 @@ export class IntegrationController {
   verifyInboundParse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      await this.integrationService.verifyInboundParse(tenantId);
-      res.json({ message: 'Inbound Webhook verified successfully!', isVerified: true });
+      const result = await this.integrationService.verifyInboundParse(tenantId);
+      res.json({ message: result.message, isVerified: true });
     } catch (error) {
       next(error);
     }

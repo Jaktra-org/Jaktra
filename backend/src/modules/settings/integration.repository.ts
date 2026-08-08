@@ -26,6 +26,16 @@ export class IntegrationRepository {
       .where(eq(tenantSettings.tenantId, tenantId));
   }
 
+  async getWebhookToken(tenantId: string): Promise<string | undefined> {
+    const { tenantSettings } = await import('../../db/index.js');
+    const [row] = await this.db
+      .select({ webhookToken: tenantSettings.webhookToken })
+      .from(tenantSettings)
+      .where(eq(tenantSettings.tenantId, tenantId))
+      .limit(1);
+    return row?.webhookToken || undefined;
+  }
+
   async getIntegration(tenantId: string, provider: 'sendgrid' | 'smtp' | 'razorpay'): Promise<TenantIntegration | undefined> {
     const result = await this.db
       .select()
