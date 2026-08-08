@@ -8,6 +8,7 @@ import { ValidationError } from '../../shared/errors/index.js';
 import { verifyEmailDomainMx } from '../../shared/email/mx-verifier.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
 
+import { config } from '../../config/index.js';
 import type { SettingsRepository } from './settings.repository.js';
 
 const razorpayCredsSchema = z.object({
@@ -15,6 +16,26 @@ const razorpayCredsSchema = z.object({
   keySecret: z.string().min(5).max(100),
   webhookSecret: z.string().min(5).max(100),
 });
+
+function getPublicBaseUrl(req: Request): string {
+  if (config.INBOUND_PARSE_DOMAIN) {
+    return config.INBOUND_PARSE_DOMAIN.startsWith('http')
+      ? config.INBOUND_PARSE_DOMAIN.replace(/\/$/, '')
+      : `https://${config.INBOUND_PARSE_DOMAIN.replace(/\/$/, '')}`;
+  }
+
+  if (config.FRONTEND_URL && config.FRONTEND_URL.includes('jaktra.site')) {
+    return config.FRONTEND_URL.replace(/\/$/, '');
+  }
+
+  const reqHost = req.get('x-forwarded-host') || req.get('host') || '';
+  if (reqHost.includes('alb') || reqHost.includes('amazonaws.com') || reqHost.includes('cloudfront.net') || process.env.NODE_ENV === 'production') {
+    return 'https://www.jaktra.site';
+  }
+
+  const protocol = req.protocol || 'http';
+  return `${protocol}://${reqHost || 'localhost:3001'}`;
+}
 
 export class IntegrationController {
   constructor(
@@ -57,9 +78,7 @@ export class IntegrationController {
         }
       }
 
-      const reqHost = req.get('host') || 'localhost:3000';
-      const protocol = req.protocol || 'http';
-      const baseUrl = `${protocol}://${reqHost}`;
+      const baseUrl = getPublicBaseUrl(req);
       const inboundWebhookUrl = `${baseUrl}/api/webhooks/sendgrid/inbound/${webhookToken}`;
 
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate');

@@ -65,7 +65,7 @@ export function IntegrationsTab() {
   const razorpay = integrations?.razorpay;
   const isConfigured = razorpay?.isConfigured;
   const inbound = integrations?.inboundParse;
-  const webhookUrl = inbound?.webhookUrl || `${window.location.origin}/api/webhooks/sendgrid/inbound/${user?.tenantId}`;
+  const webhookUrl = inbound?.webhookUrl || `https://www.jaktra.site/api/webhooks/sendgrid/inbound/${user?.tenantId || ''}`;
   const sendgridSettingsUrl = inbound?.sendgridSettingsUrl || 'https://app.sendgrid.com/settings/parse';
   const isInboundVerified = inbound?.isVerified ?? false;
 
