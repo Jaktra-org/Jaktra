@@ -102,12 +102,37 @@ export class IntegrationService {
       const data = (await response.json()) as { result?: Array<{ url?: string; hostname?: string }> };
       const parseSettings = Array.isArray(data.result) ? data.result : [];
 
-      // Look for a parse setting matching this tenant's webhook Token or URL path
-      const matchingSetting = parseSettings.find(
-        (setting) =>
-          setting.url &&
-          (setting.url.includes(webhookToken) || setting.url.includes('/api/webhooks/sendgrid/inbound/'))
+      if (parseSettings.length === 0) {
+        throw new ValidationError(
+          'No Inbound Parse settings found in your SendGrid account. Please click "Open SendGrid Parse Settings", click "Add Host & URL", paste your copied Webhook URL, and then click Verify Webhook again.'
+        );
+      }
+
+      // 5. Look for a parse setting matching this tenant's webhook Token or URL path
+      let matchingSetting = parseSettings.find(
+        (setting) => setting.url && setting.url.includes(webhookToken)
       );
+
+      if (!matchingSetting) {
+        // Fallback check: match by path /api/webhooks/sendgrid/inbound/ or hostname
+        matchingSetting = parseSettings.find(
+          (setting) =>
+            setting.url &&
+            (setting.url.includes('/api/webhooks/sendgrid/inbound/') ||
+             (setting.hostname && setting.hostname.includes('jaktra')))
+        );
+
+        if (matchingSetting && matchingSetting.url) {
+          // Sync the token configured in SendGrid back to DB if different
+          const parts = matchingSetting.url.split('/api/webhooks/sendgrid/inbound/');
+          if (parts[1]) {
+            const tokenInSendgrid = parts[1].split('?')[0].split('#')[0].trim();
+            if (tokenInSendgrid && tokenInSendgrid.length >= 10) {
+              await this.repo.updateWebhookToken(tenantId, tokenInSendgrid);
+            }
+          }
+        }
+      }
 
       if (!matchingSetting) {
         throw new ValidationError(
@@ -117,7 +142,8 @@ export class IntegrationService {
 
       // Match found! Save verification state in database
       await this.repo.verifyInboundParse(tenantId);
-      return { success: true, message: 'SendGrid Inbound Parse configuration verified successfully!' };
+      const hostMsg = matchingSetting.hostname ? ` (Host: ${matchingSetting.hostname})` : '';
+      return { success: true, message: `SendGrid Inbound Parse configuration verified successfully!${hostMsg}` };
     } catch (err: unknown) {
       if (err instanceof ValidationError) {
         throw err;

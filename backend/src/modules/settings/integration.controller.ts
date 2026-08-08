@@ -195,6 +195,10 @@ export class IntegrationController {
         }
       }
 
+      if (!emailSent) {
+        throw new ValidationError('Could not send verification OTP. Please configure and save your SendGrid API key first in Section 1.');
+      }
+
       res.json({ message: `Verification OTP sent to ${settings.replyMailboxEmail}` });
     } catch (error) {
       next(error);

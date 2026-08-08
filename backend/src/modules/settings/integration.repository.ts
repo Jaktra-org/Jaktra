@@ -26,6 +26,17 @@ export class IntegrationRepository {
       .where(eq(tenantSettings.tenantId, tenantId));
   }
 
+  async updateWebhookToken(tenantId: string, webhookToken: string): Promise<void> {
+    const { tenantSettings } = await import('../../db/index.js');
+    await this.db
+      .update(tenantSettings)
+      .set({
+        webhookToken,
+        updatedAt: new Date(),
+      })
+      .where(eq(tenantSettings.tenantId, tenantId));
+  }
+
   async getWebhookToken(tenantId: string): Promise<string | undefined> {
     const { tenantSettings } = await import('../../db/index.js');
     const [row] = await this.db

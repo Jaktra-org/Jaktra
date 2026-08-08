@@ -1,11 +1,24 @@
 import { ZodError } from 'zod';
-import { AimlServiceError } from '../errors/index.js';
+import { AimlServiceError, ValidationError } from '../errors/index.js';
 
 export function mapErrorToDisplayMessage(error: unknown): string {
   if (!error) return 'An unexpected error occurred';
 
   const errString = String(error);
   const errMsg = error instanceof Error ? error.message : errString;
+
+  // Explicit ValidationErrors and setup diagnostic messages — safe to return directly
+  if (
+    error instanceof ValidationError ||
+    (typeof error === 'object' && error !== null && (error as { name?: string }).name === 'ValidationError') ||
+    errMsg.includes('Inbound Webhook') ||
+    errMsg.includes('Inbound Parse') ||
+    errMsg.includes('SendGrid API') ||
+    errMsg.includes('SendGrid Key') ||
+    errMsg.includes('configured')
+  ) {
+    return errMsg;
+  }
 
   // AimlServiceError — use its display message directly
   if (error instanceof AimlServiceError) {

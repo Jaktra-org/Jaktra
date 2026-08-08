@@ -902,6 +902,15 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
     },
   });
 
+  const checkSendGridKeyConfigured = () => {
+    if (!integration?.isConfigured && !apiKeyInput.trim()) {
+      setInboundOtpErr('Please enter and save your SendGrid API Key in Section 1 first.');
+      setInboundOtpMsg('');
+      return false;
+    }
+    return true;
+  };
+
   const handleCopyWebhookUrl = () => {
     const url = inboundParse?.webhookUrl || 'https://www.jaktra.site/api/webhooks/sendgrid/inbound/webhook-token';
     navigator.clipboard.writeText(url);
@@ -910,6 +919,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   };
 
   const handleSaveReplyMode = (mode: 'real_mailbox' | 'webhook_only') => {
+    if (!checkSendGridKeyConfigured()) return;
     setReplyMode(mode);
     replyModeMutation.mutate({
       replyMode: mode,
@@ -918,6 +928,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   };
 
   const handleSaveMailboxEmail = () => {
+    if (!checkSendGridKeyConfigured()) return;
     if (!replyMailboxEmail.trim()) {
       setInboundOtpErr('Please enter a valid mailbox email address.');
       return;
@@ -1060,6 +1071,12 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
 
               {/* SECTION 2: INBOUND EMAIL PARSE WEBHOOK & DUAL REPLY MODE */}
               <div className="space-y-4 pt-4 border-t border-slate-200">
+                {!isConfigured && !apiKeyInput.trim() && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 font-medium">
+                    ⚠️ Please enter and save your SendGrid API Key in Section 1 first before configuring reply mailboxes or verifying webhooks.
+                  </div>
+                )}
+
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center justify-between">
                   <span className="flex items-center">
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
@@ -1091,7 +1108,11 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                     </button>
                     <button
                       type="button"
-                      onClick={() => verifyInboundWebhookMutation.mutate()}
+                      onClick={() => {
+                        if (checkSendGridKeyConfigured()) {
+                          verifyInboundWebhookMutation.mutate();
+                        }
+                      }}
                       disabled={verifyInboundWebhookMutation.isPending || isVerified}
                       className="px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
                     >
@@ -1211,7 +1232,11 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                           </span>
                           <button
                             type="button"
-                            onClick={() => sendInboundOtpMutation.mutate()}
+                            onClick={() => {
+                              if (checkSendGridKeyConfigured()) {
+                                sendInboundOtpMutation.mutate();
+                              }
+                            }}
                             disabled={sendInboundOtpMutation.isPending || !replyMailboxEmail || otpCooldown > 0}
                             className="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded font-semibold transition-colors disabled:opacity-50"
                           >
@@ -1234,7 +1259,11 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                           />
                           <button
                             type="button"
-                            onClick={() => verifyInboundOtpMutation.mutate(inboundOtpInput)}
+                            onClick={() => {
+                              if (checkSendGridKeyConfigured()) {
+                                verifyInboundOtpMutation.mutate(inboundOtpInput);
+                              }
+                            }}
                             disabled={verifyInboundOtpMutation.isPending || inboundOtpInput.trim().length !== 6}
                             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold transition-colors disabled:opacity-50"
                           >
