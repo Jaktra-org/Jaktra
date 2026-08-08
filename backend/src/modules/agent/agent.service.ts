@@ -13,7 +13,6 @@ import { logger } from '../../shared/logger.js';
 import { NotFoundError, CommunicationError } from '../../shared/errors/index.js';
 import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 import { PortalService } from '../portal/portal.service.js';
-import { config } from '../../config/index.js';
 import { type AgentRunChunk } from '../../db/index.js';
 
 export class AgentService {
@@ -157,7 +156,7 @@ export class AgentService {
             { source: 'agent' },
             {
               description: `Follow-up skipped due to idempotency check`,
-              payload: { reason: 'idempotency_skip', ...idempotencyCheck, runId }
+              payload: { recipient: inv.contactEmail, contactEmail: inv.contactEmail, reason: 'idempotency_skip', ...idempotencyCheck, runId }
             }
           ).catch(err => logger.error('Failed to log followup.skipped event', err));
           continue;
@@ -176,7 +175,7 @@ export class AgentService {
             { source: 'agent' },
             {
               description: `Follow-up halted: no automated channel configured`,
-              payload: { reason: 'no_automated_channel', tier: effectiveTier, toneSource, runId }
+              payload: { recipient: inv.contactEmail, contactEmail: inv.contactEmail, reason: 'no_automated_channel', tier: effectiveTier, toneSource, runId }
             }
           ).catch(err => logger.error('Failed to log followup.halted event', err));
           continue;
@@ -209,7 +208,7 @@ export class AgentService {
                 { source: 'agent' },
                 {
                   description: `Follow-up halted: recipient email is invalid`,
-                  payload: { reason: 'mail_invalid', error: validationErrMsg, channel, runId }
+                  payload: { recipient: inv.contactEmail, contactEmail: inv.contactEmail, reason: 'mail_invalid', error: validationErrMsg, channel, runId }
                 }
               ).catch(err => logger.error('Failed to log followup.halted event', err));
               await this.dlqService.recordFailure(inv.id, tenantId, validationErrMsg).catch(() => { });
@@ -321,7 +320,7 @@ export class AgentService {
                 { source: 'agent' },
                 {
                   description: `Follow-up email sent via ${channel}`,
-                  payload: { subject: res.content.subject, channel, toneSource, tone: effectiveTier, runId }
+                  payload: { recipient: inv.contactEmail, contactEmail: inv.contactEmail, subject: res.content.subject, channel, toneSource, tone: effectiveTier, runId }
                 }
               ).catch(err => logger.error('Failed to log followup.sent event', err));
               await this.dlqService.clearFailure(inv.id, tenantId).catch(() => { });
@@ -346,7 +345,7 @@ export class AgentService {
                 { source: 'agent' },
                 {
                   description: `Follow-up email send failed`,
-                  payload: { subject: res.content.subject, error: sendError, channel, toneSource, tone: effectiveTier, runId }
+                  payload: { recipient: inv.contactEmail, contactEmail: inv.contactEmail, subject: res.content.subject, error: sendError, channel, toneSource, tone: effectiveTier, runId }
                 }
               ).catch(err => logger.error('Failed to log followup.halted event', err));
               await this.dlqService.recordFailure(inv.id, tenantId, sendError).catch(() => { });
@@ -369,7 +368,7 @@ export class AgentService {
               { source: 'agent' },
               {
                 description: `Follow-up failed with error`,
-                payload: { error: displayErr, runId }
+                payload: { recipient: inv.contactEmail, contactEmail: inv.contactEmail, error: displayErr, runId }
               }
             ).catch(eventErr => logger.error('Failed to log followup.halted event', eventErr));
             await this.dlqService.recordFailure(inv.id, tenantId, errMsg, errStack).catch(() => { });
@@ -421,7 +420,7 @@ export class AgentService {
     if (actorContext) {
       await this.eventService.emitEvent('invoice', invoice.id, tenantId, 'followup.triggered', actorContext, {
         description: `Follow-up manually triggered by ${actorContext.source === 'ui' || actorContext.source === 'api' ? actorContext.name : 'user'}`,
-        payload: { tone: urgencyTier, toneSource }
+        payload: { recipient: invoice.contactEmail, contactEmail: invoice.contactEmail, tone: urgencyTier, toneSource }
       }).catch(err => logger.error('Failed to log followup.triggered event', err));
     }
 
@@ -435,7 +434,7 @@ export class AgentService {
         { source: 'agent' },
         {
           description: `Follow-up halted: no automated channel configured`,
-          payload: { reason: 'no_automated_channel', tier: urgencyTier, toneSource }
+          payload: { recipient: invoice.contactEmail, contactEmail: invoice.contactEmail, reason: 'no_automated_channel', tier: urgencyTier, toneSource }
         }
       ).catch(err => logger.error('Failed to log followup.halted event', err));
       return { skipped: true, reason: 'no_automated_channel', tier: urgencyTier };
@@ -451,7 +450,7 @@ export class AgentService {
         { source: 'agent' },
         {
           description: `Follow-up skipped due to idempotency check`,
-          payload: { reason: 'idempotency_skip', ...idempotencyCheck }
+          payload: { recipient: invoice.contactEmail, contactEmail: invoice.contactEmail, reason: 'idempotency_skip', ...idempotencyCheck }
         }
       ).catch(err => logger.error('Failed to log followup.skipped event', err));
       return idempotencyCheck;
@@ -485,7 +484,7 @@ export class AgentService {
               { source: 'agent' },
               {
                 description: `Follow-up halted: recipient email is invalid`,
-                payload: { reason: 'mail_invalid', error: validationErrMsg, channel }
+                payload: { recipient: invoice.contactEmail, contactEmail: invoice.contactEmail, reason: 'mail_invalid', error: validationErrMsg, channel }
               }
             ).catch(err => logger.error('Failed to log followup.halted event', err));
             await this.dlqService.recordFailure(invoice.id, tenantId, validationErrMsg).catch(() => { });
@@ -536,7 +535,7 @@ export class AgentService {
             { source: 'agent' },
             {
               description: `Follow-up email generation failed`,
-              payload: { subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error, channel, toneSource, tone: urgencyTier }
+              payload: { recipient: invoice.contactEmail, contactEmail: invoice.contactEmail, subject: resp.subject, bodyPreview: resp.bodyPreview, error: resp.error, channel, toneSource, tone: urgencyTier }
             }
           ).catch(err => logger.error('Failed to log followup.halted event', err));
           await this.dlqService.recordFailure(invoice.id, tenantId, resp.error ?? 'Generation produced no content').catch(() => { });
@@ -584,7 +583,7 @@ export class AgentService {
             { source: 'agent' },
             {
               description: `Follow-up email sent via ${channel}`,
-              payload: { subject: resp.subject, bodyPreview: resp.bodyPreview, channel, toneSource, tone: urgencyTier }
+              payload: { recipient: invoice.contactEmail, contactEmail: invoice.contactEmail, subject: resp.subject, bodyPreview: resp.bodyPreview, channel, toneSource, tone: urgencyTier }
             }
           ).catch(err => logger.error('Failed to log followup.sent event', err));
           await this.dlqService.clearFailure(invoice.id, tenantId).catch(() => { });
@@ -607,7 +606,7 @@ export class AgentService {
             { source: 'agent' },
             {
               description: `Follow-up email send failed`,
-              payload: { subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, toneSource, tone: urgencyTier }
+              payload: { recipient: invoice.contactEmail, contactEmail: invoice.contactEmail, subject: resp.subject, bodyPreview: resp.bodyPreview, error: sendError, channel, toneSource, tone: urgencyTier }
             }
           ).catch(err => logger.error('Failed to log followup.halted event', err));
           await this.dlqService.recordFailure(invoice.id, tenantId, sendError).catch(() => { });
@@ -629,7 +628,7 @@ export class AgentService {
         { source: 'agent' },
         {
           description: `Follow-up failed with error`,
-          payload: { error: displayErr }
+          payload: { recipient: invoice.contactEmail, contactEmail: invoice.contactEmail, error: displayErr }
         }
       ).catch(e => logger.error('Failed to log followup.halted event', e));
       await this.dlqService.recordFailure(invoice.id, tenantId, errMsg, errStack).catch(() => { });

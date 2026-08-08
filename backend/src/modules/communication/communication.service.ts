@@ -134,13 +134,16 @@ export class CommunicationService {
         description = `Follow-up email delivery failed (${eventType})`;
       }
 
+      const recipientEmail = (rawEvent.email || rawEvent.recipient || rawEvent.to) as string | undefined;
       const payload = isBounceOrDrop
         ? {
             reason: eventType === 'dropped' ? 'mail_dropped' : 'mail_bounced',
             error: rawEvent.reason || 'Email bounced or dropped',
+            recipient: recipientEmail,
+            contactEmail: recipientEmail,
             runId: resolvedRunId,
           }
-        : { ...rawEvent, runId: resolvedRunId };
+        : { ...rawEvent, recipient: recipientEmail, contactEmail: recipientEmail, runId: resolvedRunId };
 
       await this.eventService.emitEvent(
         'invoice',
