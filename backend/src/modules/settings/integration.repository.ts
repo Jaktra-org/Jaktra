@@ -15,6 +15,17 @@ export class IntegrationRepository {
     return !!row;
   }
 
+  async verifyInboundParse(tenantId: string): Promise<void> {
+    const { tenantSettings } = await import('../../db/index.js');
+    await this.db
+      .update(tenantSettings)
+      .set({
+        inboundParseVerified: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(tenantSettings.tenantId, tenantId));
+  }
+
   async getIntegration(tenantId: string, provider: 'sendgrid' | 'smtp' | 'razorpay'): Promise<TenantIntegration | undefined> {
     const result = await this.db
       .select()

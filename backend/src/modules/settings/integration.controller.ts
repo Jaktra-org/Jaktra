@@ -9,6 +9,7 @@ import { verifyEmailDomainMx } from '../../shared/email/mx-verifier.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
 
 import { config } from '../../config/index.js';
+import { logger } from '../../shared/logger.js';
 import type { SettingsRepository } from './settings.repository.js';
 
 const razorpayCredsSchema = z.object({
@@ -145,25 +146,53 @@ export class IntegrationController {
         throw new ValidationError('Tenant is not configured for real mailbox reply mode.');
       }
 
+      // Check 60-second rate limit cooldown between OTP requests
+      if (settings.replyMailboxOtpExpiresAt) {
+        const timeSinceLastOtp = 10 * 60 * 1000 - (settings.replyMailboxOtpExpiresAt.getTime() - Date.now());
+        if (timeSinceLastOtp >= 0 && timeSinceLastOtp < 60 * 1000) {
+          const secondsLeft = Math.ceil((60 * 1000 - timeSinceLastOtp) / 1000);
+          throw new ValidationError(`Please wait ${secondsLeft} seconds before requesting another OTP code.`);
+        }
+      }
+
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
       await this.settingsRepo.saveReplyMailboxOtp(tenantId, otpCode, expiresAt);
 
-      if (this.communicationService) {
-        await this.communicationService.send({
-          tenantId,
-          to: settings.replyMailboxEmail,
-          subject: 'Jaktra Mailbox Verification Code',
-          html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
-            <h2 style="color: #1e293b; margin-top: 0;">Verify Your Reply Mailbox</h2>
-            <p style="color: #475569;">Enter the following 6-digit OTP code in Jaktra Settings to verify ownership of <strong>${settings.replyMailboxEmail}</strong>:</p>
-            <div style="background-color: #f1f5f9; padding: 16px; text-align: center; border-radius: 6px; font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #2563eb; margin: 20px 0;">
-              ${otpCode}
-            </div>
-            <p style="color: #64748b; font-size: 13px;">This verification code expires in 10 minutes.</p>
-          </div>`,
-        });
+      // Send OTP via platform mailer or fallback safely
+      let emailSent = false;
+      const platformMailer = this.integrationService.getPlatformMailer();
+      if (platformMailer) {
+        try {
+          const res = await platformMailer.sendMailboxVerificationOtpEmail(settings.replyMailboxEmail, otpCode);
+          if (res?.success) {
+            emailSent = true;
+          }
+        } catch (err) {
+          logger.warn(`Platform mailer OTP send failed:`, err);
+        }
+      }
+
+      if (!emailSent && this.communicationService) {
+        try {
+          await this.communicationService.send({
+            tenantId,
+            to: settings.replyMailboxEmail,
+            subject: 'Jaktra Mailbox Verification Code',
+            html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
+              <h2 style="color: #1e293b; margin-top: 0;">Verify Your Reply Mailbox</h2>
+              <p style="color: #475569;">Enter the following 6-digit OTP code in Jaktra Settings to verify ownership of <strong>${settings.replyMailboxEmail}</strong>:</p>
+              <div style="background-color: #f1f5f9; padding: 16px; text-align: center; border-radius: 6px; font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #2563eb; margin: 20px 0;">
+                ${otpCode}
+              </div>
+              <p style="color: #64748b; font-size: 13px;">This verification code expires in 10 minutes.</p>
+            </div>`,
+          });
+          emailSent = true;
+        } catch (err) {
+          logger.warn(`Communication service OTP send failed:`, err);
+        }
       }
 
       res.json({ message: `Verification OTP sent to ${settings.replyMailboxEmail}` });
@@ -193,6 +222,16 @@ export class IntegrationController {
       }
 
       res.json({ message: 'Reply mailbox verified successfully!', replyMailboxVerified: true });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyInboundParse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      await this.integrationService.verifyInboundParse(tenantId);
+      res.json({ message: 'Inbound Webhook verified successfully!', isVerified: true });
     } catch (error) {
       next(error);
     }

@@ -59,6 +59,14 @@ export class IntegrationService {
     return this.repo.hasInboundEmails(tenantId);
   }
 
+  async verifyInboundParse(tenantId: string): Promise<void> {
+    await this.repo.verifyInboundParse(tenantId);
+  }
+
+  getPlatformMailer(): PlatformMailer | null {
+    return this.platformMailer;
+  }
+
   async getIntegrationStatus(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<IntegrationStatus> {
     const integration = await this.repo.getIntegration(tenantId, provider);
     

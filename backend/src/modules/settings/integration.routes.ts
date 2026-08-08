@@ -18,6 +18,7 @@ export function createIntegrationRouter(controller: IntegrationController): Rout
   router.post('/sendgrid/reply-mode', requireRole('admin'), controller.setReplyMode);
   router.post('/sendgrid/reply-mailbox/send-otp', requireRole('admin'), controller.sendReplyMailboxOtp);
   router.post('/sendgrid/reply-mailbox/verify-otp', requireRole('admin'), controller.verifyReplyMailboxOtp);
+  router.post('/sendgrid/inbound/verify', requireRole('admin'), controller.verifyInboundParse);
 
   router.post('/smtp', requireRole('admin'), controller.saveSmtpConfig);
   router.post('/smtp/test', requireRole('admin'), controller.testSmtpConfig);

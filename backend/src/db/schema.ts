@@ -326,6 +326,7 @@ export const tenantSettings = mysqlTable('tenant_settings', {
   replyMailboxVerified: boolean('reply_mailbox_verified').notNull().default(false),
   replyMailboxOtp: varchar('reply_mailbox_otp', { length: 255 }),
   replyMailboxOtpExpiresAt: datetime('reply_mailbox_otp_expires_at', { mode: 'date' }),
+  inboundParseVerified: boolean('inbound_parse_verified').notNull().default(false),
 });
 
 export const tenantIntegrations = mysqlTable('tenant_integrations', {

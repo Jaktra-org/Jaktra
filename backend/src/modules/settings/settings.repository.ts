@@ -80,12 +80,26 @@ export class SettingsRepository {
   }
 
   async hasInboundEmails(tenantId: string): Promise<boolean> {
+    const settings = await this.getSettings(tenantId);
+    if (settings?.inboundParseVerified) {
+      return true;
+    }
     const result = await this.db
       .select({ id: inboundEmails.id })
       .from(inboundEmails)
       .where(eq(inboundEmails.tenantId, tenantId))
       .limit(1);
     return result.length > 0;
+  }
+
+  async verifyInboundParse(tenantId: string): Promise<void> {
+    await this.db
+      .update(tenantSettings)
+      .set({
+        inboundParseVerified: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(tenantSettings.tenantId, tenantId));
   }
 
   async setReplyMode(
