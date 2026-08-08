@@ -10,7 +10,6 @@ import { verifyEmailDomainMx } from '../../shared/email/mx-verifier.js';
 import { ValidationError } from '../../shared/errors/index.js';
 import type { PlatformMailer } from '../platform-mail/platform-mailer.js';
 
-const memoryOtpStore = new Map<string, { code: string; targetEmail: string; payload: SendgridConfigPayload; expiresAt: number }>();
 
 export interface IntegrationStatus {
   provider: 'sendgrid' | 'smtp';
@@ -331,54 +330,6 @@ export class IntegrationService {
     const health = await this.performSendgridIdentityCheck(apiKeyToSave.trim(), senderEmail);
     if (health.senderVerified === false) {
       throw new ValidationError(`Sender email "${senderEmail}" is not configured as a verified Sender Identity in your SendGrid account. Please create and verify this sender identity in SendGrid before saving.`);
-    }
-
-    const targetEmail = replyTo || senderEmail;
-    const otpCacheKey = `sendgrid:otp:${tenantId}`;
-
-    if (data.otpCode) {
-      let storedOtpData: { code: string; targetEmail: string; payload: SendgridConfigPayload } | null = null;
-      if (this.redis && this.redis.isOpen) {
-        const cached = await this.redis.get(otpCacheKey);
-        if (cached) storedOtpData = JSON.parse(cached);
-      } else {
-        const mem = memoryOtpStore.get(otpCacheKey);
-        if (mem && mem.expiresAt > Date.now()) {
-          storedOtpData = mem;
-        }
-      }
-
-      if (!storedOtpData || storedOtpData.code !== data.otpCode.trim()) {
-        throw new ValidationError('Invalid or expired verification code. Please check your inbox or request a new code.');
-      }
-
-      if (this.redis && this.redis.isOpen) {
-        await this.redis.del(otpCacheKey);
-      } else {
-        memoryOtpStore.delete(otpCacheKey);
-      }
-    } else {
-      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-      const otpPayload = { code: otpCode, targetEmail, payload: payloadToSave };
-
-      if (this.redis && this.redis.isOpen) {
-        await this.redis.set(otpCacheKey, JSON.stringify(otpPayload), { EX: 600 });
-      } else {
-        memoryOtpStore.set(otpCacheKey, { ...otpPayload, expiresAt: Date.now() + 600000 });
-      }
-
-      if (this.platformMailer) {
-        const mailResult = await this.platformMailer.sendMailboxVerificationOtpEmail(targetEmail, otpCode);
-        if (!mailResult.success) {
-          logger.warn(`Failed to send mailbox verification OTP email to ${targetEmail}: ${mailResult.error}`);
-        }
-      }
-
-      return {
-        requiresOtp: true,
-        targetEmail,
-        message: `Verification code sent to ${targetEmail}. Please check your inbox to complete configuration.`,
-      };
     }
 
     const version = 1;

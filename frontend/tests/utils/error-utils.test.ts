@@ -67,7 +67,7 @@ describe('error-utils getErrorMessage', () => {
   describe('technical error normalization', () => {
     it('normalizes SMTP and SendGrid email errors', () => {
       expect(getErrorMessage('SMTP connection failure')).toBe('Email service unavailable');
-      expect(getErrorMessage('SendGrid API call failed')).toBe('Email service unavailable');
+      expect(getErrorMessage('SendGrid API call failed')).toBe('SendGrid API call failed');
     });
 
     it('normalizes circuit breaker open state errors', () => {

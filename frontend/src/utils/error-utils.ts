@@ -54,7 +54,13 @@ export function getErrorMessage(error: unknown): string {
     lowerMsg.includes('verified') ||
     lowerMsg.includes('mx record') ||
     lowerMsg.includes('mx records') ||
-    lowerMsg.includes('mailbox')
+    lowerMsg.includes('mailbox') ||
+    lowerMsg.includes('inbound') ||
+    lowerMsg.includes('webhook') ||
+    lowerMsg.includes('sendgrid') ||
+    lowerMsg.includes('parse') ||
+    lowerMsg.includes('api key') ||
+    lowerMsg.includes('configured')
   ) {
     return sanitizedMessage;
   }
@@ -67,7 +73,7 @@ export function getErrorMessage(error: unknown): string {
   if (lowerMsg.includes('validation failed') || lowerMsg.includes('invalid credentials') || lowerMsg.includes('bad request')) {
     return sanitizedMessage;
   }
-  if (lowerMsg.includes('smtp') || lowerMsg.includes('email sending failed') || lowerMsg.includes('sendgrid')) {
+  if (lowerMsg.includes('smtp') || lowerMsg.includes('email sending failed')) {
     return 'Email service unavailable';
   }
   if (lowerMsg.includes('fetch failed') || lowerMsg.includes('typeerror: fetch failed')) {

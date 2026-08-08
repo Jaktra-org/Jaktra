@@ -807,6 +807,27 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
     return () => clearInterval(timer);
   }, [otpCooldown]);
 
+  const saveKeyOnlyMutation = useMutation({
+    mutationFn: (apiKey: string) =>
+      settingsService.saveSendgridKey({
+        apiKey,
+        senderName: senderName.trim() || 'Finance Team',
+        senderEmail: senderEmail.trim() || userEmail,
+        replyTo: replyTo.trim() || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['sendgrid-health'] });
+      setErrorMsg('');
+      setInboundOtpMsg('SendGrid API Key saved successfully!');
+      setInboundOtpErr('');
+    },
+    onError: (err: unknown) => {
+      setErrorMsg(getErrorMessage(err));
+    },
+  });
+
   const saveMutation = useMutation({
     mutationFn: (data: { apiKey: string; senderName: string; senderEmail: string; replyTo?: string | null; otpCode?: string }) =>
       settingsService.saveSendgridKey(data),
@@ -981,6 +1002,8 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   };
 
   const isConfigured = integration?.isConfigured;
+  const hasKeyInput = apiKeyInput.trim().startsWith('SG.') && apiKeyInput.trim().length >= 15;
+  const isUnlocked = isConfigured || hasKeyInput;
   const webhookUrl = inboundParse?.webhookUrl || 'https://www.jaktra.site/api/webhooks/sendgrid/inbound/webhook-token';
   const sendgridSettingsUrl = inboundParse?.sendgridSettingsUrl || 'https://app.sendgrid.com/settings/parse';
 
@@ -1016,64 +1039,98 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
             <>
               {/* SECTION 1: OUTBOUND SENDGRID API KEY & SENDER IDENTITY */}
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center">
-                  <Mail className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
-                  1. Outbound SendGrid API & Sender Identity
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center justify-between">
+                  <span className="flex items-center">
+                    <Mail className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
+                    1. Outbound SendGrid API & Sender Identity
+                  </span>
+                  {isConfigured && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-semibold">
+                      API Key Configured ✓
+                    </span>
+                  )}
                 </h4>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700">SendGrid API Key</label>
-                  <input
-                    type="password"
-                    value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder={isConfigured ? 'SG.******** (Leave blank to keep current key)' : 'SG.xxxxxxxxxxxxxxxxxx'}
-                  />
-                  <p className="text-[11px] text-slate-500">Must be a restricted key with Mail Send permissions.</p>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="password"
+                      value={apiKeyInput}
+                      onChange={(e) => {
+                        setApiKeyInput(e.target.value);
+                        setErrorMsg('');
+                      }}
+                      className="flex-1 p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={isConfigured ? '•••••••••••••••••••••••••••• (Key Saved)' : 'SG.xxxxxxxxxxxxxxxxxx'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const key = apiKeyInput.trim();
+                        if (!key && isConfigured) return;
+                        if (!key || !key.startsWith('SG.')) {
+                          setErrorMsg('SendGrid API Key must start with SG.');
+                          return;
+                        }
+                        saveKeyOnlyMutation.mutate(key);
+                      }}
+                      disabled={saveKeyOnlyMutation.isPending || (!apiKeyInput.trim() && isConfigured)}
+                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 flex items-center"
+                    >
+                      {saveKeyOnlyMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+                      {saveKeyOnlyMutation.isPending ? 'Saving Key...' : 'Save API Key'}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-500">Must be a restricted key starting with SG. with Mail Send permissions.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">Sender Name</label>
-                    <input
-                      type="text"
-                      value={senderName}
-                      onChange={(e) => setSenderName(e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g. Acme Billing"
-                    />
+                <div className={!isUnlocked ? 'opacity-50 pointer-events-none select-none' : ''}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Sender Name</label>
+                      <input
+                        type="text"
+                        value={senderName}
+                        onChange={(e) => setSenderName(e.target.value)}
+                        disabled={!isUnlocked}
+                        className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g. Acme Billing"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Sender Email</label>
+                      <input
+                        type="email"
+                        value={senderEmail}
+                        onChange={(e) => setSenderEmail(e.target.value)}
+                        disabled={!isUnlocked}
+                        className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="billing@acme.com"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">Sender Email</label>
+
+                  <div className="space-y-1 mt-4">
+                    <label className="text-xs font-semibold text-slate-700">Reply-To Email (Optional Override)</label>
                     <input
                       type="email"
-                      value={senderEmail}
-                      onChange={(e) => setSenderEmail(e.target.value)}
+                      value={replyTo}
+                      onChange={(e) => setReplyTo(e.target.value)}
+                      disabled={!isUnlocked}
                       className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="billing@acme.com"
+                      placeholder="support@acme.com"
                     />
+                    <p className="text-[11px] text-slate-500">If left blank, replies will use your Sender Email domain.</p>
                   </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Reply-To Email (Optional Override)</label>
-                  <input
-                    type="email"
-                    value={replyTo}
-                    onChange={(e) => setReplyTo(e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="support@acme.com"
-                  />
-                  <p className="text-[11px] text-slate-500">If left blank, replies will use your Sender Email domain.</p>
                 </div>
               </div>
 
               {/* SECTION 2: INBOUND EMAIL PARSE WEBHOOK & DUAL REPLY MODE */}
-              <div className="space-y-4 pt-4 border-t border-slate-200">
-                {!isConfigured && !apiKeyInput.trim() && (
+              <div className={`space-y-4 pt-4 border-t border-slate-200 ${!isUnlocked ? 'opacity-50 pointer-events-none select-none' : ''}`}>
+                {!isUnlocked && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 font-medium">
-                    ⚠️ Please enter and save your SendGrid API Key in Section 1 first before configuring reply mailboxes or verifying webhooks.
+                    🔒 Enter and save your SendGrid API Key starting with SG. above to unlock sender identity and inbound parse settings.
                   </div>
                 )}
 
@@ -1113,7 +1170,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                           verifyInboundWebhookMutation.mutate();
                         }
                       }}
-                      disabled={verifyInboundWebhookMutation.isPending || isVerified}
+                      disabled={verifyInboundWebhookMutation.isPending || isVerified || !isUnlocked}
                       className="px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
                     >
                       {verifyInboundWebhookMutation.isPending ? 'Verifying...' : isVerified ? 'Verified ✅' : 'Verify Webhook'}
@@ -1121,7 +1178,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                     <button
                       type="button"
                       onClick={() => rotateTokenMutation.mutate()}
-                      disabled={rotateTokenMutation.isPending}
+                      disabled={rotateTokenMutation.isPending || !isUnlocked}
                       className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md text-xs font-medium shrink-0 transition-colors disabled:opacity-50"
                       title="Rotate Token"
                     >
@@ -1137,7 +1194,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div
-                      onClick={() => handleSaveReplyMode('real_mailbox')}
+                      onClick={() => isUnlocked && handleSaveReplyMode('real_mailbox')}
                       className={`p-3 rounded-lg border cursor-pointer transition-all ${
                         replyMode === 'real_mailbox'
                           ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
@@ -1149,7 +1206,8 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                           type="radio"
                           name="setupReplyMode"
                           checked={replyMode === 'real_mailbox'}
-                          onChange={() => handleSaveReplyMode('real_mailbox')}
+                          onChange={() => isUnlocked && handleSaveReplyMode('real_mailbox')}
+                          disabled={!isUnlocked}
                           className="text-blue-600 focus:ring-blue-500"
                         />
                         <span className="font-semibold text-slate-900 text-xs">Mode 1: Real Mailbox</span>
@@ -1160,7 +1218,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                     </div>
 
                     <div
-                      onClick={() => handleSaveReplyMode('webhook_only')}
+                      onClick={() => isUnlocked && handleSaveReplyMode('webhook_only')}
                       className={`p-3 rounded-lg border cursor-pointer transition-all ${
                         replyMode === 'webhook_only'
                           ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
@@ -1172,7 +1230,8 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                           type="radio"
                           name="setupReplyMode"
                           checked={replyMode === 'webhook_only'}
-                          onChange={() => handleSaveReplyMode('webhook_only')}
+                          onChange={() => isUnlocked && handleSaveReplyMode('webhook_only')}
+                          disabled={!isUnlocked}
                           className="text-blue-600 focus:ring-blue-500"
                         />
                         <span className="font-semibold text-slate-900 text-xs">Mode 2: Virtual Sub-Address</span>
@@ -1184,7 +1243,14 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                   </div>
                 </div>
 
-                {/* Real Mailbox OTP Section */}
+                {/* Mode 2 Info Notice */}
+                {replyMode === 'webhook_only' && (
+                  <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-md text-xs text-emerald-800 font-medium">
+                    ✓ <strong>Mode 2 Selected:</strong> Customer email replies flow directly into Jaktra AI Dispute Engine via your Inbound Webhook. No real mailbox or OTP verification required.
+                  </div>
+                )}
+
+                {/* Real Mailbox OTP Section (Only visible in Mode 1) */}
                 {replyMode === 'real_mailbox' && (
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1197,13 +1263,14 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                             type="email"
                             value={replyMailboxEmail}
                             onChange={(e) => setReplyMailboxEmail(e.target.value)}
+                            disabled={!isUnlocked}
                             placeholder="support@company.com"
                             className="flex-1 px-2.5 py-1.5 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
                           />
                           <button
                             type="button"
                             onClick={handleSaveMailboxEmail}
-                            disabled={replyModeMutation.isPending}
+                            disabled={replyModeMutation.isPending || !isUnlocked}
                             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
                           >
                             Save
@@ -1237,7 +1304,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                                 sendInboundOtpMutation.mutate();
                               }
                             }}
-                            disabled={sendInboundOtpMutation.isPending || !replyMailboxEmail || otpCooldown > 0}
+                            disabled={sendInboundOtpMutation.isPending || !replyMailboxEmail || otpCooldown > 0 || !isUnlocked}
                             className="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded font-semibold transition-colors disabled:opacity-50"
                           >
                             {sendInboundOtpMutation.isPending
@@ -1254,6 +1321,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                             maxLength={6}
                             value={inboundOtpInput}
                             onChange={(e) => setInboundOtpInput(e.target.value)}
+                            disabled={!isUnlocked}
                             placeholder="6-digit OTP"
                             className="w-32 px-2.5 py-1.5 border border-slate-300 rounded-md text-xs font-mono text-center tracking-widest focus:ring-2 focus:ring-blue-500"
                           />
@@ -1264,7 +1332,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                                 verifyInboundOtpMutation.mutate(inboundOtpInput);
                               }
                             }}
-                            disabled={verifyInboundOtpMutation.isPending || inboundOtpInput.trim().length !== 6}
+                            disabled={verifyInboundOtpMutation.isPending || inboundOtpInput.trim().length !== 6 || !isUnlocked}
                             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold transition-colors disabled:opacity-50"
                           >
                             {verifyInboundOtpMutation.isPending ? 'Verifying...' : 'Verify OTP'}
