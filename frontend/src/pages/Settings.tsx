@@ -961,8 +961,11 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   const rotateTokenMutation = useMutation({
     mutationFn: () => settingsService.rotateWebhookToken(),
     onSuccess: () => {
+      setIsVerifiedLocal(false);
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
-      setInboundOtpMsg('Webhook secret token rotated successfully. Update the URL in SendGrid Inbound Parse settings.');
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      setInboundOtpMsg('Webhook secret token rotated successfully. Please copy the new Webhook URL above, update your SendGrid Inbound Parse settings, and click Verify Webhook.');
+      setInboundOtpErr('');
     },
   });
 

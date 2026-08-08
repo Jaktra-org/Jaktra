@@ -31,6 +31,7 @@ export class SettingsRepository {
       .update(tenantSettings)
       .set({
         webhookToken: newToken,
+        inboundParseVerified: false,
         updatedAt: new Date(),
       })
       .where(eq(tenantSettings.tenantId, tenantId));

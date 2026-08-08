@@ -112,34 +112,13 @@ export class IntegrationService {
       }
 
       // 5. Look for a parse setting matching this tenant's webhook Token or URL path
-      let matchingSetting = parseSettings.find(
+      const matchingSetting = parseSettings.find(
         (setting) => setting.url && setting.url.includes(webhookToken)
       );
 
       if (!matchingSetting) {
-        // Fallback check: match by path /api/webhooks/sendgrid/inbound/ or hostname
-        matchingSetting = parseSettings.find(
-          (setting) =>
-            setting.url &&
-            (setting.url.includes('/api/webhooks/sendgrid/inbound/') ||
-             (setting.hostname && setting.hostname.includes('jaktra')))
-        );
-
-        if (matchingSetting && matchingSetting.url) {
-          // Sync the token configured in SendGrid back to DB if different
-          const parts = matchingSetting.url.split('/api/webhooks/sendgrid/inbound/');
-          if (parts[1]) {
-            const tokenInSendgrid = parts[1].split('?')[0].split('#')[0].trim();
-            if (tokenInSendgrid && tokenInSendgrid.length >= 10) {
-              await this.repo.updateWebhookToken(tenantId, tokenInSendgrid);
-            }
-          }
-        }
-      }
-
-      if (!matchingSetting) {
         throw new ValidationError(
-          'Inbound Webhook URL not found in SendGrid. Please open SendGrid, add Host & URL with your copied Webhook URL, then click Verify Webhook again.'
+          'Inbound Webhook URL not found or does not match your active token in SendGrid. Please open SendGrid Parse Settings, update the URL field with your new Webhook URL above, then click Verify Webhook again.'
         );
       }
 
