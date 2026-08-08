@@ -605,14 +605,22 @@ describe('SendgridWebhookController Inbound Parse Authentication Checks', () => 
   let mockReq: any;
   let mockRes: any;
 
+  const mockSettingsRepo = {
+    findByWebhookToken: vi.fn(async (token: string) => {
+      if (token === 'correct-secret-123') {
+        return { tenantId: 'tenant-1', webhookToken: 'correct-secret-123' };
+      }
+      return null;
+    }),
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    config.SENDGRID_INBOUND_PARSE_SECRET = 'correct-secret-123';
     mockDisputeService = {
       processInboundEmail: vi.fn().mockResolvedValue(true),
     };
     controller = new SendgridWebhookController(
-      {} as any,
+      mockSettingsRepo as any,
       undefined,
       mockDisputeService
     );

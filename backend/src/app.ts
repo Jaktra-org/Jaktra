@@ -291,7 +291,7 @@ export function createApp(config: AppConfig): Application {
       app.use('/api', createEventRouter(new EventController(eventService), authMiddleware, tenantScoped));
 
       app.use('/api/settings/communication', createCommunicationRouter(new CommunicationController(communicationService), authMiddleware, tenantScoped));
-      app.use('/api/settings/integrations', authMiddleware, tenantScoped, createIntegrationRouter(new IntegrationController(integrationService, communicationService, eventService, dlqService)));
+      app.use('/api/settings/integrations', authMiddleware, tenantScoped, createIntegrationRouter(new IntegrationController(integrationService, communicationService, eventService, dlqService, settingsRepo)));
       
       app.locals.authMiddleware = authMiddleware;
       app.locals.authService = authService;

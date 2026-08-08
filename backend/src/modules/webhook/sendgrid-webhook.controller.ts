@@ -3,8 +3,6 @@ import crypto from 'crypto';
 import type { SendgridWebhookService } from './providers/sendgrid.webhook.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
 import type { DisputeService } from '../dispute/dispute.service.js';
-import { timingSafeCompare } from '../dispute/dispute.service.js';
-import { config } from '../../config/index.js';
 import type { RedisClientType } from 'redis';
 import { logger } from '../../shared/logger.js';
 import { AuthError, ValidationError, ForbiddenError, AppError } from '../../shared/errors/index.js';
@@ -67,7 +65,6 @@ export class SendgridWebhookController {
   handleSendgridInbound = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const secretToken = req.params.secretToken as string;
     const sourceIp = req.ip || 'unknown';
-    const configuredSecret = config.SENDGRID_INBOUND_PARSE_SECRET;
 
     // Short-circuit if this IP has already exceeded the invalid-token threshold.
     // Still returns 200 to preserve the webhook contract with SendGrid.
@@ -82,8 +79,12 @@ export class SendgridWebhookController {
       return;
     }
 
-    if (!configuredSecret || !timingSafeCompare(secretToken, configuredSecret)) {
-      const tokenHash = crypto.createHash('sha256').update(secretToken).digest('hex').slice(0, 8);
+    const tenantSettingsObj = secretToken && secretToken.length >= 16 
+      ? await this.settingsRepo.findByWebhookToken(secretToken) 
+      : null;
+
+    if (!tenantSettingsObj) {
+      const tokenHash = crypto.createHash('sha256').update(secretToken || '').digest('hex').slice(0, 8);
       logger.warn({
         securityEvent: 'webhook_invalid_token',
         sourceIp,
@@ -95,7 +96,22 @@ export class SendgridWebhookController {
       return;
     }
 
-    const { from, to, subject, text, html } = req.body;
+    let { from, to } = req.body || {};
+    const { subject, text, html, envelope } = req.body || {};
+
+    if (envelope) {
+      try {
+        const parsedEnv = typeof envelope === 'string' ? JSON.parse(envelope) : envelope;
+        if (!from && parsedEnv.from) {
+          from = parsedEnv.from;
+        }
+        if (!to && Array.isArray(parsedEnv.to) && parsedEnv.to.length > 0) {
+          to = parsedEnv.to[0];
+        }
+      } catch {
+        // ignore envelope JSON parse error
+      }
+    }
 
     if (!this.disputeService) {
       logger.error('DisputeService not configured on WebhookController');

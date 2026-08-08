@@ -15,9 +15,7 @@ vi.mock('../../../src/shared/logger.js', () => ({
 }));
 
 vi.mock('../../../src/config/index.js', () => ({
-  config: {
-    SENDGRID_INBOUND_PARSE_SECRET: 'correct-secret-token-abc123',
-  },
+  config: {},
 }));
 
 // timingSafeCompare and extractEmail are real crypto ops — mock at module
@@ -89,14 +87,21 @@ function makeReq(
 const VALID_SECRET = 'correct-secret-token-abc123';
 const INVALID_SECRET = 'wrong-token-xyz';
 
+const mockSettingsRepo = {
+  findByWebhookToken: vi.fn(async (token: string) => {
+    if (token === VALID_SECRET) {
+      return { tenantId: 'tenant-123', webhookToken: VALID_SECRET };
+    }
+    return null;
+  }),
+};
+
 function makeController(redisClient: any = null): SendgridWebhookController {
-  // Provide minimal stubs for required constructor deps; inbound handler
-  // doesn't touch most of them.
   return new SendgridWebhookController(
-    {} as any,      // settingsRepo
-    undefined,      // sendgridService
-    undefined,      // disputeService
-    redisClient,    // redisClient
+    mockSettingsRepo as any,
+    undefined,
+    undefined,
+    redisClient,
   );
 }
 

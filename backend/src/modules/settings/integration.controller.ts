@@ -8,6 +8,8 @@ import { ValidationError } from '../../shared/errors/index.js';
 import { verifyEmailDomainMx } from '../../shared/email/mx-verifier.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
 
+import type { SettingsRepository } from './settings.repository.js';
+
 const razorpayCredsSchema = z.object({
   keyId: z.string().min(5).max(50).regex(/^rzp_/, 'Key ID must start with rzp_'),
   keySecret: z.string().min(5).max(100),
@@ -19,7 +21,8 @@ export class IntegrationController {
     private readonly integrationService: IntegrationService,
     private readonly communicationService: CommunicationService,
     private readonly eventService?: EventService,
-    private readonly dlqService?: DlqService
+    private readonly dlqService?: DlqService,
+    private readonly settingsRepo?: SettingsRepository
   ) {}
 
   private getActorContext(req: Request): ActorContext {
@@ -36,16 +39,39 @@ export class IntegrationController {
   getStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      const [sendgridStatus, smtpStatus, razorpayStatus] = await Promise.all([
+      const [sendgridStatus, smtpStatus, razorpayStatus, hasInbound] = await Promise.all([
         this.integrationService.getIntegrationStatus(tenantId, 'sendgrid'),
         this.integrationService.getIntegrationStatus(tenantId, 'smtp'),
-        this.integrationService.getIntegrationStatusRazorpay(tenantId)
+        this.integrationService.getIntegrationStatusRazorpay(tenantId),
+        this.integrationService.hasInboundEmails(tenantId),
       ]);
-      res.set('Cache-Control', 'no-store');
+
+      let webhookToken = tenantId;
+      if (this.settingsRepo) {
+        let settings = await this.settingsRepo.getSettings(tenantId);
+        if (!settings?.webhookToken) {
+          settings = await this.settingsRepo.rotateWebhookToken(tenantId);
+        }
+        if (settings?.webhookToken) {
+          webhookToken = settings.webhookToken;
+        }
+      }
+
+      const reqHost = req.get('host') || 'localhost:3000';
+      const protocol = req.protocol || 'http';
+      const baseUrl = `${protocol}://${reqHost}`;
+      const inboundWebhookUrl = `${baseUrl}/api/webhooks/sendgrid/inbound/${webhookToken}`;
+
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.json({
         sendgrid: sendgridStatus,
         smtp: smtpStatus,
-        razorpay: razorpayStatus
+        razorpay: razorpayStatus,
+        inboundParse: {
+          webhookUrl: inboundWebhookUrl,
+          sendgridSettingsUrl: 'https://app.sendgrid.com/settings/parse',
+          isVerified: hasInbound,
+        },
       });
     } catch (error) {
       next(error);

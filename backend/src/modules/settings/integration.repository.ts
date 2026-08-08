@@ -1,10 +1,19 @@
 import { eq, and } from 'drizzle-orm';
 import type { DatabaseClient } from '../../db/index.js';
-import { tenantIntegrations, type TenantIntegration, type NewTenantIntegration } from '../../db/index.js';
+import { tenantIntegrations, inboundEmails, type TenantIntegration, type NewTenantIntegration } from '../../db/index.js';
 import crypto from 'crypto';
 
 export class IntegrationRepository {
   constructor(private readonly db: DatabaseClient) {}
+
+  async hasInboundEmails(tenantId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: inboundEmails.id })
+      .from(inboundEmails)
+      .where(eq(inboundEmails.tenantId, tenantId))
+      .limit(1);
+    return !!row;
+  }
 
   async getIntegration(tenantId: string, provider: 'sendgrid' | 'smtp' | 'razorpay'): Promise<TenantIntegration | undefined> {
     const result = await this.db

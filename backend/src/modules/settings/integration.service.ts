@@ -55,6 +55,10 @@ export class IntegrationService {
     return `${tenantId}:${provider}:v${version}`;
   }
 
+  async hasInboundEmails(tenantId: string): Promise<boolean> {
+    return this.repo.hasInboundEmails(tenantId);
+  }
+
   async getIntegrationStatus(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<IntegrationStatus> {
     const integration = await this.repo.getIntegration(tenantId, provider);
     

@@ -26,7 +26,8 @@ export function extractEmail(rawHeader: string | undefined): string | null {
   if (match && match[1]) {
     return match[1].trim().toLowerCase();
   }
-  return rawHeader.trim().toLowerCase();
+  const firstPart = rawHeader.split(',')[0];
+  return firstPart.trim().toLowerCase();
 }
 
 export function getEmailDomain(email: string): string {

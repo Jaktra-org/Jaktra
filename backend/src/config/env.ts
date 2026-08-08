@@ -17,7 +17,6 @@ const schema = z.object({
 
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
 
-  SENDGRID_INBOUND_PARSE_SECRET: z.string().optional(),
   INBOUND_PARSE_DOMAIN: z.string().optional(),
 
   AI_ML_SERVICE_URL: z.string().url().optional(),
