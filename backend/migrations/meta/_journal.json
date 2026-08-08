@@ -43,6 +43,13 @@
       "when": 1785137000000,
       "tag": "0005_sendgrid_dual_reply_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1785143880000,
+      "tag": "0006_add_inbound_parse_verified",
+      "breakpoints": true
     }
   ]
 }

@@ -41,9 +41,11 @@ function isSchemaAlreadyExistsError(error: unknown): boolean {
 
   return (
     combinedStr.includes('already exists') ||
+    combinedStr.includes('Duplicate column name') ||
     combinedStr.includes('Duplicate foreign key constraint') ||
     combinedStr.includes('Duplicate key') ||
     combinedStr.includes('ER_DUP_KEY') ||
+    combinedStr.includes('ER_DUP_FIELDNAME') ||
     combinedStr.includes('ER_TABLE_EXISTS_ERROR') ||
     combinedStr.includes('ER_FK_DUP_NAME') ||
     combinedStr.includes('ER_DUP_KEYNAME') ||
