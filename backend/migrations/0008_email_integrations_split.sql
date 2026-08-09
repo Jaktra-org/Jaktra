@@ -1,9 +1,9 @@
--- Step 1: DROP legacy integration tables if any exist
 DROP TABLE IF EXISTS `email_integration_sendgrid`;
+--> statement-breakpoint
 DROP TABLE IF EXISTS `email_integration_smtp`;
+--> statement-breakpoint
 DROP TABLE IF EXISTS `email_integrations`;
-
--- Step 2: CREATE Base Table with Virtual Generated Column for Single-Active-Provider Invariant
+--> statement-breakpoint
 CREATE TABLE `email_integrations` (
   `id` varchar(36) NOT NULL,
   `tenant_id` varchar(36) NOT NULL,
@@ -21,8 +21,7 @@ CREATE TABLE `email_integrations` (
   UNIQUE KEY `unq_single_active_provider` (`active_tenant_id`),
   KEY `idx_email_integrations_tenant` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Step 3: CREATE SendGrid Detail Table
+--> statement-breakpoint
 CREATE TABLE `email_integration_sendgrid` (
   `id` varchar(36) NOT NULL,
   `integration_id` varchar(36) NOT NULL,
@@ -42,8 +41,7 @@ CREATE TABLE `email_integration_sendgrid` (
   UNIQUE KEY `unq_sendgrid_integration_id` (`integration_id`),
   CONSTRAINT `fk_sendgrid_integration` FOREIGN KEY (`integration_id`) REFERENCES `email_integrations` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Step 4: CREATE SMTP Detail Table
+--> statement-breakpoint
 CREATE TABLE `email_integration_smtp` (
   `id` varchar(36) NOT NULL,
   `integration_id` varchar(36) NOT NULL,
@@ -62,13 +60,20 @@ CREATE TABLE `email_integration_smtp` (
   UNIQUE KEY `unq_smtp_integration_id` (`integration_id`),
   CONSTRAINT `fk_smtp_integration` FOREIGN KEY (`integration_id`) REFERENCES `email_integrations` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+--> statement-breakpoint
+ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `default_email_provider`;
+--> statement-breakpoint
+ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mode`;
+--> statement-breakpoint
+ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mailbox_email`;
+--> statement-breakpoint
+ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mailbox_verified`;
+--> statement-breakpoint
+ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mailbox_otp`;
+--> statement-breakpoint
+ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mailbox_otp_expires_at`;
+--> statement-breakpoint
+ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `inbound_parse_verified`;
+--> statement-breakpoint
+ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `inbound_domain`;
 
--- Step 5: DROP legacy email columns from tenant_settings
-ALTER TABLE `tenant_settings` DROP COLUMN `default_email_provider`;
-ALTER TABLE `tenant_settings` DROP COLUMN `reply_mode`;
-ALTER TABLE `tenant_settings` DROP COLUMN `reply_mailbox_email`;
-ALTER TABLE `tenant_settings` DROP COLUMN `reply_mailbox_verified`;
-ALTER TABLE `tenant_settings` DROP COLUMN `reply_mailbox_otp`;
-ALTER TABLE `tenant_settings` DROP COLUMN `reply_mailbox_otp_expires_at`;
-ALTER TABLE `tenant_settings` DROP COLUMN `inbound_parse_verified`;
-ALTER TABLE `tenant_settings` DROP COLUMN `inbound_domain`;
