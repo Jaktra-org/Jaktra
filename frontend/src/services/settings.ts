@@ -92,8 +92,8 @@ export const settingsService = {
     return response.data;
   },
 
-  sendReplyMailboxOtp: async (): Promise<{ message: string }> => {
-    const response = await api.post('/settings/integrations/sendgrid/reply-mailbox/send-otp');
+  sendReplyMailboxOtp: async (data?: { replyMailboxEmail?: string }): Promise<{ message: string }> => {
+    const response = await api.post('/settings/integrations/sendgrid/reply-mailbox/send-otp', data || {});
     return response.data;
   },
 

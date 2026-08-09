@@ -137,18 +137,26 @@ export class IntegrationController {
   sendReplyMailboxOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
+
       if (!this.settingsRepo) {
         res.status(500).json({ error: { message: 'Settings repository not configured' } });
         return;
       }
 
-      const settings = await this.settingsRepo.getSettings(tenantId);
-      if (!settings || settings.replyMode !== 'real_mailbox' || !settings.replyMailboxEmail) {
-        throw new ValidationError('Tenant is not configured for real mailbox reply mode.');
+      let settings = await this.settingsRepo.getSettings(tenantId);
+      const inputEmail = (req.body?.replyMailboxEmail || req.body?.email || '').trim();
+      const targetEmail = inputEmail || settings?.replyMailboxEmail;
+
+      if (!targetEmail || !targetEmail.includes('@')) {
+        throw new ValidationError('A valid real mailbox email address is required to send verification OTP.');
       }
 
+      // Automatically persist replyMode = 'real_mailbox' and replyMailboxEmail to database
+      await this.settingsRepo.setReplyMode(tenantId, 'real_mailbox', targetEmail);
+      settings = await this.settingsRepo.getSettings(tenantId);
+
       // Check 60-second rate limit cooldown between OTP requests
-      if (settings.replyMailboxOtpExpiresAt) {
+      if (settings?.replyMailboxOtpExpiresAt) {
         const timeSinceLastOtp = 10 * 60 * 1000 - (settings.replyMailboxOtpExpiresAt.getTime() - Date.now());
         if (timeSinceLastOtp >= 0 && timeSinceLastOtp < 60 * 1000) {
           const secondsLeft = Math.ceil((60 * 1000 - timeSinceLastOtp) / 1000);
@@ -166,7 +174,7 @@ export class IntegrationController {
       const platformMailer = this.integrationService.getPlatformMailer();
       if (platformMailer) {
         try {
-          const res = await platformMailer.sendMailboxVerificationOtpEmail(settings.replyMailboxEmail, otpCode);
+          const res = await platformMailer.sendMailboxVerificationOtpEmail(targetEmail, otpCode);
           if (res?.success) {
             emailSent = true;
           }
@@ -179,11 +187,11 @@ export class IntegrationController {
         try {
           await this.communicationService.send({
             tenantId,
-            to: settings.replyMailboxEmail,
+            to: targetEmail,
             subject: 'Jaktra Mailbox Verification Code',
             html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
               <h2 style="color: #1e293b; margin-top: 0;">Verify Your Reply Mailbox</h2>
-              <p style="color: #475569;">Enter the following 6-digit OTP code in Jaktra Settings to verify ownership of <strong>${settings.replyMailboxEmail}</strong>:</p>
+              <p style="color: #475569;">Enter the following 6-digit OTP code in Jaktra Settings to verify ownership of <strong>${targetEmail}</strong>:</p>
               <div style="background-color: #f1f5f9; padding: 16px; text-align: center; border-radius: 6px; font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #2563eb; margin: 20px 0;">
                 ${otpCode}
               </div>
@@ -197,10 +205,10 @@ export class IntegrationController {
       }
 
       if (!emailSent) {
-        throw new ValidationError('Could not send verification OTP. Please configure and save your SendGrid API key first in Section 1.');
+        throw new ValidationError('Could not send verification OTP. Please configure and save your SendGrid API key or platform email settings.');
       }
 
-      res.json({ message: `Verification OTP sent to ${settings.replyMailboxEmail}` });
+      res.json({ message: `Verification OTP sent to ${targetEmail}` });
     } catch (error) {
       next(error);
     }

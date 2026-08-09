@@ -936,7 +936,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
   });
 
   const sendInboundOtpMutation = useMutation({
-    mutationFn: () => settingsService.sendReplyMailboxOtp(),
+    mutationFn: (emailToVerify?: string) => settingsService.sendReplyMailboxOtp({ replyMailboxEmail: emailToVerify || replyMailboxEmail }),
     onSuccess: (data) => {
       setInboundOtpMsg(data.message);
       setInboundOtpErr('');
@@ -944,6 +944,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
     },
     onError: (err: unknown) => {
       setInboundOtpErr(getErrorMessage(err));
+      setInboundOtpMsg('');
     },
   });
 
@@ -1407,7 +1408,7 @@ function SendGridSetupModal({ isOpen, onClose, integration, settings, userEmail,
                           type="button"
                           onClick={() => {
                             if (checkSendGridKeyConfigured()) {
-                              sendInboundOtpMutation.mutate();
+                              sendInboundOtpMutation.mutate(replyMailboxEmail);
                             }
                           }}
                           disabled={sendInboundOtpMutation.isPending || !replyMailboxEmail || otpCooldown > 0}
