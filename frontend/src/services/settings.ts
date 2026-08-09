@@ -63,6 +63,11 @@ export const settingsService = {
     return response.data;
   },
 
+  activateProvider: async (provider: 'sendgrid' | 'smtp'): Promise<{ message: string }> => {
+    const response = await api.post(`/settings/integrations/${provider}/activate`);
+    return response.data;
+  },
+
   saveRazorpayKey: async (data: { keyId: string; keySecret: string; webhookSecret: string }): Promise<{ message: string }> => {
     const response = await api.post('/settings/integrations/razorpay', data);
     return response.data;

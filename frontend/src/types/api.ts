@@ -224,15 +224,15 @@ export interface Communication {
 
 export interface TenantSettings {
   companyName: string;
-  senderName: string;
-  senderEmail: string;
-  replyTo: string | null;
+  senderName?: string;
+  senderEmail?: string;
+  replyTo?: string | null;
   paymentLink: string | null;
   bankDetails: string | null;
   timezone: string;
   scheduleHour: number;
   idempotencyWindowHours: number;
-  defaultEmailProvider: 'sendgrid' | 'smtp' | null;
+  defaultEmailProvider?: 'sendgrid' | 'smtp' | null;
   skipPaymentWarning: boolean;
   autoPurgeEnabled: boolean;
   autoPurgeDays: number;
@@ -276,11 +276,73 @@ export interface InboundParseIntegrationStatus {
   replyMailboxVerified?: boolean;
 }
 
+export interface SetupProgressStep1 {
+  isDone: boolean;
+  isConfigured: boolean;
+}
+
+export interface SetupProgressStep2Sendgrid {
+  isDone: boolean;
+  status: 'not_started' | 'awaiting_sender_info' | 'awaiting_otp' | 'completed';
+  senderName: string | null;
+  senderEmail: string | null;
+  replyTo: string | null;
+  replyMode: 'real_mailbox' | 'webhook_only';
+  replyMailboxEmail: string | null;
+  replyMailboxVerified: boolean;
+  requiresOtp: boolean;
+}
+
+export interface SetupProgressStep3Sendgrid {
+  isDone: boolean;
+  status: 'not_started' | 'awaiting_inbound_domain' | 'awaiting_mx_verification' | 'verified';
+  inboundDomain: string | null;
+  webhookUrl: string;
+  sendgridSettingsUrl: string;
+  isVerified: boolean;
+}
+
+export interface SendgridSetupProgress {
+  provider: 'sendgrid';
+  step1ApiKey: SetupProgressStep1;
+  step2SenderAndMode: SetupProgressStep2Sendgrid;
+  step3InboundWebhook: SetupProgressStep3Sendgrid;
+  overallStatus: 'not_configured' | 'partially_configured' | 'active';
+  isActive: boolean;
+}
+
+export interface SetupProgressStep1Smtp {
+  isDone: boolean;
+  host: string | null;
+  port: number;
+  username: string | null;
+  hasPassword: boolean;
+  encryptionType: 'tls' | 'ssl' | 'none';
+  allowSelfSigned: boolean;
+}
+
+export interface SetupProgressStep2Smtp {
+  isDone: boolean;
+  senderName: string | null;
+  senderEmail: string | null;
+  replyTo: string | null;
+}
+
+export interface SmtpSetupProgress {
+  provider: 'smtp';
+  step1ConnectionDetails: SetupProgressStep1Smtp;
+  step2SenderIdentity: SetupProgressStep2Smtp;
+  overallStatus: 'not_configured' | 'partially_configured' | 'active';
+  isActive: boolean;
+}
+
 export interface IntegrationsResponse {
   sendgrid: SendgridIntegrationStatus;
   smtp: SmtpIntegrationStatus;
   razorpay: RazorpayIntegrationStatus;
   inboundParse?: InboundParseIntegrationStatus;
+  sendgridProgress?: SendgridSetupProgress;
+  smtpProgress?: SmtpSetupProgress;
 }
 
 export interface TeamMember {
