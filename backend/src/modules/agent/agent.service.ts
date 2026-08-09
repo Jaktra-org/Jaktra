@@ -292,6 +292,7 @@ export class AgentService {
                 html: res.content.html_body ?? res.content.plain_body ?? '',
                 channel: channel as 'email',
                 invoiceId: inv.id,
+                source: 'bulk_ai_agent',
               });
             } catch (sendErr: unknown) {
               sendError = sendErr instanceof Error ? sendErr.message : String(sendErr);
@@ -557,6 +558,7 @@ export class AgentService {
             html: resp.htmlBody ?? resp.bodyPreview ?? '',
             channel: channel as 'email',
             invoiceId: invoice.id,
+            source: 'invoice_manual',
           });
         } catch (sendErr: unknown) {
           sendError = sendErr instanceof Error ? sendErr.message : String(sendErr);

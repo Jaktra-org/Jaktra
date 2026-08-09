@@ -34,6 +34,7 @@ export interface SendCommunicationOptions {
   html: string;
   channel?: 'email' | 'sms' | 'whatsapp';
   invoiceId?: string;
+  source?: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system';
 }
 
 import type { IntegrationService } from '../settings/integration.service.js';
@@ -278,20 +279,29 @@ export class CommunicationService {
       html,
     };
 
-    await this.communicationRepo.create({
+    const createdComm = await this.communicationRepo.create({
       tenantId,
       invoiceId: invoiceId || '',
       channel: 'email',
       subject,
       body: html,
       status: 'pending',
+      source: options.source || 'system',
       sentAt: null,
       error: null,
     });
 
     const result = await this.tenantMailer.sendCollectionEmail(tenantId, message, { invoiceId });
     if (!result.success) {
+      await this.communicationRepo.markFailed(createdComm.id, result.error || 'Email sending failed');
       throw new CommunicationError(result.error || 'Email sending failed', 500);
+    }
+
+    if (typeof this.communicationRepo.update === 'function') {
+      await this.communicationRepo.update(createdComm.id, {
+        status: 'sent',
+        sentAt: new Date(),
+      });
     }
 
     return true;

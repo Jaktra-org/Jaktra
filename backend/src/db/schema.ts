@@ -41,6 +41,11 @@ export const validationResultEnum = Object.assign(
   { enumValues: ['valid', 'invalid', 'revoked', 'insufficient_scope', 'unverified_sender', 'unknown'] as const }
 );
 
+export const communicationSourceEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['bulk_ai_agent', 'invoice_manual', 'dispute_agent', 'system']),
+  { enumValues: ['bulk_ai_agent', 'invoice_manual', 'dispute_agent', 'system'] as const }
+);
+
 export const inboundEmailStatusEnum = Object.assign(
   (name: string) => mysqlEnum(name, ['pending', 'resolved', 'archived']),
   { enumValues: ['pending', 'resolved', 'archived'] as const }
@@ -158,6 +163,7 @@ export const communications = mysqlTable(
     subject: text('subject'),
     body: text('body'),
     status: communicationStatusEnum('status').notNull().default('pending'),
+    source: communicationSourceEnum('source').notNull().default('system'),
     sentAt: datetime('sent_at', { mode: 'date' }),
     error: text('error'),
     createdAt: datetime('created_at', { mode: 'date' })

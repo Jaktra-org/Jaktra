@@ -53,6 +53,31 @@ export function CommunicationList({ communications }: CommunicationListProps) {
     }
   };
 
+  const getSourceBadge = (source?: string) => {
+    switch (source) {
+      case 'bulk_ai_agent':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            🤖 Bulk AI Agent
+          </span>
+        );
+      case 'invoice_manual':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            ⚡ Invoice Manual
+          </span>
+        );
+      case 'dispute_agent':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+            💬 Dispute Agent
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-4">
       {communications.map((comm) => (
@@ -79,7 +104,8 @@ export function CommunicationList({ communications }: CommunicationListProps) {
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              {getSourceBadge(comm.source)}
               {getStatusBadge(comm.status)}
               <div className="text-slate-400">
                 {expandedId === comm.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}

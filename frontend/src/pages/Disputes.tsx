@@ -449,37 +449,81 @@ const classificationConfigs: Record<string, { bg: string, text: string, label: s
 };
 
 function CustomerReplyView({ item }: { item: InboundEmailReview }) {
-  const [showQuoted, setShowQuoted] = useState(false);
-  const { replyText, quotedText } = parseEmailBody(item.body || item.subject || '');
+  const [showQuotedMap, setShowQuotedMap] = useState<Record<string, boolean>>({});
+
+  const toggleQuoted = (id: string) => {
+    setShowQuotedMap((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const threadItems = item.thread && item.thread.length > 0 ? item.thread : [
+    {
+      id: item.id,
+      direction: 'inbound' as const,
+      sender: item.sender,
+      subject: item.subject,
+      body: item.body,
+      createdAt: item.createdAt,
+    }
+  ];
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-lg p-4 space-y-3 shadow-2xs">
-      <div className="flex justify-between items-center text-xs text-slate-400">
-        <span className="font-bold text-slate-700 uppercase tracking-wider">Customer Reply</span>
-        <span>{new Date(item.createdAt).toLocaleString()}</span>
-      </div>
+    <div className="space-y-3">
+      {threadItems.map((msg) => {
+        if (msg.direction === 'outbound') {
+          const formattedBody = (msg.body || '').replace(/<br\s*\/?>/gi, '\n');
+          return (
+            <div key={msg.id} className="bg-blue-50/50 border border-blue-200/90 rounded-lg p-4 space-y-2.5 shadow-2xs">
+              <div className="flex justify-between items-center text-xs text-slate-500">
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-blue-800 uppercase tracking-wider">Dispute Reply Sent</span>
+                  <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
+                    💬 Dispute Agent
+                  </span>
+                </div>
+                <span>{new Date(msg.createdAt).toLocaleString()}</span>
+              </div>
 
-      <div className="bg-slate-50 border border-slate-200/70 p-3.5 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
-        {replyText || '(No reply text)'}
-      </div>
-
-      {quotedText && (
-        <div className="pt-1">
-          <button
-            type="button"
-            onClick={() => setShowQuoted(prev => !prev)}
-            className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 py-1 px-2.5 rounded bg-slate-100/70 border border-slate-200 transition-colors"
-          >
-            <span>{showQuoted ? '▼ Hide original email thread' : '▶ Show original email thread'}</span>
-          </button>
-
-          {showQuoted && (
-            <div className="mt-2 bg-slate-100/80 border border-slate-200 p-3.5 rounded-md text-xs text-slate-600 font-mono whitespace-pre-wrap max-h-60 overflow-y-auto leading-normal">
-              {quotedText}
+              <div className="bg-white border border-blue-100 p-3.5 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
+                {formattedBody || '(No message content)'}
+              </div>
             </div>
-          )}
-        </div>
-      )}
+          );
+        }
+
+        const { replyText, quotedText } = parseEmailBody(msg.body || msg.subject || '');
+        const isQuotedShown = !!showQuotedMap[msg.id];
+
+        return (
+          <div key={msg.id} className="bg-white border border-slate-200/90 rounded-lg p-4 space-y-3 shadow-2xs">
+            <div className="flex justify-between items-center text-xs text-slate-400">
+              <span className="font-bold text-slate-700 uppercase tracking-wider">Customer Reply</span>
+              <span>{new Date(msg.createdAt).toLocaleString()}</span>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200/70 p-3.5 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
+              {replyText || '(No reply text)'}
+            </div>
+
+            {quotedText && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => toggleQuoted(msg.id)}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 py-1 px-2.5 rounded bg-slate-100/70 border border-slate-200 transition-colors"
+                >
+                  <span>{isQuotedShown ? '▼ Hide original email thread' : '▶ Show original email thread'}</span>
+                </button>
+
+                {isQuotedShown && (
+                  <div className="mt-2 bg-slate-100/80 border border-slate-200 p-3.5 rounded-md text-xs text-slate-600 font-mono whitespace-pre-wrap max-h-60 overflow-y-auto leading-normal">
+                    {quotedText}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

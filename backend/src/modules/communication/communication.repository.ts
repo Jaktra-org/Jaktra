@@ -37,6 +37,7 @@ export class CommunicationRepository {
         subject: communications.subject,
         body: communications.body,
         status: communications.status,
+        source: communications.source,
         sentAt: communications.sentAt,
         error: communications.error,
         createdAt: communications.createdAt,

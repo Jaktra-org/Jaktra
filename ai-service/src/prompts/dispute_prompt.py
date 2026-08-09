@@ -6,12 +6,10 @@ Your job is to read an inbound reply from a customer regarding an outstanding in
    - 'payment_promise': The customer is promising to pay (e.g. "I'll pay by Friday", "payment will be processed tomorrow").
    - 'unclear': The intent is ambiguous, low quality, or cannot be confidently categorized.
 2. Provide a confidence score between 0.0 and 1.0. If the email is vague or hard to categorize, output a low confidence score (below 0.5) and classify it as 'unclear'.
-3. Provide a brief explanation of your reasoning.
 
 You must output your response as a valid JSON object with the following keys:
 - "classification": one of "dispute", "question", "payment_promise", "unclear"
 - "confidence": float between 0.0 and 1.0
-- "reasoning": string (brief reasoning for classification)
 
 Do not include any markdown formatting, backticks, or text before/after the JSON block. Output ONLY raw valid JSON.
 """

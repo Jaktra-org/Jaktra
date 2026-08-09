@@ -1,8 +1,18 @@
-import { eq, and, asc, count } from 'drizzle-orm';
-import { inboundEmails, invoices } from '../../db/index.js';
+import { eq, and, asc, count, inArray } from 'drizzle-orm';
+import { inboundEmails, invoices, communications } from '../../db/index.js';
 import type { DatabaseClient } from '../../db/index.js';
 import type { InboundEmail, NewInboundEmail } from '../../db/index.js';
 import crypto from 'crypto';
+
+export interface ThreadItem {
+  id: string;
+  direction: 'inbound' | 'outbound';
+  sender: string;
+  subject: string | null;
+  body: string | null;
+  sourceTag?: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system';
+  createdAt: Date;
+}
 
 export interface PendingDisputeItem {
   id: string;
@@ -18,6 +28,7 @@ export interface PendingDisputeItem {
   createdAt: Date;
   invoiceNo: string | null;
   clientName: string | null;
+  thread: ThreadItem[];
 }
 
 export interface DisputeListParams {
@@ -105,8 +116,99 @@ export class DisputeRepository {
       .limit(params.limit)
       .offset(offset);
 
+    const invoiceIds = Array.from(new Set(data.map((d) => d.invoiceId).filter((id): id is string => Boolean(id))));
+
+    let allInboundForInvoices: Array<{ id: string; invoiceId: string | null; sender: string; subject: string | null; body: string | null; createdAt: Date }> = [];
+    let allOutboundForInvoices: Array<{ id: string; invoiceId: string; subject: string | null; body: string | null; source: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system'; sentAt: Date | null; createdAt: Date }> = [];
+
+    if (invoiceIds.length > 0) {
+      allInboundForInvoices = await this.db
+        .select({
+          id: inboundEmails.id,
+          invoiceId: inboundEmails.invoiceId,
+          sender: inboundEmails.sender,
+          subject: inboundEmails.subject,
+          body: inboundEmails.body,
+          createdAt: inboundEmails.createdAt,
+        })
+        .from(inboundEmails)
+        .where(
+          and(
+            eq(inboundEmails.tenantId, tenantId),
+            inArray(inboundEmails.invoiceId, invoiceIds)
+          )
+        );
+
+      allOutboundForInvoices = await this.db
+        .select({
+          id: communications.id,
+          invoiceId: communications.invoiceId,
+          subject: communications.subject,
+          body: communications.body,
+          source: communications.source,
+          sentAt: communications.sentAt,
+          createdAt: communications.createdAt,
+        })
+        .from(communications)
+        .where(
+          and(
+            eq(communications.tenantId, tenantId),
+            inArray(communications.invoiceId, invoiceIds)
+          )
+        );
+    }
+
+    const dataWithThreads: PendingDisputeItem[] = data.map((item) => {
+      const thread: ThreadItem[] = [];
+
+      if (item.invoiceId) {
+        const itemInbounds = allInboundForInvoices.filter((inb) => inb.invoiceId === item.invoiceId);
+        for (const inb of itemInbounds) {
+          thread.push({
+            id: inb.id,
+            direction: 'inbound',
+            sender: inb.sender,
+            subject: inb.subject,
+            body: inb.body,
+            createdAt: inb.createdAt,
+          });
+        }
+
+        const itemOutbounds = allOutboundForInvoices.filter((outb) => outb.invoiceId === item.invoiceId);
+        for (const outb of itemOutbounds) {
+          thread.push({
+            id: outb.id,
+            direction: 'outbound',
+            sender: 'Finance Team',
+            subject: outb.subject,
+            body: outb.body,
+            sourceTag: outb.source,
+            createdAt: outb.sentAt || outb.createdAt,
+          });
+        }
+      }
+
+      if (thread.length === 0) {
+        thread.push({
+          id: item.id,
+          direction: 'inbound',
+          sender: item.sender,
+          subject: item.subject,
+          body: item.body,
+          createdAt: item.createdAt,
+        });
+      }
+
+      thread.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      return {
+        ...item,
+        thread,
+      };
+    });
+
     return {
-      data,
+      data: dataWithThreads,
       pagination: {
         total,
         page: params.page,

@@ -1299,7 +1299,7 @@ export function InvoiceDetail() {
                                 )}
 
                                 {/* Legacy/Generic payloads */}
-                                {!event.oldValues && !event.newValues && event.payload && (
+                                {!event.oldValues && !event.newValues && event.payload && !type.startsWith('dispute.') && (
                                   <div className="mt-2 pl-3 border-l-2 border-slate-200 space-y-1 py-0.5 text-[11px] text-slate-500 font-mono">
                                     {Object.entries(event.payload).map(([k, v]) => {
                                       if (v === null || v === undefined || k === 'error' || k === 'reason') return null;

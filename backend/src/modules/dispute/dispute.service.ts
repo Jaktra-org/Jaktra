@@ -361,11 +361,10 @@ export class DisputeService {
           name: params.source === 'portal' ? 'Customer Portal' : 'Inbound Email',
         },
         {
-          description: `Dispute ${params.source} received from ${params.sender} (intent: ${classification})`,
+          description: `Dispute email received from ${params.sender}`,
           payload: {
             classification,
             confidence,
-            reasoning,
           },
         }
       ).catch((err: unknown) => {
@@ -408,6 +407,7 @@ export class DisputeService {
         html: responseBody.replace(/\n/g, '<br />'),
         channel: 'email',
         invoiceId: dispute.invoiceId,
+        source: 'dispute_agent',
       });
     } else {
       logger.warn(`Dispute record ${id} has no invoiceId associated. Skipping send.`);
@@ -425,7 +425,7 @@ export class DisputeService {
         'dispute.reply_sent',
         actor,
         {
-          description: 'Tenant sent reply email to customer.',
+          description: 'Dispute reply email sent to customer by Dispute Agent',
         }
       ).catch((err: unknown) => {
         logger.error('Failed to emit dispute.reply_sent event', err);

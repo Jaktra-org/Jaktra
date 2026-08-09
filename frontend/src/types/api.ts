@@ -216,6 +216,7 @@ export interface Communication {
   subject: string | null;
   body: string;
   status: 'pending' | 'sent' | 'failed';
+  source?: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system';
   errorMsg: string | null;
   providerMessageId: string | null;
   sentAt: string | null;

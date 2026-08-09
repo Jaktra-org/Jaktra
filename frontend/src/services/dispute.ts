@@ -3,6 +3,16 @@ import { api } from './api';
 export type DisputeStatus = 'pending' | 'resolved' | 'archived';
 export type DisputeCategory = 'dispute' | 'question' | 'payment_promise' | 'unclear';
 
+export interface ThreadItem {
+  id: string;
+  direction: 'inbound' | 'outbound';
+  sender: string;
+  subject: string | null;
+  body: string | null;
+  sourceTag?: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system';
+  createdAt: string;
+}
+
 export interface InboundEmailReview {
   id: string;
   tenantId: string;
@@ -18,6 +28,7 @@ export interface InboundEmailReview {
   createdAt: string;
   invoiceNo?: string;
   clientName?: string;
+  thread?: ThreadItem[];
 }
 
 export interface ListDisputesResponse {
