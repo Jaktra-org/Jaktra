@@ -11,13 +11,46 @@ import { parseEmailBody } from '../utils/email-utils';
 
 export type DisputeTab = 'all' | 'dispute' | 'question' | 'payment_promise' | 'unclear';
 
-const QUICK_INSTRUCTIONS = [
-  "Amount is correct",
-  "Payment not received yet",
-  "Resent invoice PDF",
-  "Please share bank transfer receipt",
-  "Offer 5% discount if paid today",
-];
+const CATEGORY_QUICK_INSTRUCTIONS: Record<string, { chips: string[]; placeholder: string }> = {
+  dispute: {
+    chips: [
+      "Amount is correct",
+      "Service delivered in full",
+      "Offer 5% discount if paid today",
+      "Issue credit note",
+      "Request PO / contract proof",
+    ],
+    placeholder: "e.g., Amount is correct as per contract section 3, or offer 5% discount if paid today...",
+  },
+  question: {
+    chips: [
+      "Send online payment portal link",
+      "Provide bank transfer details",
+      "Attach invoice PDF copy",
+      "Clarify line items & terms",
+      "Send account statement",
+    ],
+    placeholder: "e.g., You can pay online via portal link, or wire to bank account XYZ...",
+  },
+  payment_promise: {
+    chips: [
+      "Thank customer & confirm deadline",
+      "Send payment portal link",
+      "Note promise date in records",
+      "Offer installment plan if needed",
+    ],
+    placeholder: "e.g., Thank you for confirming payment by Friday, here is the payment link...",
+  },
+  unclear: {
+    chips: [
+      "Request more details & invoice reference",
+      "Attach invoice copy & payment options",
+      "Offer to schedule a call",
+      "Send standard payment instructions",
+    ],
+    placeholder: "e.g., Please clarify invoice number and payment date...",
+  },
+};
 
 export function Disputes() {
   const queryClient = useQueryClient();
@@ -369,6 +402,7 @@ function ItemActionArea({
   discardPending: boolean;
 }) {
   const [instruction, setInstruction] = useState('');
+  const categoryConfig = CATEGORY_QUICK_INSTRUCTIONS[item.classification] || CATEGORY_QUICK_INSTRUCTIONS.unclear;
 
   const handleChipClick = (chipText: string) => {
     setInstruction(chipText);
@@ -386,9 +420,9 @@ function ItemActionArea({
           <span className="text-[11px] text-slate-400 font-normal">Select a quick instruction chip or type below</span>
         </div>
 
-        {/* Quick Instruction Chips */}
+        {/* Quick Instruction Chips (category-specific) */}
         <div className="flex flex-wrap gap-1.5 pt-0.5">
-          {QUICK_INSTRUCTIONS.map((chipText) => (
+          {categoryConfig.chips.map((chipText) => (
             <button
               key={chipText}
               type="button"
@@ -406,7 +440,7 @@ function ItemActionArea({
             type="text"
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
-            placeholder="e.g., Amount is correct as per contract, or offer 5% discount if paid today..."
+            placeholder={categoryConfig.placeholder}
             className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-800"
           />
           <button

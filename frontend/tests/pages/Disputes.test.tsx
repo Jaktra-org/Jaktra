@@ -246,14 +246,14 @@ describe('Disputes page reviews and actions', () => {
       sender.click();
     });
 
-    // Click quick chip "Amount is correct"
-    const chipBtn = screen.getByText('Amount is correct');
+    // Click quick chip for Question category: "Send online payment portal link"
+    const chipBtn = screen.getByText('Send online payment portal link');
     await act(async () => {
       chipBtn.click();
     });
 
-    const input = screen.getByPlaceholderText(/e\.g\., Amount is correct/i) as HTMLInputElement;
-    expect(input.value).toBe('Amount is correct');
+    const input = screen.getByPlaceholderText(/e\.g\., You can pay online via portal link/i) as HTMLInputElement;
+    expect(input.value).toBe('Send online payment portal link');
 
     // Click Generate Draft Response
     const genBtn = screen.getByRole('button', { name: /Generate Draft Response/i });
@@ -261,7 +261,49 @@ describe('Disputes page reviews and actions', () => {
       genBtn.click();
     });
 
-    expect(disputeService.generateDraft).toHaveBeenCalledWith('disp-99', 'Amount is correct');
+    expect(disputeService.generateDraft).toHaveBeenCalledWith('disp-99', 'Send online payment portal link');
+  });
+
+  it('suggests dispute-specific chips when classification is dispute', async () => {
+    const disputeItem = {
+      data: [
+        {
+          id: 'disp-100',
+          tenantId: 't1',
+          invoiceId: 'inv-100',
+          sender: 'disputer@client.com',
+          subject: 'Wrong invoice total',
+          body: 'The price is wrong.',
+          classification: 'dispute' as const,
+          confidence: 0.9,
+          suggestedResponse: '',
+          reasoning: 'Dispute',
+          status: 'pending_review' as const,
+          createdAt: '2026-07-30T10:00:00.000Z',
+          invoiceNo: 'INV-100',
+          clientName: 'Dispute Client',
+        },
+      ],
+      pagination: { total: 1, page: 1, limit: 25, totalPages: 1 },
+    };
+
+    vi.mocked(disputeService.getPendingDisputes).mockResolvedValue(disputeItem);
+    vi.mocked(settingsService.getInboundVerificationStatus).mockResolvedValue(mockInboundStatus);
+
+    renderWithProviders(<Disputes />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/disputer@client.com/i)).toBeInTheDocument();
+    });
+
+    const sender = screen.getByText(/disputer@client.com/i);
+    await act(async () => {
+      sender.click();
+    });
+
+    expect(screen.getByText('Amount is correct')).toBeInTheDocument();
+    expect(screen.getByText('Service delivered in full')).toBeInTheDocument();
+    expect(screen.getByText('Offer 5% discount if paid today')).toBeInTheDocument();
   });
 });
 
