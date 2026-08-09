@@ -16,6 +16,7 @@ import { EditInvoiceModal } from "../components/invoices/EditInvoiceModal";
 import { Modal } from "../components/ui/Modal";
 import { CommunicationList } from "../components/invoices/CommunicationList";
 import { getErrorMessage } from "../utils/error-utils";
+import { stripHtml } from "../utils/email-utils";
 import type { InvoiceEvent } from "../types/api";
 import {
   ArrowLeft, 
@@ -1295,6 +1296,18 @@ export function InvoiceDetail() {
                                 {renderEventDescription(event) && (
                                   <div className="text-xs text-slate-500 mt-2 pl-3 border-l-2 border-slate-200 py-0.5">
                                     {renderEventDescription(event)}
+                                  </div>
+                                )}
+
+                                {/* Customer Inbound Dispute Email details */}
+                                {type === 'dispute.received' && event.payload && (
+                                  <div className="mt-2 pl-3 border-l-2 border-blue-400 space-y-1 py-1 text-xs text-slate-700 bg-blue-50/50 rounded-r-md p-2">
+                                    {typeof event.payload.subject === 'string' && event.payload.subject && (
+                                      <div><span className="font-semibold text-slate-900">Subject:</span> {event.payload.subject}</div>
+                                    )}
+                                    {typeof event.payload.body === 'string' && event.payload.body && (
+                                      <div className="text-slate-600 line-clamp-2"><span className="font-semibold text-slate-900">Message:</span> {stripHtml(event.payload.body)}</div>
+                                    )}
                                   </div>
                                 )}
 

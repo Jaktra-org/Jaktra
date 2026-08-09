@@ -301,16 +301,6 @@ export class AgentService {
 
             const now = new Date();
             if (!sendError) {
-              await this.communicationRepo.create({
-                tenantId,
-                invoiceId: inv.id,
-                channel: channel as 'email' | 'sms' | 'whatsapp',
-                subject: res.content.subject ?? null,
-                body: res.content.html_body ?? res.content.plain_body ?? null,
-                status: 'sent',
-                sentAt: now,
-                error: null,
-              });
               await this.invoiceRepo.update(inv.id, tenantId, {
                 followupCount: inv.followupCount + 1,
                 lastFollowupDate: now,
@@ -567,16 +557,6 @@ export class AgentService {
 
         const now = new Date();
         if (!sendError) {
-          await this.communicationRepo.create({
-            tenantId,
-            invoiceId: invoice.id,
-            channel: channel as 'email' | 'sms' | 'whatsapp',
-            subject: resp.subject ?? null,
-            body: resp.htmlBody ?? resp.body ?? resp.bodyPreview ?? null,
-            status: 'sent',
-            sentAt: now,
-            error: null,
-          });
           await this.invoiceRepo.update(invoice.id, tenantId, {
             followupCount: invoice.followupCount + 1,
             lastFollowupDate: now,

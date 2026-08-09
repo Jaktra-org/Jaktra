@@ -363,6 +363,9 @@ export class DisputeService {
         {
           description: `Dispute email received from ${params.sender}`,
           payload: {
+            sender: params.sender,
+            subject: params.subject,
+            body: params.body,
             classification,
             confidence,
           },

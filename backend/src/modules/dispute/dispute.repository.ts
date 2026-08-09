@@ -153,7 +153,8 @@ export class DisputeRepository {
         .where(
           and(
             eq(communications.tenantId, tenantId),
-            inArray(communications.invoiceId, invoiceIds)
+            inArray(communications.invoiceId, invoiceIds),
+            eq(communications.source, 'dispute_agent')
           )
         );
     }
