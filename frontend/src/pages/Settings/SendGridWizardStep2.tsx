@@ -13,36 +13,17 @@ interface Props {
 }
 
 /**
- * Step 2 — Sender Identity & Reply Mode
- *
- * VIEW MODE: renders only static read-only text from progress.step2SenderAndMode.
- * No <input> elements. No verification comparisons. The "Verified" badge appears
- * only here, sourced purely from server data.
- *
- * EDIT MODE: a fully local draft form. The OTP flow runs here.
- * No "Verified" badge is ever shown inside the form — it is just a draft editor.
- * On OTP verification success: await refetch() -> setMode('view') -> onNext().
- *
- * MODE SAFETY: mode is seeded from progress.step2SenderAndMode.isDone at mount.
- * Safe because parent blocks render until sendgridProgress has resolved.
- * Component fully unmounts on modal close (parent uses `if (!isOpen) return null`),
- * so stale mode state cannot persist across close/reopen.
- *
- * CANCEL SAFETY: clicking Edit then closing modal without saving does NOT affect
- * backend state. Only successful mutation calls touch the backend.
+ * Step 2 — Sender Identity & Optional Reply Forwarding
  */
 export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props) {
   const s = progress.step2SenderAndMode;
   const [mode, setMode] = useState<'view' | 'edit'>(s.isDone ? 'view' : 'edit');
 
-  // Draft form state — only used in edit mode
+  // Draft form state — used in edit mode
   const [senderName, setSenderName] = useState(s.senderName || '');
   const [senderEmail, setSenderEmail] = useState(s.senderEmail || '');
-  const [replyTo, setReplyTo] = useState(s.replyTo || '');
-  const [replyMode, setReplyMode] = useState<'real_mailbox' | 'webhook_only'>(s.replyMode || 'webhook_only');
-  const [inboundDomainDerived, setInboundDomainDerived] = useState(
-    s.senderEmail?.includes('@') ? `reply.${s.senderEmail.split('@')[1]}` : ''
-  );
+  const [enableForwarding, setEnableForwarding] = useState(s.replyMode === 'real_mailbox');
+  const [forwardingMailbox, setForwardingMailbox] = useState(s.replyMailboxEmail || s.replyTo || s.senderEmail || '');
   const [otpInput, setOtpInput] = useState('');
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [infoMsg, setInfoMsg] = useState('');
@@ -50,7 +31,6 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
 
   const queryClient = useQueryClient();
 
-  // OTP cooldown timer
   const startCooldown = () => {
     setOtpCooldown(60);
     const tick = setInterval(() => {
@@ -63,14 +43,15 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
 
   const saveSenderMutation = useMutation({
     mutationFn: () => {
-      const targetMailbox = replyTo.trim() || senderEmail.trim();
+      const mode = enableForwarding ? 'real_mailbox' : 'webhook_only';
+      const target = forwardingMailbox.trim() || senderEmail.trim();
       return settingsService.saveSendgridKey({
         apiKey: 'SG.placeholder',
         senderName: senderName.trim(),
         senderEmail: senderEmail.trim(),
-        replyTo: replyTo.trim() || null,
-        replyMode,
-        replyMailboxEmail: replyMode === 'real_mailbox' ? targetMailbox : undefined,
+        replyTo: enableForwarding ? target : null,
+        replyMode: mode,
+        replyMailboxEmail: enableForwarding ? target : undefined,
       });
     },
     onSuccess: async () => {
@@ -89,13 +70,15 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
       if (!senderName.trim()) throw new Error('Outbound Sender Name is required.');
       if (!senderEmail.trim() || !senderEmail.includes('@')) throw new Error('Valid Outbound Sender Email is required.');
 
-      const target = replyTo.trim() || senderEmail.trim();
-      // First save sender details so DB has name & email
+      const target = forwardingMailbox.trim() || senderEmail.trim();
+      if (!target || !target.includes('@')) throw new Error('Valid Forwarding Mailbox Email is required.');
+
+      // Save sender details so DB has name, email, and target mailbox
       await settingsService.saveSendgridKey({
         apiKey: 'SG.placeholder',
         senderName: senderName.trim(),
         senderEmail: senderEmail.trim(),
-        replyTo: replyTo.trim() || null,
+        replyTo: target,
         replyMode: 'real_mailbox',
         replyMailboxEmail: target,
       });
@@ -120,18 +103,18 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
       if (!senderName.trim()) throw new Error('Outbound Sender Name is required.');
       if (!senderEmail.trim() || !senderEmail.includes('@')) throw new Error('Valid Outbound Sender Email is required.');
 
-      const target = replyTo.trim() || senderEmail.trim();
-      // 1. Save sender details to DB first!
+      const target = forwardingMailbox.trim() || senderEmail.trim();
+      if (!target || !target.includes('@')) throw new Error('Valid Forwarding Mailbox Email is required.');
+
       await settingsService.saveSendgridKey({
         apiKey: 'SG.placeholder',
         senderName: senderName.trim(),
         senderEmail: senderEmail.trim(),
-        replyTo: replyTo.trim() || null,
+        replyTo: target,
         replyMode: 'real_mailbox',
         replyMailboxEmail: target,
       });
 
-      // 2. Verify OTP
       return settingsService.verifyReplyMailboxOtp(otp);
     },
     onSuccess: async () => {
@@ -151,6 +134,10 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
   const handleSaveAndContinue = () => {
     if (!senderName.trim()) { setErrorMsg('Outbound Sender Name is required.'); return; }
     if (!senderEmail.trim() || !senderEmail.includes('@')) { setErrorMsg('Valid Outbound Sender Email is required.'); return; }
+    if (enableForwarding && (!forwardingMailbox.trim() || !forwardingMailbox.includes('@'))) {
+      setErrorMsg('Valid Receiving Mailbox Email is required when reply forwarding is enabled.');
+      return;
+    }
 
     saveSenderMutation.mutate(undefined, {
       onSuccess: async () => {
@@ -160,8 +147,8 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
         if (freshProgress?.step2SenderAndMode?.isDone) {
           setMode('view');
           onNext();
-        } else if (replyMode === 'real_mailbox') {
-          setErrorMsg('Please send 6-digit OTP and click "Verify OTP" to complete Step 2 verification.');
+        } else if (enableForwarding) {
+          setErrorMsg('Please send 6-digit OTP and click "Verify OTP" to complete mailbox forwarding verification.');
         } else {
           setMode('view');
           onNext();
@@ -171,13 +158,13 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
   };
 
   if (mode === 'view') {
-    // VIEW MODE: static read-only text only — sourced entirely from server data
+    // VIEW MODE: static read-only summary from server data
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-2">
           <h4 className="text-sm font-bold text-slate-900 flex items-center">
             <Mail className="w-4 h-4 mr-2 text-blue-600" />
-            Step 2 of 3: Sender Identity & Reply Mode
+            Step 2 of 3: Sender Identity & Optional Reply Forwarding
           </h4>
           <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5" /> Completed
@@ -194,42 +181,35 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
               <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Sender Email</p>
               <p className="text-slate-900 font-medium mt-0.5 font-mono">{s.senderEmail}</p>
             </div>
-            <div>
-              <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Reply Mode</p>
-              <p className="text-slate-900 font-medium mt-0.5">
-                {s.replyMode === 'real_mailbox' ? 'Mode 1: Real Mailbox' : 'Mode 2: Virtual Sub-Address'}
-              </p>
-            </div>
-            {s.replyTo && (
-              <div>
-                <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Reply-To Override</p>
-                <p className="text-slate-900 font-medium mt-0.5 font-mono">{s.replyTo}</p>
-              </div>
-            )}
           </div>
 
-          {s.replyMode === 'real_mailbox' && (
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-              <div>
-                <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Reply Mailbox</p>
-                <p className="text-slate-900 font-mono font-medium mt-0.5">{s.replyMailboxEmail}</p>
-              </div>
+          <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+            <div>
+              <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Reply Copy Forwarding</p>
+              <p className="text-slate-900 font-medium mt-0.5">
+                {s.replyMode === 'real_mailbox' ? (
+                  <span className="font-mono font-bold text-blue-700">Enabled → {s.replyMailboxEmail}</span>
+                ) : (
+                  <span className="text-slate-600">Disabled (Managed inside Jaktra AI & Timeline)</span>
+                )}
+              </p>
+            </div>
+            {s.replyMode === 'real_mailbox' && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Verified
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="flex justify-between items-center pt-2">
           <button
             type="button"
             onClick={() => {
-              // Reset draft to current server values before entering edit
               setSenderName(s.senderName || '');
               setSenderEmail(s.senderEmail || '');
-              setReplyTo(s.replyTo || '');
-              setReplyMode(s.replyMode || 'webhook_only');
+              setEnableForwarding(s.replyMode === 'real_mailbox');
+              setForwardingMailbox(s.replyMailboxEmail || s.replyTo || s.senderEmail || '');
               setOtpInput('');
               setInfoMsg('');
               setErrorMsg('');
@@ -251,15 +231,15 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
     );
   }
 
-  // EDIT MODE — pure draft form, no "Verified" badge, no state comparisons
-  const targetMailbox = replyTo.trim() || senderEmail.trim();
+  // EDIT MODE
+  const targetMailbox = forwardingMailbox.trim() || senderEmail.trim();
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
         <h4 className="text-sm font-bold text-slate-900 flex items-center">
           <Mail className="w-4 h-4 mr-2 text-blue-600" />
-          Step 2 of 3: Sender Identity & Reply Mode
+          Step 2 of 3: Sender Identity & Optional Reply Forwarding
         </h4>
         <span className="text-xs bg-amber-100 text-amber-800 font-semibold px-2.5 py-0.5 rounded-full border border-amber-300">
           Step 2 Awaiting Action ⏳
@@ -270,34 +250,7 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 font-medium">{errorMsg}</div>
       )}
 
-      {/* Reply Mode Selection */}
-      <div className="space-y-2">
-        <label className="text-xs font-semibold text-slate-700 block">Select Reply Handling Mode (Mandatory)</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div
-            onClick={() => setReplyMode('real_mailbox')}
-            className={`p-3 rounded-lg border cursor-pointer transition-all ${replyMode === 'real_mailbox' ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-          >
-            <div className="flex items-center space-x-2 mb-1">
-              <input type="radio" name="replyMode" checked={replyMode === 'real_mailbox'} onChange={() => setReplyMode('real_mailbox')} className="text-blue-600" />
-              <span className="font-semibold text-slate-900 text-xs">Mode 1: Real Mailbox</span>
-            </div>
-            <p className="text-[11px] text-slate-600 pl-5 leading-tight">Replies forwarded to your verified mailbox. Requires 6-digit OTP verification.</p>
-          </div>
-          <div
-            onClick={() => setReplyMode('webhook_only')}
-            className={`p-3 rounded-lg border cursor-pointer transition-all ${replyMode === 'webhook_only' ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-          >
-            <div className="flex items-center space-x-2 mb-1">
-              <input type="radio" name="replyMode" checked={replyMode === 'webhook_only'} onChange={() => setReplyMode('webhook_only')} className="text-blue-600" />
-              <span className="font-semibold text-slate-900 text-xs">Mode 2: Virtual Sub-Address</span>
-            </div>
-            <p className="text-[11px] text-slate-600 pl-5 leading-tight">Replies flow directly into Jaktra AI via sub-addressing. No OTP required.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Sender fields */}
+      {/* Outbound Sender Fields */}
       <div className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
@@ -321,14 +274,10 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
               value={senderEmail}
               onChange={(e) => {
                 const val = e.target.value;
-                const prev = senderEmail;
                 setSenderEmail(val);
                 setErrorMsg('');
-                // Keep inbound domain in sync if it was derived from old email
-                const oldDerived = prev.includes('@') ? `reply.${prev.split('@')[1]}` : '';
-                const newDerived = val.includes('@') ? `reply.${val.split('@')[1]}` : '';
-                if (!inboundDomainDerived || inboundDomainDerived === oldDerived) {
-                  setInboundDomainDerived(newDerived);
+                if (!forwardingMailbox || forwardingMailbox === senderEmail) {
+                  setForwardingMailbox(val);
                 }
               }}
               className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
@@ -336,85 +285,90 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
             />
           </div>
         </div>
+        <p className="text-[11px] text-slate-500 italic">
+          * Note: Outbound Sender Email is used for sending outgoing emails and does not require an active receiving inbox.
+        </p>
+      </div>
 
-        {replyMode === 'real_mailbox' && (
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-700">Reply-To Email (Optional Override)</label>
-              <span className="text-[10px] text-slate-400">Leave blank to use Outbound Sender Email</span>
+      {/* Reply Copy Forwarding Checkbox */}
+      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+        <label className="flex items-start space-x-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={enableForwarding}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setEnableForwarding(checked);
+              setErrorMsg('');
+              if (checked && !forwardingMailbox) {
+                setForwardingMailbox(senderEmail);
+              }
+            }}
+            className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 h-4 w-4 border-slate-300"
+          />
+          <div>
+            <span className="text-xs font-bold text-slate-900 block">
+              Receive customer replies in your personal/company mailbox as well
+            </span>
+            <span className="text-[11px] text-slate-600 block leading-normal mt-0.5">
+              When checked, customer replies logged in Jaktra AI will also be forwarded to your specified receiving mailbox.
+            </span>
+          </div>
+        </label>
+
+        {enableForwarding && (
+          <div className="pt-3 border-t border-slate-200 space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700">Receiving Mailbox Email</label>
+              <input
+                type="text"
+                inputMode="email"
+                value={forwardingMailbox}
+                onChange={(e) => { setForwardingMailbox(e.target.value); setErrorMsg(''); }}
+                className="w-full p-2 border border-slate-300 rounded-md text-xs font-mono focus:ring-2 focus:ring-blue-500 bg-white"
+                placeholder="support@acme.com"
+              />
             </div>
-            <input
-              type="text"
-              inputMode="email"
-              autoComplete="new-password"
-              data-1p-ignore="true"
-              value={replyTo}
-              onChange={(e) => { setReplyTo(e.target.value); setErrorMsg(''); }}
-              className="w-full p-2 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 bg-white"
-              placeholder={senderEmail ? `Defaults to ${senderEmail}` : 'support@acme.com'}
-            />
+
+            <div className="p-3 bg-white border border-amber-200 rounded-md space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-800 font-medium">
+                  Verify ownership of <strong className="font-mono">{targetMailbox || 'your receiving mailbox'}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => sendOtpMutation.mutate()}
+                  disabled={sendOtpMutation.isPending || !targetMailbox || otpCooldown > 0}
+                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                >
+                  {sendOtpMutation.isPending ? 'Sending...' : otpCooldown > 0 ? `Resend OTP (${otpCooldown}s)` : 'Send 6-Digit OTP'}
+                </button>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value)}
+                  placeholder="6-digit OTP"
+                  className="w-36 px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono text-center tracking-widest focus:ring-2 focus:ring-blue-500 bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => verifyOtpMutation.mutate(otpInput)}
+                  disabled={verifyOtpMutation.isPending || otpInput.trim().length !== 6}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
+                >
+                  {verifyOtpMutation.isPending ? 'Verifying...' : 'Verify OTP'}
+                </button>
+              </div>
+            </div>
+
+            {infoMsg && <p className="text-[11px] text-emerald-600 font-medium bg-emerald-50 p-2 rounded border border-emerald-200">✅ {infoMsg}</p>}
           </div>
         )}
       </div>
-
-      {/* Mode 2 info */}
-      {replyMode === 'webhook_only' && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md text-xs text-emerald-800 font-medium">
-          ✓ <strong>Mode 2 Selected:</strong> No mailbox or OTP verification required.
-        </div>
-      )}
-
-      {/* Mode 1 OTP section — ONLY shows the form, never a "Verified" badge */}
-      {replyMode === 'real_mailbox' && (
-        <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-md space-y-3">
-          <div>
-            <label className="text-[11px] font-semibold text-slate-700 block mb-0.5">
-              Target Mailbox for OTP & Reply Forwarding:
-            </label>
-            <p className="text-xs font-mono font-bold text-blue-700">
-              {targetMailbox || '(Enter Outbound Sender Email above)'}
-            </p>
-            <p className="text-[10px] text-slate-500">{replyTo.trim() ? 'Using Reply-To override' : 'Using Outbound Sender Email'}</p>
-          </div>
-
-          <div className="p-3 bg-white border border-amber-200 rounded-md space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-800 font-medium">
-                Verify ownership of <strong className="font-mono">{targetMailbox || 'your mailbox'}</strong>
-              </span>
-              <button
-                type="button"
-                onClick={() => sendOtpMutation.mutate()}
-                disabled={sendOtpMutation.isPending || !targetMailbox || otpCooldown > 0}
-                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold transition-colors disabled:opacity-50 shadow-sm"
-              >
-                {sendOtpMutation.isPending ? 'Sending...' : otpCooldown > 0 ? `Resend OTP (${otpCooldown}s)` : 'Send 6-Digit OTP'}
-              </button>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                maxLength={6}
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value)}
-                placeholder="6-digit OTP"
-                className="w-36 px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono text-center tracking-widest focus:ring-2 focus:ring-blue-500 bg-white"
-              />
-              <button
-                type="button"
-                onClick={() => verifyOtpMutation.mutate(otpInput)}
-                disabled={verifyOtpMutation.isPending || otpInput.trim().length !== 6}
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold shrink-0 transition-colors disabled:opacity-50"
-              >
-                {verifyOtpMutation.isPending ? 'Verifying...' : 'Verify OTP'}
-              </button>
-            </div>
-          </div>
-
-          {infoMsg && <p className="text-[11px] text-emerald-600 font-medium">{infoMsg}</p>}
-        </div>
-      )}
 
       {/* Navigation */}
       <div className="pt-4 flex justify-between items-center border-t border-slate-100">
@@ -422,11 +376,10 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
           type="button"
           onClick={() => {
             if (s.isDone) {
-              // Cancel edit — revert to view without touching backend
               setSenderName(s.senderName || '');
               setSenderEmail(s.senderEmail || '');
-              setReplyTo(s.replyTo || '');
-              setReplyMode(s.replyMode || 'webhook_only');
+              setEnableForwarding(s.replyMode === 'real_mailbox');
+              setForwardingMailbox(s.replyMailboxEmail || s.replyTo || s.senderEmail || '');
               setOtpInput('');
               setInfoMsg('');
               setErrorMsg('');
