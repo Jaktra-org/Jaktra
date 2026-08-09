@@ -61,19 +61,14 @@ CREATE TABLE `email_integration_smtp` (
   CONSTRAINT `fk_smtp_integration` FOREIGN KEY (`integration_id`) REFERENCES `email_integrations` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 --> statement-breakpoint
-ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `default_email_provider`;
---> statement-breakpoint
-ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mode`;
---> statement-breakpoint
-ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mailbox_email`;
---> statement-breakpoint
-ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mailbox_verified`;
---> statement-breakpoint
-ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mailbox_otp`;
---> statement-breakpoint
-ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `reply_mailbox_otp_expires_at`;
---> statement-breakpoint
-ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `inbound_parse_verified`;
---> statement-breakpoint
-ALTER TABLE `tenant_settings` DROP COLUMN IF EXISTS `inbound_domain`;
+ALTER TABLE `tenant_settings`
+  DROP COLUMN `default_email_provider`,
+  DROP COLUMN `reply_mode`,
+  DROP COLUMN `reply_mailbox_email`,
+  DROP COLUMN `reply_mailbox_verified`,
+  DROP COLUMN `reply_mailbox_otp`,
+  DROP COLUMN `reply_mailbox_otp_expires_at`,
+  DROP COLUMN `inbound_parse_verified`,
+  DROP COLUMN `inbound_domain`;
+
 
