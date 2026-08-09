@@ -76,8 +76,9 @@ describe('Disputes page reviews and actions', () => {
       expect(screen.getByText('Dispute')).toBeInTheDocument();
     });
 
-    // Body text initially collapsed
-    expect(screen.queryByText('I disagree with this charge.')).not.toBeInTheDocument();
+    // 1-line summary is visible in header preview, AI reasoning initially collapsed
+    expect(screen.getByText('I disagree with this charge.')).toBeInTheDocument();
+    expect(screen.queryByText('AI generated response')).not.toBeInTheDocument();
 
     // Click sender email to expand card (invoice number stops propagation)
     const clientEmail = screen.getByText(/client@company.com/i);
@@ -85,9 +86,8 @@ describe('Disputes page reviews and actions', () => {
       clientEmail.click();
     });
 
-    // Details visible
-    expect(screen.getByText('I disagree with this charge.')).toBeInTheDocument();
-    expect(screen.getByText('AI generated response')).toBeInTheDocument();
+    // Suggested reply visible when expanded
+    expect(screen.getByText('We will investigate the charge.')).toBeInTheDocument();
   });
 
   it('triggers approve and discard actions successfully', async () => {
@@ -193,7 +193,7 @@ describe('Disputes page reviews and actions', () => {
     });
 
     // Both bodies rendered inside single expanded box
-    expect(screen.getByText('Wrong total amount')).toBeInTheDocument();
+    expect(screen.getAllByText('Wrong total amount').length).toBeGreaterThan(0);
     expect(screen.getByText('Send payment link')).toBeInTheDocument();
 
     // Click Questions tag filter

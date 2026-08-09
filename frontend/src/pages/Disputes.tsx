@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, Loader2
 } from 'lucide-react';
 import { getErrorMessage } from '../utils/error-utils';
+import { parseEmailBody } from '../utils/email-utils';
 
 export type DisputeTab = 'all' | 'dispute' | 'question' | 'payment_promise' | 'unclear';
 
@@ -264,6 +265,44 @@ function Loader({ className }: { className?: string }) {
   return <RefreshCw className={className} />;
 }
 
+function CustomerReplyView({ body, createdAt }: { body: string; createdAt: string }) {
+  const [showQuoted, setShowQuoted] = useState(false);
+  const { replyText, quotedText } = parseEmailBody(body);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer Reply</h5>
+        <span className="text-xs text-slate-400">{new Date(createdAt).toLocaleString()}</span>
+      </div>
+
+      {/* Clean main customer reply text */}
+      <div className="bg-slate-50 border border-slate-200 p-4 rounded-md text-sm text-slate-800 whitespace-pre-wrap font-sans leading-relaxed">
+        {replyText}
+      </div>
+
+      {/* Collapsible Quoted Email Thread (if present) */}
+      {quotedText && (
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => setShowQuoted(prev => !prev)}
+            className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 py-1 px-2.5 rounded bg-slate-100/70 border border-slate-200 transition-colors"
+          >
+            <span>{showQuoted ? '▼ Hide original email thread' : '▶ Show original email thread'}</span>
+          </button>
+
+          {showQuoted && (
+            <div className="mt-2 bg-slate-100/80 border border-slate-200 p-3.5 rounded-md text-xs text-slate-600 font-mono whitespace-pre-wrap max-h-60 overflow-y-auto leading-normal">
+              {quotedText}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Badge classification styling maps
 const classificationConfigs: Record<string, { bg: string, text: string, label: string }> = {
   dispute: { bg: 'bg-rose-50 text-rose-700 border-rose-100', label: 'Dispute', text: 'text-rose-700' },
@@ -320,38 +359,47 @@ function DisputeGroupCard({
         onClick={onToggleExpand}
         className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50 transition-colors"
       >
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold text-slate-800 text-sm">{group.sender}</span>
-            <span className="text-slate-400 text-xs">•</span>
-            <span className="text-slate-500 text-xs flex items-center">
+        <div className="flex-1 space-y-1.5 min-w-0">
+          {/* Top Meta Line: Sender Email • Clickable Invoice Link • Date & Time */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <span className="font-semibold text-slate-900 text-sm">{group.sender}</span>
+
+            {group.invoiceNo && (
+              <>
+                <span className="text-slate-300">•</span>
+                <span className="flex items-center space-x-1">
+                  <span className="text-slate-400">Invoice:</span>
+                  <a 
+                    href={`/invoices/${group.invoiceId}`}
+                    onClick={(e) => e.stopPropagation()} 
+                    className="text-blue-600 font-semibold hover:underline flex items-center"
+                  >
+                    #{group.invoiceNo} {group.clientName ? `(${group.clientName})` : ''}
+                    <ExternalLink className="w-3 h-3 ml-0.5" />
+                  </a>
+                </span>
+              </>
+            )}
+
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-500 flex items-center">
               <Clock className="w-3.5 h-3.5 mr-1" />
               {new Date(group.latestCreatedAt).toLocaleString()}
             </span>
+
             {group.items.length > 1 && (
-              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                 {group.items.length} Replies
               </span>
             )}
           </div>
 
-          <h4 className="text-sm font-medium text-slate-700 line-clamp-1">
-            {group.items.length === 1 ? latestItem.subject : `${latestItem.subject} (${group.items.length} responses)`}
-          </h4>
-
-          {group.invoiceNo && (
-            <div className="flex items-center space-x-2 text-xs pt-1">
-              <span className="text-slate-400">Invoice:</span>
-              <a 
-                href={`/invoices/${group.invoiceId}`}
-                onClick={(e) => e.stopPropagation()} 
-                className="text-blue-600 font-medium hover:underline flex items-center"
-              >
-                #{group.invoiceNo} ({group.clientName})
-                <ExternalLink className="w-3 h-3 ml-0.5" />
-              </a>
-            </div>
-          )}
+          {/* One-Line Summary Preview of the Customer Message */}
+          <p className="text-sm font-medium text-slate-700 line-clamp-1 leading-snug">
+            {latestItem.body 
+              ? parseEmailBody(latestItem.body).replyText.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim() 
+              : latestItem.subject}
+          </p>
         </div>
 
         <div className="flex items-center space-x-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
@@ -396,22 +444,8 @@ function DisputeGroupCard({
                   </div>
                 )}
 
-                {/* Customer reply text block */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer Reply</h5>
-                    <span className="text-xs text-slate-400">{new Date(item.createdAt).toLocaleString()}</span>
-                  </div>
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-md text-sm text-slate-700 whitespace-pre-wrap font-sans max-h-60 overflow-y-auto leading-relaxed">
-                    {item.body}
-                  </div>
-                </div>
-
-                {/* AI reasoning analysis */}
-                <div className="bg-blue-50/30 border border-blue-100 p-4 rounded-md space-y-1">
-                  <h5 className="text-xs font-bold text-blue-800 uppercase tracking-wider">AI Classification Reasoning</h5>
-                  <p className="text-xs text-slate-600 leading-relaxed">{item.reasoning}</p>
-                </div>
+                {/* Customer reply view component (clean reply + collapsible quoted email thread) */}
+                <CustomerReplyView body={item.body} createdAt={item.createdAt} />
 
                 {/* Suggested reply action block */}
                 <div className="space-y-3">
