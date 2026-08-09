@@ -9,7 +9,17 @@ const ApproveSchema = z.object({
   suggestedResponse: z.string().min(1, 'Response body cannot be empty'),
 });
 
+const SendReplySchema = z.object({
+  responseBody: z.string().min(1, 'Response body cannot be empty'),
+});
+
+const StatusChangeSchema = z.object({
+  status: z.enum(['pending', 'resolved', 'archived']),
+});
+
 const ListDisputesSchema = z.object({
+  status: z.enum(['pending', 'resolved', 'archived']).default('pending'),
+  classification: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(25),
 });
@@ -28,13 +38,57 @@ export class DisputeController {
     };
   }
 
-  listPending = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  listDisputes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const authReq = req as AuthenticatedRequest;
       const tenantId = authReq.user.tenantId;
       const params = ListDisputesSchema.parse(req.query);
-      const result = await this.disputeService.listPending(tenantId, params);
+      const result = await this.disputeService.listDisputes(tenantId, params);
       res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  listPending = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    return this.listDisputes(req, res, next);
+  };
+
+  sendReply = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const tenantId = authReq.user.tenantId;
+      const disputeId = req.params.id as string;
+
+      const parsed = SendReplySchema.safeParse(req.body);
+      if (!parsed.success) {
+        next(new ValidationError('Invalid response body', JSON.stringify(parsed.error.format())));
+        return;
+      }
+
+      const actor = this.getActorContext(req);
+      await this.disputeService.sendReply(disputeId, tenantId, parsed.data.responseBody, actor);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  changeStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const tenantId = authReq.user.tenantId;
+      const disputeId = req.params.id as string;
+
+      const parsed = StatusChangeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        next(new ValidationError('Invalid status change payload', JSON.stringify(parsed.error.format())));
+        return;
+      }
+
+      const actor = this.getActorContext(req);
+      await this.disputeService.changeStatus(disputeId, tenantId, parsed.data.status, actor);
+      res.status(204).send();
     } catch (err) {
       next(err);
     }

@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { eq, and, isNull } from 'drizzle-orm';
 import { invoices, tenantSettings, replyTokens, emailIntegrations, emailIntegrationSendgrid } from '../../db/index.js';
 import type { DatabaseClient, Invoice } from '../../db/index.js';
-import type { DisputeRepository, PendingDisputeItem } from './dispute.repository.js';
+import type { DisputeRepository } from './dispute.repository.js';
 import type { AimlService } from '../agent/aiml.service.js';
 import type { CommunicationService } from '../communication/communication.service.js';
 import type { CommunicationRepository } from '../communication/communication.repository.js';
@@ -10,7 +10,7 @@ import type { EventService, ActorContext } from '../event/event.service.js';
 import { logger } from '../../shared/logger.js';
 import type { RedisClientType } from 'redis';
 import { config } from '../../config/index.js';
-import { ValidationError, ForbiddenError, NotFoundError } from '../../shared/errors/index.js';
+import { ValidationError, ForbiddenError, NotFoundError, ExternalServiceError } from '../../shared/errors/index.js';
 
 export function timingSafeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -314,7 +314,6 @@ export class DisputeService {
     // Call AI service to classify and generate suggested response
     let classification = 'unclear';
     let confidence = 0.0;
-    const suggestedResponse = '';
     let reasoning = 'AI classification failed';
 
     try {
@@ -336,7 +335,7 @@ export class DisputeService {
       reasoning = `AI analysis failed: ${err instanceof Error ? err.message : String(err)}`;
     }
 
-    // Save review queue item
+    // Save review queue item with default status 'pending'
     await this.disputeRepo.create({
       tenantId: params.tenantId,
       invoiceId: params.invoiceId,
@@ -345,9 +344,8 @@ export class DisputeService {
       body: params.body,
       classification,
       confidence: confidence.toFixed(3),
-      suggestedResponse,
       reasoning,
-      status: 'pending_review',
+      status: 'pending',
       source: params.source,
     });
 
@@ -376,94 +374,107 @@ export class DisputeService {
     }
   }
 
-  async listPending(tenantId: string, params: { page: number; limit: number }): Promise<{
-    data: PendingDisputeItem[];
-    pagination: { total: number; page: number; limit: number; totalPages: number };
-  }> {
+  async listDisputes(
+    tenantId: string,
+    params: {
+      status: 'pending' | 'resolved' | 'archived';
+      classification?: string;
+      page: number;
+      limit: number;
+    }
+  ): Promise<ReturnType<DisputeRepository['listDisputes']>> {
+    return this.disputeRepo.listDisputes(tenantId, params);
+  }
+
+  async listPending(
+    tenantId: string,
+    params: { page: number; limit: number }
+  ): Promise<ReturnType<DisputeRepository['listDisputes']>> {
     return this.disputeRepo.listPending(tenantId, params);
   }
 
-  async approveDispute(id: string, tenantId: string, approvedBody: string, actor: ActorContext): Promise<void> {
+  async sendReply(id: string, tenantId: string, responseBody: string, actor: ActorContext): Promise<void> {
     const dispute = await this.disputeRepo.findById(id);
     if (!dispute || dispute.tenantId !== tenantId) {
-      throw new Error('Dispute review item not found');
+      throw new NotFoundError(`Dispute record not found: ${id}`);
     }
 
-    if (dispute.status !== 'pending_review') {
-      throw new Error('Dispute item is already resolved');
-    }
-
-    // Send the approved response
+    // Send the reply email to customer
     if (dispute.invoiceId) {
       await this.communicationService.send({
         tenantId,
         to: dispute.sender,
         subject: dispute.subject ? `Re: ${dispute.subject}` : 'Re: Invoice Follow-up',
-        html: approvedBody.replace(/\n/g, '<br />'),
+        html: responseBody.replace(/\n/g, '<br />'),
         channel: 'email',
         invoiceId: dispute.invoiceId,
       });
     } else {
-      logger.warn(`Approved dispute review ${id} has no invoiceId associated. Skipping send.`);
+      logger.warn(`Dispute record ${id} has no invoiceId associated. Skipping send.`);
     }
 
-    // Update dispute review item status
-    await this.disputeRepo.update(id, {
-      status: 'approved',
-      suggestedResponse: approvedBody,
-      reviewedBy: ('userId' in actor && actor.userId) || null,
-      reviewedAt: new Date(),
-    });
+    // Note: Per requirements, sending a reply email does NOT mark dispute as resolved.
+    // Dispute remains active in Pending so future customer replies group under the same thread.
 
-    // Log approved audit event
+    // Log reply sent audit event
     if (this.eventService && dispute.invoiceId) {
       await this.eventService.emitEvent(
         'invoice',
         dispute.invoiceId,
         tenantId,
-        'dispute.approved',
+        'dispute.reply_sent',
         actor,
         {
-          description: 'Manager approved and sent draft response to customer.',
+          description: 'Tenant sent reply email to customer.',
         }
       ).catch((err: unknown) => {
-        logger.error('Failed to emit dispute.approved event', err);
+        logger.error('Failed to emit dispute.reply_sent event', err);
       });
     }
   }
 
-  async discardDispute(id: string, tenantId: string, actor: ActorContext): Promise<void> {
+  async changeStatus(
+    id: string,
+    tenantId: string,
+    targetStatus: 'pending' | 'resolved' | 'archived',
+    actor: ActorContext
+  ): Promise<void> {
     const dispute = await this.disputeRepo.findById(id);
     if (!dispute || dispute.tenantId !== tenantId) {
-      throw new Error('Dispute review item not found');
+      throw new NotFoundError(`Dispute record not found: ${id}`);
     }
 
-    if (dispute.status !== 'pending_review') {
-      throw new Error('Dispute item is already resolved');
-    }
-
-    // Update status to discarded
     await this.disputeRepo.update(id, {
-      status: 'discarded',
+      status: targetStatus,
       reviewedBy: ('userId' in actor && actor.userId) || null,
       reviewedAt: new Date(),
     });
 
-    // Log discarded audit event
     if (this.eventService && dispute.invoiceId) {
+      const actionName = targetStatus === 'resolved' ? 'dispute.resolved' : targetStatus === 'archived' ? 'dispute.archived' : 'dispute.reopened';
       await this.eventService.emitEvent(
         'invoice',
         dispute.invoiceId,
         tenantId,
-        'dispute.discarded',
+        actionName,
         actor,
         {
-          description: 'Manager discarded AI-suggested dispute response.',
+          description: `Dispute item moved to ${targetStatus}.`,
         }
       ).catch((err: unknown) => {
-        logger.error('Failed to emit dispute.discarded event', err);
+        logger.error(`Failed to emit ${actionName} event`, err);
       });
     }
+  }
+
+  // Backward compatibility alias methods
+  async approveDispute(id: string, tenantId: string, approvedBody: string, actor: ActorContext): Promise<void> {
+    await this.sendReply(id, tenantId, approvedBody, actor);
+    await this.changeStatus(id, tenantId, 'resolved', actor);
+  }
+
+  async discardDispute(id: string, tenantId: string, actor: ActorContext): Promise<void> {
+    await this.changeStatus(id, tenantId, 'archived', actor);
   }
 
   async generateDraftResponse(
@@ -504,22 +515,25 @@ export class DisputeService {
       }));
     }
 
-    const draftResult = await this.aimlService.generateDisputeDraft({
-      tenantInstruction,
-      inboundText: dispute.body || '',
-      invoiceId: dispute.invoiceId || id,
-      invoiceNo,
-      clientName,
-      invoiceAmount,
-      dueDate,
-      priorCommunications: priorHistory,
-    });
+    try {
+      const draftResult = await this.aimlService.generateDisputeDraft({
+        tenantInstruction,
+        inboundText: dispute.body || '',
+        invoiceId: dispute.invoiceId || id,
+        invoiceNo,
+        clientName,
+        invoiceAmount,
+        dueDate,
+        priorCommunications: priorHistory,
+      });
 
-    // Persist draft response in review record
-    await this.disputeRepo.update(id, {
-      suggestedResponse: draftResult.suggestedResponse,
-    });
-
-    return { suggestedResponse: draftResult.suggestedResponse };
+      return { suggestedResponse: draftResult.suggestedResponse };
+    } catch (err: unknown) {
+      logger.error(`On-demand AI draft generation failed for dispute ${id}: ${err instanceof Error ? err.message : String(err)}`);
+      throw new ExternalServiceError(
+        'AI response generation timed out or failed. Click Retry to try again.',
+        'AI_SERVICE_UNAVAILABLE'
+      );
+    }
   }
 }

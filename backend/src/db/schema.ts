@@ -42,8 +42,8 @@ export const validationResultEnum = Object.assign(
 );
 
 export const inboundEmailStatusEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['pending_review', 'approved', 'discarded']),
-  { enumValues: ['pending_review', 'approved', 'discarded'] as const }
+  (name: string) => mysqlEnum(name, ['pending', 'resolved', 'archived']),
+  { enumValues: ['pending', 'resolved', 'archived'] as const }
 );
 
 export const paymentPlanStatusEnum = Object.assign(
@@ -320,6 +320,7 @@ export const tenantSettings = mysqlTable('tenant_settings', {
   dlqThreshold: int('dlq_threshold').notNull().default(3),
   mfaRequired: boolean('mfa_required').notNull().default(false),
   inboundBlockedByAdmin: boolean('inbound_blocked_by_admin').notNull().default(false),
+  autoPurgeArchivedDisputesDays: int('auto_purge_archived_disputes_days').notNull().default(30),
 });
 
 export const emailProviderEnum = Object.assign(
@@ -496,9 +497,8 @@ export const inboundEmails = mysqlTable('inbound_emails', {
   body: text('body'),
   classification: varchar('classification', { length: 100 }),
   confidence: decimal('confidence', { precision: 4, scale: 3 }),
-  suggestedResponse: text('suggested_response'),
   reasoning: text('reasoning'),
-  status: inboundEmailStatusEnum('status').notNull().default('pending_review'),
+  status: inboundEmailStatusEnum('status').notNull().default('pending'),
   reviewedBy: varchar('reviewed_by', { length: 36 })
     .references(() => users.id, { onDelete: 'set null' }),
   reviewedAt: datetime('reviewed_at', { mode: 'date' }),

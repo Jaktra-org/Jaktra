@@ -13,10 +13,12 @@ export function parseEmailBody(fullBody: string): { replyText: string; quotedTex
   const match = normalized.match(quotePattern);
   if (match && match.index !== undefined && match.index > 0) {
     const replyText = normalized.substring(0, match.index).trim();
-    const quotedText = normalized.substring(match.index).trim();
+    const rawQuotedText = normalized.substring(match.index).trim();
+    // Strip leading '>' quote prefixes from lines so original email shows cleanly as sent
+    const cleanedQuotedText = rawQuotedText.replace(/^>\s?/gm, '');
     return {
       replyText: replyText || normalized.trim(),
-      quotedText: quotedText || null,
+      quotedText: cleanedQuotedText || null,
     };
   }
 

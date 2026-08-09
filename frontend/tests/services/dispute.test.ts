@@ -13,18 +13,20 @@ describe('disputeService', () => {
     vi.clearAllMocks();
   });
 
-  it('calls correct API endpoints for getPendingDisputes, approveDispute, discardDispute', async () => {
+  it('calls correct API endpoints for getDisputes, sendReply, updateStatus, generateDraft', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: {} });
     vi.mocked(api.post).mockResolvedValue({ data: {} });
 
-    await disputeService.getPendingDisputes({ page: 2, limit: 10 });
-    expect(api.get).toHaveBeenCalledWith('/disputes/pending', { params: { page: 2, limit: 10 } });
+    await disputeService.getDisputes({ status: 'pending', classification: 'all', page: 2, limit: 10 });
+    expect(api.get).toHaveBeenCalledWith('/disputes/list', {
+      params: { status: 'pending', classification: 'all', page: 2, limit: 10 },
+    });
 
-    await disputeService.approveDispute('d-1', 'suggested response text');
-    expect(api.post).toHaveBeenCalledWith('/disputes/d-1/approve', { suggestedResponse: 'suggested response text' });
+    await disputeService.sendReply('d-1', 'reply response text');
+    expect(api.post).toHaveBeenCalledWith('/disputes/d-1/send-reply', { responseBody: 'reply response text' });
 
-    await disputeService.discardDispute('d-2');
-    expect(api.post).toHaveBeenCalledWith('/disputes/d-2/discard');
+    await disputeService.updateStatus('d-2', 'resolved');
+    expect(api.post).toHaveBeenCalledWith('/disputes/d-2/status', { status: 'resolved' });
 
     await disputeService.generateDraft('d-3', 'The amount is correct');
     expect(api.post).toHaveBeenCalledWith('/disputes/d-3/generate-draft', { tenantInstruction: 'The amount is correct' });

@@ -17,6 +17,7 @@ export const updateSettingsSchema = z.object({
   skipPaymentWarning: z.boolean().optional(),
   autoPurgeEnabled: z.boolean().optional(),
   autoPurgeDays: z.number().min(7, { message: "Auto-purge retention period must be at least 7 days" }).optional(),
+  autoPurgeArchivedDisputesDays: z.number().min(1, { message: "Dispute purge retention period must be at least 1 day" }).optional(),
   dlqThreshold: z.number().min(1).optional(),
 });
 

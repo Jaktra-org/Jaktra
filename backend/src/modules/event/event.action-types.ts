@@ -51,6 +51,10 @@ export const ACTION_TYPES = [
   'dispute.received',
   'dispute.approved',
   'dispute.discarded',
+  'dispute.reply_sent',
+  'dispute.resolved',
+  'dispute.archived',
+  'dispute.reopened',
 
   'invoice.payment_plan_requested',
   'invoice.payment_plan_approved',

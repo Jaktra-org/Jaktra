@@ -297,7 +297,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
       invoiceId,
       classification: 'dispute',
       confidence: '0.950',
-      status: 'pending_review',
+      status: 'pending',
     }));
     expect(mockEventService.emitEvent).toHaveBeenCalledWith(
       'invoice',
@@ -396,7 +396,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
       invoiceId,
       classification: 'dispute',
       confidence: '0.950',
-      status: 'pending_review',
+      status: 'pending',
     }));
   });
 
@@ -418,7 +418,7 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
       invoiceId,
       classification: 'dispute',
       confidence: '0.950',
-      status: 'pending_review',
+      status: 'pending',
     }));
   });
 
@@ -610,15 +610,14 @@ describe('DisputeService Approve & Discard Actions', () => {
       invoiceId: 'inv-123',
     }));
     expect(mockDisputeRepo.update).toHaveBeenCalledWith('dispute-123', expect.objectContaining({
-      status: 'approved',
-      suggestedResponse: 'Approved suggested text',
+      status: 'resolved',
       reviewedBy: 'user-manager',
     }));
     expect(mockEventService.emitEvent).toHaveBeenCalledWith(
       'invoice',
       'inv-123',
       'tenant-123',
-      'dispute.approved',
+      'dispute.resolved',
       { userId: 'user-manager', role: 'manager' },
       expect.any(Object)
     );
@@ -633,14 +632,14 @@ describe('DisputeService Approve & Discard Actions', () => {
 
     expect(mockCommService.send).not.toHaveBeenCalled();
     expect(mockDisputeRepo.update).toHaveBeenCalledWith('dispute-123', expect.objectContaining({
-      status: 'discarded',
+      status: 'archived',
       reviewedBy: 'user-manager',
     }));
     expect(mockEventService.emitEvent).toHaveBeenCalledWith(
       'invoice',
       'inv-123',
       'tenant-123',
-      'dispute.discarded',
+      'dispute.archived',
       { userId: 'user-manager', role: 'manager' },
       expect.any(Object)
     );
@@ -733,15 +732,19 @@ describe('Dispute listPending Pagination Tests', () => {
 
   it('should validate query params and apply defaults in DisputeController', async () => {
     const mockService = {
+      listDisputes: vi.fn().mockResolvedValue({
+        data: [],
+        pagination: { total: 0, page: 1, limit: 25, totalPages: 0 }
+      }),
       listPending: vi.fn().mockResolvedValue({
-        data: [{ id: 'dispute-1' }],
-        pagination: { total: 1, page: 1, limit: 25, totalPages: 1 }
+        data: [],
+        pagination: { total: 0, page: 1, limit: 25, totalPages: 0 }
       })
     };
     const controller = new DisputeController(mockService as any);
 
     const req = {
-      user: { tenantId: 'tenant-abc', userId: 'user-1' },
+      user: { tenantId: 'tenant-abc' },
       query: {} // empty query to trigger defaults
     } as any;
 
@@ -752,7 +755,7 @@ describe('Dispute listPending Pagination Tests', () => {
 
     await controller.listPending(req, res, () => {});
 
-    expect(mockService.listPending).toHaveBeenCalledWith('tenant-abc', { page: 1, limit: 25 });
+    expect(mockService.listDisputes).toHaveBeenCalledWith('tenant-abc', { status: 'pending', page: 1, limit: 25 });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       pagination: expect.objectContaining({ limit: 25, page: 1 })
@@ -761,6 +764,10 @@ describe('Dispute listPending Pagination Tests', () => {
 
   it('should restrict limit parameter up to max 100 in DisputeController', async () => {
     const mockService = {
+      listDisputes: vi.fn().mockResolvedValue({
+        data: [],
+        pagination: { total: 0, page: 1, limit: 100, totalPages: 0 }
+      }),
       listPending: vi.fn().mockResolvedValue({
         data: [],
         pagination: { total: 0, page: 1, limit: 100, totalPages: 0 }
@@ -769,8 +776,8 @@ describe('Dispute listPending Pagination Tests', () => {
     const controller = new DisputeController(mockService as any);
 
     const req = {
-      user: { tenantId: 'tenant-abc', userId: 'user-1' },
-      query: { limit: '999' } // tries to request high page size
+      user: { tenantId: 'tenant-abc' },
+      query: { limit: '999' }
     } as any;
 
     const res = {
@@ -782,8 +789,9 @@ describe('Dispute listPending Pagination Tests', () => {
 
     await controller.listPending(req, res, next);
 
-    // Zod will fail safeParse/parse because 999 exceeds max(100), passing to next(ValidationError)
+    // Zod will fail parse because 999 exceeds max(100), passing to next(ValidationError)
     expect(next).toHaveBeenCalledWith(expect.any(Error));
+    expect(mockService.listDisputes).not.toHaveBeenCalled();
     expect(mockService.listPending).not.toHaveBeenCalled();
   });
 });

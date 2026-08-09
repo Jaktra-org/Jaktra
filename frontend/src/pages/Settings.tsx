@@ -310,6 +310,26 @@ function GeneralSettings() {
               )}
             </div>
           )}
+
+          <div className="pt-4 border-t border-slate-200/80 space-y-2 max-w-xs">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+              Auto-delete Archived Disputes (Days)
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.autoPurgeArchivedDisputesDays ?? 30}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                setFormData(prev => ({ 
+                  ...prev, 
+                  autoPurgeArchivedDisputesDays: isNaN(val) ? 30 : val 
+                }));
+              }}
+              className="w-full p-2 border border-slate-300 rounded-md text-sm font-medium focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="text-[10px] text-slate-400 font-medium">Archived disputes older than this number of days will be automatically deleted.</p>
+          </div>
         </div>
       </CardContent>
     </Card>

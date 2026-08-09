@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { disputeService, type InboundEmailReview } from '../services/dispute';
+import { disputeService, type InboundEmailReview, type DisputeStatus } from '../services/dispute';
 import { 
-  MessageSquare, CheckCircle, Trash2, 
-  RefreshCw, Edit3, Clock, ChevronDown, ChevronUp, ExternalLink,
-  ChevronLeft, ChevronRight, Loader2, Sparkles
+  MessageSquare, CheckCircle, RefreshCw, Edit3, Clock, ChevronDown, ChevronUp, ExternalLink,
+  ChevronLeft, ChevronRight, Loader2, Sparkles, AlertCircle, Send, RotateCcw, Archive
 } from 'lucide-react';
 import { getErrorMessage } from '../utils/error-utils';
 import { parseEmailBody } from '../utils/email-utils';
@@ -54,17 +53,24 @@ const CATEGORY_QUICK_INSTRUCTIONS: Record<string, { chips: string[]; placeholder
 
 export function Disputes() {
   const queryClient = useQueryClient();
+  const [activeStatus, setActiveStatus] = useState<DisputeStatus>('pending');
+  const [activeCategory, setActiveCategory] = useState<DisputeTab>('all');
   const [page, setPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<DisputeTab>('all');
   const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftResponse, setDraftResponse] = useState<string>('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [failedDraftId, setFailedDraftId] = useState<string | null>(null);
 
-  // 1. Fetch pending disputes
+  // 1. Fetch disputes with status and classification parameters
   const { data: disputesData, isLoading: isDisputesLoading, error: disputesError, refetch: refetchDisputes } = useQuery({
-    queryKey: ['pendingDisputes', page],
-    queryFn: () => disputeService.getPendingDisputes({ page, limit: 25 }),
+    queryKey: ['disputes', activeStatus, activeCategory, page],
+    queryFn: () => disputeService.getDisputes({
+      status: activeStatus,
+      classification: activeCategory,
+      page,
+      limit: 25,
+    }),
   });
 
   // 2. Generate Draft Mutation
@@ -73,32 +79,39 @@ export function Disputes() {
       disputeService.generateDraft(id, tenantInstruction),
     onMutate: ({ id }) => {
       setGeneratingId(id);
+      setFailedDraftId(null);
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['pendingDisputes'] });
       setEditingId(variables.id);
       setDraftResponse(data.suggestedResponse);
+      setFailedDraftId(null);
+    },
+    onError: (_err, variables) => {
+      setFailedDraftId(variables.id);
     },
     onSettled: () => {
       setGeneratingId(null);
     },
   });
 
-  // 3. Approve Mutation
-  const approveMutation = useMutation({
-    mutationFn: ({ id, suggestedResponse }: { id: string; suggestedResponse: string }) => 
-      disputeService.approveDispute(id, suggestedResponse),
+  // 3. Send Reply Mutation
+  const sendReplyMutation = useMutation({
+    mutationFn: ({ id, responseBody }: { id: string; responseBody: string }) => 
+      disputeService.sendReply(id, responseBody),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pendingDisputes'] });
+      queryClient.invalidateQueries({ queryKey: ['disputes'] });
       setEditingId(null);
+      setDraftResponse('');
     },
   });
 
-  // 4. Discard Mutation
-  const discardMutation = useMutation({
-    mutationFn: disputeService.discardDispute,
+  // 4. Status Transition Mutation (Pending <-> Resolved <-> Archived)
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: DisputeStatus }) =>
+      disputeService.updateStatus(id, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pendingDisputes'] });
+      queryClient.invalidateQueries({ queryKey: ['disputes'] });
+      setEditingId(null);
     },
   });
 
@@ -115,18 +128,14 @@ export function Disputes() {
     setEditingId(null);
   };
 
-  const handleSaveAndApprove = (id: string) => {
-    approveMutation.mutate({ id, suggestedResponse: draftResponse });
+  const handleSendReply = (item: InboundEmailReview) => {
+    const replyContent = (editingId === item.id ? draftResponse : (draftResponse || item.suggestedResponse || '')).trim();
+    if (!replyContent) return;
+    sendReplyMutation.mutate({ id: item.id, responseBody: replyContent });
   };
 
-  const handleDirectApprove = (item: InboundEmailReview) => {
-    approveMutation.mutate({ id: item.id, suggestedResponse: item.suggestedResponse });
-  };
-
-  const handleDiscard = (id: string) => {
-    if (window.confirm('Are you sure you want to discard this item? It will be archived.')) {
-      discardMutation.mutate(id);
-    }
+  const handleMarkStatus = (id: string, status: DisputeStatus) => {
+    statusMutation.mutate({ id, status });
   };
 
   const toggleExpandGroup = (groupKey: string) => {
@@ -141,25 +150,12 @@ export function Disputes() {
     );
   }
 
-  const pendingDisputes = disputesData?.data || [];
+  const disputesList = disputesData?.data || [];
   const pagination = disputesData?.pagination;
+  const statusCounts = disputesData?.statusCounts || { pending: 0, resolved: 0, archived: 0 };
+  const categoryCounts = disputesData?.categoryCounts || { all: 0, dispute: 0, question: 0, payment_promise: 0, unclear: 0 };
 
-  // Counts by classification
-  const counts = {
-    all: pendingDisputes.length,
-    dispute: pendingDisputes.filter(i => i.classification === 'dispute').length,
-    question: pendingDisputes.filter(i => i.classification === 'question').length,
-    payment_promise: pendingDisputes.filter(i => i.classification === 'payment_promise').length,
-    unclear: pendingDisputes.filter(i => i.classification === 'unclear').length,
-  };
-
-  // Filter items by active tab
-  const filteredItems = pendingDisputes.filter(item => {
-    if (activeTab === 'all') return true;
-    return item.classification === activeTab;
-  });
-
-  // Group filtered items by invoice & sender
+  // Group items by invoice / groupKey
   interface InboundGroup {
     groupKey: string;
     invoiceId?: string | null;
@@ -173,7 +169,7 @@ export function Disputes() {
   const groupMap = new Map<string, InboundGroup>();
   const groupedList: InboundGroup[] = [];
 
-  for (const item of filteredItems) {
+  for (const item of disputesList) {
     const groupKey = item.invoiceId 
       ? item.invoiceId 
       : (item.invoiceNo ? item.invoiceNo : item.id);
@@ -198,151 +194,275 @@ export function Disputes() {
     }
   }
 
-  const tabs: Array<{ id: DisputeTab; label: string; count: number }> = [
-    { id: 'all', label: 'All', count: counts.all },
-    { id: 'dispute', label: 'Disputes', count: counts.dispute },
-    { id: 'question', label: 'Questions', count: counts.question },
-    { id: 'payment_promise', label: 'Payment Promises', count: counts.payment_promise },
-    { id: 'unclear', label: 'Unclear', count: counts.unclear },
-  ];
-
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      <div className="flex justify-between items-center">
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center">
-            <MessageSquare className="w-8 h-8 text-blue-600 mr-3" />
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <MessageSquare className="w-6 h-6 text-blue-600" />
             Disputes Review Queue
           </h1>
-          <p className="text-slate-500 mt-1">Review, edit, and approve draft responses generated for customer replies.</p>
+          <p className="text-sm text-slate-500 mt-1">
+            Review inbound customer communications, generate AI draft replies, and manage dispute resolution lifecycle.
+          </p>
         </div>
-        <button 
+
+        <button
           onClick={() => refetchDisputes()}
-          className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 p-2 hover:bg-slate-100 rounded-md transition-colors"
+          className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors shadow-2xs self-start sm:self-auto"
         >
-          <RefreshCw className={`w-4 h-4 mr-2 ${(approveMutation.isPending || discardMutation.isPending || generateDraftMutation.isPending) ? 'animate-spin' : ''}`} />
-          Refresh
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Refresh</span>
         </button>
       </div>
 
-      {/* Tag Filter Tabs section directly below header line */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3 pt-1">
-        {tabs.map((tab) => (
+      {disputesError && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>Failed to load disputes: {getErrorMessage(disputesError)}</span>
+        </div>
+      )}
+
+      {/* Primary Navigation Tabs (Status) */}
+      <div className="border-b border-slate-200">
+        <nav className="flex space-x-4">
+          <button
+            onClick={() => { setActiveStatus('pending'); setPage(1); }}
+            className={`pb-3 px-1 border-b-2 font-semibold text-sm flex items-center space-x-2 transition-colors ${
+              activeStatus === 'pending'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }`}
+          >
+            <span>Pending</span>
+            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+              activeStatus === 'pending' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+            }`}>
+              {statusCounts.pending}
+            </span>
+          </button>
+
+          <button
+            onClick={() => { setActiveStatus('resolved'); setPage(1); }}
+            className={`pb-3 px-1 border-b-2 font-semibold text-sm flex items-center space-x-2 transition-colors ${
+              activeStatus === 'resolved'
+                ? 'border-emerald-600 text-emerald-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }`}
+          >
+            <span>Resolved</span>
+            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+              activeStatus === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+            }`}>
+              {statusCounts.resolved}
+            </span>
+          </button>
+
+          <button
+            onClick={() => { setActiveStatus('archived'); setPage(1); }}
+            className={`pb-3 px-1 border-b-2 font-semibold text-sm flex items-center space-x-2 transition-colors ${
+              activeStatus === 'archived'
+                ? 'border-amber-600 text-amber-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }`}
+          >
+            <span>Archived</span>
+            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+              activeStatus === 'archived' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+            }`}>
+              {statusCounts.archived}
+            </span>
+          </button>
+        </nav>
+      </div>
+
+      {/* Secondary Sub-Category Filters */}
+      <div className="flex flex-wrap gap-2 pt-1">
+        {([
+          { id: 'all', label: 'All', count: categoryCounts.all },
+          { id: 'dispute', label: 'Disputes', count: categoryCounts.dispute },
+          { id: 'question', label: 'Questions', count: categoryCounts.question },
+          { id: 'payment_promise', label: 'Payment Promises', count: categoryCounts.payment_promise },
+          { id: 'unclear', label: 'Unclear', count: categoryCounts.unclear },
+        ] as const).map((tab) => (
           <button
             key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-            }}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-all flex items-center space-x-1.5 ${
-              activeTab === tab.id
-                ? 'bg-blue-600 text-white border-blue-600 shadow-sm ring-2 ring-blue-600/20'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+            onClick={() => { setActiveCategory(tab.id as DisputeTab); setPage(1); }}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors flex items-center space-x-1.5 ${
+              activeCategory === tab.id
+                ? 'bg-slate-800 text-white shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             <span>{tab.label}</span>
-            <span className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
-              activeTab === tab.id ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600'
-            }`}>
+            <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-200/70 text-slate-800 font-semibold">
               {tab.count}
             </span>
           </button>
         ))}
       </div>
 
-      {disputesError && (
-        <div className="p-4 bg-red-50 text-red-700 rounded-md text-sm border border-red-200">
-          Error loading disputes: {getErrorMessage(disputesError)}
+      {/* Main Review Queue List */}
+      {groupedList.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center space-y-3">
+          <CheckCircle className="w-12 h-12 text-slate-300 mx-auto" />
+          <h3 className="text-base font-semibold text-slate-800">
+            No {activeStatus} items found
+          </h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            {activeStatus === 'pending'
+              ? 'All customer replies have been processed and resolved.'
+              : `There are currently no items marked as ${activeStatus}.`}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center text-xs text-slate-500 font-semibold uppercase tracking-wider px-1">
+            <span className="capitalize">{activeStatus} Items ({groupedList.length})</span>
+          </div>
+
+          {groupedList.map((group) => {
+            const isGroupExpanded = expandedGroupKey === group.groupKey;
+            const primaryItem = group.items[0];
+
+            return (
+              <div
+                key={group.groupKey}
+                className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all overflow-hidden shadow-2xs"
+              >
+                {/* Group Box Header */}
+                <div
+                  onClick={() => toggleExpandGroup(group.groupKey)}
+                  className="p-4 cursor-pointer hover:bg-slate-50/70 transition-colors flex items-center justify-between gap-4"
+                >
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <div className="flex items-center flex-wrap gap-2 text-xs">
+                      <span className="font-semibold text-slate-900 truncate">
+                        {group.sender}
+                      </span>
+                      {group.invoiceId && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <span className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium">
+                            Invoice: #{group.invoiceNo || group.invoiceId} {group.clientName ? `(${group.clientName})` : ''}
+                            <ExternalLink className="w-3 h-3 ml-1 inline" />
+                          </span>
+                        </>
+                      )}
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-400 font-normal flex items-center">
+                        <Clock className="w-3 h-3 mr-1 text-slate-400" />
+                        {new Date(group.latestCreatedAt).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-600 line-clamp-1 font-normal">
+                      {primaryItem.body || primaryItem.subject || '(No preview content)'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-3 flex-shrink-0">
+                    <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full border capitalize ${
+                      classificationConfigs[primaryItem.classification]?.bg || classificationConfigs.unclear.bg
+                    }`}>
+                      {classificationConfigs[primaryItem.classification]?.label || 'Unclear'}
+                    </span>
+
+                    <button
+                      type="button"
+                      className="p-1 hover:bg-slate-200/60 rounded-md text-slate-400 hover:text-slate-700 transition-colors"
+                    >
+                      {isGroupExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded Box Content */}
+                {isGroupExpanded && (
+                  <div className="border-t border-slate-100 bg-slate-50/40 p-4 space-y-5">
+                    {group.items.map((item) => (
+                      <div key={item.id} className="space-y-4">
+                        <CustomerReplyView item={item} />
+                        <ItemActionArea
+                          item={item}
+                          activeStatus={activeStatus}
+                          isEditingThisItem={editingId === item.id}
+                          draftResponse={editingId === item.id ? draftResponse : (item.suggestedResponse || '')}
+                          setDraftResponse={setDraftResponse}
+                          onStartEdit={handleStartEdit}
+                          onCancelEdit={handleCancelEdit}
+                          onSendReply={handleSendReply}
+                          onMarkStatus={handleMarkStatus}
+                          onGenerateDraft={handleGenerateDraft}
+                          isGeneratingThisItem={generatingId === item.id}
+                          failedDraftId={failedDraftId}
+                          sendReplyPending={sendReplyMutation.isPending}
+                          statusChangePending={statusMutation.isPending}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Main Review Section */}
-      <div className="space-y-8">
-        {/* Pending Disputes */}
-        <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 mr-2"></span>
-            Pending Items ({filteredItems.length})
-          </h3>
-          {groupedList.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-lg p-8 text-center text-slate-500">
-              <CheckCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="font-medium">No pending items in this category.</p>
-              <p className="text-xs text-slate-400 mt-1">All customer replies for this category have been resolved.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {groupedList.map(group => (
-                <DisputeGroupCard 
-                  key={group.groupKey}
-                  group={group}
-                  isExpanded={expandedGroupKey === group.groupKey}
-                  editingId={editingId}
-                  draftResponse={draftResponse}
-                  setDraftResponse={setDraftResponse}
-                  onToggleExpand={() => toggleExpandGroup(group.groupKey)}
-                  onStartEdit={handleStartEdit}
-                  onCancelEdit={handleCancelEdit}
-                  onSaveAndApprove={handleSaveAndApprove}
-                  onDirectApprove={handleDirectApprove}
-                  onDiscard={handleDiscard}
-                  onGenerateDraft={handleGenerateDraft}
-                  generatingId={generatingId}
-                  approvePending={approveMutation.isPending}
-                  discardPending={discardMutation.isPending}
-                />
-              ))}
-            </div>
-          )}
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+          <p className="text-xs text-slate-500">
+            Page <span className="font-semibold text-slate-800">{pagination.page}</span> of{' '}
+            <span className="font-semibold text-slate-800">{pagination.totalPages}</span>
+          </p>
 
-          {/* Pagination Controls */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border border-slate-200 rounded-lg bg-white shadow-sm mt-6">
-              <div className="text-sm text-slate-500">
-                Showing <span className="font-medium">{(page - 1) * pagination.limit + 1}</span> to <span className="font-medium">{Math.min(page * pagination.limit, pagination.total)}</span> of <span className="font-medium">{pagination.total}</span> results
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span className="sr-only">Previous page</span>
-                </button>
-                <button
-                  onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                  disabled={page === pagination.totalPages}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-8 w-8 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                  <span className="sr-only">Next page</span>
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setPage(prev => Math.min(prev + 1, pagination.totalPages))}
+              disabled={page === pagination.totalPages}
+              className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function CustomerReplyView({ body, createdAt }: { body: string; createdAt: string }) {
+// Badge classification styling maps
+const classificationConfigs: Record<string, { bg: string, text: string, label: string }> = {
+  dispute: { bg: 'bg-rose-50 text-rose-700 border-rose-100', label: 'Dispute', text: 'text-rose-700' },
+  question: { bg: 'bg-blue-50 text-blue-700 border-blue-100', label: 'Question', text: 'text-blue-700' },
+  payment_promise: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-100', label: 'Payment Promise', text: 'text-emerald-700' },
+  unclear: { bg: 'bg-amber-50 text-amber-700 border-amber-100', label: 'Unclear', text: 'text-amber-700' },
+};
+
+function CustomerReplyView({ item }: { item: InboundEmailReview }) {
   const [showQuoted, setShowQuoted] = useState(false);
-  const { replyText, quotedText } = parseEmailBody(body);
+  const { replyText, quotedText } = parseEmailBody(item.body || item.subject || '');
 
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer Reply</h5>
-        <span className="text-xs text-slate-400">{new Date(createdAt).toLocaleString()}</span>
+    <div className="bg-white border border-slate-200/90 rounded-lg p-4 space-y-3 shadow-2xs">
+      <div className="flex justify-between items-center text-xs text-slate-400">
+        <span className="font-bold text-slate-700 uppercase tracking-wider">Customer Reply</span>
+        <span>{new Date(item.createdAt).toLocaleString()}</span>
       </div>
 
-      {/* Clean main customer reply text */}
-      <div className="bg-slate-50 border border-slate-200 p-4 rounded-md text-sm text-slate-800 whitespace-pre-wrap font-sans leading-relaxed">
-        {replyText}
+      <div className="bg-slate-50 border border-slate-200/70 p-3.5 rounded-md text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
+        {replyText || '(No reply text)'}
       </div>
 
-      {/* Collapsible Quoted Email Thread (if present) */}
       {quotedText && (
         <div className="pt-1">
           <button
@@ -364,45 +484,40 @@ function CustomerReplyView({ body, createdAt }: { body: string; createdAt: strin
   );
 }
 
-// Badge classification styling maps
-const classificationConfigs: Record<string, { bg: string, text: string, label: string }> = {
-  dispute: { bg: 'bg-rose-50 text-rose-700 border-rose-100', label: 'Dispute', text: 'text-rose-700' },
-  question: { bg: 'bg-blue-50 text-blue-700 border-blue-100', label: 'Question', text: 'text-blue-700' },
-  payment_promise: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-100', label: 'Payment Promise', text: 'text-emerald-700' },
-  unclear: { bg: 'bg-amber-50 text-amber-700 border-amber-100', label: 'Unclear', text: 'text-amber-700' },
-};
-
 function ItemActionArea({
   item,
+  activeStatus,
   isEditingThisItem,
   draftResponse,
   setDraftResponse,
   onStartEdit,
   onCancelEdit,
-  onSaveAndApprove,
-  onDirectApprove,
-  onDiscard,
+  onSendReply,
+  onMarkStatus,
   onGenerateDraft,
   isGeneratingThisItem,
-  approvePending,
-  discardPending,
+  failedDraftId,
+  sendReplyPending,
+  statusChangePending,
 }: {
   item: InboundEmailReview;
+  activeStatus: DisputeStatus;
   isEditingThisItem: boolean;
   draftResponse: string;
   setDraftResponse: (val: string) => void;
   onStartEdit: (item: InboundEmailReview) => void;
   onCancelEdit: () => void;
-  onSaveAndApprove: (id: string) => void;
-  onDirectApprove: (item: InboundEmailReview) => void;
-  onDiscard: (id: string) => void;
+  onSendReply: (item: InboundEmailReview) => void;
+  onMarkStatus: (id: string, status: DisputeStatus) => void;
   onGenerateDraft: (id: string, instruction: string) => void;
   isGeneratingThisItem: boolean;
-  approvePending: boolean;
-  discardPending: boolean;
+  failedDraftId: string | null;
+  sendReplyPending: boolean;
+  statusChangePending: boolean;
 }) {
   const [instruction, setInstruction] = useState('');
   const categoryConfig = CATEGORY_QUICK_INSTRUCTIONS[item.classification] || CATEGORY_QUICK_INSTRUCTIONS.unclear;
+  const activeDraftContent = (isEditingThisItem ? draftResponse : (draftResponse || item.suggestedResponse || '')).trim();
 
   const handleChipClick = (chipText: string) => {
     setInstruction(chipText);
@@ -410,314 +525,209 @@ function ItemActionArea({
 
   return (
     <div className="space-y-4 pt-1">
-      {/* AI Reply Instruction Input Block */}
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600 mr-1.5" />
-            AI Reply Instruction
-          </label>
-          <span className="text-[11px] text-slate-400 font-normal">Select a quick instruction chip or type below</span>
-        </div>
+      {/* 1. Pending Status Specific AI Instruction & Response Controls */}
+      {activeStatus === 'pending' && (
+        <>
+          {/* AI Reply Instruction Input Block */}
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600 mr-1.5" />
+                AI Reply Instruction
+              </label>
+              <span className="text-[11px] text-slate-400 font-normal">Select a quick instruction chip or type below</span>
+            </div>
 
-        {/* Quick Instruction Chips (category-specific) */}
-        <div className="flex flex-wrap gap-1.5 pt-0.5">
-          {categoryConfig.chips.map((chipText) => (
-            <button
-              key={chipText}
-              type="button"
-              onClick={() => handleChipClick(chipText)}
-              className="px-2.5 py-1 text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors flex items-center space-x-1 shadow-2xs"
-            >
-              <span>+</span>
-              <span>{chipText}</span>
-            </button>
-          ))}
-        </div>
+            {/* Category-aware Quick Instruction Chips */}
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {categoryConfig.chips.map((chipText) => (
+                <button
+                  key={chipText}
+                  type="button"
+                  onClick={() => handleChipClick(chipText)}
+                  className="px-2.5 py-1 text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors flex items-center space-x-1 shadow-2xs"
+                >
+                  <span>+</span>
+                  <span>{chipText}</span>
+                </button>
+              ))}
+            </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-            placeholder={categoryConfig.placeholder}
-            className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-800"
-          />
-          <button
-            type="button"
-            disabled={!instruction.trim() || isGeneratingThisItem}
-            onClick={() => onGenerateDraft(item.id, instruction)}
-            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-colors shadow-xs"
-          >
-            {isGeneratingThisItem ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Drafting...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{item.suggestedResponse ? 'Regenerate Draft' : 'Generate Draft Response'}</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Generated Draft Response Section */}
-      {item.suggestedResponse ? (
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suggested Draft Response</h5>
-            {!isEditingThisItem && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                placeholder={categoryConfig.placeholder}
+                className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-800"
+              />
               <button
                 type="button"
-                onClick={() => onStartEdit(item)}
-                className="flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
+                disabled={!instruction.trim() || isGeneratingThisItem}
+                onClick={() => onGenerateDraft(item.id, instruction)}
+                className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-colors shadow-xs"
               >
-                <Edit3 className="w-3.5 h-3.5 mr-1" />
-                Edit Draft
+                {isGeneratingThisItem ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Drafting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{draftResponse ? 'Regenerate Draft' : 'Generate Draft Response'}</span>
+                  </>
+                )}
               </button>
+            </div>
+
+            {/* AI Generation Error & Retry state */}
+            {failedDraftId === item.id && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <span>AI response generation timed out or failed. Please click retry.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onGenerateDraft(item.id, instruction || 'Generate standard response')}
+                  className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded text-xs transition-colors flex-shrink-0"
+                >
+                  Retry
+                </button>
+              </div>
             )}
           </div>
 
-          {isEditingThisItem ? (
+          {/* Generated Response Box (when generated or edited) */}
+          {(draftResponse || isEditingThisItem) && (
             <div className="space-y-3">
-              <textarea
-                value={draftResponse}
-                onChange={(e) => setDraftResponse(e.target.value)}
-                className="w-full min-h-[140px] p-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs text-slate-800 font-mono leading-normal"
-              />
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  disabled={approvePending}
-                  onClick={() => onSaveAndApprove(item.id)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                >
-                  {approvePending && <RefreshCw className="w-3 h-3 animate-spin mr-1.5" />}
-                  Approve & Send
-                </button>
-                <button
-                  type="button"
-                  onClick={onCancelEdit}
-                  className="px-4 py-2 border border-slate-300 bg-white text-slate-700 rounded-md text-xs font-semibold hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-md text-xs text-slate-700 whitespace-pre-wrap font-mono leading-relaxed">
-                {item.suggestedResponse}
+              <div className="flex justify-between items-center">
+                <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suggested Draft Response</h5>
+                {!isEditingThisItem && (
+                  <button
+                    type="button"
+                    onClick={() => onStartEdit(item)}
+                    className="flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 mr-1" />
+                    Edit Draft
+                  </button>
+                )}
               </div>
 
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  disabled={approvePending || discardPending}
-                  onClick={() => onDirectApprove(item)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center transition-all hover:scale-[1.02]"
-                >
-                  {approvePending && <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                  Approve & Send
-                </button>
-                <button
-                  type="button"
-                  disabled={approvePending || discardPending}
-                  onClick={() => onDiscard(item.id)}
-                  className="px-4 py-2 border border-red-200 bg-white text-red-600 rounded-md text-xs font-semibold hover:bg-red-50 disabled:opacity-50 flex items-center transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                  Discard
-                </button>
-              </div>
+              {isEditingThisItem ? (
+                <div className="space-y-2">
+                  <textarea
+                    rows={6}
+                    value={draftResponse}
+                    onChange={(e) => setDraftResponse(e.target.value)}
+                    className="w-full p-3 border border-slate-300 rounded-md text-xs font-sans focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      onClick={onCancelEdit}
+                      className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-50 border border-slate-200/70 p-3.5 rounded-md text-xs text-slate-800 font-sans whitespace-pre-wrap leading-relaxed">
+                  {draftResponse}
+                </div>
+              )}
             </div>
           )}
-        </div>
-      ) : (
-        <div className="flex justify-end pt-1">
-          <button
-            type="button"
-            disabled={approvePending || discardPending}
-            onClick={() => onDiscard(item.id)}
-            className="px-4 py-2 border border-red-200 bg-white text-red-600 rounded-md text-xs font-semibold hover:bg-red-50 disabled:opacity-50 flex items-center transition-all"
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-            Discard Item
-          </button>
-        </div>
+        </>
       )}
-    </div>
-  );
-}
 
-function DisputeGroupCard({
-  group,
-  isExpanded,
-  editingId,
-  draftResponse,
-  setDraftResponse,
-  onToggleExpand,
-  onStartEdit,
-  onCancelEdit,
-  onSaveAndApprove,
-  onDirectApprove,
-  onDiscard,
-  onGenerateDraft,
-  generatingId,
-  approvePending,
-  discardPending,
-}: {
-  group: {
-    groupKey: string;
-    invoiceId?: string | null;
-    invoiceNo?: string | null;
-    clientName?: string | null;
-    sender: string;
-    items: InboundEmailReview[];
-    latestCreatedAt: string;
-  };
-  isExpanded: boolean;
-  editingId: string | null;
-  draftResponse: string;
-  setDraftResponse: (val: string) => void;
-  onToggleExpand: () => void;
-  onStartEdit: (item: InboundEmailReview) => void;
-  onCancelEdit: () => void;
-  onSaveAndApprove: (id: string) => void;
-  onDirectApprove: (item: InboundEmailReview) => void;
-  onDiscard: (id: string) => void;
-  onGenerateDraft: (id: string, instruction: string) => void;
-  generatingId: string | null;
-  approvePending: boolean;
-  discardPending: boolean;
-}) {
-  // Collect unique classifications in this group
-  const uniqueClassifications = Array.from(new Set(group.items.map(i => i.classification)));
-  const latestItem = group.items[0]; // representative subject/metadata
+      {/* Action Buttons based on Active Status */}
+      <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+        {activeStatus === 'pending' && (
+          <>
+            <button
+              type="button"
+              disabled={sendReplyPending || !activeDraftContent}
+              onClick={() => onSendReply(item)}
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
+            >
+              {sendReplyPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              <span>Send Reply</span>
+            </button>
 
-  return (
-    <div className={`bg-white border rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-md ${isExpanded ? 'ring-1 ring-blue-500/50' : 'border-slate-200'}`}>
-      {/* Group Card Header */}
-      <div 
-        onClick={onToggleExpand}
-        className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50 transition-colors"
-      >
-        <div className="flex-1 space-y-1.5 min-w-0">
-          {/* Top Meta Line: Sender Email • Clickable Invoice Link • Date & Time */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-            <span className="font-semibold text-slate-900 text-sm">{group.sender}</span>
+            <button
+              type="button"
+              disabled={statusChangePending}
+              onClick={() => onMarkStatus(item.id, 'resolved')}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>Mark Resolved</span>
+            </button>
 
-            {group.invoiceNo && (
-              <>
-                <span className="text-slate-300">•</span>
-                <span className="flex items-center space-x-1">
-                  <span className="text-slate-400">Invoice:</span>
-                  <a 
-                    href={`/invoices/${group.invoiceId}`}
-                    onClick={(e) => e.stopPropagation()} 
-                    className="text-blue-600 font-semibold hover:underline flex items-center"
-                  >
-                    #{group.invoiceNo} {group.clientName ? `(${group.clientName})` : ''}
-                    <ExternalLink className="w-3 h-3 ml-0.5" />
-                  </a>
-                </span>
-              </>
-            )}
+            <button
+              type="button"
+              disabled={statusChangePending}
+              onClick={() => onMarkStatus(item.id, 'archived')}
+              className="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>Archive</span>
+            </button>
+          </>
+        )}
 
-            <span className="text-slate-300">•</span>
-            <span className="text-slate-500 flex items-center">
-              <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />
-              {new Date(group.latestCreatedAt).toLocaleString()}
-            </span>
+        {activeStatus === 'resolved' && (
+          <>
+            <button
+              type="button"
+              disabled={statusChangePending}
+              onClick={() => onMarkStatus(item.id, 'pending')}
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reopen to Pending</span>
+            </button>
 
-            {group.items.length > 1 && (
-              <>
-                <span className="text-slate-300">•</span>
-                <span className="px-2 py-0.5 text-[11px] font-semibold bg-blue-50 text-blue-700 rounded-full border border-blue-100">
-                  {group.items.length} Replies
-                </span>
-              </>
-            )}
-          </div>
+            <button
+              type="button"
+              disabled={statusChangePending}
+              onClick={() => onMarkStatus(item.id, 'archived')}
+              className="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>Move to Archive</span>
+            </button>
+          </>
+        )}
 
-          {/* 1-Line Message Summary */}
-          <p className="text-xs text-slate-600 font-normal truncate">
-            {latestItem.body 
-              ? parseEmailBody(latestItem.body).replyText.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim() 
-              : latestItem.subject}
-          </p>
-        </div>
+        {activeStatus === 'archived' && (
+          <>
+            <button
+              type="button"
+              disabled={statusChangePending}
+              onClick={() => onMarkStatus(item.id, 'pending')}
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reopen to Pending</span>
+            </button>
 
-        <div className="flex items-center space-x-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
-          {/* Classification badges for all unique intents in this grouped box */}
-          <div className="flex items-center space-x-1.5">
-            {uniqueClassifications.map(c => {
-              const cfg = classificationConfigs[c] || classificationConfigs.unclear;
-              return (
-                <span key={c} className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${cfg.bg}`}>
-                  {cfg.label}
-                </span>
-              );
-            })}
-          </div>
-
-          <button 
-            onClick={onToggleExpand} 
-            className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-700"
-          >
-            {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </button>
-        </div>
+            <button
+              type="button"
+              disabled={statusChangePending}
+              onClick={() => onMarkStatus(item.id, 'resolved')}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center space-x-1.5 transition-colors shadow-2xs"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>Mark Resolved</span>
+            </button>
+          </>
+        )}
       </div>
-
-      {/* Expanded details - lists all reply items in this grouped box */}
-      {isExpanded && (
-        <div className="border-t border-slate-100 bg-slate-50/50 p-6 space-y-6">
-          {group.items.map((item, index) => {
-            const cfg = classificationConfigs[item.classification] || classificationConfigs.unclear;
-            const isEditingThisItem = editingId === item.id;
-            const isGeneratingThisItem = generatingId === item.id;
-
-            return (
-              <div key={item.id} className="bg-white border border-slate-200 rounded-lg p-5 space-y-5 shadow-sm">
-                {group.items.length > 1 && (
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Response #{index + 1}
-                    </span>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${cfg.bg}`}>
-                      {cfg.label}
-                    </span>
-                  </div>
-                )}
-
-                {/* Customer reply view component (clean reply + collapsible quoted email thread) */}
-                <CustomerReplyView body={item.body} createdAt={item.createdAt} />
-
-                {/* Item Action Area: AI instruction chips + draft generation + approve/discard */}
-                <ItemActionArea
-                  item={item}
-                  isEditingThisItem={isEditingThisItem}
-                  draftResponse={draftResponse}
-                  setDraftResponse={setDraftResponse}
-                  onStartEdit={onStartEdit}
-                  onCancelEdit={onCancelEdit}
-                  onSaveAndApprove={onSaveAndApprove}
-                  onDirectApprove={onDirectApprove}
-                  onDiscard={onDiscard}
-                  onGenerateDraft={onGenerateDraft}
-                  isGeneratingThisItem={isGeneratingThisItem}
-                  approvePending={approvePending}
-                  discardPending={discardPending}
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

@@ -236,6 +236,7 @@ export interface TenantSettings {
   skipPaymentWarning: boolean;
   autoPurgeEnabled: boolean;
   autoPurgeDays: number;
+  autoPurgeArchivedDisputesDays?: number;
 }
 
 export interface BaseIntegrationStatus {
