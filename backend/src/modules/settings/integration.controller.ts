@@ -19,7 +19,7 @@ const razorpayCredsSchema = z.object({
 });
 
 function getPublicBaseUrl(req: Request): string {
-  if (config.INBOUND_PARSE_DOMAIN) {
+  if (config.INBOUND_PARSE_DOMAIN && !config.INBOUND_PARSE_DOMAIN.includes('inbound.jaktra.site')) {
     return config.INBOUND_PARSE_DOMAIN.startsWith('http')
       ? config.INBOUND_PARSE_DOMAIN.replace(/\/$/, '')
       : `https://${config.INBOUND_PARSE_DOMAIN.replace(/\/$/, '')}`;
@@ -30,7 +30,7 @@ function getPublicBaseUrl(req: Request): string {
   }
 
   const reqHost = req.get('x-forwarded-host') || req.get('host') || '';
-  if (reqHost.includes('alb') || reqHost.includes('amazonaws.com') || reqHost.includes('cloudfront.net') || process.env.NODE_ENV === 'production') {
+  if (reqHost.includes('jaktra.site') || reqHost.includes('alb') || reqHost.includes('amazonaws.com') || reqHost.includes('cloudfront.net') || process.env.NODE_ENV === 'production') {
     return 'https://www.jaktra.site';
   }
 
