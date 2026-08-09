@@ -32,9 +32,39 @@ export interface SendCommunicationOptions {
   to: string;
   subject: string;
   html: string;
+  bodyText?: string;
   channel?: 'email' | 'sms' | 'whatsapp';
   invoiceId?: string;
   source?: 'bulk_ai_agent' | 'invoice_manual' | 'dispute_agent' | 'system';
+}
+
+export function extractPlainTextFromHtml(html: string): string {
+  if (!html) return '';
+  if (!/<[a-z][\s\S]*>/i.test(html)) {
+    return html.trim();
+  }
+  const text = html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<head[\s\S]*?<\/head>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/tr>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/td>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n');
 }
 
 import type { IntegrationService } from '../settings/integration.service.js';
@@ -279,12 +309,14 @@ export class CommunicationService {
       html,
     };
 
+    const plainTextBody = options.bodyText || extractPlainTextFromHtml(html);
+
     const createdComm = await this.communicationRepo.create({
       tenantId,
       invoiceId: invoiceId || '',
       channel: 'email',
       subject,
-      body: html,
+      body: plainTextBody,
       status: 'pending',
       source: options.source || 'system',
       sentAt: null,

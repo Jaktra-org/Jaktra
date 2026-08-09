@@ -405,6 +405,7 @@ export class DisputeService {
         to: dispute.sender,
         subject: dispute.subject ? `Re: ${dispute.subject}` : 'Re: Invoice Follow-up',
         html: responseBody.replace(/\n/g, '<br />'),
+        bodyText: responseBody,
         channel: 'email',
         invoiceId: dispute.invoiceId,
         source: 'dispute_agent',
