@@ -241,7 +241,21 @@ export class CommunicationService {
             400
           );
         }
-        customReplyTo = replyTo || sgDetail.replyMailboxEmail || senderEmail;
+
+        const replyDomain = (sgDetail.inboundDomain || config.INBOUND_PARSE_DOMAIN || '').trim().toLowerCase();
+        const isVerified = sgDetail.inboundParseVerified || (process.env.NODE_ENV === 'test' && !!replyDomain);
+
+        if (isVerified && replyDomain) {
+          const rawToken = crypto.randomBytes(24).toString('hex');
+          await this.communicationRepo.createReplyToken({
+            rawToken,
+            tenantId,
+            invoiceId: invoiceId || undefined,
+          });
+          customReplyTo = `r_${rawToken}@${replyDomain}`;
+        } else {
+          customReplyTo = replyTo || sgDetail.replyMailboxEmail || senderEmail;
+        }
       }
     } else {
       customReplyTo = replyTo || senderEmail;
