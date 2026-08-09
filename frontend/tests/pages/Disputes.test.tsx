@@ -121,11 +121,6 @@ describe('Disputes page reviews and actions', () => {
 
     expect(disputeService.approveDispute).toHaveBeenCalledWith('disp-1', 'We will investigate the charge.');
 
-    // Re-expand card to make Discard button available again
-    await act(async () => {
-      clientEmail.click();
-    });
-
     // Click Discard
     const discardBtn = screen.getByRole('button', { name: /Discard/i });
     await act(async () => {
@@ -137,4 +132,78 @@ describe('Disputes page reviews and actions', () => {
 
     confirmSpy.mockRestore();
   });
+
+  it('filters by category tags and groups multiple replies for same invoice in single box', async () => {
+    const multiDisputes = {
+      data: [
+        {
+          id: 'disp-1',
+          tenantId: 't1',
+          invoiceId: 'inv-108',
+          sender: 'suresh@company.com',
+          subject: 'Dispute invoice 108',
+          body: 'Wrong total amount',
+          classification: 'dispute' as const,
+          confidence: 0.9,
+          suggestedResponse: 'Checking total.',
+          reasoning: 'Dispute',
+          status: 'pending_review' as const,
+          createdAt: '2026-07-28T10:00:00.000Z',
+          invoiceNo: 'INV-108',
+          clientName: 'Quantum Analytics',
+        },
+        {
+          id: 'disp-2',
+          tenantId: 't1',
+          invoiceId: 'inv-108',
+          sender: 'suresh@company.com',
+          subject: 'Question on invoice 108',
+          body: 'Send payment link',
+          classification: 'question' as const,
+          confidence: 0.8,
+          suggestedResponse: 'Here is your link.',
+          reasoning: 'Question',
+          status: 'pending_review' as const,
+          createdAt: '2026-07-30T11:00:00.000Z',
+          invoiceNo: 'INV-108',
+          clientName: 'Quantum Analytics',
+        },
+      ],
+      pagination: { total: 2, page: 1, limit: 25, totalPages: 1 },
+    };
+
+    vi.mocked(disputeService.getPendingDisputes).mockResolvedValue(multiDisputes);
+    vi.mocked(settingsService.getInboundVerificationStatus).mockResolvedValue(mockInboundStatus);
+
+    renderWithProviders(<Disputes />);
+
+    await waitFor(() => {
+      // Conf badge should NOT be rendered
+      expect(screen.queryByText(/Conf:/i)).not.toBeInTheDocument();
+      // Both Dispute and Question badges rendered on the grouped box header
+      expect(screen.getByText('Dispute')).toBeInTheDocument();
+      expect(screen.getByText('Question')).toBeInTheDocument();
+      expect(screen.getByText('2 Replies')).toBeInTheDocument();
+    });
+
+    // Expand group
+    const sender = screen.getByText(/suresh@company.com/i);
+    await act(async () => {
+      sender.click();
+    });
+
+    // Both bodies rendered inside single expanded box
+    expect(screen.getByText('Wrong total amount')).toBeInTheDocument();
+    expect(screen.getByText('Send payment link')).toBeInTheDocument();
+
+    // Click Questions tag filter
+    const questionTab = screen.getByRole('button', { name: /Questions/i });
+    await act(async () => {
+      questionTab.click();
+    });
+
+    // Only 1 item shown under Questions
+    expect(screen.getByText('Pending Items (1)')).toBeInTheDocument();
+  });
 });
+
