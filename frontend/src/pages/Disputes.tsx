@@ -4,12 +4,20 @@ import { disputeService, type InboundEmailReview } from '../services/dispute';
 import { 
   MessageSquare, CheckCircle, Trash2, 
   RefreshCw, Edit3, Clock, ChevronDown, ChevronUp, ExternalLink,
-  ChevronLeft, ChevronRight, Loader2
+  ChevronLeft, ChevronRight, Loader2, Sparkles
 } from 'lucide-react';
 import { getErrorMessage } from '../utils/error-utils';
 import { parseEmailBody } from '../utils/email-utils';
 
 export type DisputeTab = 'all' | 'dispute' | 'question' | 'payment_promise' | 'unclear';
+
+const QUICK_INSTRUCTIONS = [
+  "Amount is correct",
+  "Payment not received yet",
+  "Resent invoice PDF",
+  "Please share bank transfer receipt",
+  "Offer 5% discount if paid today",
+];
 
 export function Disputes() {
   const queryClient = useQueryClient();
@@ -18,6 +26,7 @@ export function Disputes() {
   const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftResponse, setDraftResponse] = useState<string>('');
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
 
   // 1. Fetch pending disputes
   const { data: disputesData, isLoading: isDisputesLoading, error: disputesError, refetch: refetchDisputes } = useQuery({
@@ -25,7 +34,24 @@ export function Disputes() {
     queryFn: () => disputeService.getPendingDisputes({ page, limit: 25 }),
   });
 
-  // 2. Approve Mutation
+  // 2. Generate Draft Mutation
+  const generateDraftMutation = useMutation({
+    mutationFn: ({ id, tenantInstruction }: { id: string; tenantInstruction: string }) =>
+      disputeService.generateDraft(id, tenantInstruction),
+    onMutate: ({ id }) => {
+      setGeneratingId(id);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['pendingDisputes'] });
+      setEditingId(variables.id);
+      setDraftResponse(data.suggestedResponse);
+    },
+    onSettled: () => {
+      setGeneratingId(null);
+    },
+  });
+
+  // 3. Approve Mutation
   const approveMutation = useMutation({
     mutationFn: ({ id, suggestedResponse }: { id: string; suggestedResponse: string }) => 
       disputeService.approveDispute(id, suggestedResponse),
@@ -35,13 +61,17 @@ export function Disputes() {
     },
   });
 
-  // 3. Discard Mutation
+  // 4. Discard Mutation
   const discardMutation = useMutation({
     mutationFn: disputeService.discardDispute,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingDisputes'] });
     },
   });
+
+  const handleGenerateDraft = (id: string, tenantInstruction: string) => {
+    generateDraftMutation.mutate({ id, tenantInstruction });
+  };
 
   const handleStartEdit = (item: InboundEmailReview) => {
     setEditingId(item.id);
@@ -61,7 +91,7 @@ export function Disputes() {
   };
 
   const handleDiscard = (id: string) => {
-    if (window.confirm('Are you sure you want to discard this suggested response? The inbound reply will be archived as discarded.')) {
+    if (window.confirm('Are you sure you want to discard this item? It will be archived.')) {
       discardMutation.mutate(id);
     }
   };
@@ -157,7 +187,7 @@ export function Disputes() {
           onClick={() => refetchDisputes()}
           className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-900 p-2 hover:bg-slate-100 rounded-md transition-colors"
         >
-          <RefreshCw className={`w-4 h-4 mr-2 ${(approveMutation.isPending || discardMutation.isPending) ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 mr-2 ${(approveMutation.isPending || discardMutation.isPending || generateDraftMutation.isPending) ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
@@ -222,6 +252,8 @@ export function Disputes() {
                   onSaveAndApprove={handleSaveAndApprove}
                   onDirectApprove={handleDirectApprove}
                   onDiscard={handleDiscard}
+                  onGenerateDraft={handleGenerateDraft}
+                  generatingId={generatingId}
                   approvePending={approveMutation.isPending}
                   discardPending={discardMutation.isPending}
                 />
@@ -259,10 +291,6 @@ export function Disputes() {
       </div>
     </div>
   );
-}
-
-function Loader({ className }: { className?: string }) {
-  return <RefreshCw className={className} />;
 }
 
 function CustomerReplyView({ body, createdAt }: { body: string; createdAt: string }) {
@@ -311,6 +339,186 @@ const classificationConfigs: Record<string, { bg: string, text: string, label: s
   unclear: { bg: 'bg-amber-50 text-amber-700 border-amber-100', label: 'Unclear', text: 'text-amber-700' },
 };
 
+function ItemActionArea({
+  item,
+  isEditingThisItem,
+  draftResponse,
+  setDraftResponse,
+  onStartEdit,
+  onCancelEdit,
+  onSaveAndApprove,
+  onDirectApprove,
+  onDiscard,
+  onGenerateDraft,
+  isGeneratingThisItem,
+  approvePending,
+  discardPending,
+}: {
+  item: InboundEmailReview;
+  isEditingThisItem: boolean;
+  draftResponse: string;
+  setDraftResponse: (val: string) => void;
+  onStartEdit: (item: InboundEmailReview) => void;
+  onCancelEdit: () => void;
+  onSaveAndApprove: (id: string) => void;
+  onDirectApprove: (item: InboundEmailReview) => void;
+  onDiscard: (id: string) => void;
+  onGenerateDraft: (id: string, instruction: string) => void;
+  isGeneratingThisItem: boolean;
+  approvePending: boolean;
+  discardPending: boolean;
+}) {
+  const [instruction, setInstruction] = useState('');
+
+  const handleChipClick = (chipText: string) => {
+    setInstruction(chipText);
+  };
+
+  return (
+    <div className="space-y-4 pt-1">
+      {/* AI Reply Instruction Input Block */}
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600 mr-1.5" />
+            AI Reply Instruction
+          </label>
+          <span className="text-[11px] text-slate-400 font-normal">Select a quick instruction chip or type below</span>
+        </div>
+
+        {/* Quick Instruction Chips */}
+        <div className="flex flex-wrap gap-1.5 pt-0.5">
+          {QUICK_INSTRUCTIONS.map((chipText) => (
+            <button
+              key={chipText}
+              type="button"
+              onClick={() => handleChipClick(chipText)}
+              className="px-2.5 py-1 text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors flex items-center space-x-1 shadow-2xs"
+            >
+              <span>+</span>
+              <span>{chipText}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            placeholder="e.g., Amount is correct as per contract, or offer 5% discount if paid today..."
+            className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-800"
+          />
+          <button
+            type="button"
+            disabled={!instruction.trim() || isGeneratingThisItem}
+            onClick={() => onGenerateDraft(item.id, instruction)}
+            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold disabled:opacity-50 flex items-center justify-center space-x-1.5 flex-shrink-0 transition-colors shadow-xs"
+          >
+            {isGeneratingThisItem ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Drafting...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{item.suggestedResponse ? 'Regenerate Draft' : 'Generate Draft Response'}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Generated Draft Response Section */}
+      {item.suggestedResponse ? (
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suggested Draft Response</h5>
+            {!isEditingThisItem && (
+              <button
+                type="button"
+                onClick={() => onStartEdit(item)}
+                className="flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
+              >
+                <Edit3 className="w-3.5 h-3.5 mr-1" />
+                Edit Draft
+              </button>
+            )}
+          </div>
+
+          {isEditingThisItem ? (
+            <div className="space-y-3">
+              <textarea
+                value={draftResponse}
+                onChange={(e) => setDraftResponse(e.target.value)}
+                className="w-full min-h-[140px] p-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs text-slate-800 font-mono leading-normal"
+              />
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  disabled={approvePending}
+                  onClick={() => onSaveAndApprove(item.id)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                >
+                  {approvePending && <RefreshCw className="w-3 h-3 animate-spin mr-1.5" />}
+                  Approve & Send
+                </button>
+                <button
+                  type="button"
+                  onClick={onCancelEdit}
+                  className="px-4 py-2 border border-slate-300 bg-white text-slate-700 rounded-md text-xs font-semibold hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-md text-xs text-slate-700 whitespace-pre-wrap font-mono leading-relaxed">
+                {item.suggestedResponse}
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  disabled={approvePending || discardPending}
+                  onClick={() => onDirectApprove(item)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center transition-all hover:scale-[1.02]"
+                >
+                  {approvePending && <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                  Approve & Send
+                </button>
+                <button
+                  type="button"
+                  disabled={approvePending || discardPending}
+                  onClick={() => onDiscard(item.id)}
+                  className="px-4 py-2 border border-red-200 bg-white text-red-600 rounded-md text-xs font-semibold hover:bg-red-50 disabled:opacity-50 flex items-center transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                  Discard
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex justify-end pt-1">
+          <button
+            type="button"
+            disabled={approvePending || discardPending}
+            onClick={() => onDiscard(item.id)}
+            className="px-4 py-2 border border-red-200 bg-white text-red-600 rounded-md text-xs font-semibold hover:bg-red-50 disabled:opacity-50 flex items-center transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+            Discard Item
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DisputeGroupCard({
   group,
   isExpanded,
@@ -323,6 +531,8 @@ function DisputeGroupCard({
   onSaveAndApprove,
   onDirectApprove,
   onDiscard,
+  onGenerateDraft,
+  generatingId,
   approvePending,
   discardPending,
 }: {
@@ -345,6 +555,8 @@ function DisputeGroupCard({
   onSaveAndApprove: (id: string) => void;
   onDirectApprove: (item: InboundEmailReview) => void;
   onDiscard: (id: string) => void;
+  onGenerateDraft: (id: string, instruction: string) => void;
+  generatingId: string | null;
   approvePending: boolean;
   discardPending: boolean;
 }) {
@@ -383,19 +595,22 @@ function DisputeGroupCard({
 
             <span className="text-slate-300">•</span>
             <span className="text-slate-500 flex items-center">
-              <Clock className="w-3.5 h-3.5 mr-1" />
+              <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />
               {new Date(group.latestCreatedAt).toLocaleString()}
             </span>
 
             {group.items.length > 1 && (
-              <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                {group.items.length} Replies
-              </span>
+              <>
+                <span className="text-slate-300">•</span>
+                <span className="px-2 py-0.5 text-[11px] font-semibold bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+                  {group.items.length} Replies
+                </span>
+              </>
             )}
           </div>
 
-          {/* One-Line Summary Preview of the Customer Message */}
-          <p className="text-sm font-medium text-slate-700 line-clamp-1 leading-snug">
+          {/* 1-Line Message Summary */}
+          <p className="text-xs text-slate-600 font-normal truncate">
             {latestItem.body 
               ? parseEmailBody(latestItem.body).replyText.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim() 
               : latestItem.subject}
@@ -430,9 +645,10 @@ function DisputeGroupCard({
           {group.items.map((item, index) => {
             const cfg = classificationConfigs[item.classification] || classificationConfigs.unclear;
             const isEditingThisItem = editingId === item.id;
+            const isGeneratingThisItem = generatingId === item.id;
 
             return (
-              <div key={item.id} className={`bg-white border rounded-lg p-5 space-y-5 shadow-sm ${group.items.length > 1 ? 'border-slate-200' : 'border-slate-200'}`}>
+              <div key={item.id} className="bg-white border border-slate-200 rounded-lg p-5 space-y-5 shadow-sm">
                 {group.items.length > 1 && (
                   <div className="flex justify-between items-center pb-2 border-b border-slate-100">
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -447,74 +663,22 @@ function DisputeGroupCard({
                 {/* Customer reply view component (clean reply + collapsible quoted email thread) */}
                 <CustomerReplyView body={item.body} createdAt={item.createdAt} />
 
-                {/* Suggested reply action block */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suggested Draft Response</h5>
-                    {!isEditingThisItem && (
-                      <button 
-                        onClick={() => onStartEdit(item)}
-                        className="flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
-                      >
-                        <Edit3 className="w-3.5 h-3.5 mr-1" />
-                        Edit Draft
-                      </button>
-                    )}
-                  </div>
-
-                  {isEditingThisItem ? (
-                    <div className="space-y-3">
-                      <textarea
-                        value={draftResponse}
-                        onChange={(e) => setDraftResponse(e.target.value)}
-                        className="w-full min-h-[160px] p-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-slate-800 font-mono leading-normal"
-                      />
-                      <div className="flex space-x-2">
-                        <button 
-                          disabled={approvePending}
-                          onClick={() => onSaveAndApprove(item.id)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                        >
-                          {approvePending && <Loader className="w-3 h-3 animate-spin mr-1.5" />}
-                          Approve & Send
-                        </button>
-                        <button 
-                          onClick={onCancelEdit}
-                          className="px-4 py-2 border border-slate-300 bg-white text-slate-700 rounded-md text-xs font-semibold hover:bg-slate-100"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-md text-sm text-slate-700 whitespace-pre-wrap font-mono leading-relaxed">
-                        {item.suggestedResponse || <span className="text-slate-400 italic">No draft response suggested for this category.</span>}
-                      </div>
-                      
-                      <div className="flex space-x-3">
-                        {item.suggestedResponse && (
-                          <button 
-                            disabled={approvePending || discardPending}
-                            onClick={() => onDirectApprove(item)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center transition-all hover:scale-[1.02]"
-                          >
-                            {approvePending && <Loader className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                            Approve & Send
-                          </button>
-                        )}
-                        <button 
-                          disabled={approvePending || discardPending}
-                          onClick={() => onDiscard(item.id)}
-                          className="px-4 py-2 border border-red-200 bg-white text-red-600 rounded-md text-xs font-semibold hover:bg-red-50 disabled:opacity-50 flex items-center transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                          Discard
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* Item Action Area: AI instruction chips + draft generation + approve/discard */}
+                <ItemActionArea
+                  item={item}
+                  isEditingThisItem={isEditingThisItem}
+                  draftResponse={draftResponse}
+                  setDraftResponse={setDraftResponse}
+                  onStartEdit={onStartEdit}
+                  onCancelEdit={onCancelEdit}
+                  onSaveAndApprove={onSaveAndApprove}
+                  onDirectApprove={onDirectApprove}
+                  onDiscard={onDiscard}
+                  onGenerateDraft={onGenerateDraft}
+                  isGeneratingThisItem={isGeneratingThisItem}
+                  approvePending={approvePending}
+                  discardPending={discardPending}
+                />
               </div>
             );
           })}
@@ -523,4 +687,3 @@ function DisputeGroupCard({
     </div>
   );
 }
-

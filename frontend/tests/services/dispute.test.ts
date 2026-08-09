@@ -1,4 +1,4 @@
-﻿import { disputeService } from '../../src/services/dispute';
+import { disputeService } from '../../src/services/dispute';
 import { api } from '../../src/services/api';
 
 vi.mock('../../src/services/api', () => ({
@@ -25,5 +25,8 @@ describe('disputeService', () => {
 
     await disputeService.discardDispute('d-2');
     expect(api.post).toHaveBeenCalledWith('/disputes/d-2/discard');
+
+    await disputeService.generateDraft('d-3', 'The amount is correct');
+    expect(api.post).toHaveBeenCalledWith('/disputes/d-3/generate-draft', { tenantInstruction: 'The amount is correct' });
   });
 });

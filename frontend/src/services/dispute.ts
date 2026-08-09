@@ -38,4 +38,8 @@ export const disputeService = {
   discardDispute: async (id: string): Promise<void> => {
     await api.post(`/disputes/${id}/discard`);
   },
+  generateDraft: async (id: string, tenantInstruction: string): Promise<{ suggestedResponse: string }> => {
+    const response = await api.post(`/disputes/${id}/generate-draft`, { tenantInstruction });
+    return response.data;
+  },
 };

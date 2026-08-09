@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from src.agents.negotiation_agent import NegotiationRequest, NegotiationResponse, NegotiationAgent
-from src.agents.dispute_agent import DisputeRequest, DisputeResponse, DisputeAgent
+from src.agents.dispute_agent import (
+    DisputeRequest, DisputeResponse, DisputeAgent,
+    DisputeDraftRequest, DisputeDraftResponse
+)
 
 router = APIRouter(prefix="/agents", tags=["Agents"])
 
@@ -24,5 +27,10 @@ async def handle_negotiate(request: NegotiationRequest):
 @router.post("/dispute", response_model=DisputeResponse)
 async def handle_dispute(request: DisputeRequest):
     return await dispute_agent.handle(request)
+
+@router.post("/dispute/draft", response_model=DisputeDraftResponse)
+async def handle_dispute_draft(request: DisputeDraftRequest):
+    return await dispute_agent.generate_draft(request)
+
 
 

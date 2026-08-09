@@ -10,7 +10,7 @@ import type { EventService, ActorContext } from '../event/event.service.js';
 import { logger } from '../../shared/logger.js';
 import type { RedisClientType } from 'redis';
 import { config } from '../../config/index.js';
-import { ValidationError, ForbiddenError } from '../../shared/errors/index.js';
+import { ValidationError, ForbiddenError, NotFoundError } from '../../shared/errors/index.js';
 
 export function timingSafeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -314,7 +314,7 @@ export class DisputeService {
     // Call AI service to classify and generate suggested response
     let classification = 'unclear';
     let confidence = 0.0;
-    let suggestedResponse = '';
+    const suggestedResponse = '';
     let reasoning = 'AI classification failed';
 
     try {
@@ -330,7 +330,6 @@ export class DisputeService {
 
       classification = aiResult.classification;
       confidence = aiResult.confidence;
-      suggestedResponse = aiResult.suggestedResponse;
       reasoning = aiResult.reasoning;
     } catch (err: unknown) {
       logger.error(`AI dispute analysis failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -465,5 +464,62 @@ export class DisputeService {
         logger.error('Failed to emit dispute.discarded event', err);
       });
     }
+  }
+
+  async generateDraftResponse(
+    id: string,
+    tenantId: string,
+    tenantInstruction: string
+  ): Promise<{ suggestedResponse: string }> {
+    const dispute = await this.disputeRepo.findById(id);
+    if (!dispute || dispute.tenantId !== tenantId) {
+      throw new NotFoundError(`Dispute record not found: ${id}`);
+    }
+
+    let invoiceNo = 'UNKNOWN';
+    let clientName = 'Customer';
+    let invoiceAmount = '0.00';
+    let dueDate = new Date().toISOString();
+    let priorHistory: Array<{ subject: string | null; body: string | null; sentAt: Date | null }> = [];
+
+    if (dispute.invoiceId) {
+      const [inv] = await this.db
+        .select()
+        .from(invoices)
+        .where(and(eq(invoices.id, dispute.invoiceId), eq(invoices.tenantId, tenantId)))
+        .limit(1);
+
+      if (inv) {
+        invoiceNo = inv.invoiceNo;
+        clientName = inv.clientName;
+        invoiceAmount = String(inv.invoiceAmount);
+        dueDate = inv.dueDate;
+      }
+
+      const comms = await this.communicationRepo.findByInvoiceId(dispute.invoiceId);
+      priorHistory = comms.map((c) => ({
+        subject: c.subject,
+        body: c.body,
+        sentAt: c.sentAt,
+      }));
+    }
+
+    const draftResult = await this.aimlService.generateDisputeDraft({
+      tenantInstruction,
+      inboundText: dispute.body || '',
+      invoiceId: dispute.invoiceId || id,
+      invoiceNo,
+      clientName,
+      invoiceAmount,
+      dueDate,
+      priorCommunications: priorHistory,
+    });
+
+    // Persist draft response in review record
+    await this.disputeRepo.update(id, {
+      suggestedResponse: draftResult.suggestedResponse,
+    });
+
+    return { suggestedResponse: draftResult.suggestedResponse };
   }
 }

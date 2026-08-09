@@ -15,6 +15,7 @@ export function createDisputeRouter(
   router.get('/pending', requireRole('admin', 'manager'), disputeController.listPending);
   router.post('/:id/approve', validateParam('id'), requireRole('admin', 'manager'), disputeController.approve);
   router.post('/:id/discard', validateParam('id'), requireRole('admin', 'manager'), disputeController.discard);
+  router.post('/:id/generate-draft', validateParam('id'), requireRole('admin', 'manager'), disputeController.generateDraft);
 
   return router;
 }

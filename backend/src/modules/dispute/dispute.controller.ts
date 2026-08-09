@@ -73,4 +73,31 @@ export class DisputeController {
       next(err);
     }
   };
+
+  generateDraft = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const tenantId = authReq.user.tenantId;
+      const disputeId = req.params.id as string;
+
+      const GenerateDraftSchema = z.object({
+        tenantInstruction: z.string().min(1, 'Instruction cannot be empty'),
+      });
+
+      const parsed = GenerateDraftSchema.safeParse(req.body);
+      if (!parsed.success) {
+        next(new ValidationError('Invalid instruction body', JSON.stringify(parsed.error.format())));
+        return;
+      }
+
+      const result = await this.disputeService.generateDraftResponse(
+        disputeId,
+        tenantId,
+        parsed.data.tenantInstruction
+      );
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
 }

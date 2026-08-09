@@ -252,8 +252,10 @@ describe('DisputeService Inbound Processing & Ingestion', () => {
       analyzeDispute: vi.fn().mockResolvedValue({
         classification: 'dispute',
         confidence: 0.95,
-        suggestedResponse: 'Sorry about the issue. We will resolve it.',
         reasoning: 'Customer disputes billing amount.',
+      }),
+      generateDisputeDraft: vi.fn().mockResolvedValue({
+        suggestedResponse: 'Drafted response from instruction',
       }),
     };
     mockCommRepo = {

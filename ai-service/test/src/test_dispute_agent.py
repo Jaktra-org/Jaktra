@@ -1,7 +1,10 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
-from src.agents.dispute_agent import DisputeAgent, DisputeRequest, DisputeResponse
+from src.agents.dispute_agent import (
+    DisputeAgent, DisputeRequest, DisputeResponse,
+    DisputeDraftRequest, DisputeDraftResponse
+)
 from src.api.main import app
 
 client = TestClient(app)
@@ -24,7 +27,6 @@ async def test_dispute_agent_success():
     {
         "classification": "dispute",
         "confidence": 0.95,
-        "suggested_response": "Dear Acme Corp, We apologize for the issue...",
         "reasoning": "Customer states they were charged double."
     }
     ```"""
@@ -33,8 +35,27 @@ async def test_dispute_agent_success():
         res = await agent.handle(req)
         assert res.classification == "dispute"
         assert res.confidence == 0.95
-        assert "Dear Acme Corp" in res.suggested_response
         assert "charged double" in res.reasoning
+
+@pytest.mark.asyncio
+async def test_dispute_agent_generate_draft():
+    agent = DisputeAgent()
+    req = DisputeDraftRequest(
+        tenant_instruction="The invoice amount is correct as per signed contract section 3.",
+        inbound_text="I was charged double for invoice INV-101",
+        invoice_id="inv-123",
+        invoice_no="INV-101",
+        client_name="Acme Corp",
+        invoice_amount="5000",
+        due_date="2026-08-01",
+    )
+
+    mock_llm_response = AsyncMock()
+    mock_llm_response.content = '{"suggested_response": "Dear Acme Corp, Please note the amount is correct as per contract."}'
+
+    with patch("src.agents.dispute_agent.llm_client.generate", return_value=mock_llm_response):
+        res = await agent.generate_draft(req)
+        assert "Dear Acme Corp" in res.suggested_response
 
 @pytest.mark.asyncio
 async def test_dispute_agent_prompt_injection_sanitization():
@@ -49,7 +70,7 @@ async def test_dispute_agent_prompt_injection_sanitization():
     )
 
     mock_llm_response = AsyncMock()
-    mock_llm_response.content = '{"classification": "unclear", "confidence": 0.1, "suggested_response": "Hello", "reasoning": "Unclear"}'
+    mock_llm_response.content = '{"classification": "unclear", "confidence": 0.1, "reasoning": "Unclear"}'
 
     with patch("src.agents.dispute_agent.llm_client.generate", return_value=mock_llm_response) as mock_gen:
         res = await agent.handle(req)
@@ -87,7 +108,7 @@ def test_dispute_api_endpoint():
     }
 
     mock_llm_response = AsyncMock()
-    mock_llm_response.content = '{"classification": "question", "confidence": 0.9, "suggested_response": "Here are our payment details...", "reasoning": "Asking about payment details."}'
+    mock_llm_response.content = '{"classification": "question", "confidence": 0.9, "reasoning": "Asking about payment details."}'
 
     with patch("src.agents.dispute_agent.llm_client.generate", return_value=mock_llm_response):
         response = client.post("/agents/dispute", json=payload, headers={"X-Service-Key": "test-service-key"})
@@ -95,5 +116,25 @@ def test_dispute_api_endpoint():
         data = response.json()
         assert data["classification"] == "question"
         assert data["confidence"] == 0.9
-        assert "Here are our payment details" in data["suggested_response"]
+
+def test_dispute_draft_api_endpoint():
+    payload = {
+        "tenant_instruction": "The amount is correct",
+        "inbound_text": "Dispute on invoice INV-999",
+        "invoice_id": "inv-999",
+        "invoice_no": "INV-999",
+        "client_name": "Beta LLC",
+        "invoice_amount": "1200",
+        "due_date": "2026-08-15"
+    }
+
+    mock_llm_response = AsyncMock()
+    mock_llm_response.content = '{"suggested_response": "Dear Beta LLC, The amount of $1200 is correct."}'
+
+    with patch("src.agents.dispute_agent.llm_client.generate", return_value=mock_llm_response):
+        response = client.post("/agents/dispute/draft", json=payload, headers={"X-Service-Key": "test-service-key"})
+        assert response.status_code == 200
+        data = response.json()
+        assert "Dear Beta LLC" in data["suggested_response"]
+
 

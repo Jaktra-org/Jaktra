@@ -222,7 +222,6 @@ export class AimlService {
   }): Promise<{
     classification: 'dispute' | 'question' | 'payment_promise' | 'unclear';
     confidence: number;
-    suggestedResponse: string;
     reasoning: string;
   }> {
     const payload = {
@@ -237,14 +236,42 @@ export class AimlService {
     const raw = await this.request<{
       classification: string;
       confidence: number;
-      suggested_response: string;
       reasoning: string;
     }>('POST', '/agents/dispute', payload);
     return {
       classification: raw.classification as 'dispute' | 'question' | 'payment_promise' | 'unclear',
       confidence: raw.confidence,
-      suggestedResponse: raw.suggested_response,
       reasoning: raw.reasoning,
+    };
+  }
+
+  async generateDisputeDraft(request: {
+    tenantInstruction: string;
+    inboundText: string;
+    invoiceId: string;
+    invoiceNo: string;
+    clientName: string;
+    invoiceAmount: string;
+    dueDate: string;
+    priorCommunications?: Array<{ subject: string | null; body: string | null; sentAt: Date | null }>;
+  }): Promise<{
+    suggestedResponse: string;
+  }> {
+    const payload = {
+      tenant_instruction: request.tenantInstruction,
+      inbound_text: request.inboundText,
+      invoice_id: request.invoiceId,
+      invoice_no: request.invoiceNo,
+      client_name: request.clientName,
+      invoice_amount: request.invoiceAmount,
+      due_date: request.dueDate,
+      prior_communications: request.priorCommunications || null,
+    };
+    const raw = await this.request<{
+      suggested_response: string;
+    }>('POST', '/agents/dispute/draft', payload);
+    return {
+      suggestedResponse: raw.suggested_response,
     };
   }
 

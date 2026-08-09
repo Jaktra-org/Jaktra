@@ -11,6 +11,7 @@ vi.mock('../../src/services/dispute', () => ({
     getPendingDisputes: vi.fn(),
     approveDispute: vi.fn(),
     discardDispute: vi.fn(),
+    generateDraft: vi.fn(),
   },
 }));
 
@@ -204,6 +205,63 @@ describe('Disputes page reviews and actions', () => {
 
     // Only 1 item shown under Questions
     expect(screen.getByText('Pending Items (1)')).toBeInTheDocument();
+  });
+
+  it('autofills instruction on chip click and triggers generateDraft', async () => {
+    const unResponseDispute = {
+      data: [
+        {
+          id: 'disp-99',
+          tenantId: 't1',
+          invoiceId: 'inv-99',
+          sender: 'customer@acme.com',
+          subject: 'Need invoice details',
+          body: 'Is the invoice amount correct?',
+          classification: 'question' as const,
+          confidence: 0.9,
+          suggestedResponse: '',
+          reasoning: 'Question',
+          status: 'pending_review' as const,
+          createdAt: '2026-07-30T10:00:00.000Z',
+          invoiceNo: 'INV-99',
+          clientName: 'Acme',
+        },
+      ],
+      pagination: { total: 1, page: 1, limit: 25, totalPages: 1 },
+    };
+
+    vi.mocked(disputeService.getPendingDisputes).mockResolvedValue(unResponseDispute);
+    vi.mocked(settingsService.getInboundVerificationStatus).mockResolvedValue(mockInboundStatus);
+    vi.mocked(disputeService.generateDraft).mockResolvedValue({ suggestedResponse: 'Dear Customer, Amount is correct.' });
+
+    renderWithProviders(<Disputes />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/customer@acme.com/i)).toBeInTheDocument();
+    });
+
+    // Expand
+    const sender = screen.getByText(/customer@acme.com/i);
+    await act(async () => {
+      sender.click();
+    });
+
+    // Click quick chip "Amount is correct"
+    const chipBtn = screen.getByText('Amount is correct');
+    await act(async () => {
+      chipBtn.click();
+    });
+
+    const input = screen.getByPlaceholderText(/e\.g\., Amount is correct/i) as HTMLInputElement;
+    expect(input.value).toBe('Amount is correct');
+
+    // Click Generate Draft Response
+    const genBtn = screen.getByRole('button', { name: /Generate Draft Response/i });
+    await act(async () => {
+      genBtn.click();
+    });
+
+    expect(disputeService.generateDraft).toHaveBeenCalledWith('disp-99', 'Amount is correct');
   });
 });
 
