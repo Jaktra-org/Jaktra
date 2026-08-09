@@ -13,6 +13,7 @@ import { logger } from '../../shared/logger.js';
 import { NotFoundError, CommunicationError } from '../../shared/errors/index.js';
 import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 import { PortalService } from '../portal/portal.service.js';
+import type { IntegrationService } from '../settings/integration.service.js';
 import { type AgentRunChunk } from '../../db/index.js';
 
 export class AgentService {
@@ -30,7 +31,8 @@ export class AgentService {
     private paymentService: PaymentService,
     private communicationService: CommunicationService,
     private communicationRepo: CommunicationRepository,
-    private portalService: PortalService
+    private portalService: PortalService,
+    private integrationService?: IntegrationService
   ) { }
 
   private async getPortalLinkUrl(tenantId: string, invoiceId: string): Promise<string> {
@@ -47,12 +49,14 @@ export class AgentService {
    * Throws immediately so no AI-ML content is generated for nothing.
    */
   private async assertEmailConfigured(tenantId: string): Promise<void> {
-    const settings = await this.communicationRepo.getSettings(tenantId);
-    if (!settings?.defaultEmailProvider) {
-      throw new CommunicationError(
-        'Email provider is not set up. Please select a provider and configure settings in Settings → Email Configuration before running the agent.',
-        400
-      );
+    if (this.integrationService) {
+      const active = await this.integrationService.getActiveEmailIntegration(tenantId);
+      if (!active || active.base.overallStatus !== 'active' || !active.base.isActive) {
+        throw new CommunicationError(
+          'Email provider is not set up. Please select a provider and configure settings in Settings → Email Configuration before running the agent.',
+          400
+        );
+      }
     }
   }
 

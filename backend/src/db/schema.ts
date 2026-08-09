@@ -313,7 +313,6 @@ export const tenantSettings = mysqlTable('tenant_settings', {
   updatedAt: datetime('updated_at', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  defaultEmailProvider: defaultEmailProviderEnum('default_email_provider'),
   webhookToken: varchar('webhook_token', { length: 255 }),
   skipPaymentWarning: boolean('skip_payment_warning').notNull().default(false),
   autoPurgeEnabled: boolean('auto_purge_enabled').notNull().default(false),
@@ -321,14 +320,93 @@ export const tenantSettings = mysqlTable('tenant_settings', {
   dlqThreshold: int('dlq_threshold').notNull().default(3),
   mfaRequired: boolean('mfa_required').notNull().default(false),
   inboundBlockedByAdmin: boolean('inbound_blocked_by_admin').notNull().default(false),
-  replyMode: varchar('reply_mode', { length: 32 }).notNull().default('webhook_only'),
+});
+
+export const emailProviderEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['sendgrid', 'smtp']),
+  { enumValues: ['sendgrid', 'smtp'] as const }
+);
+
+export const integrationOverallStatusEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['not_configured', 'partially_configured', 'active']),
+  { enumValues: ['not_configured', 'partially_configured', 'active'] as const }
+);
+
+export const sendgridReplyModeEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['real_mailbox', 'webhook_only']),
+  { enumValues: ['real_mailbox', 'webhook_only'] as const }
+);
+
+export const smtpEncryptionTypeEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['tls', 'ssl', 'none']),
+  { enumValues: ['tls', 'ssl', 'none'] as const }
+);
+
+export const smtpValidationResultEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['valid', 'invalid', 'untested']),
+  { enumValues: ['valid', 'invalid', 'untested'] as const }
+);
+
+export const emailIntegrations = mysqlTable('email_integrations', {
+  id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: varchar('tenant_id', { length: 36 })
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  provider: emailProviderEnum('provider').notNull(),
+  senderName: varchar('sender_name', { length: 255 }),
+  senderEmail: varchar('sender_email', { length: 255 }),
+  replyTo: varchar('reply_to', { length: 255 }),
+  overallStatus: integrationOverallStatusEnum('overall_status').notNull().default('not_configured'),
+  isActive: boolean('is_active').notNull().default(false),
+  activeTenantId: varchar('active_tenant_id', { length: 36 }),
+  createdAt: datetime('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime('updated_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex('unq_tenant_provider').on(table.tenantId, table.provider),
+  uniqueIndex('unq_single_active_provider').on(table.activeTenantId),
+  index('idx_email_integrations_tenant').on(table.tenantId),
+]);
+
+export const emailIntegrationSendgrid = mysqlTable('email_integration_sendgrid', {
+  id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  integrationId: varchar('integration_id', { length: 36 })
+    .notNull()
+    .references(() => emailIntegrations.id, { onDelete: 'cascade' }),
+  ciphertext: text('ciphertext'),
+  iv: varchar('iv', { length: 64 }),
+  authTag: varchar('auth_tag', { length: 64 }),
+  keyVersion: int('key_version').notNull().default(1),
+  inboundDomain: varchar('inbound_domain', { length: 255 }),
+  inboundParseVerified: boolean('inbound_parse_verified').notNull().default(false),
+  webhookUrl: varchar('webhook_url', { length: 512 }),
+  replyMode: sendgridReplyModeEnum('reply_mode').notNull().default('webhook_only'),
   replyMailboxEmail: varchar('reply_mailbox_email', { length: 255 }),
   replyMailboxVerified: boolean('reply_mailbox_verified').notNull().default(false),
-  replyMailboxOtp: varchar('reply_mailbox_otp', { length: 255 }),
+  replyMailboxOtpCode: varchar('reply_mailbox_otp_code', { length: 6 }),
   replyMailboxOtpExpiresAt: datetime('reply_mailbox_otp_expires_at', { mode: 'date' }),
-  inboundParseVerified: boolean('inbound_parse_verified').notNull().default(false),
-  inboundDomain: varchar('inbound_domain', { length: 255 }),
-});
+}, (table) => [
+  uniqueIndex('unq_sendgrid_integration_id').on(table.integrationId),
+]);
+
+export const emailIntegrationSmtp = mysqlTable('email_integration_smtp', {
+  id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  integrationId: varchar('integration_id', { length: 36 })
+    .notNull()
+    .references(() => emailIntegrations.id, { onDelete: 'cascade' }),
+  host: varchar('host', { length: 255 }).notNull(),
+  port: int('port').notNull().default(587),
+  username: varchar('username', { length: 255 }),
+  ciphertext: text('ciphertext').notNull(),
+  iv: varchar('iv', { length: 64 }).notNull(),
+  authTag: varchar('auth_tag', { length: 64 }).notNull(),
+  keyVersion: int('key_version').notNull().default(1),
+  encryptionType: smtpEncryptionTypeEnum('encryption_type').notNull().default('tls'),
+  allowSelfSigned: boolean('allow_self_signed').notNull().default(false),
+  lastValidationResult: smtpValidationResultEnum('last_validation_result').notNull().default('untested'),
+  lastValidatedAt: datetime('last_validated_at', { mode: 'date' }),
+}, (table) => [
+  uniqueIndex('unq_smtp_integration_id').on(table.integrationId),
+]);
 
 export const tenantIntegrations = mysqlTable('tenant_integrations', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),

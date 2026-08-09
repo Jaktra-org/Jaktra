@@ -7,6 +7,8 @@ describe('AgentService - getRunDetails', () => {
   let mockEventService: any;
   let mockPortalService: any;
 
+  let mockIntegrationService: any;
+
   beforeEach(() => {
     mockAgentRepo = {
       getRunById: vi.fn(),
@@ -18,6 +20,13 @@ describe('AgentService - getRunDetails', () => {
     mockPortalService = {
       getOrCreatePortalLink: vi.fn().mockResolvedValue('mock-token'),
       ensurePortalLinkExists: vi.fn().mockResolvedValue(undefined)
+    };
+
+    mockIntegrationService = {
+      getActiveEmailIntegration: vi.fn().mockResolvedValue({
+        base: { overallStatus: 'active', isActive: true, provider: 'smtp' },
+        detail: {},
+      }),
     };
 
     agentService = new AgentService(
@@ -32,7 +41,8 @@ describe('AgentService - getRunDetails', () => {
       {} as any, // paymentService
       {} as any, // communicationService
       {} as any, // communicationRepo
-      mockPortalService as any
+      mockPortalService as any,
+      mockIntegrationService as any
     );
   });
 
@@ -133,6 +143,7 @@ describe('AgentService - triggerRun', () => {
   let mockCommunicationService: any;
   let mockCommunicationRepo: any;
   let mockPortalService: any;
+  let mockIntegrationService: any;
 
   beforeEach(() => {
     mockAgentRepo = {
@@ -171,6 +182,13 @@ describe('AgentService - triggerRun', () => {
       ensurePortalLinkExists: vi.fn().mockResolvedValue(undefined)
     };
 
+    mockIntegrationService = {
+      getActiveEmailIntegration: vi.fn().mockResolvedValue({
+        base: { overallStatus: 'active', isActive: true, provider: 'smtp' },
+        detail: {},
+      }),
+    };
+
     agentService = new AgentService(
       mockAgentRepo,
       mockAgentChunkRepo as any,
@@ -183,12 +201,13 @@ describe('AgentService - triggerRun', () => {
       mockPaymentService,
       mockCommunicationService,
       mockCommunicationRepo,
-      mockPortalService
+      mockPortalService,
+      mockIntegrationService as any
     );
   });
 
   it('throws CommunicationError if email provider is not configured', async () => {
-    mockCommunicationRepo.getSettings.mockResolvedValue(null);
+    mockIntegrationService.getActiveEmailIntegration.mockResolvedValue(null);
 
     await expect(agentService.triggerRun('tenant-1')).rejects.toThrow(
       'Email provider is not set up'
@@ -196,9 +215,9 @@ describe('AgentService - triggerRun', () => {
   });
 
   it('triggers run and completes immediately if no invoices are triaged', async () => {
-    mockCommunicationRepo.getSettings.mockResolvedValue({
-      defaultEmailProvider: 'smtp',
-      senderEmail: 'test@example.com',
+    mockIntegrationService.getActiveEmailIntegration.mockResolvedValue({
+      base: { overallStatus: 'active', isActive: true, provider: 'smtp' },
+      detail: {},
     });
 
     const run = await agentService.triggerRun('tenant-1');

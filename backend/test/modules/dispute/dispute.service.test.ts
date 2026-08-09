@@ -78,6 +78,23 @@ describe('CommunicationService Outbound replyTo Injection', () => {
     } as any;
 
     const mockIntegrationService = {
+      getActiveEmailIntegration: vi.fn().mockResolvedValue({
+        base: {
+          id: 'integ-1',
+          tenantId: 'tenant-123',
+          provider: 'sendgrid',
+          senderName: 'Test Sender',
+          senderEmail: 'sender@test.com',
+          replyTo: 'custom-reply@test.com',
+          overallStatus: 'active',
+          isActive: true,
+        },
+        detail: {
+          replyMode: 'webhook_only',
+          inboundDomain: 'test.com',
+          inboundParseVerified: true,
+        },
+      }),
       getEffectiveSenderConfig: vi.fn().mockResolvedValue({
         senderName: 'Test Sender',
         senderEmail: 'sender@test.com',
@@ -127,10 +144,22 @@ describe('CommunicationService Outbound replyTo Injection', () => {
       inboundDomain: null,
       inboundParseVerified: true,
     });
-    (commService as any).integrationService.getEffectiveSenderConfig = vi.fn().mockResolvedValue({
-      senderName: 'Test Sender',
-      senderEmail: 'invalid-no-domain',
-      replyTo: null,
+    (commService as any).integrationService.getActiveEmailIntegration = vi.fn().mockResolvedValue({
+      base: {
+        id: 'integ-1',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        senderName: 'Test Sender',
+        senderEmail: 'invalid-no-domain',
+        replyTo: null,
+        overallStatus: 'active',
+        isActive: true,
+      },
+      detail: {
+        replyMode: 'webhook_only',
+        inboundDomain: null,
+        inboundParseVerified: true,
+      },
     });
     const invoiceId = '123e4567-e89b-12d3-a456-426614174000';
 

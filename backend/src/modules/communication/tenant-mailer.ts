@@ -22,12 +22,22 @@ export class DbTenantEmailConfigResolver implements TenantEmailConfigResolver {
   ) {}
 
   async resolve(tenantId: string): Promise<ResolvedEmailConfig> {
-    const settings = await this.communicationRepo.getSettings(tenantId);
-    if (!settings) {
-      throw new CommunicationError('Communication settings not configured for this tenant', 400);
+    let active: { base: { overallStatus: string; isActive: boolean; provider: 'sendgrid' | 'smtp' } } | null = null;
+    if (this.integrationService && typeof this.integrationService.getActiveEmailIntegration === 'function') {
+      active = await this.integrationService.getActiveEmailIntegration(tenantId);
     }
 
-    const defaultProvider = (settings as { defaultEmailProvider?: 'sendgrid' | 'smtp' }).defaultEmailProvider;
+    let defaultProvider: 'sendgrid' | 'smtp' | null = null;
+    if (active && active.base.overallStatus === 'active' && active.base.isActive) {
+      defaultProvider = active.base.provider;
+    } else if (this.communicationRepo && typeof this.communicationRepo.getSettings === 'function') {
+      const settings = await this.communicationRepo.getSettings(tenantId);
+      if (!settings) {
+        throw new CommunicationError('Communication settings not configured for this tenant', 400);
+      }
+      defaultProvider = (settings as { defaultEmailProvider?: 'sendgrid' | 'smtp' | null })?.defaultEmailProvider || null;
+    }
+
     if (!defaultProvider) {
       throw new CommunicationError('EMAIL_PROVIDER_NOT_CONFIGURED', 400);
     }
@@ -46,7 +56,7 @@ export class DbTenantEmailConfigResolver implements TenantEmailConfigResolver {
         secure: smtpConfig.securityMode === 'implicit_tls',
       };
     } else {
-      throw new CommunicationError(`Unsupported default email provider: ${defaultProvider}`, 400);
+      throw new CommunicationError(`Unsupported active email provider`, 400);
     }
   }
 
@@ -61,7 +71,8 @@ export class TenantMailer {
     private readonly communicationRepo: CommunicationRepository,
     private readonly invoiceRepo: InvoiceRepository,
     private readonly eventService?: EventService,
-    private readonly dlqRepo?: DlqRepository
+    private readonly dlqRepo?: DlqRepository,
+    private readonly integrationService?: IntegrationService
   ) {}
 
   private async getProvider(tenantId: string): Promise<EmailProvider> {
@@ -73,10 +84,16 @@ export class TenantMailer {
     message: EmailMessage,
     options?: { invoiceId?: string }
   ): Promise<EmailSendResult> {
-    const settings = await this.communicationRepo.getSettings(tenantId);
-    const defaultProvider = settings?.defaultEmailProvider as 'sendgrid' | 'smtp' | undefined;
-    if (!defaultProvider) {
-      return { success: false, error: 'EMAIL_PROVIDER_NOT_CONFIGURED' };
+    let defaultProvider: 'sendgrid' | 'smtp' | undefined;
+    if (this.integrationService && typeof this.integrationService.getActiveEmailIntegration === 'function') {
+      const active = await this.integrationService.getActiveEmailIntegration(tenantId);
+      if (active && active.base.overallStatus === 'active' && active.base.isActive) {
+        defaultProvider = active.base.provider;
+      }
+    }
+    if (!defaultProvider && this.communicationRepo && typeof this.communicationRepo.getSettings === 'function') {
+      const settings = await this.communicationRepo.getSettings(tenantId);
+      defaultProvider = ((settings as { defaultEmailProvider?: 'sendgrid' | 'smtp' })?.defaultEmailProvider as 'sendgrid' | 'smtp' | undefined) || 'sendgrid';
     }
 
     try {
@@ -101,7 +118,7 @@ export class TenantMailer {
         }
       }
 
-      if (!result.success) {
+      if (!result.success && defaultProvider) {
         // Delegate tracking of validation and operational errors to IntegrationService
         await this.configResolver.handleDeliveryError(
           tenantId,
@@ -112,7 +129,7 @@ export class TenantMailer {
 
       return result;
     } catch (error: unknown) {
-      if (!(error instanceof CommunicationError)) {
+      if (!(error instanceof CommunicationError) && defaultProvider) {
         await this.configResolver.handleDeliveryError(
           tenantId,
           defaultProvider,

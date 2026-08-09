@@ -24,6 +24,8 @@ export function createIntegrationRouter(controller: IntegrationController): Rout
   router.post('/smtp/test', requireRole('admin'), controller.testSmtpConfig);
   router.delete('/smtp', requireRole('admin'), controller.disconnectSmtp);
 
+  router.post('/:provider/activate', requireRole('admin'), controller.setActiveProvider);
+
   router.patch('/default-provider', requireRole('admin'), controller.setDefaultProvider);
 
   router.post('/razorpay', requireRole('admin'), controller.saveRazorpayKey);

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { eq, and, isNull } from 'drizzle-orm';
-import { invoices, tenantSettings, replyTokens } from '../../db/index.js';
+import { invoices, tenantSettings, replyTokens, emailIntegrations, emailIntegrationSendgrid } from '../../db/index.js';
 import type { DatabaseClient, Invoice } from '../../db/index.js';
 import type { DisputeRepository, PendingDisputeItem } from './dispute.repository.js';
 import type { AimlService } from '../agent/aiml.service.js';
@@ -229,22 +229,27 @@ export class DisputeService {
 
     // Auto-forward copy to real tenant mailbox if configured and verified
     try {
-      const [settings] = await this.db
-        .select()
-        .from(tenantSettings)
-        .where(eq(tenantSettings.tenantId, tenantId))
+      const [sendgridConfig] = await this.db
+        .select({
+          replyMode: emailIntegrationSendgrid.replyMode,
+          replyMailboxVerified: emailIntegrationSendgrid.replyMailboxVerified,
+          replyMailboxEmail: emailIntegrationSendgrid.replyMailboxEmail,
+        })
+        .from(emailIntegrations)
+        .innerJoin(emailIntegrationSendgrid, eq(emailIntegrations.id, emailIntegrationSendgrid.integrationId))
+        .where(eq(emailIntegrations.tenantId, tenantId))
         .limit(1);
 
       if (
-        settings?.replyMode === 'real_mailbox' &&
-        settings?.replyMailboxVerified &&
-        settings?.replyMailboxEmail &&
+        sendgridConfig?.replyMode === 'real_mailbox' &&
+        sendgridConfig?.replyMailboxVerified &&
+        sendgridConfig?.replyMailboxEmail &&
         this.communicationService
       ) {
-        logger.info(`Auto-forwarding inbound email for invoice ${invoiceId} to verified tenant mailbox: ${settings.replyMailboxEmail}`);
+        logger.info(`Auto-forwarding inbound email for invoice ${invoiceId} to verified tenant mailbox: ${sendgridConfig.replyMailboxEmail}`);
         await this.communicationService.forwardInboundEmail({
           tenantId,
-          to: settings.replyMailboxEmail,
+          to: sendgridConfig.replyMailboxEmail,
           from: senderEmail,
           subject: params.subject,
           text: params.text,

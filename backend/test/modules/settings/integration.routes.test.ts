@@ -30,6 +30,7 @@ describe('GET /api/settings/integrations/ Routing & Role Restrictions', () => {
       sendReplyMailboxOtp: dummyHandler,
       verifyReplyMailboxOtp: dummyHandler,
       verifyInboundParse: dummyHandler,
+      setActiveProvider: dummyHandler,
     };
 
     const authMiddleware = (req: any, res: any, next: any): void => {

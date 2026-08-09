@@ -57,6 +57,13 @@
       "when": 1785226693558,
       "tag": "0007_careless_doomsday",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1785310000000,
+      "tag": "0008_email_integrations_split",
+      "breakpoints": true
     }
   ]
 }

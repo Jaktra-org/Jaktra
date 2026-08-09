@@ -46,10 +46,13 @@ function makeIntegrationService(): any {
     deleteSendgridIntegration: vi.fn().mockResolvedValue(undefined),
     getIntegrationStatus: vi.fn().mockResolvedValue({ isConfigured: false, lastValidationResult: null }),
     getIntegrationStatusRazorpay: vi.fn().mockResolvedValue({ isConfigured: false }),
+    getSendgridSetupProgress: vi.fn().mockResolvedValue({}),
+    getSmtpSetupProgress: vi.fn().mockResolvedValue({}),
     validateAndSaveSmtpConfig: vi.fn().mockResolvedValue(undefined),
     deleteSmtpIntegration: vi.fn().mockResolvedValue(undefined),
     validateAndSaveRazorpayKey: vi.fn().mockResolvedValue(undefined),
     deleteRazorpayIntegration: vi.fn().mockResolvedValue(undefined),
+    setActiveProvider: vi.fn().mockResolvedValue(undefined),
   } as any;
 }
 

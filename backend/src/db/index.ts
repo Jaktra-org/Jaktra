@@ -9,6 +9,9 @@ export {
   dlqEntries,
   tenantSettings,
   tenantIntegrations,
+  emailIntegrations,
+  emailIntegrationSendgrid,
+  emailIntegrationSmtp,
   teamInvitations,
   inboundEmails,
   invoicePortalLinks,
@@ -25,6 +28,11 @@ export {
   validationResultEnum,
   inboundEmailStatusEnum,
   paymentPlanStatusEnum,
+  emailProviderEnum,
+  integrationOverallStatusEnum,
+  sendgridReplyModeEnum,
+  smtpEncryptionTypeEnum,
+  smtpValidationResultEnum,
 } from './schema.js';
 
 export type {

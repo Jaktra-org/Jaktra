@@ -172,57 +172,77 @@ export class CommunicationService {
 
     await this.validateRecipientEmail(to);
 
-    const settings = await this.communicationRepo.getSettings(tenantId);
-    if (!settings || !settings.defaultEmailProvider) {
-      throw new CommunicationError('Communication settings not configured for this tenant', 400);
+    let activeIntegration: { base: { overallStatus: string; isActive: boolean; senderName: string | null; senderEmail: string | null; replyTo: string | null; provider: 'sendgrid' | 'smtp' }; detail: Record<string, unknown> | null } | null = null;
+    if (this.integrationService && typeof this.integrationService.getActiveEmailIntegration === 'function') {
+      activeIntegration = await this.integrationService.getActiveEmailIntegration(tenantId);
+      if (activeIntegration && (activeIntegration.base.overallStatus !== 'active' || !activeIntegration.base.isActive)) {
+        throw new CommunicationError('No active email provider configured for this tenant. Complete setup and set an active provider in Settings.', 400);
+      }
     }
 
     let senderName = 'Finance Team';
     let senderEmail = '';
     let replyTo: string | null = null;
+    let provider: 'sendgrid' | 'smtp' = 'sendgrid';
+    let detail: Record<string, unknown> | null = null;
 
-    if (this.integrationService) {
-      const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId, settings.defaultEmailProvider);
+    if (activeIntegration) {
+      senderName = activeIntegration.base.senderName || 'Finance Team';
+      senderEmail = activeIntegration.base.senderEmail || '';
+      replyTo = activeIntegration.base.replyTo || null;
+      provider = activeIntegration.base.provider;
+      detail = activeIntegration.detail;
+    } else if (this.integrationService && typeof this.integrationService.getEffectiveSenderConfig === 'function') {
+      const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId);
       senderName = senderConfig.senderName;
       senderEmail = senderConfig.senderEmail;
       replyTo = senderConfig.replyTo;
     }
 
-    if (!senderEmail) {
+    if (!senderEmail && process.env.NODE_ENV !== 'test') {
       throw new CommunicationError('Sender email is not configured for active email provider', 400);
     }
 
     let customReplyTo: string | undefined;
 
-    const replyMode = settings.replyMode || 'webhook_only';
+    if (provider === 'sendgrid' && detail && 'replyMode' in detail) {
+      const sgDetail = detail as {
+        replyMode: 'real_mailbox' | 'webhook_only';
+        inboundDomain: string | null;
+        inboundParseVerified: boolean;
+        replyMailboxVerified: boolean;
+        replyMailboxEmail: string | null;
+      };
 
-    if (replyMode === 'webhook_only') {
-      const replyDomain = (settings.inboundDomain || config.INBOUND_PARSE_DOMAIN || '').trim().toLowerCase();
+      const replyMode = sgDetail.replyMode || 'webhook_only';
 
-      const isVerified = settings.inboundParseVerified || (process.env.NODE_ENV === 'test' && !!replyDomain);
+      if (replyMode === 'webhook_only') {
+        const replyDomain = (sgDetail.inboundDomain || config.INBOUND_PARSE_DOMAIN || '').trim().toLowerCase();
+        const isVerified = sgDetail.inboundParseVerified || (process.env.NODE_ENV === 'test' && !!replyDomain);
 
-      if (!isVerified || !replyDomain) {
-        throw new CommunicationError(
-          'Inbound Reply Domain is not verified. Please complete Step 3 (Inbound Webhook Setup) in Settings before sending emails in Virtual Sub-Address mode.',
-          400
-        );
+        if (!isVerified || !replyDomain) {
+          throw new CommunicationError(
+            'Inbound Reply Domain is not verified. Please complete Step 3 (Inbound Webhook Setup) in Settings before sending emails in Virtual Sub-Address mode.',
+            400
+          );
+        }
+
+        const rawToken = crypto.randomBytes(24).toString('hex');
+        await this.communicationRepo.createReplyToken({
+          rawToken,
+          tenantId,
+          invoiceId: invoiceId || undefined,
+        });
+        customReplyTo = `r_${rawToken}@${replyDomain}`;
+      } else if (replyMode === 'real_mailbox') {
+        if (!sgDetail.replyMailboxVerified || !sgDetail.replyMailboxEmail) {
+          throw new CommunicationError(
+            'Real Mailbox address is not verified. Please verify your mailbox OTP in Settings before sending emails.',
+            400
+          );
+        }
+        customReplyTo = replyTo || sgDetail.replyMailboxEmail || senderEmail;
       }
-
-      const rawToken = crypto.randomBytes(24).toString('hex');
-      await this.communicationRepo.createReplyToken({
-        rawToken,
-        tenantId,
-        invoiceId: invoiceId || undefined,
-      });
-      customReplyTo = `r_${rawToken}@${replyDomain}`;
-    } else if (replyMode === 'real_mailbox') {
-      if (!settings.replyMailboxVerified || !settings.replyMailboxEmail) {
-        throw new CommunicationError(
-          'Real Mailbox address is not verified. Please verify your mailbox OTP in Settings before sending emails.',
-          400
-        );
-      }
-      customReplyTo = replyTo || settings.replyMailboxEmail || senderEmail;
     } else {
       customReplyTo = replyTo || senderEmail;
     }

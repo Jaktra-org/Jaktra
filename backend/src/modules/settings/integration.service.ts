@@ -1,6 +1,6 @@
 import type { RedisClientType } from 'redis';
 import sgClient from '@sendgrid/client';
-import type { IntegrationRepository } from './integration.repository.js';
+import type { IntegrationRepository, SendgridSetupProgress, SmtpSetupProgress } from './integration.repository.js';
 import { encrypt, decrypt } from '../../shared/encryption.js';
 import { IntegrationErrors, IntegrationError } from './integration.errors.js';
 import { logger } from '../../shared/logger.js';
@@ -23,6 +23,7 @@ export interface IntegrationStatus {
   senderName?: string | null;
   senderEmail?: string | null;
   replyTo?: string | null;
+  isSenderConfigured?: boolean;
 }
 
 export interface RazorpayIntegrationStatus {
@@ -53,6 +54,245 @@ export class IntegrationService {
     private readonly redis: RedisClientType | null = null,
     private readonly platformMailer: PlatformMailer | null = null
   ) {}
+
+  async getSendgridSetupProgress(tenantId: string): Promise<SendgridSetupProgress> {
+    const integration = await this.repo.getSendgridIntegration(tenantId);
+    const base = integration?.base;
+    const detail = integration?.detail;
+
+    const step1Done = !!detail?.ciphertext && !!detail?.iv && !!detail?.authTag;
+
+    const senderName = base?.senderName || null;
+    const senderEmail = base?.senderEmail || null;
+    const replyTo = base?.replyTo || null;
+    const replyMode = detail?.replyMode || 'webhook_only';
+    const replyMailboxEmail = detail?.replyMailboxEmail || null;
+    const replyMailboxVerified = detail?.replyMailboxVerified ?? false;
+
+    let step2Status: 'not_started' | 'awaiting_sender_info' | 'awaiting_otp' | 'completed' = 'not_started';
+    if (!senderName && !senderEmail) {
+      step2Status = 'not_started';
+    } else if (!senderName || !senderEmail) {
+      step2Status = 'awaiting_sender_info';
+    } else if (replyMode === 'real_mailbox' && !replyMailboxVerified) {
+      step2Status = 'awaiting_otp';
+    } else {
+      step2Status = 'completed';
+    }
+
+    const step2Done = step2Status === 'completed';
+
+    const inboundDomain = detail?.inboundDomain || null;
+    const isVerified = (detail?.inboundParseVerified === true) && !!inboundDomain;
+
+    let step3Status: 'not_started' | 'awaiting_inbound_domain' | 'awaiting_mx_verification' | 'verified' = 'not_started';
+    if (!inboundDomain) {
+      step3Status = 'not_started';
+    } else if (!isVerified) {
+      step3Status = 'awaiting_mx_verification';
+    } else {
+      step3Status = 'verified';
+    }
+
+    const step3Done = isVerified;
+
+    const overallStatus = base?.overallStatus || 'not_configured';
+    const isActive = base?.isActive ?? false;
+
+    const publicBaseUrl = process.env.PUBLIC_BASE_URL || 'https://www.jaktra.site';
+    const token = (await this.repo.getWebhookToken(tenantId)) || tenantId;
+    const webhookUrl = `${publicBaseUrl}/api/webhooks/sendgrid/inbound/${token}`;
+
+    return {
+      provider: 'sendgrid' as const,
+      step1ApiKey: {
+        isDone: step1Done,
+        isConfigured: step1Done,
+      },
+      step2SenderAndMode: {
+        isDone: step2Done,
+        status: step2Status,
+        senderName,
+        senderEmail,
+        replyTo,
+        replyMode,
+        replyMailboxEmail,
+        replyMailboxVerified,
+        requiresOtp: replyMode === 'real_mailbox',
+      },
+      step3InboundWebhook: {
+        isDone: step3Done,
+        status: step3Status,
+        inboundDomain,
+        webhookUrl,
+        sendgridSettingsUrl: 'https://app.sendgrid.com/settings/parse',
+        isVerified,
+      },
+      overallStatus,
+      isActive,
+    };
+  }
+
+  async getSmtpSetupProgress(tenantId: string): Promise<SmtpSetupProgress> {
+    const integration = await this.repo.getSmtpIntegration(tenantId);
+    const base = integration?.base;
+    const detail = integration?.detail;
+
+    const host = detail?.host || null;
+    const port = detail?.port || 587;
+    const username = detail?.username || null;
+    const hasPassword = !!detail?.ciphertext && !!detail?.iv && !!detail?.authTag;
+
+    const step1Done = !!host && !!port && hasPassword;
+
+    const senderName = base?.senderName || null;
+    const senderEmail = base?.senderEmail || null;
+    const replyTo = base?.replyTo || null;
+
+    const step2Done = !!senderName && !!senderEmail;
+
+    const overallStatus = base?.overallStatus || 'not_configured';
+    const isActive = base?.isActive ?? false;
+
+    return {
+      provider: 'smtp' as const,
+      step1ConnectionDetails: {
+        isDone: step1Done,
+        host,
+        port,
+        username,
+        hasPassword,
+        encryptionType: detail?.encryptionType || 'tls',
+        allowSelfSigned: detail?.allowSelfSigned || false,
+      },
+      step2SenderIdentity: {
+        isDone: step2Done,
+        senderName,
+        senderEmail,
+        replyTo,
+      },
+      overallStatus,
+      isActive,
+    };
+  }
+
+  async setActiveProvider(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<void> {
+    await this.repo.setActiveProvider(tenantId, provider);
+  }
+
+  async deleteEmailIntegration(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<void> {
+    await this.repo.deleteEmailIntegration(tenantId, provider);
+  }
+
+  async getActiveEmailIntegration(tenantId: string): Promise<ReturnType<IntegrationRepository['getActiveEmailIntegration']>> {
+    return this.repo.getActiveEmailIntegration(tenantId);
+  }
+
+  async getEffectiveSenderConfig(
+    tenantId: string,
+    provider?: 'sendgrid' | 'smtp' | null
+  ): Promise<{ senderName: string; senderEmail: string; replyTo: string | null }> {
+    let integration;
+    if (provider) {
+      integration = provider === 'sendgrid' ? await this.repo.getSendgridIntegration(tenantId) : await this.repo.getSmtpIntegration(tenantId);
+    } else {
+      integration = await this.repo.getActiveEmailIntegration(tenantId);
+    }
+    const base = integration?.base;
+    return {
+      senderName: base?.senderName || 'Finance Team',
+      senderEmail: base?.senderEmail || '',
+      replyTo: base?.replyTo || null,
+    };
+  }
+
+  async setReplyMode(
+    tenantId: string,
+    replyMode: 'real_mailbox' | 'webhook_only',
+    replyMailboxEmail?: string
+  ): Promise<SendgridSetupProgress> {
+    const existing = await this.repo.getSendgridIntegration(tenantId);
+    const existingMailbox = existing?.detail?.replyMailboxEmail?.trim().toLowerCase();
+    const newMailbox = replyMailboxEmail?.trim().toLowerCase();
+
+    const keepVerified = existingMailbox && newMailbox && existingMailbox === newMailbox ? existing?.detail?.replyMailboxVerified : false;
+
+    await this.repo.saveSendgridIntegrationTransaction(
+      tenantId,
+      {},
+      {
+        replyMode,
+        replyMailboxEmail: replyMode === 'real_mailbox' ? replyMailboxEmail : null,
+        replyMailboxVerified: keepVerified ?? false,
+      }
+    );
+    return this.getSendgridSetupProgress(tenantId);
+  }
+
+  async sendReplyMailboxOtp(
+    tenantId: string,
+    replyMailboxEmail: string
+  ): Promise<{ targetEmail: string; otpCode: string; setupProgress: SendgridSetupProgress }> {
+    const sg = await this.repo.getSendgridIntegration(tenantId);
+    if (sg?.detail?.replyMailboxOtpExpiresAt) {
+      const timeSinceLastOtp = 10 * 60 * 1000 - (new Date(sg.detail.replyMailboxOtpExpiresAt).getTime() - Date.now());
+      if (timeSinceLastOtp >= 0 && timeSinceLastOtp < 60 * 1000) {
+        const secondsLeft = Math.ceil((60 * 1000 - timeSinceLastOtp) / 1000);
+        throw new ValidationError(`Please wait ${secondsLeft} seconds before requesting another OTP code.`);
+      }
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.repo.saveSendgridIntegrationTransaction(
+      tenantId,
+      {},
+      {
+        replyMode: 'real_mailbox',
+        replyMailboxEmail,
+        replyMailboxVerified: false,
+        replyMailboxOtpCode: otpCode,
+        replyMailboxOtpExpiresAt: expiresAt,
+      }
+    );
+
+    const setupProgress = await this.getSendgridSetupProgress(tenantId);
+    return { targetEmail: replyMailboxEmail, otpCode, setupProgress };
+  }
+
+  async verifyReplyMailboxOtp(
+    tenantId: string,
+    otpCode: string
+  ): Promise<{ success: boolean; message: string; setupProgress: SendgridSetupProgress }> {
+    const sg = await this.repo.getSendgridIntegration(tenantId);
+    const detail = sg?.detail;
+
+    if (!detail || !detail.replyMailboxOtpCode || !detail.replyMailboxOtpExpiresAt) {
+      throw new ValidationError('No OTP code found. Please request a new OTP.');
+    }
+
+    if (new Date() > new Date(detail.replyMailboxOtpExpiresAt)) {
+      throw new ValidationError('OTP code has expired. Please request a new OTP.');
+    }
+
+    if (detail.replyMailboxOtpCode.trim() !== otpCode.trim()) {
+      throw new ValidationError('Invalid OTP code. Please check and try again.');
+    }
+
+    await this.repo.saveSendgridIntegrationTransaction(
+      tenantId,
+      {},
+      {
+        replyMailboxVerified: true,
+        replyMailboxOtpCode: null,
+        replyMailboxOtpExpiresAt: null,
+      }
+    );
+
+    const setupProgress = await this.getSendgridSetupProgress(tenantId);
+    return { success: true, message: 'Mailbox verified successfully!', setupProgress };
+  }
 
   private getAadContext(tenantId: string, provider: string, version: number): string {
     return `${tenantId}:${provider}:v${version}`;
@@ -127,7 +367,10 @@ export class IntegrationService {
       }
 
       // Stage 5: Save verification state in database
-      await this.repo.verifyInboundParse(tenantId, domainToVerify);
+      await this.repo.saveSendgridIntegrationTransaction(tenantId, {}, {
+        inboundDomain: domainToVerify,
+        inboundParseVerified: true,
+      });
       const hostMsg = matchingSetting.hostname ? ` (Host: ${matchingSetting.hostname})` : '';
       return { success: true, message: `SendGrid Inbound Parse configuration verified successfully!${hostMsg}` };
     } catch (err: unknown) {
@@ -146,51 +389,34 @@ export class IntegrationService {
   }
 
   async getIntegrationStatus(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<IntegrationStatus> {
-    const integration = await this.repo.getIntegration(tenantId, provider);
-    
-    if (!integration) {
+    if (provider === 'sendgrid') {
+      const progress = await this.getSendgridSetupProgress(tenantId);
       return {
-        provider,
-        isConfigured: false,
+        provider: 'sendgrid',
+        isConfigured: progress.step1ApiKey.isDone,
         lastValidatedAt: null,
-        lastValidationResult: 'unknown',
+        lastValidationResult: progress.step1ApiKey.isDone ? 'valid' : 'unknown',
+        senderName: progress.step2SenderAndMode.senderName || null,
+        senderEmail: progress.step2SenderAndMode.senderEmail || null,
+        replyTo: progress.step2SenderAndMode.replyTo || null,
+        isSenderConfigured: progress.step2SenderAndMode.isDone,
+      };
+    } else {
+      const progress = await this.getSmtpSetupProgress(tenantId);
+      const smtpIntegration = await this.repo.getSmtpIntegration(tenantId);
+      const username = progress.step1ConnectionDetails.username;
+      const maskedUsername = username ? '*'.repeat(Math.max(username.length - 4, 0)) + username.slice(-4) : '';
+      return {
+        provider: 'smtp',
+        isConfigured: progress.step1ConnectionDetails.isDone,
+        lastValidatedAt: smtpIntegration?.detail?.lastValidatedAt || null,
+        lastValidationResult: (smtpIntegration?.detail?.lastValidationResult as 'valid' | 'invalid' | 'unknown' | null) || (progress.step1ConnectionDetails.isDone ? 'valid' : 'unknown'),
+        displayHost: progress.step1ConnectionDetails.host || undefined,
+        port: progress.step1ConnectionDetails.port,
+        maskedUsername,
+        securityMode: progress.step1ConnectionDetails.encryptionType,
       };
     }
-
-    let extraConfig = {};
-    if (provider === 'sendgrid') {
-      try {
-        const config = await this.getDecryptedSendgridConfig(tenantId);
-        extraConfig = {
-          senderName: config.senderName || null,
-          senderEmail: config.senderEmail || null,
-          replyTo: config.replyTo || null,
-          isSenderConfigured: !!config.isSenderConfigured,
-        };
-      } catch (e) {
-        logger.error(`Failed to decrypt SendGrid config for status check (tenant: ${tenantId}):`, e);
-      }
-    } else if (provider === 'smtp') {
-      try {
-        const config = await this.getDecryptedSmtpConfig(tenantId);
-        extraConfig = {
-          displayHost: config.host,
-          maskedUsername: '*'.repeat(Math.max(config.username.length - 4, 0)) + config.username.slice(-4),
-          port: config.port,
-          securityMode: config.securityMode,
-        };
-      } catch (e) {
-        logger.error(`Failed to decrypt SMTP config for status check (tenant: ${tenantId}):`, e);
-      }
-    }
-
-    return {
-      provider,
-      isConfigured: true,
-      lastValidatedAt: integration.lastValidatedAt,
-      lastValidationResult: integration.lastValidationResult,
-      ...extraConfig,
-    };
   }
 
   async getIntegrationStatusRazorpay(tenantId: string): Promise<RazorpayIntegrationStatus> {
@@ -221,46 +447,22 @@ export class IntegrationService {
     };
   }
 
-  async getEffectiveSenderConfig(
-    tenantId: string,
-    defaultProvider: 'sendgrid' | 'smtp' | null | undefined
-  ): Promise<EffectiveSenderConfig> {
-    const defaultFrom = process.env.PLATFORM_FROM_EMAIL || 'billing@example.com';
-    if (defaultProvider === 'sendgrid') {
-      try {
-        const sgConfig = await this.getDecryptedSendgridConfig(tenantId);
-        return {
-          senderName: sgConfig.senderName || 'Finance Team',
-          senderEmail: sgConfig.senderEmail || defaultFrom,
-          replyTo: sgConfig.replyTo || null,
-        };
-      } catch {
-        return { senderName: 'Finance Team', senderEmail: defaultFrom, replyTo: null };
-      }
-    } else if (defaultProvider === 'smtp') {
-      try {
-        const smtpConfig = await this.getDecryptedSmtpConfig(tenantId);
-        return {
-          senderName: (smtpConfig as { senderName?: string }).senderName || 'Finance Team',
-          senderEmail: smtpConfig.username || defaultFrom,
-          replyTo: null,
-        };
-      } catch {
-        return { senderName: 'Finance Team', senderEmail: defaultFrom, replyTo: null };
-      }
-    }
-
-    return { senderName: 'Finance Team', senderEmail: defaultFrom, replyTo: null };
-  }
-
   async validateAndSaveSendgridKey(
     tenantId: string,
-    data: { apiKey: string; senderName?: string; senderEmail?: string; replyTo?: string | null; otpCode?: string }
+    data: {
+      apiKey: string;
+      senderName?: string;
+      senderEmail?: string;
+      replyTo?: string | null;
+      replyMode?: 'real_mailbox' | 'webhook_only';
+      replyMailboxEmail?: string;
+      otpCode?: string;
+    }
   ): Promise<{ requiresOtp?: boolean; targetEmail?: string; message: string }> {
     let apiKeyToSave = data.apiKey;
-    const existingIntegration = await this.repo.getIntegration(tenantId, 'sendgrid');
+    const existingIntegration = await this.repo.getSendgridIntegration(tenantId);
 
-    if (existingIntegration && (!apiKeyToSave || apiKeyToSave === 'SG.placeholder')) {
+    if (existingIntegration?.detail?.ciphertext && (!apiKeyToSave || apiKeyToSave === 'SG.placeholder')) {
       const existingConfig = await this.getDecryptedSendgridConfig(tenantId);
       apiKeyToSave = existingConfig.apiKey;
     }
@@ -275,11 +477,8 @@ export class IntegrationService {
       url: '/v3/scopes',
     };
 
-    let validationResult: TenantIntegration['lastValidationResult'] = 'unknown';
-
     try {
       await sgClient.request(request);
-      validationResult = 'valid';
     } catch (error: unknown) {
       const errObj = error as { code?: string | number; response?: { statusCode?: number } } | null;
       const status = errObj?.code || errObj?.response?.statusCode;
@@ -295,26 +494,6 @@ export class IntegrationService {
       }
     }
 
-    let existingPayload: SendgridConfigPayload = { apiKey: apiKeyToSave.trim() };
-    if (existingIntegration) {
-      try {
-        existingPayload = await this.getDecryptedSendgridConfig(tenantId);
-      } catch {
-        // ignore
-      }
-    }
-
-    const isExplicitSenderSave = data.senderEmail !== undefined && data.senderEmail.trim() !== '';
-
-    const payloadToSave: SendgridConfigPayload = {
-      apiKey: apiKeyToSave.trim(),
-      senderName: data.senderName ?? existingPayload.senderName,
-      senderEmail: data.senderEmail ?? existingPayload.senderEmail,
-      replyTo: data.replyTo !== undefined ? data.replyTo : existingPayload.replyTo,
-      isSenderConfigured: isExplicitSenderSave ? true : (data.apiKey && !data.senderEmail ? false : existingPayload.isSenderConfigured ?? false),
-    };
-
-    // Only perform SendGrid sender identity verification if data.senderEmail was EXPLICITLY passed in this request!
     if (data.senderEmail !== undefined && data.senderEmail.trim() !== '') {
       const senderEmail = data.senderEmail.trim();
 
@@ -325,18 +504,22 @@ export class IntegrationService {
     }
 
     const version = 1;
-    const encrypted = encrypt(JSON.stringify(payloadToSave), this.getAadContext(tenantId, 'sendgrid', version));
+    const encrypted = encrypt(apiKeyToSave.trim(), this.getAadContext(tenantId, 'sendgrid', version));
 
-    await this.repo.upsertIntegration({
+    const targetMailbox = (data.replyTo && data.replyTo.trim()) ? data.replyTo.trim() : (data.senderEmail ? data.senderEmail.trim() : null);
+
+    await this.repo.saveSendgridIntegrationTransaction(
       tenantId,
-      provider: 'sendgrid',
-      ciphertext: encrypted.ciphertext,
-      iv: encrypted.iv,
-      authTag: encrypted.authTag,
-      keyVersion: version,
-      lastValidatedAt: new Date(),
-      lastValidationResult: validationResult,
-    });
+      { senderName: data.senderName, senderEmail: data.senderEmail, replyTo: data.replyTo },
+      {
+        ciphertext: encrypted.ciphertext,
+        iv: encrypted.iv,
+        authTag: encrypted.authTag,
+        keyVersion: version,
+        ...(data.replyMode ? { replyMode: data.replyMode as 'real_mailbox' | 'webhook_only' } : {}),
+        ...(data.replyMailboxEmail ? { replyMailboxEmail: data.replyMailboxEmail } : (targetMailbox ? { replyMailboxEmail: targetMailbox } : {})),
+      }
+    );
 
     return {
       requiresOtp: false,
@@ -345,22 +528,22 @@ export class IntegrationService {
   }
 
   async deleteSendgridIntegration(tenantId: string): Promise<void> {
-    await this.repo.deleteIntegration(tenantId, 'sendgrid');
+    await this.repo.deleteEmailIntegration(tenantId, 'sendgrid');
   }
 
   async getDecryptedSendgridConfig(tenantId: string): Promise<SendgridConfigPayload> {
-    const integration = await this.repo.getIntegration(tenantId, 'sendgrid');
-    if (!integration) {
+    const integration = await this.repo.getSendgridIntegration(tenantId);
+    if (!integration || !integration.detail?.ciphertext || !integration.detail?.iv || !integration.detail?.authTag) {
       throw IntegrationErrors.NOT_CONFIGURED();
     }
 
     try {
-      const aadContext = this.getAadContext(tenantId, 'sendgrid', integration.keyVersion);
+      const aadContext = this.getAadContext(tenantId, 'sendgrid', integration.detail.keyVersion);
       const decrypted = decrypt({
-        ciphertext: integration.ciphertext,
-        iv: integration.iv,
-        authTag: integration.authTag,
-        keyVersion: integration.keyVersion,
+        ciphertext: integration.detail.ciphertext,
+        iv: integration.detail.iv,
+        authTag: integration.detail.authTag,
+        keyVersion: integration.detail.keyVersion,
       }, aadContext);
 
       if (decrypted.startsWith('{')) {
@@ -379,18 +562,18 @@ export class IntegrationService {
   }
 
   async getDecryptedSmtpConfig(tenantId: string): Promise<SmtpConfig & { senderName?: string }> {
-    const integration = await this.repo.getIntegration(tenantId, 'smtp');
-    if (!integration) {
+    const integration = await this.repo.getSmtpIntegration(tenantId);
+    if (!integration || !integration.detail?.ciphertext || !integration.detail?.iv || !integration.detail?.authTag) {
       throw IntegrationErrors.NOT_CONFIGURED();
     }
 
     try {
-      const aadContext = this.getAadContext(tenantId, 'smtp', integration.keyVersion);
+      const aadContext = this.getAadContext(tenantId, 'smtp', integration.detail.keyVersion);
       const decryptedString = decrypt({
-        ciphertext: integration.ciphertext,
-        iv: integration.iv,
-        authTag: integration.authTag,
-        keyVersion: integration.keyVersion,
+        ciphertext: integration.detail.ciphertext,
+        iv: integration.detail.iv,
+        authTag: integration.detail.authTag,
+        keyVersion: integration.detail.keyVersion,
       }, aadContext);
       
       const payload = JSON.parse(decryptedString);
@@ -406,10 +589,10 @@ export class IntegrationService {
   }
 
   async validateAndSaveSmtpConfig(tenantId: string, updateData: Partial<SmtpConfig> & { senderName?: string }): Promise<void> {
-    const existingIntegration = await this.repo.getIntegration(tenantId, 'smtp');
+    const existingIntegration = await this.repo.getSmtpIntegration(tenantId);
     let candidateConfig: Partial<SmtpConfig> & { senderName?: string; payloadVersion: number } = { payloadVersion: 1, ...updateData };
 
-    if (!existingIntegration) {
+    if (!existingIntegration?.detail?.ciphertext) {
       if (!updateData.password) {
         throw new IntegrationError('Password is required for initial SMTP setup', 'INTEGRATION_BAD_REQUEST', 400);
       }
@@ -447,73 +630,30 @@ export class IntegrationService {
     const version = 1;
     const encrypted = encrypt(JSON.stringify(validatedConfig), this.getAadContext(tenantId, 'smtp', version));
     
-    if (existingIntegration) {
-      const updated = await this.repo.optimisticUpdateIntegration(tenantId, 'smtp', {
+    await this.repo.saveSmtpIntegrationTransaction(
+      tenantId,
+      { senderName: updateData.senderName },
+      {
+        host: validatedConfig.host,
+        port: validatedConfig.port,
+        username: validatedConfig.username,
         ciphertext: encrypted.ciphertext,
         iv: encrypted.iv,
         authTag: encrypted.authTag,
         keyVersion: version,
-        lastValidatedAt: new Date(),
+        encryptionType: (validatedConfig.securityMode === 'implicit_tls' ? 'ssl' : 'tls'),
         lastValidationResult: 'valid',
-        lastOperationalErrorCode: null,
-      }, existingIntegration.updatedAt);
-      
-      if (!updated) {
-        throw new IntegrationError('SMTP settings were changed by another administrator. Current values have been reloaded.', 'INTEGRATION_CONFLICT', 409);
+        lastValidatedAt: new Date(),
       }
-    } else {
-      try {
-        await this.repo.insertIntegration({
-          tenantId,
-          provider: 'smtp',
-          ciphertext: encrypted.ciphertext,
-          iv: encrypted.iv,
-          authTag: encrypted.authTag,
-          keyVersion: version,
-          lastValidatedAt: new Date(),
-          lastValidationResult: 'valid',
-          lastOperationalErrorCode: null,
-        });
-      } catch (e: unknown) {
-        // Unique constraint violation map to 409
-        if (e && typeof e === 'object' && 'code' in e && e.code === '23505') {
-          throw new IntegrationError('SMTP settings were changed by another administrator. Current values have been reloaded.', 'INTEGRATION_CONFLICT', 409);
-        }
-        throw e;
-      }
-    }
+    );
   }
 
   async deleteSmtpIntegration(tenantId: string): Promise<void> {
-    await this.repo.deleteIntegration(tenantId, 'smtp');
+    await this.repo.deleteEmailIntegration(tenantId, 'smtp');
   }
 
   async handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp', error: unknown): Promise<void> {
-    const err = error as {
-      response?: { statusCode?: number; body?: unknown };
-      responseCode?: number;
-      code?: string | number;
-    };
-    if (provider === 'sendgrid') {
-      const status = err.response?.statusCode;
-      if (status === 401) {
-        await this.repo.updateValidationStatus(tenantId, provider, 'revoked', String(status));
-      } else if (status === 403) {
-        const bodyStr = JSON.stringify(err.response?.body || {});
-        if (bodyStr.includes('sender') || bodyStr.includes('identity')) {
-          await this.repo.updateValidationStatus(tenantId, provider, 'unverified_sender', String(status));
-        } else {
-          await this.repo.updateValidationStatus(tenantId, provider, 'insufficient_scope', String(status));
-        }
-      }
-    } else if (provider === 'smtp') {
-      const status = err.responseCode || err.code;
-      if (status === 535) {
-         await this.repo.updateValidationStatus(tenantId, provider, 'revoked', 'auth_failed');
-      } else {
-         await this.repo.updateOperationalErrorCode(tenantId, provider, String(status));
-      }
-    }
+    logger.warn(`Delivery error encountered for tenant ${tenantId} on provider ${provider}:`, error);
   }
 
 

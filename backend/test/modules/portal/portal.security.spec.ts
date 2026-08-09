@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
-import { createDatabaseClient, invoices, tenants, tenantSettings, invoicePortalLinks, users, paymentPlanRequests, inboundEmails, events } from '../../../src/db/index.js';
+import { createDatabaseClient, invoices, tenants, tenantSettings, invoicePortalLinks, users, paymentPlanRequests, inboundEmails, events, emailIntegrations, emailIntegrationSendgrid } from '../../../src/db/index.js';
 import { config } from '../../../src/config/env.js';
 import { createApp } from '../../../src/app.js';
 import crypto from 'crypto';
@@ -294,7 +294,22 @@ describe('Portal Token Security & Isolation Tests', () => {
       // Mock the tenantMailer to prevent EMAIL_PROVIDER_NOT_CONFIGURED error during integration test
       const originalSend = (commService as any).tenantMailer.sendCollectionEmail;
       (commService as any).tenantMailer.sendCollectionEmail = async () => ({ success: true });
-      await db.update(tenantSettings).set({ defaultEmailProvider: 'sendgrid', inboundParseVerified: true, inboundDomain: 'reply.jaktra.site' }).where(eq(tenantSettings.tenantId, tenantAId));
+      await db.insert(emailIntegrations).values({
+        id: 'integ-portal-test',
+        tenantId: tenantAId,
+        provider: 'sendgrid',
+        senderName: 'Test',
+        senderEmail: 'test@example.com',
+        overallStatus: 'active',
+        isActive: true,
+      }).onDuplicateKeyUpdate({ set: { overallStatus: 'active', isActive: true } });
+
+      await db.insert(emailIntegrationSendgrid).values({
+        id: 'integ-sg-portal-test',
+        integrationId: 'integ-portal-test',
+        inboundDomain: 'reply.jaktra.site',
+        inboundParseVerified: true,
+      }).onDuplicateKeyUpdate({ set: { inboundParseVerified: true } });
 
       try {
         // Send first follow-up email

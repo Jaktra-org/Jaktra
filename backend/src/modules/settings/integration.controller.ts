@@ -8,7 +8,6 @@ import { ValidationError } from '../../shared/errors/index.js';
 import { verifyEmailDomainMx } from '../../shared/email/mx-verifier.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
 
-import { config } from '../../config/index.js';
 import { logger } from '../../shared/logger.js';
 import type { SettingsRepository } from './settings.repository.js';
 
@@ -18,25 +17,7 @@ const razorpayCredsSchema = z.object({
   webhookSecret: z.string().min(5).max(100),
 });
 
-function getPublicBaseUrl(req: Request): string {
-  if (config.INBOUND_PARSE_DOMAIN && !config.INBOUND_PARSE_DOMAIN.includes('inbound.jaktra.site')) {
-    return config.INBOUND_PARSE_DOMAIN.startsWith('http')
-      ? config.INBOUND_PARSE_DOMAIN.replace(/\/$/, '')
-      : `https://${config.INBOUND_PARSE_DOMAIN.replace(/\/$/, '')}`;
-  }
 
-  if (config.FRONTEND_URL && config.FRONTEND_URL.includes('jaktra.site')) {
-    return config.FRONTEND_URL.replace(/\/$/, '');
-  }
-
-  const reqHost = req.get('x-forwarded-host') || req.get('host') || '';
-  if (reqHost.includes('jaktra.site') || reqHost.includes('alb') || reqHost.includes('amazonaws.com') || reqHost.includes('cloudfront.net') || process.env.NODE_ENV === 'production') {
-    return 'https://www.jaktra.site';
-  }
-
-  const protocol = req.protocol || 'http';
-  return `${protocol}://${reqHost || 'localhost:3001'}`;
-}
 
 export class IntegrationController {
   constructor(
@@ -61,41 +42,29 @@ export class IntegrationController {
   getStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      const [sendgridStatus, smtpStatus, razorpayStatus, hasInbound] = await Promise.all([
+      const [sendgridProgress, smtpProgress, razorpayStatus, sendgridStatus, smtpStatus] = await Promise.all([
+        this.integrationService.getSendgridSetupProgress(tenantId),
+        this.integrationService.getSmtpSetupProgress(tenantId),
+        this.integrationService.getIntegrationStatusRazorpay(tenantId),
         this.integrationService.getIntegrationStatus(tenantId, 'sendgrid'),
         this.integrationService.getIntegrationStatus(tenantId, 'smtp'),
-        this.integrationService.getIntegrationStatusRazorpay(tenantId),
-        this.integrationService.hasInboundEmails(tenantId),
       ]);
-
-      let webhookToken = tenantId;
-      let settings = null;
-      if (this.settingsRepo) {
-        settings = await this.settingsRepo.getSettings(tenantId);
-        if (!settings?.webhookToken) {
-          settings = await this.settingsRepo.rotateWebhookToken(tenantId);
-        }
-        if (settings?.webhookToken) {
-          webhookToken = settings.webhookToken;
-        }
-      }
-
-      const baseUrl = getPublicBaseUrl(req);
-      const inboundWebhookUrl = `${baseUrl}/api/webhooks/sendgrid/inbound/${webhookToken}`;
 
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.json({
+        sendgridProgress,
+        smtpProgress,
         sendgrid: sendgridStatus,
         smtp: smtpStatus,
         razorpay: razorpayStatus,
         inboundParse: {
-          webhookUrl: inboundWebhookUrl,
-          sendgridSettingsUrl: 'https://app.sendgrid.com/settings/parse',
-          isVerified: !!settings?.inboundParseVerified || hasInbound,
-          inboundDomain: settings?.inboundDomain || null,
-          replyMode: settings?.replyMode || 'webhook_only',
-          replyMailboxEmail: settings?.replyMailboxEmail || null,
-          replyMailboxVerified: settings?.replyMailboxVerified || false,
+          webhookUrl: sendgridProgress.step3InboundWebhook.webhookUrl,
+          sendgridSettingsUrl: sendgridProgress.step3InboundWebhook.sendgridSettingsUrl,
+          isVerified: sendgridProgress.step3InboundWebhook.isVerified,
+          inboundDomain: sendgridProgress.step3InboundWebhook.inboundDomain,
+          replyMode: sendgridProgress.step2SenderAndMode.replyMode,
+          replyMailboxEmail: sendgridProgress.step2SenderAndMode.replyMailboxEmail,
+          replyMailboxVerified: sendgridProgress.step2SenderAndMode.replyMailboxVerified,
         },
       });
     } catch (error) {
@@ -116,18 +85,14 @@ export class IntegrationController {
         throw new ValidationError('Reply mailbox email is required for real_mailbox mode.');
       }
 
-      if (!this.settingsRepo) {
-        res.status(500).json({ error: { message: 'Settings repository not configured' } });
-        return;
-      }
-
-      const updated = await this.settingsRepo.setReplyMode(tenantId, replyMode, replyMailboxEmail);
+      const setupProgress = await this.integrationService.setReplyMode(tenantId, replyMode, replyMailboxEmail);
 
       res.json({
         message: 'Reply mode updated successfully',
-        replyMode: updated.replyMode,
-        replyMailboxEmail: updated.replyMailboxEmail,
-        replyMailboxVerified: updated.replyMailboxVerified,
+        setupProgress,
+        replyMode: setupProgress.step2SenderAndMode.replyMode,
+        replyMailboxEmail: setupProgress.step2SenderAndMode.replyMailboxEmail,
+        replyMailboxVerified: setupProgress.step2SenderAndMode.replyMailboxVerified,
       });
     } catch (error) {
       next(error);
@@ -137,39 +102,14 @@ export class IntegrationController {
   sendReplyMailboxOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-
-      if (!this.settingsRepo) {
-        res.status(500).json({ error: { message: 'Settings repository not configured' } });
-        return;
-      }
-
-      let settings = await this.settingsRepo.getSettings(tenantId);
       const inputEmail = (req.body?.replyMailboxEmail || req.body?.email || '').trim();
-      const targetEmail = inputEmail || settings?.replyMailboxEmail;
 
-      if (!targetEmail || !targetEmail.includes('@')) {
+      if (!inputEmail || !inputEmail.includes('@')) {
         throw new ValidationError('A valid real mailbox email address is required to send verification OTP.');
       }
 
-      // Automatically persist replyMode = 'real_mailbox' and replyMailboxEmail to database
-      await this.settingsRepo.setReplyMode(tenantId, 'real_mailbox', targetEmail);
-      settings = await this.settingsRepo.getSettings(tenantId);
+      const { targetEmail, otpCode, setupProgress } = await this.integrationService.sendReplyMailboxOtp(tenantId, inputEmail);
 
-      // Check 60-second rate limit cooldown between OTP requests
-      if (settings?.replyMailboxOtpExpiresAt) {
-        const timeSinceLastOtp = 10 * 60 * 1000 - (settings.replyMailboxOtpExpiresAt.getTime() - Date.now());
-        if (timeSinceLastOtp >= 0 && timeSinceLastOtp < 60 * 1000) {
-          const secondsLeft = Math.ceil((60 * 1000 - timeSinceLastOtp) / 1000);
-          throw new ValidationError(`Please wait ${secondsLeft} seconds before requesting another OTP code.`);
-        }
-      }
-
-      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      await this.settingsRepo.saveReplyMailboxOtp(tenantId, otpCode, expiresAt);
-
-      // Send OTP via platform mailer or fallback safely
       let emailSent = false;
       const platformMailer = this.integrationService.getPlatformMailer();
       if (platformMailer) {
@@ -208,7 +148,7 @@ export class IntegrationController {
         throw new ValidationError('Could not send verification OTP. Please configure and save your SendGrid API key or platform email settings.');
       }
 
-      res.json({ message: `Verification OTP sent to ${targetEmail}` });
+      res.json({ message: `Verification OTP sent to ${targetEmail}`, setupProgress });
     } catch (error) {
       next(error);
     }
@@ -223,18 +163,8 @@ export class IntegrationController {
         throw new ValidationError('6-digit OTP code is required.');
       }
 
-      if (!this.settingsRepo) {
-        res.status(500).json({ error: { message: 'Settings repository not configured' } });
-        return;
-      }
-
-      const result = await this.settingsRepo.verifyReplyMailboxOtp(tenantId, otp);
-      if (!result.success) {
-        res.status(400).json({ error: { message: result.message } });
-        return;
-      }
-
-      res.json({ message: 'Reply mailbox verified successfully!', replyMailboxVerified: true });
+      const result = await this.integrationService.verifyReplyMailboxOtp(tenantId, otp);
+      res.json({ message: result.message, setupProgress: result.setupProgress, replyMailboxVerified: true });
     } catch (error) {
       next(error);
     }
@@ -245,7 +175,8 @@ export class IntegrationController {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { inboundDomain } = req.body || {};
       const result = await this.integrationService.verifyInboundParse(tenantId, inboundDomain);
-      res.json({ message: result.message, isVerified: true });
+      const setupProgress = await this.integrationService.getSendgridSetupProgress(tenantId);
+      res.json({ message: result.message, isVerified: true, setupProgress });
     } catch (error) {
       next(error);
     }
@@ -256,7 +187,9 @@ export class IntegrationController {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { apiKey, senderName, senderEmail, replyTo, replyMode, replyMailboxEmail, otpCode } = req.body;
 
-      if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim().startsWith('SG.')) {
+      const effectiveApiKey = (typeof apiKey === 'string' && apiKey.trim() !== '') ? apiKey.trim() : 'SG.placeholder';
+
+      if (!effectiveApiKey.startsWith('SG.')) {
         next(new ValidationError('Invalid SendGrid API Key format. Must start with SG.'));
         return;
       }
@@ -272,36 +205,21 @@ export class IntegrationController {
         }
       }
 
-      if (replyMode && ['real_mailbox', 'webhook_only'].includes(replyMode) && this.settingsRepo) {
-        await this.settingsRepo.setReplyMode(tenantId, replyMode, replyMailboxEmail);
-      }
-
       const result = await this.integrationService.validateAndSaveSendgridKey(tenantId, {
-        apiKey: apiKey.trim(),
+        apiKey: effectiveApiKey,
         senderName: senderName ? senderName.trim() : undefined,
         senderEmail: senderEmail ? senderEmail.trim() : undefined,
         replyTo: replyTo && typeof replyTo === 'string' && replyTo.trim() !== '' ? replyTo.trim() : undefined,
+        replyMode: replyMode && ['real_mailbox', 'webhook_only'].includes(replyMode) ? replyMode : undefined,
+        replyMailboxEmail: replyMailboxEmail && typeof replyMailboxEmail === 'string' && replyMailboxEmail.trim() !== '' ? replyMailboxEmail.trim() : undefined,
         otpCode: otpCode && typeof otpCode === 'string' ? otpCode.trim() : undefined,
       });
 
-      if (result.requiresOtp) {
-        res.json({
-          requiresOtp: true,
-          targetEmail: result.targetEmail,
-          message: result.message,
-        });
-        return;
-      }
+      const setupProgress = await this.integrationService.getSendgridSetupProgress(tenantId);
 
       // Clear DLQ entries on recovery / credentials update
       if (this.dlqService) {
         await this.dlqService.clearAllFailures(tenantId).catch(() => {});
-      }
-
-      // Auto-select as default if no provider is currently set
-      const settings = await this.communicationService.getSettings(tenantId);
-      if (!settings?.defaultEmailProvider) {
-        await this.communicationService.setDefaultEmailProvider(tenantId, 'sendgrid');
       }
 
       this.eventService?.logEvent({
@@ -311,7 +229,7 @@ export class IntegrationController {
         metadata: { integration: 'sendgrid' },
       });
 
-      res.json({ requiresOtp: false, message: result.message || 'SendGrid integration saved successfully' });
+      res.json({ requiresOtp: false, message: result.message || 'SendGrid integration saved successfully', setupProgress });
     } catch (error) {
       next(error);
     }
@@ -339,17 +257,7 @@ export class IntegrationController {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       await this.integrationService.deleteSendgridIntegration(tenantId);
-
-      const settings = await this.communicationService.getSettings(tenantId);
-      if (settings && (settings as { defaultEmailProvider?: string }).defaultEmailProvider === 'sendgrid') {
-        // If SMTP is configured and valid, auto-switch to it
-        const smtpStatus = await this.integrationService.getIntegrationStatus(tenantId, 'smtp');
-        if (smtpStatus.isConfigured && smtpStatus.lastValidationResult === 'valid') {
-          await this.communicationService.setDefaultEmailProvider(tenantId, 'smtp');
-        } else {
-          await this.communicationService.setDefaultEmailProvider(tenantId, null);
-        }
-      }
+      const setupProgress = await this.integrationService.getSendgridSetupProgress(tenantId);
 
       this.eventService?.logEvent({
         tenantId,
@@ -358,7 +266,7 @@ export class IntegrationController {
         metadata: { integration: 'sendgrid' },
       });
 
-      res.status(204).send();
+      res.json({ message: 'SendGrid integration disconnected successfully', setupProgress });
     } catch (error) {
       next(error);
     }
@@ -389,16 +297,11 @@ export class IntegrationController {
       }
 
       await this.integrationService.validateAndSaveSmtpConfig(tenantId, req.body);
+      const setupProgress = await this.integrationService.getSmtpSetupProgress(tenantId);
 
       // Clear DLQ entries on recovery / credentials update
       if (this.dlqService) {
         await this.dlqService.clearAllFailures(tenantId).catch(() => {});
-      }
-
-      // Auto-select as default if no provider is currently set
-      const settings = await this.communicationService.getSettings(tenantId);
-      if (!settings?.defaultEmailProvider) {
-        await this.communicationService.setDefaultEmailProvider(tenantId, 'smtp');
       }
 
       this.eventService?.logEvent({
@@ -408,7 +311,46 @@ export class IntegrationController {
         metadata: { integration: 'smtp', host: req.body?.host ?? null },
       });
 
-      res.json({ message: 'SMTP connection verified and saved successfully' });
+      res.json({ message: 'SMTP connection verified and saved successfully', setupProgress });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  disconnectSmtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      await this.integrationService.deleteSmtpIntegration(tenantId);
+      const setupProgress = await this.integrationService.getSmtpSetupProgress(tenantId);
+
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.disconnected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'smtp' },
+      });
+
+      res.json({ message: 'SMTP integration disconnected successfully', setupProgress });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  setActiveProvider = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const { provider } = req.params;
+
+      if (provider !== 'sendgrid' && provider !== 'smtp') {
+        throw new ValidationError('Invalid provider. Must be sendgrid or smtp.');
+      }
+
+      await this.integrationService.setActiveProvider(tenantId, provider);
+      const setupProgress = provider === 'sendgrid'
+        ? await this.integrationService.getSendgridSetupProgress(tenantId)
+        : await this.integrationService.getSmtpSetupProgress(tenantId);
+
+      res.json({ message: `${provider} activated as active email provider`, setupProgress });
     } catch (error) {
       next(error);
     }
@@ -457,35 +399,6 @@ export class IntegrationController {
       }
 
       res.json({ message: 'Test email accepted by SMTP server' });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  disconnectSmtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      await this.integrationService.deleteSmtpIntegration(tenantId);
-
-      const settings = await this.communicationService.getSettings(tenantId);
-      if (settings && (settings as { defaultEmailProvider?: string }).defaultEmailProvider === 'smtp') {
-        // If SendGrid is configured and valid, auto-switch to it
-        const sendgridStatus = await this.integrationService.getIntegrationStatus(tenantId, 'sendgrid');
-        if (sendgridStatus.isConfigured && sendgridStatus.lastValidationResult === 'valid') {
-          await this.communicationService.setDefaultEmailProvider(tenantId, 'sendgrid');
-        } else {
-          await this.communicationService.setDefaultEmailProvider(tenantId, null);
-        }
-      }
-
-      this.eventService?.logEvent({
-        tenantId,
-        eventType: 'integration.disconnected',
-        actor: this.getActorContext(req),
-        metadata: { integration: 'smtp' },
-      });
-
-      res.status(204).send();
     } catch (error) {
       next(error);
     }
@@ -548,18 +461,34 @@ export class IntegrationController {
       }
 
       if (provider) {
-        const status = await this.integrationService.getIntegrationStatus(tenantId, provider);
-        if (!status || !status.isConfigured || status.lastValidationResult !== 'valid') {
+        const status = await this.integrationService.getIntegrationStatus(tenantId, provider).catch(() => null);
+        let isValid = status?.isConfigured && status?.lastValidationResult === 'valid';
+        if (!isValid) {
+          const progress = provider === 'sendgrid'
+            ? await this.integrationService.getSendgridSetupProgress(tenantId).catch(() => null)
+            : await this.integrationService.getSmtpSetupProgress(tenantId).catch(() => null);
+          isValid = progress?.overallStatus === 'active';
+        }
+
+        if (!isValid) {
            next(new ValidationError('Cannot select an absent or invalid provider'));
            return;
         }
       }
 
       // Capture previous default before changing it
-      const prevSettings = await this.communicationService.getSettings(tenantId);
-      const previousProvider = (prevSettings as { defaultEmailProvider?: string | null } | undefined)?.defaultEmailProvider ?? null;
+      let previousProvider: string | null = null;
+      if (this.integrationService && typeof this.integrationService.getActiveEmailIntegration === 'function') {
+        const active = await this.integrationService.getActiveEmailIntegration(tenantId);
+        previousProvider = active?.base.isActive ? active.base.provider : null;
+      } else {
+        const prevSettings = await this.communicationService.getSettings(tenantId);
+        previousProvider = (prevSettings as { defaultEmailProvider?: string | null } | undefined)?.defaultEmailProvider ?? null;
+      }
 
-      await this.communicationService.setDefaultEmailProvider(tenantId, provider);
+      if (provider) {
+        await this.integrationService.setActiveProvider(tenantId, provider);
+      }
 
       this.eventService?.logEvent({
         tenantId,

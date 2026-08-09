@@ -38,7 +38,7 @@ export class SettingsService {
     }
     let senderConfig = { senderName: 'Finance Team', senderEmail: '', replyTo: null as string | null };
     if (this.integrationService) {
-      senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId, settings.defaultEmailProvider);
+      senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId);
     }
     return {
       ...settings,

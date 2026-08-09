@@ -39,6 +39,11 @@ describe('IntegrationService', () => {
     vi.clearAllMocks();
     mockRepo = {
       getIntegration: vi.fn(),
+      getSendgridIntegration: vi.fn().mockResolvedValue({
+        base: { provider: 'sendgrid', overallStatus: 'active' },
+        detail: { keyVersion: 1, ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag' }
+      }),
+      getSmtpIntegration: vi.fn(),
       upsertIntegration: vi.fn(),
       deleteIntegration: vi.fn(),
     };
