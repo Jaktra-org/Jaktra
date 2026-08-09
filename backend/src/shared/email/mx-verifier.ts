@@ -11,10 +11,13 @@ export function validateInboundDomainFormat(domainInput: string): string {
     throw new ValidationError('Inbound reply domain is required.');
   }
   if (trimmed.includes('@')) {
-    throw new ValidationError('Inbound reply domain cannot be an email address. Enter a domain name such as reply.acme.com.');
+    throw new ValidationError('Inbound reply domain cannot be an email address. Enter a full domain name such as reply.acme.com.');
   }
   if (trimmed.includes('/') || trimmed.includes(':') || trimmed.includes(' ')) {
     throw new ValidationError('Inbound reply domain must be a valid domain name (e.g., reply.acme.com).');
+  }
+  if (!trimmed.includes('.')) {
+    throw new ValidationError(`"${trimmed}" is not a full domain name. Enter the full domain name (e.g., ${trimmed}.jaktra.site or reply.yourdomain.com).`);
   }
   return trimmed;
 }

@@ -20,7 +20,7 @@ function getDnsHostPrefix(fullDomain: string): string {
 }
 
 function copyToClipboard(text: string) {
-  navigator.clipboard.writeText(text).catch(() => {});
+  navigator.clipboard.writeText(text).catch(() => { });
 }
 
 /**
@@ -62,7 +62,8 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
     mutationFn: () => {
       const domain = domainInput.trim().toLowerCase();
       if (!domain) throw new Error('Inbound reply domain is required.');
-      if (domain.includes('@')) throw new Error('Enter a domain name (e.g. reply.acme.com), not an email address.');
+      if (domain.includes('@')) throw new Error('Enter a domain name (e.g. invoicereply.jaktra.site), not an email address.');
+      if (!domain.includes('.')) throw new Error(`"${domain}" is not a full domain name. Enter the full domain (e.g. ${domain}.jaktra.site).`);
       return settingsService.verifyInboundWebhook({ inboundDomain: domain });
     },
     onSuccess: async (data) => {
@@ -169,7 +170,7 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
           <p className="font-bold">❌ Verification Failed:</p>
           <p>{errorMsg}</p>
           <p className="text-[11px] text-red-600 font-normal">
-            If you just added the MX record, DNS propagation can take 1–5 minutes. Wait and click Re-check again.
+            Ensure you enter the full domain (e.g. <code>invoicereply.jaktra.site</code>) instead of just the host prefix. If you just added the MX record, DNS propagation can take 1–5 minutes.
           </p>
         </div>
       )}
@@ -177,21 +178,27 @@ export function SendGridWizardStep3({ progress, refetch, onBack, onComplete }: P
       {/* 1. Domain input */}
       <div className="space-y-1.5 p-3.5 bg-slate-50 border border-slate-200 rounded-lg">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-900">1. Inbound Reply Domain</label>
+          <label className="text-xs font-bold text-slate-900">1. Full Inbound Reply Domain Name</label>
           <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
             DNS Host: <code className="font-mono">{hostPrefix}</code>
           </span>
         </div>
-        <p className="text-[11px] text-slate-600">Example: <code>reply.acme.com</code> or <code>inbound.acme.com</code></p>
+        <p className="text-[11px] text-slate-600">Enter your full subdomain (e.g. <code>invoicereply.jaktra.site</code> or <code>reply.acme.com</code>)</p>
         <input
           type="text"
           value={domainInput}
           onChange={(e) => {
             const val = e.target.value;
             setDomainInput(val);
-            setDomainErr(val.includes('@') ? 'Enter a domain name, not an email address.' : '');
+            if (val.includes('@')) {
+              setDomainErr('Enter a domain name, not an email address.');
+            } else if (val.trim() && !val.includes('.')) {
+              setDomainErr(`Please enter the FULL domain name (e.g., ${val.trim()}.jaktra.site), not just the host prefix.`);
+            } else {
+              setDomainErr('');
+            }
           }}
-          placeholder="reply.acme.com"
+          placeholder="invoicereply.jaktra.site"
           className="w-full p-2 border border-slate-300 rounded-md text-xs font-mono focus:ring-2 focus:ring-blue-500 bg-white"
         />
         {domainErr && <p className="text-[11px] text-red-600 font-medium">{domainErr}</p>}
