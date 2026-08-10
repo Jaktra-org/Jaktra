@@ -36,26 +36,26 @@ export function createInvoiceRouter(
     invoiceController.importFromCsv,
   );
 
+  // Static routes MUST come before parameterized /:id routes
   router.get('/trash', invoiceController.listTrashed);
+  router.get('/payment-plans/pending', requireRole('admin', 'manager'), paymentPlanController.listPending);
+  router.get('/payment-plans', requireRole('admin', 'manager'), paymentPlanController.listPlans);
+  router.post('/payment-plans/:id/approve', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.approve);
+  router.post('/payment-plans/:id/deny', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.deny);
+
+  // Parameterized /:id routes
   router.get('/:id/trashed', validateParam('id'), invoiceController.getTrashed);
-  router.get('/:id', validateParam('id'), invoiceController.getById);
+  router.get('/:id/installments', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.getInstallments);
+  router.get('/:id/portal-link', validateParam('id'), requireRole('admin', 'manager'), invoiceController.getPortalLinkStatus);
+  router.post('/:id/portal-link/regenerate', validateParam('id'), requireRole('admin', 'manager'), invoiceController.regeneratePortalLink);
+  router.post('/:id/payment-link', validateParam('id'), requireRole('admin', 'manager'), invoiceController.generatePaymentLink);
+  router.post('/:id/restore', validateParam('id'), requireRole('admin', 'manager'), invoiceController.restore);
+  router.post('/:id/cancel-payment-plan', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.cancelActivePlan);
+  router.patch('/:id/status', validateParam('id'), requireRole('admin', 'manager'), invoiceController.updateStatus);
   router.patch('/:id', validateParam('id'), requireRole('admin', 'manager'), invoiceController.update);
   router.delete('/:id/permanent', validateParam('id'), requireRole('admin'), invoiceController.permanentDelete);
   router.delete('/:id', validateParam('id'), requireRole('admin', 'manager'), invoiceController.delete);
-  router.patch('/:id/status', validateParam('id'), requireRole('admin', 'manager'), invoiceController.updateStatus);
-  router.post('/:id/payment-link', validateParam('id'), requireRole('admin', 'manager'), invoiceController.generatePaymentLink);
-  router.post('/:id/restore', validateParam('id'), requireRole('admin', 'manager'), invoiceController.restore);
-  router.get('/:id/portal-link', validateParam('id'), requireRole('admin', 'manager'), invoiceController.getPortalLinkStatus);
-  router.post('/:id/portal-link/regenerate', validateParam('id'), requireRole('admin', 'manager'), invoiceController.regeneratePortalLink);
-
-  // Payment Plan endpoints
-  router.get('/payment-plans/pending', requireRole('admin', 'manager'), paymentPlanController.listPending);
-  router.get('/payment-plans', requireRole('admin', 'manager'), paymentPlanController.listPlans);
-  router.get('/:id/installments', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.getInstallments);
-  router.post('/payment-plans/:id/approve', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.approve);
-  router.post('/payment-plans/:id/deny', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.deny);
-  router.post('/:id/cancel-payment-plan', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.cancelActivePlan);
+  router.get('/:id', validateParam('id'), invoiceController.getById);
 
   return router;
 }
-
