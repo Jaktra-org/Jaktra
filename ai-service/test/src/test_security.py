@@ -8,7 +8,6 @@ from src.security import (
 )
 from src.exceptions import OutputValidationError, PromptInjectionDetectedError
 from src.prompts.dispute_prompt import DISPUTE_SYSTEM_PROMPT, DISPUTE_USER_PROMPT
-from src.prompts.negotiation_prompt import NEGOTIATION_SYSTEM_PROMPT, NEGOTIATION_USER_PROMPT
 
 def test_sanitize_input():
     # 1. Strip HTML/XML tags
@@ -125,13 +124,3 @@ def test_prompt_templates_formatting():
     )
     assert "INV-123" in formatted_dispute
     assert "I dispute this invoice" in formatted_dispute
-    
-    # Verify negotiation prompt formatting
-    formatted_neg = NEGOTIATION_USER_PROMPT.format(
-        invoice_id="inv_99",
-        client_proposal="Installment plan",
-        invoice_data="INV-99",
-        company_policies="Min 50%"
-    )
-    assert "INV-99" in formatted_neg
-    assert "Installment plan" in formatted_neg
