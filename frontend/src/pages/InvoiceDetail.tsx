@@ -959,30 +959,40 @@ export function InvoiceDetail() {
             </Card>
           )}
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Aging &amp; Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Due Date</p>
-                <div className="flex items-center text-slate-900">
-                  <Calendar className="mr-2 h-4 w-4 text-slate-400" />
-                  {new Date(invoice.dueDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <p className="text-sm text-slate-500">Days Overdue</p>
-                <p className={`font-semibold ${invoice.daysOverdue && invoice.daysOverdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                  {invoice.daysOverdue || 0}
-                </p>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <p className="text-sm text-slate-500">Follow-ups Sent</p>
-                <p className="font-semibold text-slate-900">{invoice.followupCount}</p>
-              </div>
-            </CardContent>
-          </Card>
+          {(() => {
+            const activeInstallment = invoice.hasActivePaymentPlan && installmentsResponse?.data
+              ? (installmentsResponse.data as Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string }>).find(i => i.status !== 'paid')
+              : undefined;
+
+            return (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Aging &amp; Status</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">
+                      {activeInstallment ? `Next Installment Due (#${activeInstallment.installmentNumber})` : 'Due Date'}
+                    </p>
+                    <div className="flex items-center text-slate-900 font-medium">
+                      <Calendar className="mr-2 h-4 w-4 text-slate-400" />
+                      {new Date(activeInstallment ? activeInstallment.dueDate : invoice.dueDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <p className="text-sm text-slate-500">Days Overdue</p>
+                    <p className={`font-semibold ${invoice.daysOverdue && invoice.daysOverdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                      {invoice.daysOverdue && invoice.daysOverdue > 0 ? invoice.daysOverdue : 0}
+                    </p>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <p className="text-sm text-slate-500">Follow-ups Sent</p>
+                    <p className="font-semibold text-slate-900">{invoice.followupCount}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {invoice.hasActivePaymentPlan && installmentsResponse?.data && (
             <Card className="border border-emerald-200 bg-emerald-50/20">

@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
-from src.constants import TIER_WARM, TIER_FIRM, TIER_SERIOUS, TIER_STERN, TIER_LEGAL, TIER_INSTALLMENT
+from src.constants import TIER_WARM, TIER_FIRM, TIER_SERIOUS, TIER_STERN, TIER_LEGAL
 
 class TierNotAutomatableError(ValueError):
     pass
@@ -18,55 +18,62 @@ class PromptRegistry:
         self._load_prompts()
 
     def _load_prompts(self):
-        # Email Prompts
+        # Email Prompts — Standard
         from src.prompts.email.warm import PROMPT as EMAIL_WARM
         from src.prompts.email.firm import PROMPT as EMAIL_FIRM
         from src.prompts.email.serious import PROMPT as EMAIL_SERIOUS
         from src.prompts.email.stern import PROMPT as EMAIL_STERN
-        from src.prompts.email.installment import PROMPT as EMAIL_INSTALLMENT
 
         self._registry[f"email:{TIER_WARM}"] = EMAIL_WARM
         self._registry[f"email:{TIER_FIRM}"] = EMAIL_FIRM
         self._registry[f"email:{TIER_SERIOUS}"] = EMAIL_SERIOUS
         self._registry[f"email:{TIER_STERN}"] = EMAIL_STERN
-        self._registry[f"email:{TIER_INSTALLMENT}"] = EMAIL_INSTALLMENT
+
+        # Email Prompts — Installment Specific Tones
+        from src.prompts.email.installment.warm import PROMPT as EMAIL_INST_WARM
+        from src.prompts.email.installment.firm import PROMPT as EMAIL_INST_FIRM
+        from src.prompts.email.installment.serious import PROMPT as EMAIL_INST_SERIOUS
+        from src.prompts.email.installment.stern import PROMPT as EMAIL_INST_STERN
+
+        self._registry[f"email:{TIER_WARM}:installment"] = EMAIL_INST_WARM
+        self._registry[f"email:{TIER_FIRM}:installment"] = EMAIL_INST_FIRM
+        self._registry[f"email:{TIER_SERIOUS}:installment"] = EMAIL_INST_SERIOUS
+        self._registry[f"email:{TIER_STERN}:installment"] = EMAIL_INST_STERN
 
         # SMS Prompts
         from src.prompts.sms.warm import PROMPT as SMS_WARM
         from src.prompts.sms.firm import PROMPT as SMS_FIRM
         from src.prompts.sms.serious import PROMPT as SMS_SERIOUS
         from src.prompts.sms.stern import PROMPT as SMS_STERN
-        from src.prompts.sms.installment import PROMPT as SMS_INSTALLMENT
 
         self._registry[f"sms:{TIER_WARM}"] = SMS_WARM
         self._registry[f"sms:{TIER_FIRM}"] = SMS_FIRM
         self._registry[f"sms:{TIER_SERIOUS}"] = SMS_SERIOUS
         self._registry[f"sms:{TIER_STERN}"] = SMS_STERN
-        self._registry[f"sms:{TIER_INSTALLMENT}"] = SMS_INSTALLMENT
 
         # WhatsApp Prompts
         from src.prompts.whatsapp.warm import PROMPT as WA_WARM
         from src.prompts.whatsapp.firm import PROMPT as WA_FIRM
         from src.prompts.whatsapp.serious import PROMPT as WA_SERIOUS
         from src.prompts.whatsapp.stern import PROMPT as WA_STERN
-        from src.prompts.whatsapp.installment import PROMPT as WA_INSTALLMENT
 
         self._registry[f"whatsapp:{TIER_WARM}"] = WA_WARM
         self._registry[f"whatsapp:{TIER_FIRM}"] = WA_FIRM
         self._registry[f"whatsapp:{TIER_SERIOUS}"] = WA_SERIOUS
         self._registry[f"whatsapp:{TIER_STERN}"] = WA_STERN
-        self._registry[f"whatsapp:{TIER_INSTALLMENT}"] = WA_INSTALLMENT
 
-    def get_prompt(self, channel: str, tier: str) -> ChatPromptTemplate:
+    def get_prompt(self, channel: str, tier: str, is_installment: bool = False) -> ChatPromptTemplate:
         if tier == TIER_LEGAL:
             raise TierNotAutomatableError(f"{tier} does not have an automated prompt.")
-        key = f"{channel}:{tier}"
+        key = f"{channel}:{tier}:installment" if is_installment else f"{channel}:{tier}"
+        if key not in self._registry and is_installment:
+            key = f"{channel}:{tier}"
         if key not in self._registry:
             raise UnknownPromptError(f"Unknown prompt for channel={channel}, tier={tier}")
         return self._registry[key]
 
 registry = PromptRegistry()
 
-def get_prompt_for_tier(tier: str, channel: str = "email") -> ChatPromptTemplate:
+def get_prompt_for_tier(tier: str, channel: str = "email", is_installment: bool = False) -> ChatPromptTemplate:
     """Convenience function for backwards compatibility or simple access."""
-    return registry.get_prompt(channel, tier)
+    return registry.get_prompt(channel, tier, is_installment=is_installment)

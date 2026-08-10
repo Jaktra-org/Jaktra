@@ -272,7 +272,7 @@ export class InvoiceController {
         const isActionable = triageService.isActionable(inv, activeInstallmentsMap);
         let urgencyTier = null;
         if (isActionable) {
-          urgencyTier = activeInstallment ? 'payment_plan_installment' : triageService.assignTier(daysOverdue);
+          urgencyTier = triageService.assignTier(daysOverdue);
         }
         return { 
           ...inv, 
@@ -385,7 +385,7 @@ export class InvoiceController {
       const isActionable = triageService.isActionable(invoice, activeInstallmentsMap);
       let urgencyTier = null;
       if (isActionable) {
-        urgencyTier = activeInstallment ? 'payment_plan_installment' : triageService.assignTier(daysOverdue);
+        urgencyTier = triageService.assignTier(daysOverdue);
       }
 
       let isBlocked = false;

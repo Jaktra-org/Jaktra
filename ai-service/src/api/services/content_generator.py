@@ -108,15 +108,12 @@ class ContentGenerator:
 
         inst_num = getattr(request, "installment_number", None)
         total_inst = getattr(request, "total_installments", None)
-
-        tier_to_load = request.urgency_tier
-        if inst_num and total_inst:
-            tier_to_load = "payment_plan_installment"
+        is_installment = bool(inst_num and total_inst)
 
         try:
-            prompt = self.prompts.get_prompt(request.channel, tier_to_load)
+            prompt = self.prompts.get_prompt(request.channel, request.urgency_tier, is_installment=is_installment)
         except TierNotAutomatableError:
-            raise ValueError(f"{tier_to_load} does not have an automated prompt.")
+            raise ValueError(f"{request.urgency_tier} does not have an automated prompt.")
         except UnknownPromptError as e:
             raise ValueError(str(e))
 
@@ -134,7 +131,8 @@ class ContentGenerator:
         if raw_subject and str(raw_subject).strip():
             subject_parts.append(f"- Invoice Description: {sanitize_input(str(raw_subject).strip())}")
         if inst_num and total_inst:
-            subject_parts.append(f"- Payment Plan Active: Remind debtor for Installment #{inst_num} of {total_inst}")
+            subject_parts.append(f"- Active Payment Plan: Remind debtor specifically for Installment #{inst_num} of {total_inst}")
+            subject_parts.append(f"- MANDATORY INSTALLMENT INSTRUCTION: This invoice is under an active payment plan. You MUST frame this email for Installment #{inst_num} of {total_inst} (Amount: {sanitize_input(str(getattr(request, 'invoice_amount', '')))}, Due Date: {sanitize_input(str(getattr(request, 'due_date', ''))[:10])}) while maintaining the required {request.urgency_tier} tone. Explicitly reference Installment #{inst_num} of {total_inst} in the subject line.")
 
         subject_context = "\n".join(subject_parts)
 

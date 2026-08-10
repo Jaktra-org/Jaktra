@@ -38,7 +38,6 @@ export function ToneSelector({
       <option value="stage_2_firm">Firm (Stage 2)</option>
       <option value="stage_3_serious">Serious (Stage 3)</option>
       <option value="stage_4_stern">Stern (Stage 4)</option>
-      <option value="payment_plan_installment">Payment Plan Installment</option>
     </select>
   );
 }

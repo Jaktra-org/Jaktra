@@ -245,7 +245,6 @@ export class AgentService {
           }
 
           const instContext = inv.activeInstallment;
-          const tierToUse = instContext ? 'payment_plan_installment' : effectiveTier;
           followupRequests.push({
             invoiceId: inv.id,
             invoiceNo: inv.invoiceNo,
@@ -255,7 +254,7 @@ export class AgentService {
             currency: instContext ? instContext.currency : (inv.currency ?? 'INR'),
             dueDate: instContext ? instContext.dueDate : inv.dueDate,
             daysOverdue: inv.daysOverdue,
-            urgencyTier: tierToUse,
+            urgencyTier: effectiveTier,
             followupCount: inv.followupCount,
             channel,
             paymentLink,
@@ -527,7 +526,6 @@ export class AgentService {
         let targetDueDate = invoice.dueDate;
         let instNum: number | undefined;
         let totalInst: number | undefined;
-        let effectiveUrgencyTier = urgencyTier;
 
         if (invoice.hasActivePaymentPlan && this.paymentPlanRepo) {
           const nextInst = await this.paymentPlanRepo.findNextDueInstallment(invoice.id);
@@ -536,11 +534,11 @@ export class AgentService {
             targetDueDate = nextInst.dueDate;
             instNum = nextInst.installmentNumber;
             totalInst = await this.paymentPlanRepo.countInstallmentsByInvoiceId(invoice.id);
-            effectiveUrgencyTier = 'payment_plan_installment' as UrgencyTier;
           }
         }
 
         const daysOverdue = this.triageService.computeDaysOverdue(targetDueDate);
+        const effectiveUrgencyTier = toneOverride ?? this.triageService.assignTier(daysOverdue);
 
         const resp = await this.aimlService.triggerFollowup({
           invoiceId: invoice.id,
