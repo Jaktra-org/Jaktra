@@ -17,6 +17,7 @@ const toneLabels: Record<string, string> = {
   stage_2_firm: 'Firm (Stage 2)',
   stage_3_serious: 'Serious (Stage 3)',
   stage_4_stern: 'Stern (Stage 4)',
+  payment_plan_installment: 'Payment Plan Installment',
 };
 
 export function TriggerFollowupModal({
@@ -46,8 +47,12 @@ export function TriggerFollowupModal({
       return "Invoice is already paid";
     }
     
-    if (invoice.daysOverdue !== undefined && invoice.daysOverdue >= 31) {
+    if (!invoice.hasActivePaymentPlan && invoice.daysOverdue !== undefined && invoice.daysOverdue >= 31) {
       return "Invoice has escalated to legal status";
+    }
+
+    if (invoice.hasActivePaymentPlan) {
+      return "No pending installment schedule is due at this time";
     }
 
     const due = new Date(invoice.dueDate);

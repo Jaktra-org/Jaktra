@@ -288,7 +288,7 @@ export function createApp(config: AppConfig): Application {
 
       const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo);
       const triageService = new TriageService();
-      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService, dlqService, communicationRepo, portalService), paymentPlanController, authMiddleware, tenantScoped));
+      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService, dlqService, communicationRepo, portalService, paymentPlanRepo), paymentPlanController, authMiddleware, tenantScoped));
       app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo, dlqService, communicationRepo, paymentPlanRepo), authMiddleware, tenantScoped));
 
       const analyticsRepo = new AnalyticsRepository(config.db);

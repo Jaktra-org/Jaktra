@@ -5,7 +5,8 @@ import type { InvoiceImportService, DuplicateStrategy } from './invoice.service.
 import type { InvoiceRepository } from './invoice.repository.js';
 import { logger } from '../../shared/logger.js';
 import type { PortalService } from '../portal/portal.service.js';
-import { TriageService } from '../agent/triage.service.js';
+import { TriageService, type ActiveInstallmentContext } from '../agent/triage.service.js';
+import type { PaymentPlanRepository } from '../payment-plan/payment-plan.repository.js';
 import {
   createInvoiceSchema,
   bulkCreateInvoiceSchema,
@@ -28,7 +29,8 @@ export class InvoiceController {
     private eventService: EventService,
     private dlqService: DlqService,
     private communicationRepo: CommunicationRepository,
-    private portalService: PortalService
+    private portalService: PortalService,
+    private paymentPlanRepo?: PaymentPlanRepository
   ) {}
 
   private getActorContext(req: Request): ActorContext {
@@ -242,12 +244,35 @@ export class InvoiceController {
         );
       }
 
+      const activeInstallmentsMap = new Map<string, ActiveInstallmentContext>();
+      if (this.paymentPlanRepo) {
+        for (const inv of result.data) {
+          if (inv.hasActivePaymentPlan) {
+            const nextInst = await this.paymentPlanRepo.findNextDueInstallment(inv.id);
+            if (nextInst) {
+              const totalInst = await this.paymentPlanRepo.countInstallmentsByInvoiceId(inv.id);
+              activeInstallmentsMap.set(inv.id, {
+                id: nextInst.id,
+                installmentNumber: nextInst.installmentNumber,
+                totalInstallments: totalInst,
+                amount: nextInst.amount,
+                dueDate: nextInst.dueDate,
+                currency: nextInst.currency || inv.currency || 'INR',
+                status: nextInst.status,
+              });
+            }
+          }
+        }
+      }
+
       const dataWithDaysOverdue = result.data.map(inv => {
-        const daysOverdue = triageService.computeDaysOverdue(inv.dueDate);
-        const isActionable = triageService.isActionable(inv);
+        const activeInstallment = activeInstallmentsMap.get(inv.id);
+        const targetDueDate = activeInstallment ? activeInstallment.dueDate : inv.dueDate;
+        const daysOverdue = triageService.computeDaysOverdue(targetDueDate);
+        const isActionable = triageService.isActionable(inv, activeInstallmentsMap);
         let urgencyTier = null;
         if (isActionable) {
-          urgencyTier = triageService.assignTier(daysOverdue);
+          urgencyTier = activeInstallment ? 'payment_plan_installment' : triageService.assignTier(daysOverdue);
         }
         return { 
           ...inv, 
@@ -333,11 +358,34 @@ export class InvoiceController {
       }
 
       const triageService = new TriageService();
-      const daysOverdue = triageService.computeDaysOverdue(invoice.dueDate);
-      const isActionable = triageService.isActionable(invoice);
+      let activeInstallment: ActiveInstallmentContext | undefined;
+      if (invoice.hasActivePaymentPlan && this.paymentPlanRepo) {
+        const nextInst = await this.paymentPlanRepo.findNextDueInstallment(id);
+        if (nextInst) {
+          const totalInst = await this.paymentPlanRepo.countInstallmentsByInvoiceId(id);
+          activeInstallment = {
+            id: nextInst.id,
+            installmentNumber: nextInst.installmentNumber,
+            totalInstallments: totalInst,
+            amount: nextInst.amount,
+            dueDate: nextInst.dueDate,
+            currency: nextInst.currency || invoice.currency || 'INR',
+            status: nextInst.status,
+          };
+        }
+      }
+
+      const activeInstallmentsMap = new Map<string, ActiveInstallmentContext>();
+      if (activeInstallment) {
+        activeInstallmentsMap.set(id, activeInstallment);
+      }
+
+      const targetDueDate = activeInstallment ? activeInstallment.dueDate : invoice.dueDate;
+      const daysOverdue = triageService.computeDaysOverdue(targetDueDate);
+      const isActionable = triageService.isActionable(invoice, activeInstallmentsMap);
       let urgencyTier = null;
       if (isActionable) {
-        urgencyTier = triageService.assignTier(daysOverdue);
+        urgencyTier = activeInstallment ? 'payment_plan_installment' : triageService.assignTier(daysOverdue);
       }
 
       let isBlocked = false;
