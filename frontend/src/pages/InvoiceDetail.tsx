@@ -240,6 +240,7 @@ export function InvoiceDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoice", id] });
+      queryClient.invalidateQueries({ queryKey: ["invoice-installments", id] });
     }
   });
 
