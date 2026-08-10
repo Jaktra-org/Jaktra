@@ -960,70 +960,128 @@ export function InvoiceDetail() {
           )}
 
           {(() => {
-            const activeInstallment = invoice.hasActivePaymentPlan && installmentsResponse?.data
-              ? (installmentsResponse.data as Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string }>).find(i => i.status !== 'paid')
-              : undefined;
+            const instList = invoice.hasActivePaymentPlan && installmentsResponse?.data
+              ? (installmentsResponse.data as Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string }>)
+              : [];
+            const activeInstallment = instList.find(i => i.status !== 'paid');
+
+            // Calculate days overdue relative to active installment
+            let activeDaysOverdue = 0;
+            if (activeInstallment) {
+              const dueObj = new Date(activeInstallment.dueDate);
+              const nowObj = new Date();
+              nowObj.setHours(0, 0, 0, 0);
+              dueObj.setHours(0, 0, 0, 0);
+              const diffMs = nowObj.getTime() - dueObj.getTime();
+              activeDaysOverdue = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+            } else if (!invoice.hasActivePaymentPlan && invoice.daysOverdue) {
+              activeDaysOverdue = Math.max(0, invoice.daysOverdue);
+            }
+
+            const totalInst = instList.length;
+            const paidInst = instList.filter(i => i.status === 'paid').length;
+            const percentPaid = totalInst > 0 ? Math.round((paidInst / totalInst) * 100) : 0;
 
             return (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Aging &amp; Status</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-slate-500 mb-1">
-                      {activeInstallment ? `Next Installment Due (#${activeInstallment.installmentNumber})` : 'Due Date'}
-                    </p>
-                    <div className="flex items-center text-slate-900 font-medium">
-                      <Calendar className="mr-2 h-4 w-4 text-slate-400" />
-                      {new Date(activeInstallment ? activeInstallment.dueDate : invoice.dueDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                    <p className="text-sm text-slate-500">Days Overdue</p>
-                    <p className={`font-semibold ${invoice.daysOverdue && invoice.daysOverdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                      {invoice.daysOverdue && invoice.daysOverdue > 0 ? invoice.daysOverdue : 0}
-                    </p>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                    <p className="text-sm text-slate-500">Follow-ups Sent</p>
-                    <p className="font-semibold text-slate-900">{invoice.followupCount}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })()}
-
-          {invoice.hasActivePaymentPlan && installmentsResponse?.data && (
-            <Card className="border border-emerald-200 bg-emerald-50/20">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-emerald-800 uppercase tracking-wider flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-emerald-600" />
-                  Agreed Installment Schedule
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  {(installmentsResponse.data as Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string }>).map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg text-xs">
-                      <div>
-                        <span className="font-semibold text-slate-800">Installment #{item.installmentNumber}</span>
-                        <span className="block text-[11px] text-slate-500">Due {new Date(item.dueDate).toLocaleDateString()}</span>
+              <>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-slate-500 uppercase tracking-wider">Aging &amp; Status</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm text-slate-500 mb-1">
+                        {activeInstallment ? `Next Installment Due (#${activeInstallment.installmentNumber})` : 'Due Date'}
+                      </p>
+                      <div className="flex items-center text-slate-900 font-medium">
+                        <Calendar className="mr-2 h-4 w-4 text-slate-400" />
+                        {new Date(activeInstallment ? activeInstallment.dueDate : invoice.dueDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </div>
-                      <div className="text-right">
-                        <span className="font-semibold text-slate-900">{formatCurrency(item.amount)}</span>
-                        <span className={`block text-[10px] font-bold uppercase ${
-                          item.status === 'paid' ? 'text-emerald-600' : item.status === 'overdue' ? 'text-red-600' : 'text-amber-600'
-                        }`}>
-                          {item.status}
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                      <p className="text-sm text-slate-500">Days Overdue</p>
+                      <p className={`font-semibold ${activeDaysOverdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                        {activeDaysOverdue}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                      <p className="text-sm text-slate-500">Follow-ups Sent</p>
+                      <p className="font-semibold text-slate-900">{invoice.followupCount}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {invoice.hasActivePaymentPlan && totalInst > 0 && (
+                  <Card className="border border-emerald-200 bg-emerald-50/20">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium text-emerald-800 uppercase tracking-wider flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-emerald-600" />
+                          Agreed Installment Schedule
+                        </CardTitle>
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                          {paidInst} of {totalInst} Paid ({percentPaid}%)
                         </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
+                      {/* Visual Segmented Progress Bar */}
+                      <div className="mt-3 space-y-1">
+                        <div className="flex gap-1.5 h-2.5 w-full rounded-full overflow-hidden bg-slate-200/80 p-0.5">
+                          {instList.map((item, idx) => {
+                            let bgColor = 'bg-slate-300';
+                            if (item.status === 'paid') {
+                              bgColor = 'bg-emerald-500';
+                            } else if (item.status === 'overdue') {
+                              bgColor = 'bg-rose-500 animate-pulse';
+                            } else if (item.status === 'pending' && idx === paidInst) {
+                              bgColor = 'bg-amber-400';
+                            }
+
+                            return (
+                              <div
+                                key={item.id}
+                                className={`h-full flex-1 rounded-sm transition-all duration-300 ${bgColor}`}
+                                title={`Installment #${item.installmentNumber}: ${item.status.toUpperCase()} (${formatCurrency(item.amount)})`}
+                              />
+                            );
+                          })}
+                        </div>
+                        <div className="flex justify-between text-[10px] font-medium text-slate-500 pt-0.5">
+                          <span>Installment Progress</span>
+                          <span>{paidInst === totalInst ? 'All Installments Paid' : `Active: Installment #${paidInst + 1}`}</span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-2">
+                        {instList.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg text-xs hover:border-emerald-300 transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-2 h-2 rounded-full ${
+                                item.status === 'paid' ? 'bg-emerald-500' : item.status === 'overdue' ? 'bg-rose-500' : 'bg-amber-400'
+                              }`} />
+                              <div>
+                                <span className="font-semibold text-slate-800">Installment #{item.installmentNumber}</span>
+                                <span className="block text-[11px] text-slate-500">Due {new Date(item.dueDate).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-semibold text-slate-900">{formatCurrency(item.amount)}</span>
+                              <span className={`block text-[10px] font-bold uppercase ${
+                                item.status === 'paid' ? 'text-emerald-600' : item.status === 'overdue' ? 'text-rose-600' : 'text-amber-600'
+                              }`}>
+                                {item.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            );
+          })()}
 
           <Card>
             <CardHeader className="pb-3">
