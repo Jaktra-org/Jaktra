@@ -276,6 +276,9 @@ export class InvoiceController {
         }
         return { 
           ...inv, 
+          dueDate: targetDueDate,
+          originalDueDate: inv.dueDate,
+          activeInstallmentNumber: activeInstallment?.installmentNumber,
           daysOverdue, 
           urgencyTier,
           needsManualReview: blockedIds.has(inv.id)

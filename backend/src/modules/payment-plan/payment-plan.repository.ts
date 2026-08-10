@@ -1,4 +1,4 @@
-import { eq, and, desc, count, asc } from 'drizzle-orm';
+import { eq, ne, and, desc, count, asc } from 'drizzle-orm';
 import { paymentPlanRequests, paymentPlanInstallments, invoices } from '../../db/index.js';
 import type {
   DatabaseClient,
@@ -184,7 +184,7 @@ export class PaymentPlanRepository {
       .from(paymentPlanInstallments)
       .where(and(
         eq(paymentPlanInstallments.invoiceId, invoiceId),
-        eq(paymentPlanInstallments.status, 'pending')
+        ne(paymentPlanInstallments.status, 'paid')
       ))
       .orderBy(asc(paymentPlanInstallments.installmentNumber))
       .limit(1);

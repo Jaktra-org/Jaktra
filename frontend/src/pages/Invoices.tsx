@@ -421,7 +421,14 @@ export function Invoices() {
                       {formatCurrency(invoice.invoiceAmount)}
                     </td>
                     <td className="p-4 align-middle text-slate-600">
-                      {new Date(invoice.dueDate).toLocaleDateString()}
+                      <div>
+                        {new Date(invoice.dueDate).toLocaleDateString()}
+                        {invoice.hasActivePaymentPlan && (
+                          <span className="block text-[11px] text-emerald-700 font-medium">
+                            {invoice.activeInstallmentNumber ? `Inst #${invoice.activeInstallmentNumber} Due` : 'Payment Plan'}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 align-middle">
                       <div className="flex items-center gap-1.5">
@@ -439,10 +446,10 @@ export function Invoices() {
                       </div>
                     </td>
                     <td className="p-4 align-middle">
-                      {invoice.daysOverdue ? (
+                      {invoice.daysOverdue && invoice.daysOverdue > 0 ? (
                         <span className="font-medium text-red-600">{invoice.daysOverdue} days</span>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-slate-400">0 days</span>
                       )}
                     </td>
                     <td className="p-4 align-middle text-slate-600">

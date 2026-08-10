@@ -57,6 +57,8 @@ export interface Invoice {
   clientName: string;
   invoiceAmount: string; 
   dueDate: string;
+  originalDueDate?: string;
+  activeInstallmentNumber?: number;
   paymentStatus: 'Pending' | 'Paid' | 'Overdue';
   contactEmail: string;
   subject?: string | null;

@@ -35,8 +35,14 @@ export function Agent() {
     retry: false,
   });
 
-  // Email is ready only when both a provider and a sender email are configured
-  const emailReady = !!(settings?.defaultEmailProvider && settings?.senderEmail);
+  // Email is ready when any active email integration (SendGrid or SMTP) or tenant email settings are configured
+  const emailReady = !!(
+    integrations?.sendgrid?.isConfigured ||
+    integrations?.smtp?.isConfigured ||
+    integrations?.sendgridProgress?.isActive ||
+    integrations?.smtpProgress?.isActive ||
+    (settings?.defaultEmailProvider && settings?.senderEmail)
+  );
 
   const runMutation = useMutation({
     mutationFn: (tone?: string) => agentService.runAgent(tone),
