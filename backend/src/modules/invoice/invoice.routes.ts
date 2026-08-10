@@ -50,6 +50,8 @@ export function createInvoiceRouter(
 
   // Payment Plan endpoints
   router.get('/payment-plans/pending', requireRole('admin', 'manager'), paymentPlanController.listPending);
+  router.get('/payment-plans', requireRole('admin', 'manager'), paymentPlanController.listPlans);
+  router.get('/:id/installments', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.getInstallments);
   router.post('/payment-plans/:id/approve', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.approve);
   router.post('/payment-plans/:id/deny', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.deny);
   router.post('/:id/cancel-payment-plan', validateParam('id'), requireRole('admin', 'manager'), paymentPlanController.cancelActivePlan);

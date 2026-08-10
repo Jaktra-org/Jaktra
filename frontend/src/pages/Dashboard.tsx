@@ -105,7 +105,7 @@ export function Dashboard() {
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         {/* Actionable Queue */}
         <Card className="animate-in fade-in duration-500 slide-in-from-bottom-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -145,6 +145,22 @@ export function Dashboard() {
               {isLoading ? "-" : formatPercent(recoveryRate)}
             </div>
             <p className="text-xs text-slate-500 mt-1">Collected vs Total Billed</p>
+          </CardContent>
+        </Card>
+
+        {/* Payment Plans Metric */}
+        <Card className="animate-in fade-in duration-500 slide-in-from-bottom-2 delay-175">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Payment Plans</CardTitle>
+            <Clock className="h-4 w-4 text-emerald-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-900">
+              {isLoading ? "-" : formatCurrency(summaryData?.totalPaymentPlan || 0)}
+            </div>
+            <p className="text-xs text-emerald-600 font-medium mt-1">
+              {summaryData?.paymentPlanCount || 0} active plans
+            </p>
           </CardContent>
         </Card>
 

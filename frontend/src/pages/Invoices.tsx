@@ -361,6 +361,11 @@ export function Invoices() {
                             Manual Review
                           </Badge>
                         )}
+                        {invoice.hasActivePaymentPlan && (
+                          <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                            Payment Plan
+                          </Badge>
+                        )}
                       </div>
                     </td>
                     <td className="p-4 align-middle text-slate-400 text-sm">

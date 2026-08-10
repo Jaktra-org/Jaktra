@@ -117,6 +117,8 @@ export interface AnalyticsSummary {
   totalReceivable: number;
   totalCollected: number;
   totalOverdue: number;
+  totalPaymentPlan?: number;
+  paymentPlanCount?: number;
   invoiceCount: number;
 }
 

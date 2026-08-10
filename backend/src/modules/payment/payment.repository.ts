@@ -1,5 +1,5 @@
 import type { DatabaseOrTransaction } from '../../db/index.js';
-import { paymentWebhookEvents, invoicePaymentLinks, invoices } from '../../db/schema.js';
+import { paymentWebhookEvents, invoicePaymentLinks, invoices, paymentPlanInstallments } from '../../db/schema.js';
 import type { PaymentWebhookEvent, InvoicePaymentLink } from '../../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 import crypto from 'crypto';
@@ -136,8 +136,12 @@ export class PaymentRepository {
       }
 
       await tx.update(invoices)
-        .set({ paymentStatus: 'Paid', updatedAt: new Date(), paymentStatusChangedAt: new Date() })
+        .set({ paymentStatus: 'Paid', hasActivePaymentPlan: false, updatedAt: new Date(), paymentStatusChangedAt: new Date() })
         .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)));
+
+      await tx.update(paymentPlanInstallments)
+        .set({ status: 'paid', paidAt: new Date() })
+        .where(and(eq(paymentPlanInstallments.invoiceId, invoiceId), eq(paymentPlanInstallments.tenantId, tenantId)));
 
       if (activeLinkId) {
         await tx.update(invoicePaymentLinks)

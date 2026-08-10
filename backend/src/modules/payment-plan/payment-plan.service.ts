@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { invoices } from '../../db/index.js';
-import type { DatabaseClient, PaymentPlanRequest } from '../../db/index.js';
+import type { DatabaseClient, PaymentPlanRequest, NewPaymentPlanInstallment, PaymentPlanInstallment } from '../../db/index.js';
 import type { PaymentPlanRepository } from './payment-plan.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
 import type { EventService, ActorContext } from '../event/event.service.js';
@@ -9,6 +9,7 @@ import type { TenantMailer } from '../communication/tenant-mailer.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
 import { ValidationError } from '../../shared/errors/index.js';
 import { logger } from '../../shared/logger.js';
+import { config } from '../../config/env.js';
 
 export class PaymentPlanService {
   constructor(
@@ -76,7 +77,7 @@ export class PaymentPlanService {
         'invoice.payment_plan_requested',
         { source: 'system', name: 'Customer Portal' },
         {
-          description: `Customer proposed a payment plan of ${installments} monthly installments of ${invoice.currency} ${proposedAmountPerMonth}.`,
+          description: `Customer proposed a payment plan of ${installments} monthly installments of ${invoice.currency || 'INR'} ${proposedAmountPerMonth}.`,
           payload: { installments, proposedAmountPerMonth },
           tx,
         }
@@ -86,11 +87,11 @@ export class PaymentPlanService {
     });
   }
 
-  async listPending(
+  async listPlans(
     tenantId: string,
-    params: { page: number; limit: number }
+    params: { page: number; limit: number; status?: string }
   ): Promise<{ data: unknown[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
-    const { data, total } = await this.repo.listPending(tenantId, params);
+    const { data, total } = await this.repo.listPlans(tenantId, params);
     const totalPages = Math.ceil(total / params.limit);
     return {
       data,
@@ -103,6 +104,21 @@ export class PaymentPlanService {
     };
   }
 
+  async listPending(
+    tenantId: string,
+    params: { page: number; limit: number }
+  ): Promise<{ data: unknown[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
+    return this.listPlans(tenantId, { ...params, status: 'pending' });
+  }
+
+  async getInstallmentsForInvoice(invoiceId: string, tenantId: string): Promise<PaymentPlanInstallment[]> {
+    const invoice = await this.invoiceRepo.findById(invoiceId);
+    if (!invoice || invoice.tenantId !== tenantId) {
+      throw new ValidationError('Invoice not found.');
+    }
+    return this.repo.findInstallmentsByInvoiceId(invoiceId);
+  }
+
   async approve(id: string, tenantId: string, actor: ActorContext): Promise<void> {
     const plan = await this.repo.findById(id);
     if (!plan || plan.tenantId !== tenantId) {
@@ -113,7 +129,47 @@ export class PaymentPlanService {
       throw new ValidationError('Payment plan request is no longer pending.');
     }
 
+    const invoice = await this.invoiceRepo.findById(plan.invoiceId);
+    if (!invoice) {
+      throw new ValidationError('Invoice not found.');
+    }
+
     const reviewerId = ('userId' in actor && actor.userId) || null;
+
+    // Generate installment schedule items handling penny rounding residual
+    const totalAmount = parseFloat(invoice.invoiceAmount);
+    const count = plan.installments;
+    const baseMonthly = parseFloat((totalAmount / count).toFixed(2));
+    
+    // Accumulate first N-1 installments and give exact remainder to the last installment
+    let sumPrevious = 0;
+    const installmentItems: NewPaymentPlanInstallment[] = [];
+    const baseDate = new Date();
+
+    for (let i = 1; i <= count; i++) {
+      let currentAmount: number;
+      if (i === count) {
+        currentAmount = parseFloat((totalAmount - sumPrevious).toFixed(2));
+      } else {
+        currentAmount = baseMonthly;
+        sumPrevious += baseMonthly;
+      }
+
+      const dueDateObj = new Date(baseDate);
+      dueDateObj.setDate(dueDateObj.getDate() + (i * 30));
+      const dueDateStr = dueDateObj.toISOString().split('T')[0];
+
+      installmentItems.push({
+        tenantId,
+        planRequestId: plan.id,
+        invoiceId: plan.invoiceId,
+        installmentNumber: i,
+        dueDate: dueDateStr,
+        amount: currentAmount.toString(),
+        currency: invoice.currency || 'INR',
+        status: 'pending',
+      });
+    }
 
     await this.db.transaction(async (tx) => {
       // Set status to approved
@@ -122,6 +178,9 @@ export class PaymentPlanService {
         reviewedBy: reviewerId,
         reviewedAt: new Date(),
       }, tx);
+
+      // Create installment schedule records
+      await this.repo.createInstallmentsBatch(installmentItems, tx);
 
       // Set hasActivePaymentPlan on invoice to true
       await tx
@@ -205,11 +264,14 @@ export class PaymentPlanService {
       }
 
       const token = await this.portalService.getOrCreatePortalLink(tenantId, invoiceId);
-      const portalUrl = `https://www.jaktra.site/i/${token}`;
+      // P0 Fix: Configurable portal URL via config.FRONTEND_URL
+      const portalUrl = `${config.FRONTEND_URL}/i/${token}`;
 
+      // P0 Fix: Locale-aware formatting based on currency
       const currency = invoice.currency || 'INR';
-      const formattedBalance = `${currency} ${parseFloat(invoice.invoiceAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-      const formattedMonthly = `${currency} ${parseFloat(proposedAmountPerMonth).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+      const locale = currency === 'INR' ? 'en-IN' : currency === 'EUR' ? 'de-DE' : 'en-US';
+      const formattedBalance = `${currency} ${parseFloat(invoice.invoiceAmount).toLocaleString(locale, { minimumFractionDigits: 2 })}`;
+      const formattedMonthly = `${currency} ${parseFloat(proposedAmountPerMonth).toLocaleString(locale, { minimumFractionDigits: 2 })}`;
 
       let subject = '';
       let html = '';

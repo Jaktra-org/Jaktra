@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '../services/invoice';
-import { Loader2, AlertCircle, CheckCircle, XCircle, Calendar, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, XCircle, Calendar, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
 
@@ -16,22 +16,26 @@ interface PaymentPlanRequest {
   installments: number;
   proposedAmountPerMonth: string;
   reason?: string | null;
+  status: 'pending' | 'approved' | 'denied' | 'cancelled';
   createdAt: string;
 }
 
 export function PaymentPlans() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'denied' | 'cancelled' | 'all'>('pending');
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   const { data: plansResponse, isLoading, refetch } = useQuery({
-    queryKey: ['pendingPaymentPlans'],
-    queryFn: () => invoiceService.getPendingPaymentPlans({ limit: 25 }),
+    queryKey: ['paymentPlans', statusFilter, page],
+    queryFn: () => invoiceService.getPaymentPlans({ page, limit, status: statusFilter }),
   });
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => invoiceService.approvePaymentPlan(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pendingPaymentPlans'] });
+      queryClient.invalidateQueries({ queryKey: ['paymentPlans'] });
     },
     onError: (err: unknown) => {
       setError((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Failed to approve payment plan request.');
@@ -41,7 +45,7 @@ export function PaymentPlans() {
   const denyMutation = useMutation({
     mutationFn: (id: string) => invoiceService.denyPaymentPlan(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pendingPaymentPlans'] });
+      queryClient.invalidateQueries({ queryKey: ['paymentPlans'] });
     },
     onError: (err: unknown) => {
       setError((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Failed to deny payment plan request.');
@@ -73,23 +77,57 @@ export function PaymentPlans() {
   };
 
   const plansList = (plansResponse?.data || []) as PaymentPlanRequest[];
+  const pagination = plansResponse?.pagination || { total: 0, totalPages: 1 };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-200">Approved</Badge>;
+      case 'denied':
+        return <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-200">Denied</Badge>;
+      case 'cancelled':
+        return <Badge variant="warning" className="bg-slate-100 text-slate-800 border-slate-200">Cancelled</Badge>;
+      default:
+        return <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200">Pending Review</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Payment Plan Requests</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Payment Plan Management</h1>
           <p className="text-sm text-slate-500 mt-1">
             Review and manage installment plan proposals submitted by debtors.
           </p>
         </div>
         <button
           onClick={() => refetch()}
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-slate-200 bg-white hover:bg-slate-100 h-9 px-3"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-slate-200 bg-white hover:bg-slate-100 h-9 px-3 self-start sm:self-auto"
         >
           <RefreshCw className="mr-2 h-4 w-4" />
           Refresh
         </button>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+        {(['pending', 'approved', 'denied', 'cancelled', 'all'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => {
+              setStatusFilter(tab);
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
+              statusFilter === tab
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {tab === 'pending' ? 'Pending Review' : tab}
+          </button>
+        ))}
       </div>
 
       {error && (
@@ -120,9 +158,9 @@ export function PaymentPlans() {
         <Card className="border-dashed border-slate-200">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <CheckCircle className="h-10 w-10 text-slate-300 mb-3" />
-            <h3 className="font-semibold text-slate-800 text-base">All caught up!</h3>
+            <h3 className="font-semibold text-slate-800 text-base">No proposals found</h3>
             <p className="text-sm text-slate-500 mt-1 max-w-sm">
-              There are no pending payment plan requests awaiting review.
+              There are no payment plan proposals matching the selected filter.
             </p>
           </CardContent>
         </Card>
@@ -138,9 +176,7 @@ export function PaymentPlans() {
                   >
                     {plan.invoiceNo}
                   </Link>
-                  <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200">
-                    Pending Review
-                  </Badge>
+                  {getStatusBadge(plan.status)}
                 </div>
                 <div className="text-xs text-slate-400 flex items-center">
                   <Calendar className="h-3.5 w-3.5 mr-1" />
@@ -189,39 +225,74 @@ export function PaymentPlans() {
 
                   {/* Actions pane */}
                   <div className="flex flex-col justify-center space-y-2 md:border-l md:border-slate-100 md:pl-6">
-                    <button
-                      onClick={() => approveMutation.mutate(plan.id)}
-                      disabled={approveMutation.isPending || denyMutation.isPending}
-                      className="w-full inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white h-10 transition disabled:opacity-50"
-                    >
-                      {approveMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Approve Proposal
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to deny this payment plan proposal? The customer will be expected to settle the full balance.')) {
-                          denyMutation.mutate(plan.id);
-                        }
-                      }}
-                      disabled={approveMutation.isPending || denyMutation.isPending}
-                      className="w-full inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-white border border-red-200 hover:bg-red-50 text-red-700 h-10 transition disabled:opacity-50"
-                    >
-                      {denyMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <XCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Deny Proposal
-                    </button>
+                    {plan.status === 'pending' ? (
+                      <>
+                        <button
+                          onClick={() => approveMutation.mutate(plan.id)}
+                          disabled={approveMutation.isPending || denyMutation.isPending}
+                          className="w-full inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white h-10 transition disabled:opacity-50"
+                        >
+                          {approveMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                          )}
+                          Approve Proposal
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to deny this payment plan proposal? The customer will be expected to settle the full balance.')) {
+                              denyMutation.mutate(plan.id);
+                            }
+                          }}
+                          disabled={approveMutation.isPending || denyMutation.isPending}
+                          className="w-full inline-flex items-center justify-center rounded-lg text-sm font-semibold bg-white border border-red-200 hover:bg-red-50 text-red-700 h-10 transition disabled:opacity-50"
+                        >
+                          {denyMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <XCircle className="h-4 w-4 mr-2" />
+                          )}
+                          Deny Proposal
+                        </button>
+                      </>
+                    ) : (
+                      <div className="text-center p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-500">
+                        Status: <span className="font-semibold capitalize text-slate-700">{plan.status}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
+
+          {/* Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <span className="text-xs text-slate-500">
+                Page {page} of {pagination.totalPages} ({pagination.total} total items)
+              </span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 h-8 px-3 disabled:opacity-50"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                  disabled={page >= pagination.totalPages}
+                  className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 h-8 px-3 disabled:opacity-50"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

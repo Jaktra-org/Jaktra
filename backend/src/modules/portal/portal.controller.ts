@@ -108,4 +108,14 @@ export class PortalController {
       next(err);
     }
   };
+
+  getInstallments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { invoice, tenant } = res.locals.portalContext;
+      const items = await this.paymentPlanService.getInstallmentsForInvoice(invoice.id, tenant.id);
+      res.status(200).json({ data: items });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

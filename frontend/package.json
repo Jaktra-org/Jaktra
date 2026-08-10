@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc -b",
-    "test": "vitest run --pool=threads",
+    "test": "vitest run --pool=forks",
     "test:watch": "vitest"
   },
   "dependencies": {

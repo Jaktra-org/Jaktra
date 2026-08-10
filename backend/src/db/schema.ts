@@ -56,6 +56,11 @@ export const paymentPlanStatusEnum = Object.assign(
   { enumValues: ['pending', 'approved', 'denied', 'cancelled'] as const }
 );
 
+export const installmentStatusEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['pending', 'paid', 'overdue']),
+  { enumValues: ['pending', 'paid', 'overdue'] as const }
+);
+
 export const paymentStatusEnum = Object.assign(
   (name: string) => mysqlEnum(name, ['Pending', 'Paid', 'Overdue', 'Written Off']),
   { enumValues: ['Pending', 'Paid', 'Overdue', 'Written Off'] as const }
@@ -580,6 +585,33 @@ export const paymentPlanRequests = mysqlTable('payment_plan_requests', {
   index('payment_plan_requests_invoice_id_idx').on(table.invoiceId),
 ]);
 
+export const paymentPlanInstallments = mysqlTable('payment_plan_installments', {
+  id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: varchar('tenant_id', { length: 36 })
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  planRequestId: varchar('plan_request_id', { length: 36 })
+    .notNull()
+    .references(() => paymentPlanRequests.id, { onDelete: 'cascade' }),
+  invoiceId: varchar('invoice_id', { length: 36 })
+    .notNull()
+    .references(() => invoices.id, { onDelete: 'cascade' }),
+  installmentNumber: int('installment_number').notNull(),
+  dueDate: date('due_date', { mode: 'string' }).notNull(),
+  amount: decimal('amount', { precision: 14, scale: 2 }).notNull(),
+  currency: varchar('currency', { length: 10 }).notNull().default('INR'),
+  status: installmentStatusEnum('status').notNull().default('pending'),
+  paidAt: datetime('paid_at', { mode: 'date' }),
+  paymentTransactionId: varchar('payment_transaction_id', { length: 255 }),
+  createdAt: datetime('created_at', { mode: 'date' })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('payment_plan_installments_tenant_idx').on(table.tenantId),
+  index('payment_plan_installments_plan_idx').on(table.planRequestId),
+  index('payment_plan_installments_invoice_idx').on(table.invoiceId),
+]);
+
 export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   users: many(users),
   invoices: many(invoices),
@@ -689,7 +721,7 @@ export const invoicePortalLinksRelations = relations(invoicePortalLinks, ({ one 
   }),
 }));
 
-export const paymentPlanRequestsRelations = relations(paymentPlanRequests, ({ one }) => ({
+export const paymentPlanRequestsRelations = relations(paymentPlanRequests, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [paymentPlanRequests.tenantId],
     references: [tenants.id],
@@ -701,6 +733,22 @@ export const paymentPlanRequestsRelations = relations(paymentPlanRequests, ({ on
   reviewer: one(users, {
     fields: [paymentPlanRequests.reviewedBy],
     references: [users.id],
+  }),
+  installments: many(paymentPlanInstallments),
+}));
+
+export const paymentPlanInstallmentsRelations = relations(paymentPlanInstallments, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [paymentPlanInstallments.tenantId],
+    references: [tenants.id],
+  }),
+  planRequest: one(paymentPlanRequests, {
+    fields: [paymentPlanInstallments.planRequestId],
+    references: [paymentPlanRequests.id],
+  }),
+  invoice: one(invoices, {
+    fields: [paymentPlanInstallments.invoiceId],
+    references: [invoices.id],
   }),
 }));
 
@@ -751,5 +799,7 @@ export type InvoicePortalLink = typeof invoicePortalLinks.$inferSelect;
 export type NewInvoicePortalLink = typeof invoicePortalLinks.$inferInsert;
 export type PaymentPlanRequest = typeof paymentPlanRequests.$inferSelect;
 export type NewPaymentPlanRequest = typeof paymentPlanRequests.$inferInsert;
+export type PaymentPlanInstallment = typeof paymentPlanInstallments.$inferSelect;
+export type NewPaymentPlanInstallment = typeof paymentPlanInstallments.$inferInsert;
 export type ReplyToken = typeof replyTokens.$inferSelect;
 export type NewReplyToken = typeof replyTokens.$inferInsert;

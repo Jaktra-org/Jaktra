@@ -49,5 +49,13 @@ export function createPortalRouter(
     portalController.submitDispute
   );
 
+  router.get(
+    '/:token/installments',
+    portalViewIpLimiter,
+    portalViewTokenLimiter,
+    portalTokenAuth,
+    portalController.getInstallments
+  );
+
   return router;
 }

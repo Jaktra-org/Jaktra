@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import type { PaymentPlanService } from './payment-plan.service.js';
+import type { PaymentService } from '../payment/payment.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 import { ValidationError } from '../../shared/errors/index.js';
 import type { ActorContext } from '../event/event.service.js';
@@ -13,10 +14,14 @@ const SubmitPlanSchema = z.object({
 const ListPlansSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(25),
+  status: z.enum(['pending', 'approved', 'denied', 'cancelled', 'all']).optional().default('pending'),
 });
 
 export class PaymentPlanController {
-  constructor(private readonly service: PaymentPlanService) {}
+  constructor(
+    private readonly service: PaymentPlanService,
+    private readonly paymentService?: PaymentService
+  ) {}
 
   private getActorContext(req: Request): ActorContext {
     const authReq = req as AuthenticatedRequest;
@@ -53,8 +58,44 @@ export class PaymentPlanController {
       const tenantId = authReq.user.tenantId;
       const params = ListPlansSchema.parse(req.query);
 
-      const result = await this.service.listPending(tenantId, params);
+      const result = await this.service.listPlans(tenantId, params);
       res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  listPlans = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const tenantId = authReq.user.tenantId;
+      const params = ListPlansSchema.parse(req.query);
+
+      const result = await this.service.listPlans(tenantId, params);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  getInstallments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const tenantId = authReq.user.tenantId;
+      const invoiceId = req.params.id as string;
+
+      const items = await this.service.getInstallmentsForInvoice(invoiceId, tenantId);
+      res.status(200).json({ data: items });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  getInstallmentsFromPortal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { invoice, tenant } = res.locals.portalContext;
+      const items = await this.service.getInstallmentsForInvoice(invoice.id, tenant.id);
+      res.status(200).json({ data: items });
     } catch (err) {
       next(err);
     }

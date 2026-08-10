@@ -5,7 +5,7 @@ import type { DatabaseClient } from '../../db/index.js';
 export class AnalyticsRepository {
   constructor(private db: DatabaseClient) {}
 
-  async getSummary(tenantId: string, fromDate?: Date, toDate?: Date): Promise<{ totalReceivable: number; totalCollected: number; totalOverdue: number; invoiceCount: number } | undefined> {
+  async getSummary(tenantId: string, fromDate?: Date, toDate?: Date): Promise<{ totalReceivable: number; totalCollected: number; totalOverdue: number; invoiceCount: number; totalPaymentPlan: number; paymentPlanCount: number } | undefined> {
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt)
@@ -23,6 +23,8 @@ export class AnalyticsRepository {
         totalReceivable: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} IN ('Pending', 'Overdue') THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
         totalCollected: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
         totalOverdue: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Overdue' THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
+        totalPaymentPlan: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.hasActivePaymentPlan} = true THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
+        paymentPlanCount: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.hasActivePaymentPlan} = true THEN 1 ELSE 0 END), 0)`,
         invoiceCount: sql<number>`COUNT(*)`,
       })
       .from(invoices)
@@ -35,6 +37,8 @@ export class AnalyticsRepository {
       totalReceivable: Number(row.totalReceivable || 0),
       totalCollected: Number(row.totalCollected || 0),
       totalOverdue: Number(row.totalOverdue || 0),
+      totalPaymentPlan: Number(row.totalPaymentPlan || 0),
+      paymentPlanCount: Number(row.paymentPlanCount || 0),
       invoiceCount: Number(row.invoiceCount || 0),
     };
   }

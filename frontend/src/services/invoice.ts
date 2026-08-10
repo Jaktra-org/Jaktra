@@ -81,6 +81,16 @@ export const invoiceService = {
     return response.data;
   },
 
+  getPaymentPlans: async (params: { page?: number; limit?: number; status?: string } = {}) => {
+    const response = await api.get('/invoices/payment-plans', { params });
+    return response.data;
+  },
+
+  getInstallments: async (invoiceId: string) => {
+    const response = await api.get(`/invoices/${invoiceId}/installments`);
+    return response.data;
+  },
+
   approvePaymentPlan: async (id: string) => {
     const response = await api.post(`/invoices/payment-plans/${id}/approve`);
     return response.data;

@@ -26,6 +26,12 @@ export function DebtorPortal() {
     }
   });
 
+  const { data: installmentsData } = useQuery({
+    queryKey: ['portal-installments', token],
+    queryFn: () => portalService.getInstallments(token!),
+    enabled: !!token && !!data?.invoice?.hasActivePaymentPlan,
+  });
+
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'pay' | 'plan' | 'dispute'>('pay');
   const [installments, setInstallments] = useState(3);
@@ -286,14 +292,40 @@ export function DebtorPortal() {
                 {activeTab === 'plan' && (
                   <div className="space-y-4">
                     {invoice.hasActivePaymentPlan ? (
-                      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-start space-x-3 text-emerald-400">
-                        <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="text-xs font-semibold">Payment Plan Active</h4>
-                          <p className="text-[11px] text-slate-400 mt-1">
-                            This invoice is currently under an active payment plan. normal collection calls have been paused.
-                          </p>
+                      <div className="space-y-4">
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-start space-x-3 text-emerald-400">
+                          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="text-xs font-semibold">Payment Plan Active</h4>
+                            <p className="text-[11px] text-slate-400 mt-1">
+                              This invoice is currently under an active payment plan. Automated collection reminders are paused.
+                            </p>
+                          </div>
                         </div>
+
+                        {installmentsData?.data && installmentsData.data.length > 0 && (
+                          <div className="space-y-2 pt-2">
+                            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Agreed Installment Schedule</h4>
+                            <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800 text-xs">
+                              {installmentsData.data.map((item) => (
+                                <div key={item.id} className="p-3 flex justify-between items-center">
+                                  <div>
+                                    <span className="font-semibold text-slate-200">Installment #{item.installmentNumber}</span>
+                                    <span className="block text-[11px] text-slate-500">Due {formatDate(item.dueDate)}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="font-semibold text-indigo-400">{formatCurrency(item.amount, item.currency)}</span>
+                                    <span className={`block text-[10px] font-semibold uppercase ${
+                                      item.status === 'paid' ? 'text-emerald-400' : item.status === 'overdue' ? 'text-rose-400' : 'text-amber-400'
+                                    }`}>
+                                      {item.status}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : invoice.hasPendingPaymentPlan ? (
                       <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex items-start space-x-3 text-amber-400">

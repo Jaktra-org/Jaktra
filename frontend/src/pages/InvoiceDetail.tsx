@@ -106,6 +106,12 @@ export function InvoiceDetail() {
     enabled: !!id,
   });
 
+  const { data: installmentsResponse } = useQuery({
+    queryKey: ["invoice-installments", id],
+    queryFn: () => invoiceService.getInstallments(id!),
+    enabled: !!id && !!invoice?.hasActivePaymentPlan,
+  });
+
   const { data: timelineResponse, isLoading: isTimelineLoading } = useQuery({
     queryKey: ["invoice-timeline", id, timelinePage],
     queryFn: () => eventService.getInvoiceTimeline(id!, {
@@ -977,6 +983,37 @@ export function InvoiceDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {invoice.hasActivePaymentPlan && installmentsResponse?.data && (
+            <Card className="border border-emerald-200 bg-emerald-50/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-emerald-800 uppercase tracking-wider flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-emerald-600" />
+                  Agreed Installment Schedule
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  {(installmentsResponse.data as Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string }>).map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg text-xs">
+                      <div>
+                        <span className="font-semibold text-slate-800">Installment #{item.installmentNumber}</span>
+                        <span className="block text-[11px] text-slate-500">Due {new Date(item.dueDate).toLocaleDateString()}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-semibold text-slate-900">{formatCurrency(item.amount)}</span>
+                        <span className={`block text-[10px] font-bold uppercase ${
+                          item.status === 'paid' ? 'text-emerald-600' : item.status === 'overdue' ? 'text-red-600' : 'text-amber-600'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="pb-3">

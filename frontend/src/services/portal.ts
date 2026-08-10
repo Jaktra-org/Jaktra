@@ -41,5 +41,10 @@ export const portalService = {
   async submitDispute(token: string, payload: { body: string }): Promise<unknown> {
     const { data } = await axios.post(`${API_BASE_URL}/public/portal/${token}/dispute`, payload);
     return data;
+  },
+
+  async getInstallments(token: string): Promise<{ data: Array<{ id: string; installmentNumber: number; dueDate: string; amount: string; currency: string; status: string; paidAt?: string | null }> }> {
+    const { data } = await axios.get(`${API_BASE_URL}/public/portal/${token}/installments`);
+    return data;
   }
 };

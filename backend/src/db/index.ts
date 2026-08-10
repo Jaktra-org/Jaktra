@@ -16,6 +16,7 @@ export {
   inboundEmails,
   invoicePortalLinks,
   paymentPlanRequests,
+  paymentPlanInstallments,
   replyTokens,
 } from './schema.js';
 
@@ -28,6 +29,7 @@ export {
   validationResultEnum,
   inboundEmailStatusEnum,
   paymentPlanStatusEnum,
+  installmentStatusEnum,
   emailProviderEnum,
   integrationOverallStatusEnum,
   sendgridReplyModeEnum,
@@ -68,6 +70,8 @@ export type {
   NewInvoicePortalLink,
   PaymentPlanRequest,
   NewPaymentPlanRequest,
+  PaymentPlanInstallment,
+  NewPaymentPlanInstallment,
   ReplyToken,
   NewReplyToken,
 } from './schema.js';

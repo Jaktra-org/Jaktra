@@ -17,7 +17,7 @@ export class AnalyticsService {
     return { fromDate, toDate };
   }
 
-  async getSummary(tenantId: string, query: DateRange): Promise<{ totalReceivable: number; totalCollected: number; totalOverdue: number; invoiceCount: number } | undefined> {
+  async getSummary(tenantId: string, query: DateRange): Promise<{ totalReceivable: number; totalCollected: number; totalOverdue: number; invoiceCount: number; totalPaymentPlan?: number; paymentPlanCount?: number } | undefined> {
     const { fromDate, toDate } = this.parseDateRange(query);
     return this.analyticsRepo.getSummary(tenantId, fromDate, toDate);
   }

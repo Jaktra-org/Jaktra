@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { eq, and } from 'drizzle-orm';
+import { paymentPlanInstallments, paymentPlanRequests, invoices } from '../../db/index.js';
 import type { InvoiceImportService, DuplicateStrategy } from './invoice.service.js';
 import type { InvoiceRepository } from './invoice.repository.js';
 import { logger } from '../../shared/logger.js';
@@ -450,6 +452,23 @@ export class InvoiceController {
 
       await this.invoiceRepo.db.transaction(async (tx) => {
         await this.invoiceRepo.updatePaymentStatus(id, paymentStatus as 'Pending' | 'Paid' | 'Overdue' | 'Written Off', undefined, tx);
+        
+        if (paymentStatus === 'Paid' || paymentStatus === 'Written Off') {
+          await tx.update(invoices)
+            .set({ hasActivePaymentPlan: false, updatedAt: new Date() })
+            .where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)));
+
+          await tx.update(paymentPlanRequests)
+            .set({ status: 'cancelled' })
+            .where(and(eq(paymentPlanRequests.invoiceId, id), eq(paymentPlanRequests.tenantId, tenantId), eq(paymentPlanRequests.status, 'pending')));
+
+          if (paymentStatus === 'Paid') {
+            await tx.update(paymentPlanInstallments)
+              .set({ status: 'paid', paidAt: new Date() })
+              .where(and(eq(paymentPlanInstallments.invoiceId, id), eq(paymentPlanInstallments.tenantId, tenantId), eq(paymentPlanInstallments.status, 'pending')));
+          }
+        }
+
         if (this.eventService && invoice.paymentStatus !== paymentStatus) {
           await this.eventService.emitEvent('invoice', id, tenantId, 'invoice.status_changed', actor, {
             description: `Status changed to ${paymentStatus}`,

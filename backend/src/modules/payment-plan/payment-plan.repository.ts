@@ -1,6 +1,13 @@
-import { eq, and, desc, count } from 'drizzle-orm';
-import { paymentPlanRequests, invoices } from '../../db/index.js';
-import type { DatabaseClient, DatabaseOrTransaction, PaymentPlanRequest, NewPaymentPlanRequest } from '../../db/index.js';
+import { eq, and, desc, count, asc } from 'drizzle-orm';
+import { paymentPlanRequests, paymentPlanInstallments, invoices } from '../../db/index.js';
+import type {
+  DatabaseClient,
+  DatabaseOrTransaction,
+  PaymentPlanRequest,
+  NewPaymentPlanRequest,
+  PaymentPlanInstallment,
+  NewPaymentPlanInstallment,
+} from '../../db/index.js';
 import crypto from 'crypto';
 
 export class PaymentPlanRepository {
@@ -51,21 +58,24 @@ export class PaymentPlanRepository {
     return rows[0];
   }
 
-  async listPending(
+  async listPlans(
     tenantId: string,
-    params: { page: number; limit: number }
+    params: { page: number; limit: number; status?: string }
   ): Promise<{ data: unknown[]; total: number }> {
-    const conditions = and(
-      eq(paymentPlanRequests.tenantId, tenantId),
-      eq(paymentPlanRequests.status, 'pending')
-    );
+    const filterStatus = params.status && params.status !== 'all' ? params.status : null;
+    
+    const conditions = filterStatus
+      ? and(
+          eq(paymentPlanRequests.tenantId, tenantId),
+          eq(paymentPlanRequests.status, filterStatus as 'pending' | 'approved' | 'denied' | 'cancelled')
+        )
+      : eq(paymentPlanRequests.tenantId, tenantId);
 
     const [totalRow] = await this.db
       .select({ count: count() })
       .from(paymentPlanRequests)
       .where(conditions);
 
-    // Join with invoices to fetch context (invoiceNo, clientName, etc.)
     const data = await this.db
       .select({
         id: paymentPlanRequests.id,
@@ -75,6 +85,8 @@ export class PaymentPlanRepository {
         proposedAmountPerMonth: paymentPlanRequests.proposedAmountPerMonth,
         reason: paymentPlanRequests.reason,
         status: paymentPlanRequests.status,
+        reviewedBy: paymentPlanRequests.reviewedBy,
+        reviewedAt: paymentPlanRequests.reviewedAt,
         createdAt: paymentPlanRequests.createdAt,
         invoiceNo: invoices.invoiceNo,
         clientName: invoices.clientName,
@@ -94,6 +106,13 @@ export class PaymentPlanRepository {
     };
   }
 
+  async listPending(
+    tenantId: string,
+    params: { page: number; limit: number }
+  ): Promise<{ data: unknown[]; total: number }> {
+    return this.listPlans(tenantId, { ...params, status: 'pending' });
+  }
+
   async update(
     id: string,
     data: Partial<NewPaymentPlanRequest>,
@@ -109,6 +128,67 @@ export class PaymentPlanRepository {
       .select()
       .from(paymentPlanRequests)
       .where(eq(paymentPlanRequests.id, id))
+      .limit(1);
+
+    return row!;
+  }
+
+  // --- Installments Management ---
+
+  async createInstallmentsBatch(
+    items: NewPaymentPlanInstallment[],
+    tx?: DatabaseOrTransaction
+  ): Promise<PaymentPlanInstallment[]> {
+    if (items.length === 0) return [];
+    const dbClient = tx || this.db;
+    const records = items.map((item) => ({
+      ...item,
+      id: item.id || crypto.randomUUID(),
+    }));
+    await dbClient.insert(paymentPlanInstallments).values(records);
+    return records as PaymentPlanInstallment[];
+  }
+
+  async findInstallmentsByInvoiceId(
+    invoiceId: string,
+    tx?: DatabaseOrTransaction
+  ): Promise<PaymentPlanInstallment[]> {
+    const dbClient = tx || this.db;
+    return dbClient
+      .select()
+      .from(paymentPlanInstallments)
+      .where(eq(paymentPlanInstallments.invoiceId, invoiceId))
+      .orderBy(asc(paymentPlanInstallments.installmentNumber));
+  }
+
+  async findInstallmentById(
+    id: string,
+    tx?: DatabaseOrTransaction
+  ): Promise<PaymentPlanInstallment | undefined> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient
+      .select()
+      .from(paymentPlanInstallments)
+      .where(eq(paymentPlanInstallments.id, id))
+      .limit(1);
+    return rows[0];
+  }
+
+  async updateInstallment(
+    id: string,
+    data: Partial<NewPaymentPlanInstallment>,
+    tx?: DatabaseOrTransaction
+  ): Promise<PaymentPlanInstallment> {
+    const dbClient = tx || this.db;
+    await dbClient
+      .update(paymentPlanInstallments)
+      .set(data)
+      .where(eq(paymentPlanInstallments.id, id));
+
+    const [row] = await dbClient
+      .select()
+      .from(paymentPlanInstallments)
+      .where(eq(paymentPlanInstallments.id, id))
       .limit(1);
 
     return row!;

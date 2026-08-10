@@ -85,6 +85,13 @@
       "when": 1785417000000,
       "tag": "0011_add_ai_summary_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1785606000000,
+      "tag": "0012_payment_plan_installments",
+      "breakpoints": true
     }
   ]
 }
