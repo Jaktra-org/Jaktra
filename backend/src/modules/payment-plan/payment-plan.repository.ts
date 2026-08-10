@@ -174,6 +174,35 @@ export class PaymentPlanRepository {
     return rows[0];
   }
 
+  async findNextDueInstallment(
+    invoiceId: string,
+    tx?: DatabaseOrTransaction
+  ): Promise<PaymentPlanInstallment | undefined> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient
+      .select()
+      .from(paymentPlanInstallments)
+      .where(and(
+        eq(paymentPlanInstallments.invoiceId, invoiceId),
+        eq(paymentPlanInstallments.status, 'pending')
+      ))
+      .orderBy(asc(paymentPlanInstallments.installmentNumber))
+      .limit(1);
+    return rows[0];
+  }
+
+  async countInstallmentsByInvoiceId(
+    invoiceId: string,
+    tx?: DatabaseOrTransaction
+  ): Promise<number> {
+    const dbClient = tx || this.db;
+    const rows = await dbClient
+      .select({ count: count() })
+      .from(paymentPlanInstallments)
+      .where(eq(paymentPlanInstallments.invoiceId, invoiceId));
+    return Number(rows[0]?.count || 0);
+  }
+
   async updateInstallment(
     id: string,
     data: Partial<NewPaymentPlanInstallment>,

@@ -22,6 +22,8 @@ export interface FollowupRequest {
   channel: string;
   paymentLink?: string;
   invoiceSubject?: string;
+  installmentNumber?: number;
+  totalInstallments?: number;
 }
 
 /** Shape returned by the Python AI-ML /followup endpoint */
@@ -117,6 +119,8 @@ export class AimlService {
       channel: invoice.channel,
       payment_link: invoice.paymentLink,
       invoice_subject: invoice.invoiceSubject ?? null,
+      installment_number: invoice.installmentNumber ?? null,
+      total_installments: invoice.totalInstallments ?? null,
     };
     const raw = await this.request<RawFollowupResponse>('POST', '/followup', payload);
     return {
@@ -169,6 +173,8 @@ export class AimlService {
         channel: invoice.channel,
         payment_link: invoice.paymentLink,
         invoice_subject: invoice.invoiceSubject ?? null,
+        installment_number: invoice.installmentNumber ?? null,
+        total_installments: invoice.totalInstallments ?? null,
       })),
       concurrency: request.concurrency ?? 5,
     };

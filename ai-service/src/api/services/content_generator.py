@@ -106,12 +106,20 @@ class ContentGenerator:
         if request.channel not in ["email", "sms", "whatsapp"]:
             raise ValueError(f"UNSUPPORTED_CHANNEL: {request.channel}")
 
+        inst_num = getattr(request, "installment_number", None)
+        total_inst = getattr(request, "total_installments", None)
+
+        tier_to_load = request.urgency_tier
+        if inst_num and total_inst:
+            tier_to_load = "payment_plan_installment"
+
         try:
-            prompt = self.prompts.get_prompt(request.channel, request.urgency_tier)
+            prompt = self.prompts.get_prompt(request.channel, tier_to_load)
         except TierNotAutomatableError:
-            raise ValueError(f"{request.urgency_tier} does not have an automated prompt.")
+            raise ValueError(f"{tier_to_load} does not have an automated prompt.")
         except UnknownPromptError as e:
             raise ValueError(str(e))
+
         sender_name = getattr(settings, "SMTP_SENDER_NAME", "Finance Department")
         payment_link = sanitize_input(getattr(request, "payment_link", None) or "")
         bank_details = sanitize_input(getattr(request, "bank_details", None) or getattr(settings, "BANK_DETAILS", "") or "")
@@ -119,12 +127,16 @@ class ContentGenerator:
         # Build a conditional CTA — never pass empty strings to the prompt
         cta_instruction = _build_cta_instruction(payment_link, bank_details)
 
-        # Build subject context — only include if the invoice has a description
+        # Build subject context — include description and installment details if present
         raw_subject = getattr(request, "invoice_subject", None)
+
+        subject_parts = []
         if raw_subject and str(raw_subject).strip():
-            subject_context = f"- Invoice Description: {sanitize_input(str(raw_subject).strip())}"
-        else:
-            subject_context = ""
+            subject_parts.append(f"- Invoice Description: {sanitize_input(str(raw_subject).strip())}")
+        if inst_num and total_inst:
+            subject_parts.append(f"- Payment Plan Active: Remind debtor for Installment #{inst_num} of {total_inst}")
+
+        subject_context = "\n".join(subject_parts)
 
         messages = prompt.format_messages(
             client_name=sanitize_input(getattr(request, "client_name", "")),
@@ -137,6 +149,8 @@ class ContentGenerator:
             cta_instruction=cta_instruction,
             subject_context=subject_context,
             payment_link=payment_link,
+            installment_number=inst_num or 1,
+            total_installments=total_inst or 1,
         )
 
         llm_response = await self.llm.generate(messages, temperature=settings.LLM_TEMPERATURE)
@@ -176,6 +190,8 @@ class ContentGenerator:
 
         if request.channel == "email":
             subject, body = validate_email_output(llm_response.content, payment_link)
+            if inst_num and total_inst and "installment" not in subject.lower():
+                subject = f"Payment Reminder: Installment #{inst_num} of {total_inst} (Invoice #{sanitize_input(getattr(request, 'invoice_no', ''))})"
             html_body = _plain_to_html(body, sender_name)
             return GenerationResult(subject=subject, html_body=html_body, plain_body=body, metadata=metadata)
         elif request.channel == "sms":

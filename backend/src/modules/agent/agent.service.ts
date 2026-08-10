@@ -2,7 +2,7 @@ import { AgentRepository } from './agent.repository.js';
 import { AgentChunkRepository } from './agent-chunk.repository.js';
 import { AimlService } from './aiml.service.js';
 import { InvoiceRepository } from '../invoice/invoice.repository.js';
-import { TriageService, type TriagedInvoice, type UrgencyTier } from './triage.service.js';
+import { TriageService, type TriagedInvoice, type UrgencyTier, type ActiveInstallmentContext } from './triage.service.js';
 import { EventService, type ActorContext } from '../event/event.service.js';
 import { DlqService } from '../dlq/dlq.service.js';
 import { IdempotencyService } from '../../modules/communication/services/idempotency.service.js';
@@ -14,6 +14,7 @@ import { NotFoundError, CommunicationError } from '../../shared/errors/index.js'
 import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 import { PortalService } from '../portal/portal.service.js';
 import type { IntegrationService } from '../settings/integration.service.js';
+import type { PaymentPlanRepository } from '../payment-plan/payment-plan.repository.js';
 import { type AgentRunChunk } from '../../db/index.js';
 
 export class AgentService {
@@ -32,7 +33,8 @@ export class AgentService {
     private communicationService: CommunicationService,
     private communicationRepo: CommunicationRepository,
     private portalService: PortalService,
-    private integrationService?: IntegrationService
+    private integrationService?: IntegrationService,
+    private paymentPlanRepo?: PaymentPlanRepository
   ) { }
 
   private async getPortalLinkUrl(tenantId: string, invoiceId: string): Promise<string> {
@@ -73,7 +75,29 @@ export class AgentService {
     );
 
     const invoices = await this.invoiceRepo.findByTenant(tenantId);
-    const triaged = this.triageService.triageInvoices(invoices, dlqBlockedIds);
+
+    const activeInstallmentsMap = new Map<string, ActiveInstallmentContext>();
+    if (this.paymentPlanRepo) {
+      for (const inv of invoices) {
+        if (inv.hasActivePaymentPlan) {
+          const nextInst = await this.paymentPlanRepo.findNextDueInstallment(inv.id);
+          if (nextInst) {
+            const totalInst = await this.paymentPlanRepo.countInstallmentsByInvoiceId(inv.id);
+            activeInstallmentsMap.set(inv.id, {
+              id: nextInst.id,
+              installmentNumber: nextInst.installmentNumber,
+              totalInstallments: totalInst,
+              amount: nextInst.amount,
+              dueDate: nextInst.dueDate,
+              currency: nextInst.currency || inv.currency || 'INR',
+              status: nextInst.status,
+            });
+          }
+        }
+      }
+    }
+
+    const triaged = this.triageService.triageInvoices(invoices, dlqBlockedIds, activeInstallmentsMap);
 
     const run = await this.agentRepo.createRun({
       tenantId,
@@ -220,19 +244,23 @@ export class AgentService {
             }
           }
 
+          const instContext = inv.activeInstallment;
+          const tierToUse = instContext ? 'payment_plan_installment' : effectiveTier;
           followupRequests.push({
             invoiceId: inv.id,
             invoiceNo: inv.invoiceNo,
             clientName: inv.clientName,
             contactEmail: inv.contactEmail,
-            invoiceAmount: inv.invoiceAmount.toString(),
-            currency: inv.currency ?? 'INR',
-            dueDate: inv.dueDate,
+            invoiceAmount: instContext ? instContext.amount : inv.invoiceAmount.toString(),
+            currency: instContext ? instContext.currency : (inv.currency ?? 'INR'),
+            dueDate: instContext ? instContext.dueDate : inv.dueDate,
             daysOverdue: inv.daysOverdue,
-            urgencyTier: effectiveTier,
+            urgencyTier: tierToUse,
             followupCount: inv.followupCount,
             channel,
             paymentLink,
+            installmentNumber: instContext ? instContext.installmentNumber : undefined,
+            totalInstallments: instContext ? instContext.totalInstallments : undefined,
             invoiceSubject: ('subject' in inv ? (inv as unknown as Record<string, unknown>).subject as string : undefined) ?? undefined,
           });
         }
@@ -495,19 +523,40 @@ export class AgentService {
           }
         }
 
+        let targetAmount = invoice.invoiceAmount.toString();
+        let targetDueDate = invoice.dueDate;
+        let instNum: number | undefined;
+        let totalInst: number | undefined;
+        let effectiveUrgencyTier = urgencyTier;
+
+        if (invoice.hasActivePaymentPlan && this.paymentPlanRepo) {
+          const nextInst = await this.paymentPlanRepo.findNextDueInstallment(invoice.id);
+          if (nextInst) {
+            targetAmount = nextInst.amount;
+            targetDueDate = nextInst.dueDate;
+            instNum = nextInst.installmentNumber;
+            totalInst = await this.paymentPlanRepo.countInstallmentsByInvoiceId(invoice.id);
+            effectiveUrgencyTier = 'payment_plan_installment' as UrgencyTier;
+          }
+        }
+
+        const daysOverdue = this.triageService.computeDaysOverdue(targetDueDate);
+
         const resp = await this.aimlService.triggerFollowup({
           invoiceId: invoice.id,
           invoiceNo: invoice.invoiceNo,
           clientName: invoice.clientName,
           contactEmail: invoice.contactEmail,
-          invoiceAmount: invoice.invoiceAmount.toString(),
+          invoiceAmount: targetAmount,
           currency: invoice.currency ?? 'INR',
-          dueDate: invoice.dueDate,
+          dueDate: targetDueDate,
           daysOverdue,
-          urgencyTier,
+          urgencyTier: effectiveUrgencyTier,
           followupCount: invoice.followupCount,
           channel,
           paymentLink,
+          installmentNumber: instNum,
+          totalInstallments: totalInst,
           invoiceSubject: ('subject' in invoice ? (invoice as Record<string, unknown>).subject as string : undefined) ?? undefined,
         });
 

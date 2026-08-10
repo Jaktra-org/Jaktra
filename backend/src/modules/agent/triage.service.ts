@@ -28,10 +28,21 @@ const TIER_BRACKETS: readonly TierBracket[] = [
 const NON_ACTIONABLE_STATUSES = new Set(['Paid', 'Written Off']);
 const NOT_YET_DUE_THRESHOLD_DAYS = 7;
 
+export interface ActiveInstallmentContext {
+  id: string;
+  installmentNumber: number;
+  totalInstallments: number;
+  amount: string;
+  dueDate: string;
+  currency: string;
+  status: string;
+}
+
 export interface TriagedInvoice extends Invoice {
   daysOverdue: number;
   computedTier: UrgencyTier;
   needsManualReview?: boolean;
+  activeInstallment?: ActiveInstallmentContext;
 }
 
 export interface TriageResult {
@@ -62,15 +73,21 @@ export class TriageService {
     return Math.max(0, diffDays);
   }
 
-  isActionable(invoice: Invoice): boolean {
-    if (invoice.hasActivePaymentPlan) return false;
+  isActionable(invoice: Invoice, activeInstallmentsMap?: Map<string, ActiveInstallmentContext>): boolean {
     if (NON_ACTIONABLE_STATUSES.has(invoice.paymentStatus)) return false;
 
-    const daysOverdue = this.computeDaysOverdue(invoice.dueDate);
+    let targetDueDate = invoice.dueDate;
+    if (invoice.hasActivePaymentPlan) {
+      const activeInstallment = activeInstallmentsMap?.get(invoice.id);
+      if (!activeInstallment) return false; // No pending installment due
+      targetDueDate = activeInstallment.dueDate;
+    }
+
+    const daysOverdue = this.computeDaysOverdue(targetDueDate);
     if (daysOverdue > 0) return true;
 
     // Not yet overdue — only actionable if due within threshold
-    const due = new Date(invoice.dueDate);
+    const due = new Date(targetDueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     due.setHours(0, 0, 0, 0);
@@ -78,7 +95,11 @@ export class TriageService {
     return daysUntilDue <= NOT_YET_DUE_THRESHOLD_DAYS;
   }
 
-  triageInvoices(invoices: Invoice[], dlqBlockedIds: Set<string> = new Set()): TriageResult {
+  triageInvoices(
+    invoices: Invoice[],
+    dlqBlockedIds: Set<string> = new Set(),
+    activeInstallmentsMap?: Map<string, ActiveInstallmentContext>
+  ): TriageResult {
     const tierCounts: Record<UrgencyTier, number> = {
       stage_1_warm: 0,
       stage_2_firm: 0,
@@ -87,12 +108,15 @@ export class TriageService {
       legal_escalation: 0,
     };
 
-    const actionable = invoices.filter((inv) => this.isActionable(inv));
+    const actionable = invoices.filter((inv) => this.isActionable(inv, activeInstallmentsMap));
     const active: TriagedInvoice[] = [];
     const blocked: TriagedInvoice[] = [];
 
     for (const inv of actionable) {
-      const daysOverdue = this.computeDaysOverdue(inv.dueDate);
+      const activeInstallment = activeInstallmentsMap?.get(inv.id);
+      const targetDueDate = activeInstallment ? activeInstallment.dueDate : inv.dueDate;
+
+      const daysOverdue = this.computeDaysOverdue(targetDueDate);
       const computedTier = this.assignTier(daysOverdue);
       const isBlocked = dlqBlockedIds.has(inv.id);
 
@@ -101,6 +125,7 @@ export class TriageService {
         daysOverdue,
         computedTier,
         needsManualReview: isBlocked,
+        activeInstallment,
       };
 
       if (isBlocked) {
@@ -111,9 +136,11 @@ export class TriageService {
       }
     }
 
-    active.sort((a, b) => b.daysOverdue - a.daysOverdue || Number(b.invoiceAmount) - Number(a.invoiceAmount));
-    blocked.sort((a, b) => b.daysOverdue - a.daysOverdue || Number(b.invoiceAmount) - Number(a.invoiceAmount));
-
-    return { invoices: active, total: active.length, tierCounts, needsManualReview: blocked };
+    return {
+      invoices: active,
+      total: active.length,
+      tierCounts,
+      needsManualReview: blocked,
+    };
   }
 }

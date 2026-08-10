@@ -27,6 +27,8 @@ class FollowupRequest(BaseModel):
     sender_name: Optional[str] = Field(None, max_length=200)
     company_name: Optional[str] = Field(None, max_length=200)
     invoice_subject: Optional[str] = Field(None, max_length=255)
+    installment_number: Optional[int] = Field(None, ge=1, le=100)
+    total_installments: Optional[int] = Field(None, ge=1, le=100)
 
 class Content(BaseModel):
     subject: str

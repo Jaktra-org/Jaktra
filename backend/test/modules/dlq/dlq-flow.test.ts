@@ -102,7 +102,8 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
     // 4. Verify triage was called with blocked ID of inv-1
     expect(mockTriageService.triageInvoices).toHaveBeenCalledWith(
       invoices,
-      new Set(['inv-1'])
+      new Set(['inv-1']),
+      expect.any(Map)
     );
   });
 
@@ -129,7 +130,8 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
     // Should not block inv-1
     expect(mockTriageService.triageInvoices).toHaveBeenCalledWith(
       invoices,
-      new Set()
+      new Set(),
+      expect.any(Map)
     );
   });
 
@@ -156,7 +158,8 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
 
     expect(mockTriageService.triageInvoices).toHaveBeenCalledWith(
       invoices,
-      new Set(['inv-1'])
+      new Set(['inv-1']),
+      expect.any(Map)
     );
 
     // Clean up
