@@ -9,6 +9,10 @@ on:
         description: "Skip CI tests"
         type: boolean
         default: false
+      force_build_all:
+        description: "Force build and deploy all services"
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
@@ -18,6 +22,30 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend == 'true' || inputs.force_build_all == true }}
+      ai-service: ${{ steps.filter.outputs.ai-service == 'true' || inputs.force_build_all == true }}
+      frontend: ${{ steps.filter.outputs.frontend == 'true' || inputs.force_build_all == true }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/deploy.yml'
+              - '.github/workflows/ci.yml'
+            ai-service:
+              - 'ai-service/**'
+              - '.github/workflows/deploy.yml'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/deploy.yml'
+              - '.github/workflows/ci.yml'
 
   test:
     if: ${{ !inputs.skip_tests }}
@@ -25,8 +53,8 @@ jobs:
     secrets: inherit
 
   build-backend:
-    needs: [test]
-    if: ${{ needs.test.result == 'success' || needs.test.result == 'skipped' }}
+    needs: [detect-changes, test]
+    if: ${{ (needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.meta.outputs.tag }}
@@ -66,8 +94,8 @@ jobs:
             ${{ steps.ecr.outputs.registry }}/jaktra/base/backend:latest
 
   build-ai-service:
-    needs: [test]
-    if: ${{ needs.test.result == 'success' || needs.test.result == 'skipped' }}
+    needs: [detect-changes, test]
+    if: ${{ (needs.detect-changes.outputs.ai-service == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.meta.outputs.tag }}
@@ -107,8 +135,8 @@ jobs:
             ${{ steps.ecr.outputs.registry }}/jaktra/base/ai-service:latest
 
   deploy-frontend:
-    needs: [test]
-    if: ${{ needs.test.result == 'success' || needs.test.result == 'skipped' }}
+    needs: [detect-changes, test]
+    if: ${{ (needs.detect-changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -160,7 +188,8 @@ jobs:
           fi
 
   trigger-active-deployments:
-    needs: [build-backend, build-ai-service, deploy-frontend]
+    needs: [detect-changes, build-backend, build-ai-service, deploy-frontend]
+    if: ${{ always() && (needs.build-backend.result == 'success' || needs.build-ai-service.result == 'success' || needs.deploy-frontend.result == 'success') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -174,32 +203,50 @@ jobs:
 
       - name: Detect active environment and trigger pull
         run: |
+          BACKEND_CHANGED="${{ needs.detect-changes.outputs.backend }}"
+          AISERVICE_CHANGED="${{ needs.detect-changes.outputs.ai-service }}"
+
           # 1. Detect Production ECS Cluster
           ECS_STATUS=$(aws ecs describe-services --cluster jaktra-production --services jaktra-production-backend --query 'services[0].status' --output text 2>/dev/null || echo "INACTIVE")
           if [ "$ECS_STATUS" == "ACTIVE" ]; then
-            echo "⚡ Active ECS Production Cluster detected! Triggering rolling container update..."
-            aws ecs update-service --cluster jaktra-production --service jaktra-production-backend --force-new-deployment --no-cli-pager > /dev/null || true
-            aws ecs update-service --cluster jaktra-production --service jaktra-production-ai-service --force-new-deployment --no-cli-pager > /dev/null || true
+            echo "⚡ Active ECS Production Cluster detected!"
+            if [ "$BACKEND_CHANGED" == "true" ]; then
+              echo "Re-deploying ECS backend service..."
+              aws ecs update-service --cluster jaktra-production --service jaktra-production-backend --force-new-deployment --no-cli-pager > /dev/null || true
+            else
+              echo "Backend unchanged. Skipping ECS backend redeployment."
+            fi
+
+            if [ "$AISERVICE_CHANGED" == "true" ]; then
+              echo "Re-deploying ECS AI Service..."
+              aws ecs update-service --cluster jaktra-production --service jaktra-production-ai-service --force-new-deployment --no-cli-pager > /dev/null || true
+            else
+              echo "AI Service unchanged. Skipping ECS AI Service redeployment."
+            fi
           else
             echo "ℹ️ No active ECS Production cluster running."
           fi
 
           # 2. Detect Dev EC2 Instance
-          EC2_ID=$(aws ec2 describe-instances --region ap-south-1 \
-            --filters "Name=tag:Name,Values=jaktra-dev-ec2,jaktra-dev-instance" "Name=instance-state-name,Values=running" \
-            --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null || echo "None")
+          if [ "$BACKEND_CHANGED" == "true" ] || [ "$AISERVICE_CHANGED" == "true" ]; then
+            EC2_ID=$(aws ec2 describe-instances --region ap-south-1 \
+              --filters "Name=tag:Name,Values=jaktra-dev-ec2,jaktra-dev-instance" "Name=instance-state-name,Values=running" \
+              --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null || echo "None")
 
-          if [ "$EC2_ID" != "None" ] && [ -n "$EC2_ID" ]; then
-            SSM_ONLINE=$(aws ssm describe-instance-information --region ap-south-1 --filters "Key=InstanceIds,Values=$EC2_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null || echo "Offline")
-            if [ "$SSM_ONLINE" == "Online" ]; then
-              echo "⚡ Active Dev EC2 Instance ($EC2_ID) is SSM-Online! Triggering docker pull..."
-              aws ssm send-command --region ap-south-1 \
-                --instance-ids "$EC2_ID" \
-                --document-name "AWS-RunShellScript" \
-                --parameters 'commands=["cd /opt/jaktra && sudo docker compose pull && sudo docker compose up -d"]' || true
+            if [ "$EC2_ID" != "None" ] && [ -n "$EC2_ID" ]; then
+              SSM_ONLINE=$(aws ssm describe-instance-information --region ap-south-1 --filters "Key=InstanceIds,Values=$EC2_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null || echo "Offline")
+              if [ "$SSM_ONLINE" == "Online" ]; then
+                echo "⚡ Active Dev EC2 Instance ($EC2_ID) is SSM-Online! Triggering docker pull..."
+                aws ssm send-command --region ap-south-1 \
+                  --instance-ids "$EC2_ID" \
+                  --document-name "AWS-RunShellScript" \
+                  --parameters 'commands=["cd /opt/jaktra && sudo docker compose pull && sudo docker compose up -d"]' || true
+              else
+                echo "ℹ️ Dev EC2 Instance ($EC2_ID) detected but SSM Agent is currently offline/stopped."
+              fi
             else
-              echo "ℹ️ Dev EC2 Instance ($EC2_ID) detected but SSM Agent is currently offline/stopped."
+              echo "ℹ️ No active Dev EC2 instance running."
             fi
           else
-            echo "ℹ️ No active Dev EC2 instance running."
+            echo "Neither backend nor AI service changed. Skipping EC2 Docker pull."
           fi
