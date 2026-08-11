@@ -73,6 +73,11 @@ export const settingsService = {
     return response.data;
   },
 
+  testRazorpayKey: async (): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post('/settings/integrations/razorpay/test');
+    return response.data;
+  },
+
   disconnectRazorpay: async (): Promise<void> => {
     await api.delete('/settings/integrations/razorpay');
   },

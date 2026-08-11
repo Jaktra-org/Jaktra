@@ -730,6 +730,32 @@ export class IntegrationService {
     }
   }
 
+  async testRazorpayIntegration(tenantId: string): Promise<{ success: boolean; message: string }> {
+    const creds = await this.getDecryptedRazorpayConfig(tenantId);
+    try {
+      const auth = Buffer.from(`${creds.keyId}:${creds.keySecret}`).toString('base64');
+      const response = await fetch('https://api.razorpay.com/v1/payments', {
+        headers: { Authorization: `Basic ${auth}` },
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(5000) : undefined
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw IntegrationErrors.CREDENTIAL_INVALID();
+        }
+        throw IntegrationErrors.PROVIDER_UNAVAILABLE();
+      }
+
+      return { success: true, message: 'Razorpay API credentials are valid and live.' };
+    } catch (error: unknown) {
+      if (error instanceof IntegrationError) {
+        throw error;
+      }
+      logger.error('testRazorpayIntegration error:', error);
+      throw IntegrationErrors.CREDENTIAL_INVALID();
+    }
+  }
+
   async getConfigurationHealth(tenantId: string, senderEmail: string): Promise<{
     senderVerified: boolean | 'insufficient_permissions' | 'check_failed';
     domainAuthenticated: boolean | 'insufficient_permissions' | 'check_failed';

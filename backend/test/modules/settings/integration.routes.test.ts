@@ -25,6 +25,7 @@ describe('GET /api/settings/integrations/ Routing & Role Restrictions', () => {
       disconnectSmtp: dummyHandler,
       setDefaultProvider: dummyHandler,
       saveRazorpayKey: dummyHandler,
+      testRazorpayKey: dummyHandler,
       disconnectRazorpay: dummyHandler,
       setReplyMode: dummyHandler,
       sendReplyMailboxOtp: dummyHandler,
@@ -79,5 +80,12 @@ describe('GET /api/settings/integrations/ Routing & Role Restrictions', () => {
     const res = await request(app).get('/api/settings/integrations');
     expect(res.status).toBe(403);
     expect(res.body).toHaveProperty('error', 'Insufficient permissions');
+  });
+
+  it('allows admin users to test razorpay integration', async () => {
+    currentUser.role = 'admin';
+    const res = await request(app).post('/api/settings/integrations/razorpay/test');
+    expect(res.status).toBe(200);
+    expect(mockController.testRazorpayKey).toHaveBeenCalled();
   });
 });

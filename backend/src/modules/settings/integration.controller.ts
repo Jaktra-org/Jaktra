@@ -432,6 +432,16 @@ export class IntegrationController {
     }
   };
 
+  testRazorpayKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const result = await this.integrationService.testRazorpayIntegration(tenantId);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   disconnectRazorpay = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;

@@ -49,6 +49,20 @@ export function IntegrationsTab() {
     }
   });
 
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const testRazorpayMutation = useMutation({
+    mutationFn: () => settingsService.testRazorpayKey(),
+    onSuccess: (data) => {
+      setTestResult(data);
+      setTimeout(() => setTestResult(null), 5000);
+    },
+    onError: (err: unknown) => {
+      setTestResult({ success: false, message: getErrorMessage(err) });
+      setTimeout(() => setTestResult(null), 5000);
+    }
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -108,64 +122,62 @@ export function IntegrationsTab() {
               </h4>
               <p className="text-[11px] text-[#8a8f98] mt-0.5">Accept payments via cards, UPI, and netbanking in India.</p>
             </div>
-            {isConfigured && !isEditing && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-3 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#18191c] border border-[#34343a] hover:bg-[#23252a] rounded-xl transition-all cursor-pointer"
-                >
-                  Update Keys
-                </button>
-                <button
-                  onClick={() => disconnectMutation.mutate()}
-                  className="px-3 py-1.5 text-xs font-medium text-red-400 bg-red-950/20 border border-red-900/40 hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"
-                >
-                  Disconnect
-                </button>
-              </div>
-            )}
           </div>
 
           {isConfigured && !isEditing ? (
-            <div className="bg-[#0f1011] p-4 rounded-xl border border-[#23252a] flex flex-col md:flex-row md:items-center justify-between gap-4 overflow-hidden">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-[#f7f8f8]">Connected Account</p>
-                <p className="text-[11px] text-[#8a8f98] mt-0.5">Key ID: •••••••••••{razorpay.maskedKeyId?.slice(-4)}</p>
-                <div className="mt-2.5 max-w-full">
-                  <p className="text-[11px] text-[#8a8f98] font-medium">Webhook Endpoint URL:</p>
-                  <div className="flex items-center gap-2 mt-1 max-w-full">
-                    <code className="text-[10px] bg-[#010102] text-[#d0d6e0] px-2.5 py-1.5 rounded-lg block flex-1 break-all select-all border border-[#23252a] font-mono overflow-x-auto">
-                      {webhookUrl}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(webhookUrl);
-                        setCopiedWebhook(true);
-                        setTimeout(() => setCopiedWebhook(false), 2000);
-                      }}
-                      className="p-1.5 text-xs text-[#8a8f98] hover:text-[#f7f8f8] bg-[#18191c] border border-[#34343a] hover:bg-[#23252a] rounded-lg transition-all flex-shrink-0 cursor-pointer"
-                      title="Copy Webhook URL"
-                    >
-                      {copiedWebhook ? <Check className="w-3.5 h-3.5 text-[#27a644]" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
+            <div className="bg-[#0f1011] p-4 rounded-xl border border-[#23252a] space-y-3">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-xs font-semibold text-[#f7f8f8]">Connected &amp; Verified</p>
+                    <span className="inline-flex items-center rounded-full bg-[#27a644]/10 border border-[#27a644]/20 px-2 py-0.5 text-[10px] font-bold text-[#27a644]">
+                      <CheckCircle2 className="w-3 h-3 mr-1 text-[#27a644]" /> Active
+                    </span>
                   </div>
+                  <p className="text-[11px] text-[#8a8f98] mt-1">Key ID: •••••••••••{razorpay.maskedKeyId?.slice(-4)}</p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => testRazorpayMutation.mutate()}
+                    disabled={testRazorpayMutation.isPending}
+                    className="px-3 py-1.5 text-xs font-bold text-[#f7f8f8] bg-[#18191c] border border-[#34343a] hover:bg-[#23252a] rounded-xl transition-all cursor-pointer inline-flex items-center"
+                  >
+                    {testRazorpayMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#8a8f98]" />
+                        Testing...
+                      </>
+                    ) : (
+                      'Test Connection'
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-3 py-1.5 text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] bg-[#18191c] border border-[#34343a] hover:bg-[#23252a] rounded-xl transition-all cursor-pointer"
+                  >
+                    Update Keys
+                  </button>
+                  <button
+                    onClick={() => disconnectMutation.mutate()}
+                    className="px-3 py-1.5 text-xs font-medium text-red-400 bg-red-950/20 border border-red-900/40 hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"
+                  >
+                    Disconnect
+                  </button>
                 </div>
               </div>
-              <div className="text-left md:text-right flex-shrink-0">
-                <p className="text-xs font-medium text-[#f7f8f8]">Webhook Status</p>
-                <div className="flex items-center mt-1 text-xs justify-start md:justify-end">
-                  {razorpay.lastWebhookReceivedAt ? (
-                    <span className="text-[#27a644] flex items-center text-[11px]">
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> Last received: {new Date(razorpay.lastWebhookReceivedAt).toLocaleString()}
-                    </span>
-                  ) : (
-                    <span className="text-amber-400 flex items-center text-[11px]">
-                      <AlertTriangle className="w-3 h-3 mr-1" /> Waiting for webhooks
-                    </span>
-                  )}
+
+              {testResult && (
+                <div className={`p-3 rounded-xl text-xs font-medium flex items-center gap-2 ${
+                  testResult.success 
+                    ? 'bg-[#27a644]/10 border border-[#27a644]/30 text-[#27a644]' 
+                    : 'bg-red-950/40 border border-red-900/50 text-red-400'
+                }`}>
+                  {testResult.success ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+                  <span>{testResult.message}</span>
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4 overflow-hidden">
