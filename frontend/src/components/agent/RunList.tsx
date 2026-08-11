@@ -13,6 +13,8 @@ interface RunListProps {
 export function RunList({ runs }: RunListProps) {
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
 
+  const safeRuns = Array.isArray(runs) ? runs : [];
+
   const toggleExpand = (id: string) => {
     setExpandedRunId(expandedRunId === id ? null : id);
   };
@@ -21,9 +23,19 @@ export function RunList({ runs }: RunListProps) {
     if (!end) return 'Running...';
     const s = new Date(start).getTime();
     const e = new Date(end).getTime();
-    const seconds = Math.floor((e - s) / 1000);
+    if (isNaN(s) || isNaN(e)) return 'N/A';
+    const seconds = Math.max(0, Math.floor((e - s) / 1000));
     if (seconds < 60) return `${seconds}s`;
     return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  };
+
+  const safeDateString = (dateStr: string | null | undefined, fallback = 'N/A') => {
+    if (!dateStr) return fallback;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return fallback;
+    return d.toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
   };
 
   return (
@@ -39,7 +51,7 @@ export function RunList({ runs }: RunListProps) {
       </div>
 
       {/* Table Body */}
-      {runs.map((run) => (
+      {safeRuns.map((run) => (
         <div key={run.id} className="flex flex-col hover:bg-[#141516]/60 transition-colors">
           <div 
             className="grid grid-cols-12 gap-4 px-5 py-3 items-center cursor-pointer"
@@ -51,9 +63,7 @@ export function RunList({ runs }: RunListProps) {
               ) : (
                 <ChevronDown className="w-3.5 h-3.5 mr-2 text-[#8a8f98]" />
               )}
-              {new Date(run.startTime).toLocaleString(undefined, {
-                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-              })}
+              {safeDateString(run.startTime)}
             </div>
             
             <div className="col-span-2">
@@ -66,12 +76,12 @@ export function RunList({ runs }: RunListProps) {
             </div>
             
             <div className="col-span-2 text-center text-xs text-[#d0d6e0]">
-              {run.invoicesProcessed}
+              {run.invoicesProcessed || 0}
             </div>
             
             <div className="col-span-2 flex items-center justify-center text-xs text-[#d0d6e0]">
               <Send className="w-3 h-3 mr-1.5 text-[#5e6ad2]" />
-              {run.emailsSent}
+              {run.emailsSent || 0}
             </div>
             
             <div className="col-span-2 flex items-center justify-center text-xs">
@@ -128,7 +138,9 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
     );
   }
 
-  if (!data.events || data.events.length === 0) {
+  const events = Array.isArray(data.events) ? data.events : [];
+
+  if (events.length === 0) {
     return (
       <div className="text-[#8a8f98] text-xs py-4 flex items-center">
         <Info className="w-4 h-4 mr-2 text-[#5e6ad2]" />
@@ -142,7 +154,7 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
       <ChunkBreakdown runId={run.id} />
       <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider mb-2.5 mt-4">Invoice Processing Breakdown</h4>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
-        {data.events.map((event, idx) => (
+        {events.map((event, idx) => (
           <div key={idx} className="flex items-start p-3 border border-[#23252a] rounded-md bg-[#0f1011]">
             <div className="mt-0.5">
               {event.eventType === 'email_sent' || event.eventType === 'email_generated' ? (
@@ -156,12 +168,14 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <Link to={`/invoices/${event.invoiceId}`} className="text-xs font-medium text-[#5e6ad2] hover:text-[#828fff] truncate">
-                  Invoice {event.invoiceId.substring(0, 8)}...
+                  Invoice {event.invoiceId ? (event.invoiceId.length > 8 ? `${event.invoiceId.substring(0, 8)}...` : event.invoiceId) : 'N/A'}
                 </Link>
-                <span className="text-[10px] text-[#8a8f98] ml-2">{new Date(event.createdAt).toLocaleTimeString()}</span>
+                <span className="text-[10px] text-[#8a8f98] ml-2">
+                  {event.createdAt && !isNaN(new Date(event.createdAt).getTime()) ? new Date(event.createdAt).toLocaleTimeString() : ''}
+                </span>
               </div>
               <p className="text-[11px] text-[#d0d6e0] mt-0.5 capitalize font-medium">
-                {event.eventType.replace('_', ' ')}
+                {(event.eventType || '').replace('_', ' ')}
               </p>
               {event.payload && typeof event.payload === 'object' && (
                 <div className="mt-1.5 text-[11px] text-[#8a8f98] bg-[#010102] p-2 rounded border border-[#23252a] font-mono overflow-x-auto whitespace-nowrap">

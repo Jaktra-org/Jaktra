@@ -45,8 +45,9 @@ export function Agent() {
     refetchInterval: 30000,
   });
 
-  const dlqCount = dlqEntries?.length || 0;
-  const dlqCriticalCount = dlqEntries?.filter(e => e.consecutiveFailures >= 3).length || 0;
+  const dlqList = Array.isArray(dlqEntries) ? dlqEntries : [];
+  const dlqCount = dlqList.length;
+  const dlqCriticalCount = dlqList.filter(e => (e?.consecutiveFailures || 0) >= 3).length;
 
   const { data: settings } = useQuery({
     queryKey: ['tenant-settings'],
@@ -84,7 +85,8 @@ export function Agent() {
     runWithWarningCheck(() => runMutation.mutate(selectedTone || undefined));
   };
 
-  const isRunning = runsResponse?.runs[0]?.status === 'running' || runMutation.isPending;
+  const runsList = Array.isArray(runsResponse?.runs) ? runsResponse.runs : [];
+  const isRunning = runsList[0]?.status === 'running' || runMutation.isPending;
 
   return (
     <div className="h-full w-full flex flex-col text-[#f7f8f8] overflow-hidden space-y-4">
@@ -226,7 +228,7 @@ export function Agent() {
                 <div className="pt-4 border-t border-[#1e2025]/80">
                   <p className="text-xs text-[#8a8f98] mb-1">Total Invoices Processed (All Time)</p>
                   <p className="text-2xl font-bold text-[#f7f8f8] font-mono">
-                    {runsResponse?.runs.reduce((acc, run) => acc + run.invoicesProcessed, 0) || 0}
+                    {runsList.reduce((acc, run) => acc + (run?.invoicesProcessed || 0), 0)}
                   </p>
                 </div>
               </div>
@@ -240,8 +242,8 @@ export function Agent() {
                     <div className="flex justify-center items-center py-12">
                       <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
                     </div>
-                  ) : runsResponse && runsResponse.runs.length > 0 ? (
-                    <RunList runs={runsResponse.runs} />
+                  ) : runsList.length > 0 ? (
+                    <RunList runs={runsList} />
                   ) : (
                     <div className="text-center py-12 text-[#8a8f98]">
                       <Bot className="w-10 h-10 text-[#3e3e44] mx-auto mb-3" />

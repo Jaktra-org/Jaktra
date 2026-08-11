@@ -63,9 +63,9 @@ export function DLQ({ embedded = false }: { embedded?: boolean }) {
     dismissMutation.mutate(invoiceId);
   };
 
-  const entries = dlqEntries || [];
-  const sortedEntries = [...entries].sort((a, b) => b.consecutiveFailures - a.consecutiveFailures);
-  const criticalCount = entries.filter(e => e.consecutiveFailures >= 3).length;
+  const entries = Array.isArray(dlqEntries) ? dlqEntries : [];
+  const sortedEntries = [...entries].sort((a, b) => (b?.consecutiveFailures || 0) - (a?.consecutiveFailures || 0));
+  const criticalCount = entries.filter(e => (e?.consecutiveFailures || 0) >= 3).length;
 
   const targetDismissEntry = entries.find(e => e.invoiceId === dismissingId);
 
@@ -175,9 +175,9 @@ export function DLQ({ embedded = false }: { embedded?: boolean }) {
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-[#8a8f98] whitespace-nowrap font-mono text-[11px]">
-                        {new Date(entry.lastFailure).toLocaleString(undefined, {
+                        {entry.lastFailure && !isNaN(new Date(entry.lastFailure).getTime()) ? new Date(entry.lastFailure).toLocaleString(undefined, {
                           month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                        })}
+                        }) : 'N/A'}
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex justify-end items-center space-x-2">
