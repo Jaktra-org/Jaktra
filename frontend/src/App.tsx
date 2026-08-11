@@ -6,7 +6,6 @@ import { Register } from "./pages/Register";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { Invoices } from "./pages/Invoices";
 import { InvoiceDetail } from "./pages/InvoiceDetail";
-import { TrashedInvoiceDetail } from "./pages/TrashedInvoiceDetail";
 import { Agent } from "./pages/Agent";
 import { Analytics } from "./pages/Analytics";
 import { Settings } from "./pages/Settings";
@@ -33,7 +32,7 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoices/:id/trashed" element={<TrashedInvoiceDetail />} />
+          <Route path="/invoices/:id/trashed" element={<InvoiceDetail />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route path="/agent" element={<Agent />} />
           <Route path="/analytics" element={<Analytics />} />

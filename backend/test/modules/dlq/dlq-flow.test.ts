@@ -23,6 +23,8 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
     mockAimlService = {};
     mockInvoiceRepo = {
       findByTenant: vi.fn().mockResolvedValue([]),
+      findById: vi.fn().mockResolvedValue(null),
+      findByIdIncludingTrashed: vi.fn().mockResolvedValue(null),
     };
     mockTriageService = {
       triageInvoices: vi.fn().mockImplementation((invoices, blockedIds) => {
@@ -167,7 +169,7 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
   });
 
   it('should bypass DLQ block and clear failure on successful single invoice processing (manual retry)', async () => {
-    mockInvoiceRepo.findById = vi.fn().mockResolvedValue({
+    const mockInvoiceData = {
       id: 'inv-1',
       tenantId: 'tenant-1',
       invoiceNo: 'INV-001',
@@ -176,7 +178,9 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
       dueDate: '2026-07-01',
       contactEmail: 'client@example.com',
       followupCount: 0,
-    });
+    };
+    mockInvoiceRepo.findById = vi.fn().mockResolvedValue(mockInvoiceData);
+    mockInvoiceRepo.findByIdIncludingTrashed = vi.fn().mockResolvedValue(mockInvoiceData);
     mockTriageService.computeDaysOverdue = vi.fn().mockReturnValue(5);
     mockTriageService.assignTier = vi.fn().mockReturnValue('stage_1_warm');
     mockIdempotencyService.checkInvoice = vi.fn().mockResolvedValue({ skipped: false });
@@ -199,7 +203,7 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
   });
 
   it('should record failure in DLQ when single invoice processing fails', async () => {
-    mockInvoiceRepo.findById = vi.fn().mockResolvedValue({
+    const mockInvoiceData = {
       id: 'inv-1',
       tenantId: 'tenant-1',
       invoiceNo: 'INV-001',
@@ -208,7 +212,9 @@ describe('AgentService - DLQ Flow and Configurable Thresholds', () => {
       dueDate: '2026-07-01',
       contactEmail: 'client@example.com',
       followupCount: 0,
-    });
+    };
+    mockInvoiceRepo.findById = vi.fn().mockResolvedValue(mockInvoiceData);
+    mockInvoiceRepo.findByIdIncludingTrashed = vi.fn().mockResolvedValue(mockInvoiceData);
     mockTriageService.computeDaysOverdue = vi.fn().mockReturnValue(5);
     mockTriageService.assignTier = vi.fn().mockReturnValue('stage_1_warm');
     mockIdempotencyService.checkInvoice = vi.fn().mockResolvedValue({ skipped: false });

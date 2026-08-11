@@ -10,7 +10,7 @@ import { CommunicationService } from '../communication/communication.service.js'
 import { CommunicationRepository } from '../communication/communication.repository.js';
 import { PaymentService } from '../payment/payment.service.js';
 import { logger } from '../../shared/logger.js';
-import { NotFoundError, CommunicationError } from '../../shared/errors/index.js';
+import { NotFoundError, CommunicationError, ValidationError } from '../../shared/errors/index.js';
 import { mapErrorToDisplayMessage } from '../../shared/utils/error-mapper.js';
 import { PortalService } from '../portal/portal.service.js';
 import type { IntegrationService } from '../settings/integration.service.js';
@@ -428,9 +428,13 @@ export class AgentService {
   async triggerSingleInvoice(invoiceId: string, tenantId: string, toneOverride?: UrgencyTier, actorContext?: ActorContext): Promise<unknown> {
     await this.assertEmailConfigured(tenantId);
 
-    const invoice = await this.invoiceRepo.findById(invoiceId);
+    const invoice = await this.invoiceRepo.findByIdIncludingTrashed(invoiceId);
     if (!invoice || invoice.tenantId !== tenantId) {
       throw new NotFoundError('Invoice not found');
+    }
+
+    if (invoice.deletedAt) {
+      throw new ValidationError('Cannot trigger follow-up for a trashed invoice. Restore it first.');
     }
 
     const daysOverdue = this.triageService.computeDaysOverdue(invoice.dueDate);

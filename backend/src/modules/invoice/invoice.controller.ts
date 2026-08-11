@@ -382,7 +382,7 @@ export class InvoiceController {
       const tenantId = res.locals.tenantId as string;
       const id = req.params.id as string;
       
-      const invoice = await this.invoiceRepo.findById(id);
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
       if (!invoice || invoice.tenantId !== tenantId) {
         next(new NotFoundError('Invoice not found'));
         return;
@@ -467,9 +467,14 @@ export class InvoiceController {
       const data = updateInvoiceSchema.parse(req.body);
       const actor = this.getActorContext(req);
 
-      const invoice = await this.invoiceRepo.findById(id);
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
       if (!invoice || invoice.tenantId !== tenantId) {
         next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (invoice.deletedAt) {
+        next(new ValidationError('Cannot update a trashed invoice. Restore it first.'));
         return;
       }
 
@@ -529,9 +534,14 @@ export class InvoiceController {
       const { paymentStatus } = updateInvoiceStatusSchema.parse(req.body);
       const actor = this.getActorContext(req);
 
-      const invoice = await this.invoiceRepo.findById(id);
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
       if (!invoice || invoice.tenantId !== tenantId) {
         next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (invoice.deletedAt) {
+        next(new ValidationError('Cannot update status of a trashed invoice. Restore it first.'));
         return;
       }
 
@@ -585,9 +595,14 @@ export class InvoiceController {
         return;
       }
 
-      const invoice = await this.invoiceRepo.findById(id);
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
       if (!invoice || invoice.tenantId !== tenantId) {
         next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (invoice.deletedAt) {
+        next(new ValidationError('Cannot generate payment link for a trashed invoice. Restore it first.'));
         return;
       }
 
@@ -615,9 +630,14 @@ export class InvoiceController {
       const id = req.params.id as string;
       const actor = this.getActorContext(req);
 
-      const invoice = await this.invoiceRepo.findById(id);
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
       if (!invoice || invoice.tenantId !== tenantId) {
         next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (invoice.deletedAt) {
+        next(new ValidationError('Invoice is already in Trash'));
         return;
       }
 
@@ -762,9 +782,14 @@ export class InvoiceController {
       const tenantId = res.locals.tenantId as string;
       const id = req.params.id as string;
 
-      const invoice = await this.invoiceRepo.findById(id);
+      const invoice = await this.invoiceRepo.findByIdIncludingTrashed(id);
       if (!invoice || invoice.tenantId !== tenantId) {
         next(new NotFoundError('Invoice not found'));
+        return;
+      }
+
+      if (invoice.deletedAt) {
+        next(new ValidationError('Cannot generate portal link for a trashed invoice. Restore it first.'));
         return;
       }
 

@@ -1,8 +1,8 @@
-﻿import React from 'react';
+import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { screen, act, waitFor } from '../test-utils';
 import { renderWithProviders } from '../test-utils';
-import { TrashedInvoiceDetail } from '../../src/pages/TrashedInvoiceDetail';
+import { InvoiceDetail } from '../../src/pages/InvoiceDetail';
 import { invoiceService } from '../../src/services/invoice';
 import { eventService } from '../../src/services/event';
 import { communicationService } from '../../src/services/communication';
@@ -10,7 +10,7 @@ import { communicationService } from '../../src/services/communication';
 // Mock services
 vi.mock('../../src/services/invoice', () => ({
   invoiceService: {
-    getTrashedInvoice: vi.fn(),
+    getInvoice: vi.fn(),
     restoreInvoice: vi.fn(),
     hardDeleteInvoice: vi.fn(),
   },
@@ -39,7 +39,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
   };
 });
 
-describe('TrashedInvoiceDetail page', () => {
+describe('Trashed Invoice rendering in InvoiceDetail', () => {
   const mockInvoice = {
     id: 'inv-456',
     invoiceNo: 'INV-TRASH',
@@ -59,32 +59,51 @@ describe('TrashedInvoiceDetail page', () => {
     vi.clearAllMocks();
   });
 
-  it('renders trashed invoice details and trigger restore request', async () => {
-    vi.mocked(invoiceService.getTrashedInvoice).mockResolvedValue(mockInvoice);
+  it('renders trashed invoice details and triggers restore request', async () => {
+    vi.mocked(invoiceService.getInvoice).mockResolvedValue(mockInvoice);
     vi.mocked(eventService.getInvoiceTimeline).mockResolvedValue({ data: [], pagination: { total: 0 } } as any);
     vi.mocked(communicationService.getInvoiceCommunications).mockResolvedValue([]);
     vi.mocked(invoiceService.restoreInvoice).mockResolvedValue({} as any);
 
     renderWithProviders(
       <Routes>
-        <Route path="/invoices/:id/trashed" element={<TrashedInvoiceDetail />} />
+        <Route path="/invoices/:id" element={<InvoiceDetail />} />
       </Routes>,
-      { route: '/invoices/inv-456/trashed' }
+      { route: '/invoices/inv-456' }
     );
 
     await waitFor(() => {
       expect(screen.getByText('Trashed Client')).toBeInTheDocument();
       expect(screen.getByText('INV-TRASH')).toBeInTheDocument();
+      expect(screen.getByText('This invoice is in Trash')).toBeInTheDocument();
     });
 
-    const restoreBtn = screen.getByRole('button', { name: /Restore Invoice/i });
+    const restoreBtn = screen.getAllByRole('button', { name: /Restore Invoice/i })[0];
     await act(async () => {
       restoreBtn.click();
     });
 
     expect(invoiceService.restoreInvoice).toHaveBeenCalledWith('inv-456');
+  });
+
+  it('hides active controls like Trigger Follow-up, Generate Payment Link, and 3-dots menu on trashed invoices', async () => {
+    vi.mocked(invoiceService.getInvoice).mockResolvedValue(mockInvoice);
+    vi.mocked(eventService.getInvoiceTimeline).mockResolvedValue({ data: [], pagination: { total: 0 } } as any);
+    vi.mocked(communicationService.getInvoiceCommunications).mockResolvedValue([]);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/invoices/:id" element={<InvoiceDetail />} />
+      </Routes>,
+      { route: '/invoices/inv-456' }
+    );
+
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/invoices/inv-456');
+      expect(screen.getByText('This invoice is in Trash')).toBeInTheDocument();
     });
+
+    expect(screen.queryByRole('button', { name: /Trigger Follow-up/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Generate Payment Link/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /More options/i })).not.toBeInTheDocument();
   });
 });

@@ -13,6 +13,7 @@ import { usePaymentWarning } from "../hooks/usePaymentWarning";
 import { useAuth } from "../contexts/AuthContext";
 import { EditInvoiceModal } from "../components/invoices/EditInvoiceModal";
 import { Modal } from "../components/ui/Modal";
+import { ConfirmDestructiveModal } from "../components/common/ConfirmDestructiveModal";
 import { CommunicationList } from "../components/invoices/CommunicationList";
 import { getErrorMessage } from "../utils/error-utils";
 import type { InvoiceEvent } from "../types/api";
@@ -61,6 +62,7 @@ export function InvoiceDetail() {
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isPermanentDeleteModalOpen, setIsPermanentDeleteModalOpen] = useState(false);
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timeline' | 'emails' | 'payment-plan'>('timeline');
@@ -116,10 +118,11 @@ export function InvoiceDetail() {
     email: string | null;
   } | null>(null);
 
-  const { data: invoice, isLoading: isInvoiceLoading } = useQuery({
+  const { data: invoice, isLoading: isInvoiceLoading, error: invoiceError } = useQuery({
     queryKey: ["invoice", id],
     queryFn: () => invoiceService.getInvoice(id!),
     enabled: !!id,
+    retry: false,
   });
 
   const { data: installmentsResponse } = useQuery({
@@ -230,6 +233,35 @@ export function InvoiceDetail() {
     setIsDeleteModalOpen(true);
   };
 
+  const restoreMutation = useMutation({
+    mutationFn: () => invoiceService.restoreInvoice(id!),
+    onMutate: () => setError(null),
+    onError: (err: unknown) => {
+      setError(getErrorMessage(err));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", id] });
+      queryClient.invalidateQueries({ queryKey: ["invoice-timeline", id] });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-aging"] });
+    }
+  });
+
+  const permanentDeleteMutation = useMutation({
+    mutationFn: () => invoiceService.hardDeleteInvoice(id!),
+    onMutate: () => setError(null),
+    onError: (err: unknown) => {
+      setError(getErrorMessage(err));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-aging"] });
+      navigate('/invoices?status=trash');
+    }
+  });
+
   const generateLinkMutation = useMutation({
     mutationFn: () => invoiceService.generatePaymentLink(id!),
     onMutate: () => setError(null),
@@ -253,7 +285,7 @@ export function InvoiceDetail() {
     }
   });
 
-  if (isInvoiceLoading || !invoice) {
+  if (isInvoiceLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-[#5e6ad2] mb-3" />
@@ -261,6 +293,28 @@ export function InvoiceDetail() {
       </div>
     );
   }
+
+  if (invoiceError || !invoice) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-3 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-red-950/40 border border-red-900/50 flex items-center justify-center text-red-400">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-[#f7f8f8]">Invoice Not Found</h3>
+          <p className="text-xs text-[#8a8f98] mt-1">{invoiceError ? getErrorMessage(invoiceError) : "The requested invoice could not be found or has been permanently removed."}</p>
+        </div>
+        <Link
+          to="/invoices"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#13161c] border border-[#1e2025] hover:bg-[#1d212a] text-[#f7f8f8] text-xs font-semibold rounded-xl transition-all mt-2"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Invoices
+        </Link>
+      </div>
+    );
+  }
+
+  const isTrashed = Boolean(invoice.deletedAt);
 
   const renderEventIcon = (event: GroupedInvoiceEvent) => {
     const type = (event.actionType || event.eventType || '').toLowerCase();
@@ -836,8 +890,49 @@ export function InvoiceDetail() {
           </div>
         )}
 
+        {/* Trashed Invoice Alert Banner */}
+        {isTrashed && (
+          <div className="bg-amber-950/40 border border-amber-900/50 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-amber-300 text-xs">This invoice is in Trash</h4>
+                <p className="text-amber-200/80 text-xs mt-0.5">
+                  Moved on {new Date(invoice.deletedAt!).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}. Read-only and excluded from automated follow-ups.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {(user?.role === 'admin' || user?.role === 'manager') && (
+                <button
+                  onClick={async () => {
+                    await restoreMutation.mutateAsync();
+                  }}
+                  disabled={restoreMutation.isPending}
+                  className="px-3.5 py-1.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] border border-[#34343a] rounded-xl text-xs font-medium transition-all inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-[#27a644]" />
+                  {restoreMutation.isPending ? 'Restoring...' : 'Restore Invoice'}
+                </button>
+              )}
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => setIsPermanentDeleteModalOpen(true)}
+                  disabled={permanentDeleteMutation.isPending}
+                  className="px-3.5 py-1.5 bg-red-950/40 hover:bg-red-900/50 text-red-400 border border-red-900/50 rounded-xl text-xs font-medium transition-all inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete Permanently
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Manual Review DLQ Warning Banner */}
-        {invoice.needsManualReview && (
+        {!isTrashed && invoice.needsManualReview && (
           <div className="bg-amber-950/40 border border-amber-900/50 text-amber-300 rounded-xl p-4 flex items-start gap-3 shadow-none animate-in fade-in">
             <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -853,15 +948,22 @@ export function InvoiceDetail() {
         {/* TOP HEADER ROW: Breadcrumb, Title & 3-Dots Dropdown Menu */}
         <div className="flex items-center justify-between pb-3 border-b border-[#1e2025]/80">
           <div className="space-y-1">
-            <Link to="/invoices" className="inline-flex items-center text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
+            <Link to={isTrashed ? "/invoices?status=trash" : "/invoices"} className="inline-flex items-center text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
               Back to Invoices
             </Link>
-            <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">{invoice.invoiceNo}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">{invoice.invoiceNo}</h1>
+              {isTrashed && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-950/40 text-amber-300 border border-amber-900/50">
+                  Trashed
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* 3-Dots Action Dropdown */}
-          {user?.role !== 'viewer' && (
+          {/* 3-Dots Action Dropdown for Active Invoices */}
+          {!isTrashed && user?.role !== 'viewer' && (
             <div className="relative">
               <button
                 onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
@@ -1141,7 +1243,7 @@ export function InvoiceDetail() {
                     <p className="text-[11px] text-[#8a8f98] mt-0.5">Automated reminders and debtor messages for this invoice.</p>
                   </div>
 
-                  {user?.role !== 'viewer' && invoice.paymentStatus !== 'Paid' && (
+                  {user?.role !== 'viewer' && invoice.paymentStatus !== 'Paid' && !isTrashed && (
                     <button
                       onClick={handleTriggerFollowup}
                       disabled={agentMutation.isPending}
@@ -1368,7 +1470,7 @@ export function InvoiceDetail() {
                       {isCopied ? <Check className="w-3 h-3 text-[#27a644]" /> : <Copy className="w-3 h-3" />}
                     </button>
                   </div>
-                  {invoice.paymentStatus !== 'Paid' && user?.role !== 'viewer' && (
+                  {invoice.paymentStatus !== 'Paid' && user?.role !== 'viewer' && !isTrashed && (
                     <button
                       onClick={() => generateLinkMutation.mutate()}
                       disabled={generateLinkMutation.isPending}
@@ -1380,7 +1482,7 @@ export function InvoiceDetail() {
                   )}
                 </div>
               ) : (
-                invoice.paymentStatus !== 'Paid' && user?.role !== 'viewer' ? (
+                invoice.paymentStatus !== 'Paid' && user?.role !== 'viewer' && !isTrashed ? (
                   <button
                     onClick={() => generateLinkMutation.mutate()}
                     disabled={generateLinkMutation.isPending}
@@ -1393,7 +1495,7 @@ export function InvoiceDetail() {
               )}
             </div>
             {/* 3. Debtor Portal Section */}
-            {(user?.role === 'admin' || user?.role === 'manager') && (
+            {(user?.role === 'admin' || user?.role === 'manager') && !isTrashed && (
               <div className="space-y-3 text-xs pt-1">
                 <span className="text-[#8a8f98] font-medium block">Debtor Portal</span>
 
@@ -1487,6 +1589,19 @@ export function InvoiceDetail() {
           </div>
         </div>
       </Modal>
+
+      {isPermanentDeleteModalOpen && invoice && (
+        <ConfirmDestructiveModal
+          isOpen={isPermanentDeleteModalOpen}
+          onClose={() => setIsPermanentDeleteModalOpen(false)}
+          onConfirm={async () => {
+            await permanentDeleteMutation.mutateAsync();
+          }}
+          invoiceNo={invoice.invoiceNo}
+          clientName={invoice.clientName}
+          amountDisplay={formatCurrency(invoice.invoiceAmount)}
+        />
+      )}
     </div>
   );
 }

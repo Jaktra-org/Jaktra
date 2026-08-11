@@ -700,7 +700,7 @@ export function Invoices() {
                 activeData!.data.map((invoice) => (
                   <tr
                     key={invoice.id}
-                    onClick={() => navigate(`/invoices/${invoice.id}/trashed`)}
+                    onClick={() => navigate(`/invoices/${invoice.id}`)}
                     className="transition-colors hover:bg-amber-950/20 cursor-pointer opacity-80"
                   >
                     <td className="p-3.5 px-4 align-middle font-medium text-[#8a8f98]">
@@ -749,9 +749,9 @@ export function Invoices() {
                               await restoreMutation.mutateAsync(invoice.id);
                             }}
                             disabled={restoreMutation.isPending}
-                            className="inline-flex items-center justify-center rounded-lg text-xs font-medium transition-all border border-[#1e2025] bg-[#13161c]/80 hover:bg-[#1d212a] text-[#f7f8f8] h-7 px-2.5 gap-1"
+                            className="inline-flex items-center justify-center rounded-lg text-xs font-medium transition-all border border-[#1e2025] bg-[#13161c]/80 hover:bg-[#1d212a] text-[#f7f8f8] h-7 px-2.5 gap-1 whitespace-nowrap shrink-0 cursor-pointer"
                           >
-                            <RotateCcw className="h-3 w-3" />
+                            <RotateCcw className="h-3 w-3 shrink-0" />
                             Restore
                           </button>
                           {user?.role === 'admin' && (
@@ -760,10 +760,10 @@ export function Invoices() {
                                 setInvoiceToDelete(invoice);
                                 setIsConfirmDeleteModalOpen(true);
                               }}
-                              className="inline-flex items-center justify-center rounded-lg text-xs font-medium transition-all border border-red-900/50 bg-red-950/30 hover:bg-red-900/40 text-red-400 h-7 px-2.5 gap-1"
+                              className="inline-flex items-center justify-center rounded-lg text-xs font-medium transition-all border border-red-900/50 bg-red-950/30 hover:bg-red-900/40 text-red-400 h-7 px-2.5 gap-1 whitespace-nowrap shrink-0 cursor-pointer"
                             >
-                              <Trash2 className="h-3 w-3" />
-                              Delete permanently
+                              <Trash2 className="h-3 w-3 shrink-0" />
+                              Delete Permanently
                             </button>
                           )}
                         </div>

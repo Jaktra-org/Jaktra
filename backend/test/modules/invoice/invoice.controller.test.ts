@@ -166,7 +166,7 @@ describe('InvoiceController', () => {
   describe('getById', () => {
     it('returns invoice if it belongs to requesting tenant', async () => {
       const mockInvoice = { id: 'inv-123', tenantId: 'tenant-123', dueDate: new Date(), paymentStatus: 'Pending', contactEmail: 'c@example.com' };
-      vi.mocked(invoiceRepo.findById).mockResolvedValue(mockInvoice as any);
+      vi.mocked(invoiceRepo.findByIdIncludingTrashed).mockResolvedValue(mockInvoice as any);
       vi.mocked(paymentService.getLatestPaymentLink).mockResolvedValue({ paymentUrl: 'http://pay.me', status: 'active' } as any);
 
       const req = authReq({}, {}, { id: 'inv-123' });
@@ -184,7 +184,7 @@ describe('InvoiceController', () => {
 
     it('returns NotFoundError (404) if invoice belongs to a different tenant', async () => {
       const mockInvoice = { id: 'inv-123', tenantId: 'tenant-other', dueDate: new Date(), paymentStatus: 'Pending', contactEmail: 'c@example.com' };
-      vi.mocked(invoiceRepo.findById).mockResolvedValue(mockInvoice as any);
+      vi.mocked(invoiceRepo.findByIdIncludingTrashed).mockResolvedValue(mockInvoice as any);
 
       const req = authReq({}, {}, { id: 'inv-123' });
       const res = mockRes('tenant-123');
@@ -200,7 +200,7 @@ describe('InvoiceController', () => {
   describe('update', () => {
     it('cancels active payment links if invoiceAmount is updated', async () => {
       const mockInvoice = { id: 'inv-123', tenantId: 'tenant-123', invoiceAmount: '100' };
-      vi.mocked(invoiceRepo.findById).mockResolvedValue(mockInvoice as any);
+      vi.mocked(invoiceRepo.findByIdIncludingTrashed).mockResolvedValue(mockInvoice as any);
       vi.mocked(invoiceRepo.update).mockResolvedValue({ ...mockInvoice, invoiceAmount: '200' } as any);
 
       const req = authReq({ invoiceAmount: 200 }, {}, { id: 'inv-123' });
@@ -241,6 +241,62 @@ describe('InvoiceController', () => {
 
       expect(invoiceRepo.hardDelete).toHaveBeenCalledWith('inv-123', 'tenant-123', null);
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+  });
+
+  describe('trashed invoice API restrictions', () => {
+    it('blocks update on a trashed invoice', async () => {
+      const trashedInvoice = { id: 'inv-123', tenantId: 'tenant-123', deletedAt: new Date() };
+      vi.mocked(invoiceRepo.findByIdIncludingTrashed).mockResolvedValue(trashedInvoice as any);
+
+      const req = authReq({ invoiceAmount: 200 }, {}, { id: 'inv-123' });
+      const res = mockRes('tenant-123');
+      const next = vi.fn();
+
+      await controller.update(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(ValidationError));
+      expect(invoiceRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('blocks updateStatus on a trashed invoice', async () => {
+      const trashedInvoice = { id: 'inv-123', tenantId: 'tenant-123', deletedAt: new Date() };
+      vi.mocked(invoiceRepo.findByIdIncludingTrashed).mockResolvedValue(trashedInvoice as any);
+
+      const req = authReq({ paymentStatus: 'Paid' }, {}, { id: 'inv-123' });
+      const res = mockRes('tenant-123');
+      const next = vi.fn();
+
+      await controller.updateStatus(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(ValidationError));
+    });
+
+    it('blocks generatePaymentLink on a trashed invoice', async () => {
+      const trashedInvoice = { id: 'inv-123', tenantId: 'tenant-123', deletedAt: new Date() };
+      vi.mocked(invoiceRepo.findByIdIncludingTrashed).mockResolvedValue(trashedInvoice as any);
+
+      const req = authReq({}, {}, { id: 'inv-123' });
+      const res = mockRes('tenant-123');
+      const next = vi.fn();
+
+      await controller.generatePaymentLink(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(ValidationError));
+    });
+
+    it('blocks soft delete on an already trashed invoice', async () => {
+      const trashedInvoice = { id: 'inv-123', tenantId: 'tenant-123', deletedAt: new Date() };
+      vi.mocked(invoiceRepo.findByIdIncludingTrashed).mockResolvedValue(trashedInvoice as any);
+
+      const req = authReq({}, {}, { id: 'inv-123' });
+      const res = mockRes('tenant-123');
+      const next = vi.fn();
+
+      await controller.delete(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(ValidationError));
+      expect(invoiceRepo.softDelete).not.toHaveBeenCalled();
     });
   });
 });

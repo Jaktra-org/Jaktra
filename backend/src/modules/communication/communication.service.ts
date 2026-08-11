@@ -83,7 +83,7 @@ export class CommunicationService {
   ) { }
 
   async listByInvoice(invoiceId: string, tenantId: string): Promise<Awaited<ReturnType<CommunicationRepository['findByInvoiceId']>>> {
-    const invoice = await this.invoiceRepo.findById(invoiceId);
+    const invoice = await this.invoiceRepo.findByIdIncludingTrashed(invoiceId);
     if (!invoice || invoice.tenantId !== tenantId) {
       throw new CommunicationError('Invoice not found', 404);
     }
