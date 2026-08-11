@@ -15,6 +15,7 @@ export function mapErrorToDisplayMessage(error: unknown): string {
     errMsg.includes('Inbound Parse') ||
     errMsg.includes('SendGrid API') ||
     errMsg.includes('SendGrid Key') ||
+    errMsg.includes('SendGrid') ||
     errMsg.includes('configured')
   ) {
     return errMsg;

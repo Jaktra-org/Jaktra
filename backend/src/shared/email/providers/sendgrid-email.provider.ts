@@ -42,10 +42,26 @@ export class SendGridEmailProvider implements EmailProvider {
         providerMessageId,
       };
     } catch (error: unknown) {
-      logger.error(`[LIVE] Failed to send email to ${message.to} via SendGrid: ${(error as Error).message}`);
+      let detailMsg = error instanceof Error ? error.message : String(error);
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const resp = (error as { response?: { body?: { errors?: Array<{ message?: string }> } } }).response;
+        if (resp?.body?.errors?.[0]?.message) {
+          detailMsg = resp.body.errors[0].message;
+        }
+      }
+
+      const lower = detailMsg.toLowerCase();
+      let formattedError = detailMsg;
+      if (lower.includes('authorization grant') || lower.includes('unauthorized') || lower.includes('invalid api key')) {
+        formattedError = 'SendGrid API Key is invalid or unauthorized. Please verify your SendGrid API key in settings.';
+      } else if (lower.includes('sender identity') || lower.includes('from address')) {
+        formattedError = 'Sender email address is not verified in your SendGrid account.';
+      }
+
+      logger.error(`[LIVE] Failed to send email to ${message.to} via SendGrid: ${detailMsg}`);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: formattedError,
       };
     }
   }
