@@ -279,8 +279,13 @@ export class InvoiceController {
         if (isActionable) {
           urgencyTier = triageService.assignTier(daysOverdue);
         }
+        let effectivePaymentStatus = inv.paymentStatus;
+        if (inv.paymentStatus === 'Pending' && daysOverdue > 0) {
+          effectivePaymentStatus = 'Overdue';
+        }
         return { 
           ...inv, 
+          paymentStatus: effectivePaymentStatus,
           dueDate: targetDueDate,
           originalDueDate: inv.dueDate,
           activeInstallmentNumber: activeInstallment?.installmentNumber,
@@ -433,8 +438,14 @@ export class InvoiceController {
         paymentWarning = 'Failed to fetch latest payment link status';
       }
 
+      let effectivePaymentStatus = invoice.paymentStatus;
+      if (invoice.paymentStatus === 'Pending' && daysOverdue > 0) {
+        effectivePaymentStatus = 'Overdue';
+      }
+
       res.status(200).json({ 
         ...invoice, 
+        paymentStatus: effectivePaymentStatus,
         daysOverdue, 
         urgencyTier, 
         paymentLink: paymentLink ? {
