@@ -48,6 +48,7 @@ const MultiStepForm = React.forwardRef<HTMLDivElement, MultiStepFormProps>(
     size,
     currentStep,
     totalSteps,
+    completedStepsCount,
     title,
     description,
     onBack,
@@ -63,8 +64,8 @@ const MultiStepForm = React.forwardRef<HTMLDivElement, MultiStepFormProps>(
     children,
     ...props
   }, ref) => {
-    const completed = Math.max(0, currentStep - 1);
-    const progress = Math.round((completed / totalSteps) * 100);
+    const completed = completedStepsCount !== undefined ? completedStepsCount : Math.max(0, currentStep - 1);
+    const progress = Math.min(100, Math.round((completed / totalSteps) * 100));
 
     const variants = {
       hidden: { opacity: 0, x: 50 },

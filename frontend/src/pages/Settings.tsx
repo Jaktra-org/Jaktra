@@ -1456,6 +1456,15 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
     }
   };
 
+  const getCompletedStepsCount = () => {
+    if (!sendgridProgress) return Math.max(0, wizardStep - 1);
+    let count = 0;
+    if (sendgridProgress.step1ApiKey?.isDone) count++;
+    if (sendgridProgress.step2SenderAndMode?.isDone) count++;
+    if (sendgridProgress.step3InboundWebhook?.isDone) count++;
+    return count;
+  };
+
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#010102]/80 backdrop-blur-sm p-4">
@@ -1463,6 +1472,7 @@ function SendGridSetupModal({ isOpen, onClose, sendgridProgress, refetch }: Send
           size="lg"
           currentStep={wizardStep}
           totalSteps={3}
+          completedStepsCount={getCompletedStepsCount()}
           title={getStepTitle()}
           description={getStepDescription()}
           onBack={() => {
