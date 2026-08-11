@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Modal } from "../ui/Modal";
 import { ToneSelector } from "../agent/ToneSelector";
-import { Loader2, Zap, AlertCircle } from "lucide-react";
 import type { Invoice } from "../../types/api";
 
 interface TriggerFollowupModalProps {
@@ -87,40 +86,44 @@ export function TriggerFollowupModal({
     >
       <form onSubmit={handleSubmit} className="space-y-5 text-[#f7f8f8]">
         {/* Recommended Tone Indicator */}
-        <div className="rounded-lg p-3.5 bg-[#010102] border border-[#23252a]">
-          <div className="flex items-start space-x-3">
+        <div className="rounded-xl p-4 bg-[#010102] border border-[#23252a]">
+          <div className="space-y-2">
             {isRecommendedValid ? (
               <>
-                <Zap className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-xs font-semibold text-[#f7f8f8]">Triage Engine Recommendation</h4>
-                  <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                    Based on current payment status and invoice age, the AI suggests the following tone:
-                  </p>
-                  <div className="mt-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#18191c] text-[#f7f8f8] border border-[#23252a]">
-                      {toneLabels[recommendedTone!]}
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[#f7f8f8]">Triage Engine Recommendation</h4>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#5e6ad2]/20 text-[#828fff] border border-[#5e6ad2]/40 uppercase tracking-wider">
+                    AI Recommendation
+                  </span>
+                </div>
+                <p className="text-xs text-[#8a8f98]">
+                  Based on current payment status and invoice age, the AI suggests the following tone:
+                </p>
+                <div className="pt-1">
+                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold bg-[#18191c] text-[#f7f8f8] border border-[#34343a]">
+                    {toneLabels[recommendedTone!]}
+                  </span>
                 </div>
               </>
             ) : (
               <>
-                <AlertCircle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-xs font-semibold text-[#f7f8f8]">No Recommended Tone</h4>
-                  <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                  ({getNoRecommendationReason()}).
-                  </p>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[#f7f8f8]">No Recommended Tone</h4>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 uppercase tracking-wider">
+                    Notice
+                  </span>
                 </div>
+                <p className="text-xs text-[#8a8f98] leading-relaxed">
+                  ({getNoRecommendationReason()}).
+                </p>
               </>
             )}
           </div>
         </div>
 
         {/* Tone Selector */}
-        <div className="space-y-1.5">
-          <label htmlFor="modal-tone-select" className="text-xs font-medium text-[#8a8f98] block">
+        <div className="space-y-1.5 pb-2">
+          <label htmlFor="modal-tone-select" className="text-xs font-bold text-[#f7f8f8] block">
             Communication Tone
           </label>
           <ToneSelector
@@ -129,10 +132,11 @@ export function TriggerFollowupModal({
             onChange={setSelectedTone}
             includeAuto={false}
             placeholder="Select Tone"
-            className="w-full h-9 border-[#23252a] bg-[#010102] text-[#f7f8f8] focus:ring-1 focus:ring-[#555761]"
+            placement="top"
+            className="w-full"
           />
           {!isRecommendedValid && !selectedTone && (
-            <p className="text-xs text-red-400 font-medium mt-1">
+            <p className="text-xs text-red-400 font-medium pt-1">
               Please select a tone before proceeding.
             </p>
           )}
@@ -143,26 +147,19 @@ export function TriggerFollowupModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] bg-transparent border border-[#23252a] rounded-xl hover:bg-[#18191c] transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-[#8a8f98] hover:text-[#f7f8f8] bg-transparent border border-[#23252a] rounded-xl hover:bg-[#18191c] transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isPending || !selectedTone}
-            className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-semibold text-[#010102] bg-[#f7f8f8] rounded-xl hover:bg-[#e1e4e8] active:bg-[#d0d6e0] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center justify-center px-4 py-2 text-xs font-bold text-[#010102] bg-[#f7f8f8] rounded-xl hover:bg-[#e1e4e8] active:bg-[#d0d6e0] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-xs"
           >
-            {isPending ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Sending...
-              </>
-            ) : (
-              "Send Follow-up"
-            )}
+            {isPending ? "Sending..." : "Send Follow-up"}
           </button>
         </div>
       </form>
     </Modal>
   );
-
 }

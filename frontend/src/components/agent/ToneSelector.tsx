@@ -8,6 +8,7 @@ export interface ToneSelectorProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  placement?: 'bottom' | 'top';
 }
 
 export function ToneSelector({
@@ -17,6 +18,7 @@ export function ToneSelector({
   placeholder,
   className,
   disabled = false,
+  placement = 'bottom',
 }: ToneSelectorProps) {
   const options = [
     ...(includeAuto ? [{ label: "Auto (Triage Engine)", value: "" }] : []),
@@ -34,6 +36,7 @@ export function ToneSelector({
       placeholder={placeholder}
       className={className}
       disabled={disabled}
+      placement={placement}
     />
   );
 }
