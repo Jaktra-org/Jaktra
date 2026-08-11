@@ -4,6 +4,10 @@ export function getErrorMessage(error: unknown): string {
   let message: string;
   
   if (axios.isAxiosError(error)) {
+    if (error.response?.status === 429) {
+      return 'Too many requests. Please wait a minute before trying again.';
+    }
+
     const data = error.response?.data;
     if (data?.error?.message) {
       message = data.error.message;
@@ -46,6 +50,12 @@ export function getErrorMessage(error: unknown): string {
   }
 
   const lowerMsg = sanitizedMessage.toLowerCase();
+  if (lowerMsg.includes('too many requests') || lowerMsg.includes('rate limit') || lowerMsg.includes('429')) {
+    return 'Too many requests. Please wait a minute before trying again.';
+  }
+  if (lowerMsg.includes('invalid credentials') || lowerMsg.includes('invalid email or password')) {
+    return 'Invalid email or password';
+  }
   if (
     lowerMsg.includes('sender email') ||
     lowerMsg.includes('sender identity') ||
@@ -70,7 +80,7 @@ export function getErrorMessage(error: unknown): string {
   if (lowerMsg.includes('circuit breaker is open') || lowerMsg.includes('circuit breaker open') || lowerMsg.includes('circuitbreaker')) {
     return 'AI service temporarily unavailable';
   }
-  if (lowerMsg.includes('validation failed') || lowerMsg.includes('invalid credentials') || lowerMsg.includes('bad request')) {
+  if (lowerMsg.includes('validation failed') || lowerMsg.includes('bad request')) {
     return sanitizedMessage;
   }
   if (lowerMsg.includes('smtp') || lowerMsg.includes('email sending failed')) {
@@ -85,7 +95,7 @@ export function getErrorMessage(error: unknown): string {
   if (lowerMsg.includes('etimedout') || lowerMsg.includes('timeout')) {
     return 'Request timed out';
   }
-  if (lowerMsg.includes('jwt') || lowerMsg.includes('token') || lowerMsg.includes('unauthorized') || lowerMsg.includes('auth')) {
+  if (lowerMsg.includes('jwt') || lowerMsg.includes('token') || lowerMsg.includes('unauthorized')) {
     return 'Authentication failed';
   }
   if (lowerMsg.includes('validation') || lowerMsg.includes('zod')) {
