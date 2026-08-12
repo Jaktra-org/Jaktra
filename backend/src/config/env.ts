@@ -16,6 +16,7 @@ const schema = z.object({
     .transform((val) => val.split(',').map((s) => s.trim())),
 
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+  PUBLIC_BASE_URL: z.string().url().optional(),
 
   INBOUND_PARSE_DOMAIN: z.string().optional(),
 
