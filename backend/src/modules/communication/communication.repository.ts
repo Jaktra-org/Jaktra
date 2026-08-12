@@ -134,7 +134,5 @@ export class CommunicationRepository {
     return result!;
   }
 
-  async setDefaultEmailProvider(_tenantId: string, _provider: 'sendgrid' | 'smtp' | null): Promise<void> {
-    // Legacy stub — provider activation is managed via email_integrations.is_active
-  }
 }
+
