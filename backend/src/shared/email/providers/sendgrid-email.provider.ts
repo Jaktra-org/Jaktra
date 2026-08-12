@@ -1,4 +1,5 @@
 import sgMail from '@sendgrid/mail';
+import { ValidationError } from '../../errors/index.js';
 import { logger } from '../../logger.js';
 import type { EmailProvider, EmailMessage, EmailSendResult } from '../index.js';
 
@@ -13,7 +14,20 @@ export class SendGridEmailProvider implements EmailProvider {
     sgMail.setApiKey(this.config.apiKey);
   }
 
+  private checkHeaderInjection(value: string | undefined): void {
+    if (!value) return;
+    if (value.includes('\r') || value.includes('\n')) {
+      throw new ValidationError('Header injection detected. CR/LF characters are not allowed.');
+    }
+  }
+
   async send(message: EmailMessage): Promise<EmailSendResult> {
+    this.checkHeaderInjection(message.to);
+    this.checkHeaderInjection(message.from.name);
+    this.checkHeaderInjection(message.from.email);
+    if (message.replyTo) this.checkHeaderInjection(message.replyTo);
+    this.checkHeaderInjection(message.subject);
+
     const msg = {
       to: message.to,
       from: message.from,
