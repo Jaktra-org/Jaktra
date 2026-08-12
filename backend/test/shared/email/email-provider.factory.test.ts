@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createEmailProvider } from '../../../src/shared/email/email-provider.factory.js';
 import { SmtpEmailProvider } from '../../../src/shared/email/providers/smtp-email.provider.js';
 import { SendGridEmailProvider } from '../../../src/shared/email/providers/sendgrid-email.provider.js';
+import { ResendEmailProvider } from '../../../src/shared/email/providers/resend-email.provider.js';
 
 describe('createEmailProvider Factory', () => {
   it('should instantiate and return SmtpEmailProvider for smtp config kind', () => {
@@ -26,6 +27,16 @@ describe('createEmailProvider Factory', () => {
 
     expect(provider).toBeInstanceOf(SendGridEmailProvider);
     expect(provider.name).toBe('sendgrid');
+  });
+
+  it('should instantiate and return ResendEmailProvider for resend config kind', () => {
+    const provider = createEmailProvider({
+      kind: 'resend',
+      apiKey: 're_test_key',
+    });
+
+    expect(provider).toBeInstanceOf(ResendEmailProvider);
+    expect(provider.name).toBe('resend');
   });
 
   it('should throw an error for unsupported kinds', () => {
