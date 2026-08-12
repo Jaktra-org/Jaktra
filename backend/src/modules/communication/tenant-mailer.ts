@@ -12,31 +12,20 @@ import type { DlqRepository } from '../dlq/dlq.repository.js';
 
 export interface TenantEmailConfigResolver {
   resolve(tenantId: string): Promise<ResolvedEmailConfig>;
-  handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp', error: Error): Promise<void>;
+  handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp' | 'resend', error: Error): Promise<void>;
 }
 
 export class DbTenantEmailConfigResolver implements TenantEmailConfigResolver {
   constructor(
     private readonly integrationService: IntegrationService,
-    private readonly communicationRepo: CommunicationRepository
   ) {}
 
   async resolve(tenantId: string): Promise<ResolvedEmailConfig> {
-    let active: { base: { overallStatus: string; isActive: boolean; provider: 'sendgrid' | 'smtp' } } | null = null;
-    if (this.integrationService && typeof this.integrationService.getActiveEmailIntegration === 'function') {
-      active = await this.integrationService.getActiveEmailIntegration(tenantId);
-    }
+    const active = await this.integrationService.getActiveEmailIntegration(tenantId);
 
-    let defaultProvider: 'sendgrid' | 'smtp' | null = null;
-    if (active && active.base.overallStatus === 'active' && active.base.isActive) {
-      defaultProvider = active.base.provider;
-    } else if (this.communicationRepo && typeof this.communicationRepo.getSettings === 'function') {
-      const settings = await this.communicationRepo.getSettings(tenantId);
-      if (!settings) {
-        throw new CommunicationError('Communication settings not configured for this tenant', 400);
-      }
-      defaultProvider = (settings as { defaultEmailProvider?: 'sendgrid' | 'smtp' | null })?.defaultEmailProvider || null;
-    }
+    const defaultProvider = (active?.base.overallStatus === 'active' && active.base.isActive)
+      ? active.base.provider
+      : null;
 
     if (!defaultProvider) {
       throw new CommunicationError('EMAIL_PROVIDER_NOT_CONFIGURED', 400);
@@ -55,12 +44,15 @@ export class DbTenantEmailConfigResolver implements TenantEmailConfigResolver {
         password: smtpConfig.password,
         secure: smtpConfig.securityMode === 'implicit_tls',
       };
+    } else if (defaultProvider === 'resend') {
+      const apiKey = await this.integrationService.getDecryptedResendKey(tenantId);
+      return { kind: 'resend', apiKey };
     } else {
       throw new CommunicationError(`Unsupported active email provider`, 400);
     }
   }
 
-  async handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp', error: Error): Promise<void> {
+  async handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp' | 'resend', error: Error): Promise<void> {
     await this.integrationService.handleDeliveryError(tenantId, provider, error);
   }
 }
@@ -84,16 +76,12 @@ export class TenantMailer {
     message: EmailMessage,
     options?: { invoiceId?: string }
   ): Promise<EmailSendResult> {
-    let defaultProvider: 'sendgrid' | 'smtp' | undefined;
+    let defaultProvider: 'sendgrid' | 'smtp' | 'resend' | undefined;
     if (this.integrationService && typeof this.integrationService.getActiveEmailIntegration === 'function') {
       const active = await this.integrationService.getActiveEmailIntegration(tenantId);
       if (active && active.base.overallStatus === 'active' && active.base.isActive) {
         defaultProvider = active.base.provider;
       }
-    }
-    if (!defaultProvider && this.communicationRepo && typeof this.communicationRepo.getSettings === 'function') {
-      const settings = await this.communicationRepo.getSettings(tenantId);
-      defaultProvider = ((settings as { defaultEmailProvider?: 'sendgrid' | 'smtp' })?.defaultEmailProvider as 'sendgrid' | 'smtp' | undefined) || 'sendgrid';
     }
 
     try {
@@ -147,9 +135,28 @@ export class TenantMailer {
       const username = smtpConfig.username;
       const password = smtpConfig.password;
 
-      const socket = tls.connect(port, host, { rejectUnauthorized: false }, () => {
-        logger.debug(`[IMAP] Connected to ${host}:${port} for bounce check`);
-      });
+      let settled = false;
+      const safeResolve = (val: boolean): void => {
+        if (!settled) {
+          settled = true;
+          resolve(val);
+        }
+      };
+      const safeReject = (err: Error): void => {
+        if (!settled) {
+          settled = true;
+          reject(err);
+        }
+      };
+
+      const socket = tls.connect(
+        port,
+        host,
+        { rejectUnauthorized: true },
+        () => {
+          logger.debug(`[IMAP] Connected to ${host}:${port} for bounce check`);
+        }
+      );
 
       socket.setTimeout(10000); // 10s socket timeout
 
@@ -181,7 +188,7 @@ export class TenantMailer {
               sendCmd('A2', 'SELECT INBOX');
             } else {
               socket.destroy();
-              reject(new Error(`IMAP Login failed: ${line}`));
+              safeReject(new Error(`IMAP Login failed: ${line}`));
               return;
             }
           } else if (commandStep === 2 && line.startsWith('A2 ')) {
@@ -190,7 +197,7 @@ export class TenantMailer {
               sendCmd('A3', `SEARCH FROM "mailer-daemon" TEXT "${recipient}"`);
             } else {
               socket.destroy();
-              reject(new Error(`IMAP SELECT INBOX failed: ${line}`));
+              safeReject(new Error(`IMAP SELECT INBOX failed: ${line}`));
               return;
             }
           } else if (commandStep === 3) {
@@ -205,7 +212,7 @@ export class TenantMailer {
             }
           } else if (commandStep === 4 && line.startsWith('A4 ')) {
             socket.destroy();
-            resolve(foundBounce);
+            safeResolve(foundBounce);
             return;
           }
         }
@@ -213,16 +220,16 @@ export class TenantMailer {
 
       socket.on('timeout', () => {
         socket.destroy();
-        reject(new Error('IMAP connection timed out'));
+        safeReject(new Error('IMAP connection timed out'));
       });
 
       socket.on('error', (err) => {
         socket.destroy();
-        reject(err);
+        safeReject(err);
       });
 
       socket.on('close', () => {
-        resolve(foundBounce);
+        safeResolve(foundBounce);
       });
     });
   }
