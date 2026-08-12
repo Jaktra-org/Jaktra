@@ -1,14 +1,20 @@
 import crypto from 'crypto';
+import * as dns from 'dns/promises';
 import { z } from 'zod';
 import type { CommunicationRepository } from './communication.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
 import type { Communication } from '../../db/index.js';
 import { CommunicationError } from '../../shared/errors/index.js';
-import * as dns from 'dns/promises';
 import { logger } from '../../shared/logger.js';
 import type { DlqRepository } from '../dlq/dlq.repository.js';
 import { config } from '../../config/index.js';
 import type { PortalService } from '../portal/portal.service.js';
+import type { EventService } from '../event/event.service.js';
+import type { ActionType } from '../event/event.action-types.js';
+import { TenantMailer } from './tenant-mailer.js';
+import type { EmailMessage } from '../../shared/email/index.js';
+import type { IntegrationService } from '../settings/integration.service.js';
+import type { AimlService } from '../agent/aiml.service.js';
 
 export const createCommunicationSchema = z.object({
   invoiceId: z.string().uuid(),
@@ -21,11 +27,6 @@ export const createCommunicationSchema = z.object({
 });
 
 export type CreateCommunicationInput = z.infer<typeof createCommunicationSchema>;
-
-import type { EventService } from '../event/event.service.js';
-import type { ActionType } from '../event/event.action-types.js';
-import { TenantMailer } from './tenant-mailer.js';
-import type { EmailMessage } from '../../shared/email/index.js';
 
 export interface SendCommunicationOptions {
   tenantId: string;
@@ -66,9 +67,6 @@ export function extractPlainTextFromHtml(html: string): string {
     .filter(Boolean)
     .join('\n');
 }
-
-import type { IntegrationService } from '../settings/integration.service.js';
-import type { AimlService } from '../agent/aiml.service.js';
 
 export class CommunicationService {
   constructor(
@@ -205,7 +203,7 @@ export class CommunicationService {
 
     await this.validateRecipientEmail(to);
 
-    let activeIntegration: { base: { overallStatus: string; isActive: boolean; senderName: string | null; senderEmail: string | null; replyTo: string | null; provider: 'sendgrid' | 'smtp' }; detail: Record<string, unknown> | null } | null = null;
+    let activeIntegration: { base: { overallStatus: string; isActive: boolean; senderName: string | null; senderEmail: string | null; replyTo: string | null; provider: 'sendgrid' | 'smtp' | 'resend' }; detail: Record<string, unknown> | null } | null = null;
     if (this.integrationService && typeof this.integrationService.getActiveEmailIntegration === 'function') {
       activeIntegration = await this.integrationService.getActiveEmailIntegration(tenantId);
       if (activeIntegration && (activeIntegration.base.overallStatus !== 'active' || !activeIntegration.base.isActive)) {
@@ -216,7 +214,7 @@ export class CommunicationService {
     let senderName = 'Finance Team';
     let senderEmail = '';
     let replyTo: string | null = null;
-    let provider: 'sendgrid' | 'smtp' = 'sendgrid';
+    let provider: 'sendgrid' | 'smtp' | 'resend' = 'sendgrid';
     let detail: Record<string, unknown> | null = null;
 
     if (activeIntegration) {
@@ -238,8 +236,8 @@ export class CommunicationService {
 
     let customReplyTo: string | undefined;
 
-    if (provider === 'sendgrid' && detail && 'replyMode' in detail) {
-      const sgDetail = detail as {
+    if ((provider === 'sendgrid' || provider === 'resend') && detail && 'replyMode' in detail) {
+      const modeDetail = detail as {
         replyMode: 'real_mailbox' | 'webhook_only';
         inboundDomain: string | null;
         inboundParseVerified: boolean;
@@ -247,11 +245,11 @@ export class CommunicationService {
         replyMailboxEmail: string | null;
       };
 
-      const replyMode = sgDetail.replyMode || 'webhook_only';
+      const replyMode = modeDetail.replyMode || 'webhook_only';
 
       if (replyMode === 'webhook_only') {
-        const replyDomain = (sgDetail.inboundDomain || config.INBOUND_PARSE_DOMAIN || '').trim().toLowerCase();
-        const isVerified = sgDetail.inboundParseVerified || (process.env.NODE_ENV === 'test' && !!replyDomain);
+        const replyDomain = (modeDetail.inboundDomain || config.INBOUND_PARSE_DOMAIN || '').trim().toLowerCase();
+        const isVerified = modeDetail.inboundParseVerified || (process.env.NODE_ENV === 'test' && !!replyDomain);
 
         if (!isVerified || !replyDomain) {
           throw new CommunicationError(
@@ -268,15 +266,15 @@ export class CommunicationService {
         });
         customReplyTo = `r_${rawToken}@${replyDomain}`;
       } else if (replyMode === 'real_mailbox') {
-        if (!sgDetail.replyMailboxVerified || !sgDetail.replyMailboxEmail) {
+        if (!modeDetail.replyMailboxVerified || !modeDetail.replyMailboxEmail) {
           throw new CommunicationError(
             'Real Mailbox address is not verified. Please verify your mailbox OTP in Settings before sending emails.',
             400
           );
         }
 
-        const replyDomain = (sgDetail.inboundDomain || config.INBOUND_PARSE_DOMAIN || '').trim().toLowerCase();
-        const isVerified = sgDetail.inboundParseVerified || (process.env.NODE_ENV === 'test' && !!replyDomain);
+        const replyDomain = (modeDetail.inboundDomain || config.INBOUND_PARSE_DOMAIN || '').trim().toLowerCase();
+        const isVerified = modeDetail.inboundParseVerified || (process.env.NODE_ENV === 'test' && !!replyDomain);
 
         if (isVerified && replyDomain) {
           const rawToken = crypto.randomBytes(24).toString('hex');
@@ -287,7 +285,7 @@ export class CommunicationService {
           });
           customReplyTo = `r_${rawToken}@${replyDomain}`;
         } else {
-          customReplyTo = replyTo || sgDetail.replyMailboxEmail || senderEmail;
+          customReplyTo = replyTo || modeDetail.replyMailboxEmail || senderEmail;
         }
       }
     } else {
@@ -381,7 +379,7 @@ export class CommunicationService {
 
     if (this.integrationService) {
       try {
-        const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId, 'sendgrid');
+        const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId);
         senderName = senderConfig.senderName || senderName;
         senderEmail = senderConfig.senderEmail || '';
       } catch (err) {
@@ -390,19 +388,22 @@ export class CommunicationService {
     }
 
     if (!senderEmail) {
-      senderEmail = 'noreply@jaktra.site';
+      senderEmail = process.env.PLATFORM_FROM_EMAIL || 'no-reply@jaktra.site';
     }
+
+    const escapedFrom = from.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const escapedSubject = subject.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
     const forwardHtml = html
       ? `<div style="background-color: #f8fafc; padding: 12px; border-left: 4px solid #3b82f6; margin-bottom: 16px; font-family: sans-serif;">
            <strong>Forwarded Customer Reply</strong><br/>
-           <strong>From:</strong> ${from}<br/>
-           <strong>Subject:</strong> ${subject}
+           <strong>From:</strong> ${escapedFrom}<br/>
+           <strong>Subject:</strong> ${escapedSubject}
          </div>${html}`
       : `<div style="background-color: #f8fafc; padding: 12px; border-left: 4px solid #3b82f6; margin-bottom: 16px; font-family: sans-serif;">
            <strong>Forwarded Customer Reply</strong><br/>
-           <strong>From:</strong> ${from}<br/>
-           <strong>Subject:</strong> ${subject}
+           <strong>From:</strong> ${escapedFrom}<br/>
+           <strong>Subject:</strong> ${escapedSubject}
          </div><pre style="font-family: inherit;">${text || ''}</pre>`;
 
     const message: EmailMessage = {
@@ -426,7 +427,5 @@ export class CommunicationService {
     return await this.communicationRepo.getSettings(tenantId);
   }
 
-  async setDefaultEmailProvider(tenantId: string, provider: 'sendgrid' | 'smtp' | null): Promise<void> {
-    await this.communicationRepo.setDefaultEmailProvider(tenantId, provider);
-  }
 }
+
