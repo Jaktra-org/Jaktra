@@ -21,4 +21,6 @@ export interface EmailProvider {
 
 export type ResolvedEmailConfig =
   | { kind: 'smtp'; host: string; port: number; user: string; password: string; secure: boolean }
-  | { kind: 'sendgrid'; apiKey: string };
+  | { kind: 'sendgrid'; apiKey: string }
+  | { kind: 'resend'; apiKey: string };
+
