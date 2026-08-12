@@ -88,4 +88,60 @@ describe('PlatformMailer', () => {
     expect(result.success).toBe(true);
     expect(result.providerMessageId).toBe('p-111');
   });
+
+  describe('EnvPlatformEmailConfigResolver', () => {
+    const originalEnv = { ...process.env };
+
+    beforeEach(() => {
+      process.env = { ...originalEnv };
+    });
+
+    afterEach(() => {
+      process.env = { ...originalEnv };
+    });
+
+    it('resolves Resend platform email config from env without requiring webhooks', async () => {
+      const { EnvPlatformEmailConfigResolver } = await import('../../../src/modules/platform-mail/platform-mailer.js');
+      process.env.PLATFORM_EMAIL_PROVIDER = 'resend';
+      process.env.PLATFORM_RESEND_API_KEY = 're_system_api_key_123';
+      process.env.PLATFORM_FROM_EMAIL = 'auth@jaktra.site';
+      process.env.PLATFORM_FROM_NAME = 'Jaktra System';
+
+      const resolver = new EnvPlatformEmailConfigResolver();
+      const config = await resolver.resolve();
+      const sender = await resolver.resolveSender();
+
+      expect(config).toEqual({
+        kind: 'resend',
+        apiKey: 're_system_api_key_123',
+      });
+      expect(sender).toEqual({
+        fromEmail: 'auth@jaktra.site',
+        fromName: 'Jaktra System',
+      });
+    });
+
+    it('throws ValidationError if PLATFORM_RESEND_API_KEY is missing when provider is resend', async () => {
+      const { EnvPlatformEmailConfigResolver } = await import('../../../src/modules/platform-mail/platform-mailer.js');
+      process.env.PLATFORM_EMAIL_PROVIDER = 'resend';
+      delete process.env.PLATFORM_RESEND_API_KEY;
+
+      const resolver = new EnvPlatformEmailConfigResolver();
+      await expect(resolver.resolve()).rejects.toThrow('PLATFORM_RESEND_API_KEY must be configured');
+    });
+
+    it('resolves SendGrid platform email config from env', async () => {
+      const { EnvPlatformEmailConfigResolver } = await import('../../../src/modules/platform-mail/platform-mailer.js');
+      process.env.PLATFORM_EMAIL_PROVIDER = 'sendgrid';
+      process.env.PLATFORM_SENDGRID_API_KEY = 'SG.system_sendgrid_key';
+
+      const resolver = new EnvPlatformEmailConfigResolver();
+      const config = await resolver.resolve();
+
+      expect(config).toEqual({
+        kind: 'sendgrid',
+        apiKey: 'SG.system_sendgrid_key',
+      });
+    });
+  });
 });

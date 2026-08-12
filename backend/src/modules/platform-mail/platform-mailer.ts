@@ -52,6 +52,15 @@ export class EnvPlatformEmailConfigResolver implements PlatformEmailConfigResolv
         kind: 'sendgrid',
         apiKey,
       };
+    } else if (provider === 'resend') {
+      const apiKey = process.env.PLATFORM_RESEND_API_KEY;
+      if (!apiKey) {
+        throw new ValidationError('PLATFORM_RESEND_API_KEY must be configured');
+      }
+      return {
+        kind: 'resend',
+        apiKey,
+      };
     } else {
       throw new ValidationError(`Unsupported platform email provider: ${provider}`);
     }
@@ -62,38 +71,24 @@ export class PlatformMailer {
   constructor(private readonly configResolver: PlatformEmailConfigResolver) {}
 
   private async getProvider(): Promise<EmailProvider | null> {
-    try {
-      const config = await this.configResolver.resolve();
-      return createEmailProvider(config);
-    } catch (error: unknown) {
-      throw error;
-    }
+    const config = await this.configResolver.resolve();
+    return createEmailProvider(config);
   }
 
   private async getSender(): Promise<{ fromEmail: string; fromName: string }> {
     return this.configResolver.resolveSender();
   }
 
-  async sendTeamInviteEmail(to: string, inviteLink: string): Promise<EmailSendResult> {
+  private async sendMail(
+    buildMessage: (sender: { fromEmail: string; fromName: string }) => EmailMessage
+  ): Promise<EmailSendResult> {
     try {
       const provider = await this.getProvider();
       if (!provider) {
-        return { success: false, error: 'Platform SMTP not configured' };
+        return { success: false, error: 'Platform email provider not configured' };
       }
-      
       const sender = await this.getSender();
-      const message: EmailMessage = {
-        to,
-        from: { name: sender.fromName, email: sender.fromEmail },
-        subject: `You have been invited to join ${sender.fromName}`,
-        html: `
-          <p>You have been invited to join a workspace on ${sender.fromName}.</p>
-          <p>Click the link below to accept the invitation and set up your account:</p>
-          <p><a href="${inviteLink}">Accept Invitation</a></p>
-          <p>This invitation expires in 7 days.</p>
-        `,
-      };
-
+      const message = buildMessage(sender);
       return await provider.send(message);
     } catch (error: unknown) {
       return {
@@ -101,127 +96,81 @@ export class PlatformMailer {
         error: error instanceof Error ? error.message : String(error),
       };
     }
+  }
+
+  async sendTeamInviteEmail(to: string, inviteLink: string): Promise<EmailSendResult> {
+    return this.sendMail((sender) => ({
+      to,
+      from: { name: sender.fromName, email: sender.fromEmail },
+      subject: `You have been invited to join ${sender.fromName}`,
+      html: `
+        <p>You have been invited to join a workspace on ${sender.fromName}.</p>
+        <p>Click the link below to accept the invitation and set up your account:</p>
+        <p><a href="${inviteLink}">Accept Invitation</a></p>
+        <p>This invitation expires in 7 days.</p>
+      `,
+    }));
   }
 
   async sendOtpEmail(to: string, code: string): Promise<EmailSendResult> {
-    try {
-      const provider = await this.getProvider();
-      if (!provider) {
-        return { success: false, error: 'Platform SMTP not configured' };
-      }
-      
-      const sender = await this.getSender();
-      const message: EmailMessage = {
-        to,
-        from: { name: sender.fromName, email: sender.fromEmail },
-        subject: 'Verify your email address',
-        html: `
-          <p>Thank you for registering on ${sender.fromName}.</p>
-          <p>Please enter the following 6-digit code to verify your email address:</p>
-          <h2>${code}</h2>
-          <p>This verification code expires in 10 minutes.</p>
-        `,
-      };
-
-      return await provider.send(message);
-    } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return this.sendMail((sender) => ({
+      to,
+      from: { name: sender.fromName, email: sender.fromEmail },
+      subject: 'Verify your email address',
+      html: `
+        <p>Thank you for registering on ${sender.fromName}.</p>
+        <p>Please enter the following 6-digit code to verify your email address:</p>
+        <h2>${code}</h2>
+        <p>This verification code expires in 10 minutes.</p>
+      `,
+    }));
   }
 
   async sendMailboxVerificationOtpEmail(to: string, code: string): Promise<EmailSendResult> {
-    try {
-      const provider = await this.getProvider();
-      if (!provider) {
-        return { success: false, error: 'Platform SMTP not configured' };
-      }
-      
-      const sender = await this.getSender();
-      const message: EmailMessage = {
-        to,
-        from: { name: `${sender.fromName} Support`, email: sender.fromEmail },
-        subject: `Verify Your Mailbox (${to}) — Code: ${code}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #334155;">
-            <h2 style="color: #0f172a; margin-bottom: 16px;">Mailbox Ownership Verification</h2>
-            <p style="font-size: 14px; line-height: 1.6;">You are configuring <strong>${to}</strong> as your receiving email address on ${sender.fromName}.</p>
-            <p style="font-size: 14px; line-height: 1.6;">Please enter the following 6-digit verification code in Jaktra to confirm that this inbox is active and able to receive customer replies:</p>
-            <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 16px 28px; border-radius: 8px; display: inline-block; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #0f172a; margin: 16px 0;">
-              ${code}
-            </div>
-            <p style="color: #64748b; font-size: 12px; margin-top: 20px;">This verification code will expire in 10 minutes. If you did not request this configuration, you can safely ignore this email.</p>
+    return this.sendMail((sender) => ({
+      to,
+      from: { name: `${sender.fromName} Support`, email: sender.fromEmail },
+      subject: `Verify Your Mailbox (${to}) — Code: ${code}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #334155;">
+          <h2 style="color: #0f172a; margin-bottom: 16px;">Mailbox Ownership Verification</h2>
+          <p style="font-size: 14px; line-height: 1.6;">You are configuring <strong>${to}</strong> as your receiving email address on ${sender.fromName}.</p>
+          <p style="font-size: 14px; line-height: 1.6;">Please enter the following 6-digit verification code in Jaktra to confirm that this inbox is active and able to receive customer replies:</p>
+          <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 16px 28px; border-radius: 8px; display: inline-block; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #0f172a; margin: 16px 0;">
+            ${code}
           </div>
-        `,
-      };
-
-      return await provider.send(message);
-    } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+          <p style="color: #64748b; font-size: 12px; margin-top: 20px;">This verification code will expire in 10 minutes. If you did not request this configuration, you can safely ignore this email.</p>
+        </div>
+      `,
+    }));
   }
 
   async sendPasswordResetOtpEmail(to: string, code: string): Promise<EmailSendResult> {
-    try {
-      const provider = await this.getProvider();
-      if (!provider) {
-        return { success: false, error: 'Platform SMTP not configured' };
-      }
-      
-      const sender = await this.getSender();
-      const message: EmailMessage = {
-        to,
-        from: { name: sender.fromName, email: sender.fromEmail },
-        subject: `Reset your ${sender.fromName} password`,
-        html: `
-          <p>You have requested to reset your password on ${sender.fromName}.</p>
-          <p>Please enter the following 6-digit code to reset your password:</p>
-          <h2>${code}</h2>
-          <p>This password reset code expires in 10 minutes.</p>
-          <p>If you did not request a password reset, you can safely ignore this email.</p>
-        `,
-      };
-
-      return await provider.send(message);
-    } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return this.sendMail((sender) => ({
+      to,
+      from: { name: sender.fromName, email: sender.fromEmail },
+      subject: `Reset your ${sender.fromName} password`,
+      html: `
+        <p>You have requested to reset your password on ${sender.fromName}.</p>
+        <p>Please enter the following 6-digit code to reset your password:</p>
+        <h2>${code}</h2>
+        <p>This password reset code expires in 10 minutes.</p>
+        <p>If you did not request a password reset, you can safely ignore this email.</p>
+      `,
+    }));
   }
 
   async sendInboundVerificationTestEmail(to: string, replyTo: string): Promise<EmailSendResult> {
-    try {
-      const provider = await this.getProvider();
-      if (!provider) {
-        return { success: false, error: 'Platform SMTP not configured' };
-      }
-      
-      const sender = await this.getSender();
-      const message: EmailMessage = {
-        to,
-        from: { name: `${sender.fromName} Support`, email: sender.fromEmail },
-        replyTo,
-        subject: `[${sender.fromName}] Verify Inbound Reply Capture`,
-        html: `
-          <p>Please reply to this email to complete your ${sender.fromName} inbound reply capture verification test.</p>
-          <p>Once you reply, the system will verify your setup and display active status on the Disputes tab.</p>
-        `,
-      };
-
-      return await provider.send(message);
-    } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return this.sendMail((sender) => ({
+      to,
+      from: { name: `${sender.fromName} Support`, email: sender.fromEmail },
+      replyTo,
+      subject: `[${sender.fromName}] Verify Inbound Reply Capture`,
+      html: `
+        <p>Please reply to this email to complete your ${sender.fromName} inbound reply capture verification test.</p>
+        <p>Once you reply, the system will verify your setup and display active status on the Disputes tab.</p>
+      `,
+    }));
   }
 }
 
