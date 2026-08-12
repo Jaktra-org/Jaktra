@@ -12,6 +12,7 @@ export {
   emailIntegrations,
   emailIntegrationSendgrid,
   emailIntegrationSmtp,
+  emailIntegrationResend,
   teamInvitations,
   inboundEmails,
   invoicePortalLinks,
@@ -35,6 +36,8 @@ export {
   sendgridReplyModeEnum,
   smtpEncryptionTypeEnum,
   smtpValidationResultEnum,
+  resendValidationResultEnum,
+  resendReplyModeEnum,
 } from './schema.js';
 
 export type {
@@ -74,6 +77,8 @@ export type {
   NewPaymentPlanInstallment,
   ReplyToken,
   NewReplyToken,
+  EmailIntegrationResend,
+  NewEmailIntegrationResend,
 } from './schema.js';
 
 export { createDatabaseClient } from './client.js';

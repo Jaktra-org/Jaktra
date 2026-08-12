@@ -336,8 +336,8 @@ export const tenantSettings = mysqlTable('tenant_settings', {
 });
 
 export const emailProviderEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['sendgrid', 'smtp']),
-  { enumValues: ['sendgrid', 'smtp'] as const }
+  (name: string) => mysqlEnum(name, ['sendgrid', 'smtp', 'resend']),
+  { enumValues: ['sendgrid', 'smtp', 'resend'] as const }
 );
 
 export const integrationOverallStatusEnum = Object.assign(
@@ -358,6 +358,16 @@ export const smtpEncryptionTypeEnum = Object.assign(
 export const smtpValidationResultEnum = Object.assign(
   (name: string) => mysqlEnum(name, ['valid', 'invalid', 'untested']),
   { enumValues: ['valid', 'invalid', 'untested'] as const }
+);
+
+export const resendValidationResultEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['valid', 'invalid', 'untested']),
+  { enumValues: ['valid', 'invalid', 'untested'] as const }
+);
+
+export const resendReplyModeEnum = Object.assign(
+  (name: string) => mysqlEnum(name, ['real_mailbox', 'webhook_only']),
+  { enumValues: ['real_mailbox', 'webhook_only'] as const }
 );
 
 export const emailIntegrations = mysqlTable('email_integrations', {
@@ -419,6 +429,29 @@ export const emailIntegrationSmtp = mysqlTable('email_integration_smtp', {
   lastValidatedAt: datetime('last_validated_at', { mode: 'date' }),
 }, (table) => [
   uniqueIndex('unq_smtp_integration_id').on(table.integrationId),
+]);
+
+export const emailIntegrationResend = mysqlTable('email_integration_resend', {
+  id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  integrationId: varchar('integration_id', { length: 36 })
+    .notNull()
+    .references(() => emailIntegrations.id, { onDelete: 'cascade' }),
+  ciphertext: text('ciphertext'),
+  iv: varchar('iv', { length: 64 }),
+  authTag: varchar('auth_tag', { length: 64 }),
+  keyVersion: int('key_version').notNull().default(1),
+  lastValidationResult: resendValidationResultEnum('last_validation_result').notNull().default('untested'),
+  lastValidatedAt: datetime('last_validated_at', { mode: 'date' }),
+  inboundDomain: varchar('inbound_domain', { length: 255 }),
+  inboundParseVerified: boolean('inbound_parse_verified').notNull().default(false),
+  webhookUrl: varchar('webhook_url', { length: 512 }),
+  replyMode: resendReplyModeEnum('reply_mode').notNull().default('webhook_only'),
+  replyMailboxEmail: varchar('reply_mailbox_email', { length: 255 }),
+  replyMailboxVerified: boolean('reply_mailbox_verified').notNull().default(false),
+  replyMailboxOtpCode: varchar('reply_mailbox_otp_code', { length: 6 }),
+  replyMailboxOtpExpiresAt: datetime('reply_mailbox_otp_expires_at', { mode: 'date' }),
+}, (table) => [
+  uniqueIndex('unq_resend_integration_id').on(table.integrationId),
 ]);
 
 export const tenantIntegrations = mysqlTable('tenant_integrations', {
@@ -803,3 +836,6 @@ export type PaymentPlanInstallment = typeof paymentPlanInstallments.$inferSelect
 export type NewPaymentPlanInstallment = typeof paymentPlanInstallments.$inferInsert;
 export type ReplyToken = typeof replyTokens.$inferSelect;
 export type NewReplyToken = typeof replyTokens.$inferInsert;
+export type EmailIntegrationResend = typeof emailIntegrationResend.$inferSelect;
+export type NewEmailIntegrationResend = typeof emailIntegrationResend.$inferInsert;
+
