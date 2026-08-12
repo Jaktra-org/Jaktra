@@ -59,15 +59,16 @@
     "express-rate-limit": "^8.5.2",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
+    "mysql2": "^3.12.0",
     "node-cron": "^4.6.0",
     "nodemailer": "^8.0.11",
     "otplib": "^13.4.1",
     "papaparse": "^5.5.3",
-    "mysql2": "^3.12.0",
     "pino": "^10.3.1",
     "qrcode": "^1.5.4",
     "rate-limit-redis": "^5.0.0",
     "redis": "^6.0.0",
+    "resend": "^6.20.0",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   }
