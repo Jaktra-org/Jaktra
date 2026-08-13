@@ -40,7 +40,7 @@ const next = vi.fn();
 
 // ---- service stubs ----------------------------------------------------------
 
-function makeIntegrationService(): any {
+function makeIntegrationService(activeProvider: 'sendgrid' | 'smtp' | null = null): any {
   return {
     validateAndSaveSendgridKey: vi.fn().mockResolvedValue({ requiresOtp: false, message: 'Saved' }),
     deleteSendgridIntegration: vi.fn().mockResolvedValue(undefined),
@@ -53,13 +53,17 @@ function makeIntegrationService(): any {
     validateAndSaveRazorpayKey: vi.fn().mockResolvedValue(undefined),
     deleteRazorpayIntegration: vi.fn().mockResolvedValue(undefined),
     setActiveProvider: vi.fn().mockResolvedValue(undefined),
+    getActiveEmailIntegration: vi.fn().mockResolvedValue(
+      activeProvider
+        ? { base: { overallStatus: 'active', isActive: true, provider: activeProvider }, detail: null, provider: activeProvider }
+        : null
+    ),
   } as any;
 }
 
-function makeCommunicationService(defaultProvider: string | null = null): any {
+function makeCommunicationService(): any {
   return {
-    getSettings: vi.fn().mockResolvedValue({ defaultEmailProvider: defaultProvider }),
-    setDefaultEmailProvider: vi.fn().mockResolvedValue(undefined),
+    getSettings: vi.fn().mockResolvedValue({}),
   } as any;
 }
 
@@ -174,13 +178,13 @@ describe('Integration audit events', () => {
 
   // Phase 8: default provider
   it('emits integration.default_provider_changed with from/to on setDefaultProvider', async () => {
-    const integSvc = makeIntegrationService();
+    const integSvc = makeIntegrationService('smtp');
     // Make sendgrid appear valid so validation passes
     integSvc.getIntegrationStatus.mockResolvedValue({ isConfigured: true, lastValidationResult: 'valid' });
 
     const ctrl = new IntegrationController(
       integSvc,
-      makeCommunicationService('smtp'),   // current default is smtp
+      makeCommunicationService(),
       eventService,
     );
     const req = makeReq({ body: { provider: 'sendgrid' } });

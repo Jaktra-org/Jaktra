@@ -42,20 +42,24 @@ export class IntegrationController {
   getStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      const [sendgridProgress, smtpProgress, razorpayStatus, sendgridStatus, smtpStatus] = await Promise.all([
+      const [sendgridProgress, smtpProgress, resendProgress, razorpayStatus, sendgridStatus, smtpStatus, resendStatus] = await Promise.all([
         this.integrationService.getSendgridSetupProgress(tenantId),
         this.integrationService.getSmtpSetupProgress(tenantId),
+        this.integrationService.getResendSetupProgress(tenantId),
         this.integrationService.getIntegrationStatusRazorpay(tenantId),
         this.integrationService.getIntegrationStatus(tenantId, 'sendgrid'),
         this.integrationService.getIntegrationStatus(tenantId, 'smtp'),
+        this.integrationService.getIntegrationStatus(tenantId, 'resend'),
       ]);
 
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.json({
         sendgridProgress,
         smtpProgress,
+        resendProgress,
         sendgrid: sendgridStatus,
         smtp: smtpStatus,
+        resend: resendStatus,
         razorpay: razorpayStatus,
         inboundParse: {
           webhookUrl: sendgridProgress.step3InboundWebhook.webhookUrl,
@@ -341,16 +345,224 @@ export class IntegrationController {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { provider } = req.params;
 
-      if (provider !== 'sendgrid' && provider !== 'smtp') {
-        throw new ValidationError('Invalid provider. Must be sendgrid or smtp.');
+      if (provider !== 'sendgrid' && provider !== 'smtp' && provider !== 'resend') {
+        throw new ValidationError('Invalid provider. Must be sendgrid, smtp, or resend.');
       }
 
       await this.integrationService.setActiveProvider(tenantId, provider);
       const setupProgress = provider === 'sendgrid'
         ? await this.integrationService.getSendgridSetupProgress(tenantId)
-        : await this.integrationService.getSmtpSetupProgress(tenantId);
+        : provider === 'smtp'
+        ? await this.integrationService.getSmtpSetupProgress(tenantId)
+        : await this.integrationService.getResendSetupProgress(tenantId);
 
       res.json({ message: `${provider} activated as active email provider`, setupProgress });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  saveResendKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const { apiKey, senderName, senderEmail, replyTo } = req.body;
+
+      if (!apiKey) {
+        throw new ValidationError('API key is required.');
+      }
+
+      if (senderEmail && typeof senderEmail === 'string' && senderEmail.trim() !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(senderEmail.trim())) {
+          throw new ValidationError('Sender email is invalid.');
+        }
+      }
+
+      if (replyTo && typeof replyTo === 'string' && replyTo.trim() !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(replyTo.trim())) {
+          throw new ValidationError('Reply-To email is invalid.');
+        }
+      }
+
+      const result = await this.integrationService.validateAndSaveResendKey(tenantId, {
+        apiKey,
+        senderName: senderName ? String(senderName).trim() : undefined,
+        senderEmail: senderEmail ? String(senderEmail).trim() : undefined,
+        replyTo: replyTo ? String(replyTo).trim() : null,
+      });
+
+      const setupProgress = await this.integrationService.getResendSetupProgress(tenantId);
+
+      // Clear DLQ entries on recovery / credentials update
+      if (this.dlqService) {
+        await this.dlqService.clearAllFailures(tenantId).catch(() => {});
+      }
+
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.connected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'resend' },
+      });
+
+      res.json({ message: result.message, setupProgress });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  testResendKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const { to } = req.body;
+
+      if (!to || typeof to !== 'string' || !to.includes('@')) {
+        throw new ValidationError('Valid recipient email required');
+      }
+
+      const result = await this.integrationService.testResendKey(tenantId, to.trim());
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  setResendReplyMode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const { replyMode, replyMailboxEmail } = req.body;
+
+      if (!['real_mailbox', 'webhook_only'].includes(replyMode)) {
+        throw new ValidationError('Invalid reply mode. Must be real_mailbox or webhook_only.');
+      }
+
+      if (replyMode === 'real_mailbox' && !replyMailboxEmail) {
+        throw new ValidationError('Reply mailbox email is required for real_mailbox mode.');
+      }
+
+      const setupProgress = await this.integrationService.setResendReplyMode(tenantId, replyMode, replyMailboxEmail);
+
+      res.json({
+        message: 'Resend reply mode updated successfully',
+        setupProgress,
+        replyMode: setupProgress.step2SenderAndMode.replyMode,
+        replyMailboxEmail: setupProgress.step2SenderAndMode.replyMailboxEmail,
+        replyMailboxVerified: setupProgress.step2SenderAndMode.replyMailboxVerified,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  sendResendReplyMailboxOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const inputEmail = (req.body?.replyMailboxEmail || req.body?.email || '').trim();
+
+      if (!inputEmail || !inputEmail.includes('@')) {
+        throw new ValidationError('A valid real mailbox email address is required to send verification OTP.');
+      }
+
+      const { targetEmail, otpCode, setupProgress } = await this.integrationService.sendResendReplyMailboxOtp(tenantId, inputEmail);
+
+      let emailSent = false;
+      const platformMailer = this.integrationService.getPlatformMailer();
+      if (platformMailer) {
+        try {
+          const res = await platformMailer.sendMailboxVerificationOtpEmail(targetEmail, otpCode);
+          if (res?.success) {
+            emailSent = true;
+          }
+        } catch (err) {
+          logger.warn(`Platform mailer OTP send failed:`, err);
+        }
+      }
+
+      if (!emailSent && this.communicationService) {
+        try {
+          await this.communicationService.send({
+            tenantId,
+            to: targetEmail,
+            subject: 'Verify your reply forwarding mailbox (Resend)',
+            html: `<p>Your 6-digit mailbox verification OTP is: <strong>${otpCode}</strong>. This code expires in 10 minutes.</p>`,
+            bodyText: `Your 6-digit mailbox verification OTP is: ${otpCode}. This code expires in 10 minutes.`,
+            source: 'system',
+          });
+          emailSent = true;
+        } catch (commErr) {
+          logger.warn(`Communication service OTP fallback failed:`, commErr);
+        }
+      }
+
+      res.json({
+        message: `Verification code sent to ${targetEmail}`,
+        emailSent,
+        setupProgress,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyResendReplyMailboxOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const otpCode = (req.body?.otp || req.body?.otpCode || '').trim();
+
+      if (!otpCode || otpCode.length !== 6) {
+        throw new ValidationError('A 6-digit numeric OTP code is required.');
+      }
+
+      const result = await this.integrationService.verifyResendReplyMailboxOtp(tenantId, otpCode);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyResendInboundParse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const { inboundDomain } = req.body || {};
+
+      const result = await this.integrationService.verifyResendInboundParse(tenantId, inboundDomain);
+      const setupProgress = await this.integrationService.getResendSetupProgress(tenantId);
+
+      res.json({
+        ...result,
+        setupProgress,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getResendHealth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      const senderConfig = await this.integrationService.getEffectiveSenderConfig(tenantId, 'resend');
+      const health = await this.integrationService.getResendConfigurationHealth(tenantId, senderConfig.senderEmail);
+      res.json(health);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  disconnectResend = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = (req as AuthenticatedRequest).user.tenantId;
+      await this.integrationService.deleteResendIntegration(tenantId);
+      const setupProgress = await this.integrationService.getResendSetupProgress(tenantId);
+
+      this.eventService?.logEvent({
+        tenantId,
+        eventType: 'integration.disconnected',
+        actor: this.getActorContext(req),
+        metadata: { integration: 'resend' },
+      });
+
+      res.json({ message: 'Resend integration disconnected successfully', setupProgress });
     } catch (error) {
       next(error);
     }
@@ -465,7 +677,7 @@ export class IntegrationController {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
       const { provider } = req.body;
 
-      if (provider !== 'sendgrid' && provider !== 'smtp' && provider !== null) {
+      if (provider !== 'sendgrid' && provider !== 'smtp' && provider !== 'resend' && provider !== null) {
          next(new ValidationError('Invalid provider'));
          return;
       }
@@ -476,7 +688,9 @@ export class IntegrationController {
         if (!isValid) {
           const progress = provider === 'sendgrid'
             ? await this.integrationService.getSendgridSetupProgress(tenantId).catch(() => null)
-            : await this.integrationService.getSmtpSetupProgress(tenantId).catch(() => null);
+            : provider === 'smtp'
+            ? await this.integrationService.getSmtpSetupProgress(tenantId).catch(() => null)
+            : await this.integrationService.getResendSetupProgress(tenantId).catch(() => null);
           isValid = progress?.overallStatus === 'active';
         }
 
@@ -486,15 +700,9 @@ export class IntegrationController {
         }
       }
 
-      // Capture previous default before changing it
-      let previousProvider: string | null = null;
-      if (this.integrationService && typeof this.integrationService.getActiveEmailIntegration === 'function') {
-        const active = await this.integrationService.getActiveEmailIntegration(tenantId);
-        previousProvider = active?.base.isActive ? active.base.provider : null;
-      } else {
-        const prevSettings = await this.communicationService.getSettings(tenantId);
-        previousProvider = (prevSettings as { defaultEmailProvider?: string | null } | undefined)?.defaultEmailProvider ?? null;
-      }
+      // Capture previous active provider for audit logging
+      const previousActive = await this.integrationService.getActiveEmailIntegration(tenantId);
+      const previousProvider: string | null = previousActive?.base.isActive ? previousActive.base.provider : null;
 
       if (provider) {
         await this.integrationService.setActiveProvider(tenantId, provider);
