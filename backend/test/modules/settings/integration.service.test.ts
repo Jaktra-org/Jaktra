@@ -4,6 +4,18 @@ import { encrypt } from '../../../src/shared/encryption.js';
 
 import sgClient from '@sendgrid/client';
 
+const mockResendDomainsList = vi.fn();
+const mockResendEmailsSend = vi.fn();
+vi.mock('resend', () => {
+  class MockResend {
+    domains = { list: mockResendDomainsList };
+    emails = { send: mockResendEmailsSend };
+  }
+  return {
+    Resend: MockResend,
+  };
+});
+
 vi.mock('@sendgrid/client', () => {
   return {
     default: {
@@ -12,6 +24,11 @@ vi.mock('@sendgrid/client', () => {
     },
   };
 });
+
+vi.mock('../../../src/shared/email/mx-verifier.js', () => ({
+  verifyEmailDomainMx: vi.fn().mockResolvedValue(undefined),
+  validateInboundDomainFormat: (d: string) => d,
+}));
 
 vi.mock('../../../src/shared/encryption.js', () => ({
   encrypt: vi.fn().mockReturnValue({
@@ -22,6 +39,9 @@ vi.mock('../../../src/shared/encryption.js', () => ({
   decrypt: vi.fn((config, context) => {
     if (context && context.includes('sendgrid')) {
       return 'SG.mock_sendgrid_key';
+    }
+    if (context && context.includes('resend')) {
+      return 're_mock_resend_key';
     }
     return JSON.stringify({
       keyId: 'rzp_test_123',
@@ -44,6 +64,8 @@ describe('IntegrationService', () => {
         detail: { keyVersion: 1, ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag' }
       }),
       getSmtpIntegration: vi.fn(),
+      getResendIntegration: vi.fn().mockResolvedValue(null),
+      getWebhookToken: vi.fn().mockResolvedValue('mock-webhook-token'),
       upsertIntegration: vi.fn(),
       deleteIntegration: vi.fn(),
     };
@@ -325,6 +347,193 @@ describe('IntegrationService', () => {
         { senderName: 'New Sender Name', senderEmail: 'new@company.com', replyTo: undefined },
         expect.objectContaining({
           clearStep3: true,
+        })
+      );
+    });
+  });
+
+  describe('Resend Integration Operations', () => {
+    it('validates, encrypts, and saves Resend integration', async () => {
+      mockResendDomainsList.mockResolvedValueOnce({ data: [], error: null });
+      mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue(null);
+
+      const result = await service.validateAndSaveResendKey('tenant_1', {
+        apiKey: 're_valid_api_key_123',
+        senderName: 'Acme Billing',
+        senderEmail: 'billing@acme.com',
+        replyTo: 'support@acme.com',
+      });
+
+      expect(result.message).toContain('configured successfully');
+      expect(encrypt).toHaveBeenCalledWith('re_valid_api_key_123', 'tenant_1:resend:v1');
+      expect(mockRepo.saveResendIntegrationTransaction).toHaveBeenCalledWith(
+        'tenant_1',
+        {
+          senderName: 'Acme Billing',
+          senderEmail: 'billing@acme.com',
+          replyTo: 'support@acme.com',
+        },
+        expect.objectContaining({
+          ciphertext: 'encrypted_secret',
+          iv: 'mock_iv',
+          authTag: 'mock_authTag',
+          keyVersion: 1,
+          lastValidationResult: 'valid',
+        })
+      );
+    });
+
+    it('rejects API key without "re_" prefix', async () => {
+      await expect(
+        service.validateAndSaveResendKey('tenant_1', {
+          apiKey: 'invalid_key_prefix',
+        })
+      ).rejects.toThrow('Resend API keys must start with "re_"');
+    });
+
+    it('decrypts Resend API key from email_integration_resend', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend', overallStatus: 'active' },
+        detail: {
+          keyVersion: 1,
+          ciphertext: 'encrypted_secret',
+          iv: 'mock_iv',
+          authTag: 'mock_authTag',
+        },
+      });
+
+      const key = await service.getDecryptedResendKey('tenant_1');
+      expect(key).toBe('re_mock_resend_key');
+    });
+
+    it('throws NOT_CONFIGURED when decrypting unconfigured Resend integration', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue(null);
+
+      await expect(service.getDecryptedResendKey('tenant_1')).rejects.toThrow();
+    });
+
+    it('deletes Resend email integration', async () => {
+      mockRepo.deleteEmailIntegration = vi.fn().mockResolvedValue(undefined);
+
+      await service.deleteResendIntegration('tenant_1');
+      expect(mockRepo.deleteEmailIntegration).toHaveBeenCalledWith('tenant_1', 'resend');
+    });
+
+    it('sends test email using Resend and returns success response', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend', overallStatus: 'active', senderName: 'Finance', senderEmail: 'finance@acme.com', replyTo: 'reply@acme.com' },
+        detail: {
+          keyVersion: 1,
+          ciphertext: 'encrypted_secret',
+          iv: 'mock_iv',
+          authTag: 'mock_authTag',
+        },
+      });
+      mockResendEmailsSend.mockResolvedValueOnce({
+        data: { id: 're_test_email_id_999' },
+        error: null,
+      });
+
+      const result = await service.testResendKey('tenant_1', 'test@recipient.com');
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('re_test_email_id_999');
+      expect(mockResendEmailsSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: 'Finance <finance@acme.com>',
+          to: ['test@recipient.com'],
+          replyTo: 'reply@acme.com',
+        })
+      );
+    });
+
+    it('sets Resend reply mode and resets verification if mailbox changes', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend', overallStatus: 'partially_configured' },
+        detail: { replyMailboxEmail: 'old@acme.com', replyMailboxVerified: true },
+      });
+      mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      mockRepo.getResendSetupProgress = vi.fn().mockResolvedValue({
+        step2SenderAndMode: { replyMode: 'real_mailbox', replyMailboxEmail: 'new@acme.com', replyMailboxVerified: false },
+      });
+
+      await service.setResendReplyMode('tenant_1', 'real_mailbox', 'new@acme.com');
+
+      expect(mockRepo.saveResendIntegrationTransaction).toHaveBeenCalledWith(
+        'tenant_1',
+        {},
+        expect.objectContaining({
+          replyMode: 'real_mailbox',
+          replyMailboxEmail: 'new@acme.com',
+          replyMailboxVerified: false,
+        })
+      );
+    });
+
+    it('generates and saves OTP for Resend reply mailbox verification', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: {},
+      });
+      mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      mockRepo.getResendSetupProgress = vi.fn().mockResolvedValue({});
+
+      const { targetEmail, otpCode } = await service.sendResendReplyMailboxOtp('tenant_1', 'support@acme.com');
+
+      expect(targetEmail).toBe('support@acme.com');
+      expect(otpCode).toMatch(/^\d{6}$/);
+      expect(mockRepo.saveResendIntegrationTransaction).toHaveBeenCalledWith(
+        'tenant_1',
+        {},
+        expect.objectContaining({
+          replyMode: 'real_mailbox',
+          replyMailboxEmail: 'support@acme.com',
+          replyMailboxVerified: false,
+          replyMailboxOtpCode: otpCode,
+        })
+      );
+    });
+
+    it('verifies valid OTP for Resend reply mailbox', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: {
+          replyMailboxOtpCode: '123456',
+          replyMailboxOtpExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        },
+      });
+      mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      mockRepo.getResendSetupProgress = vi.fn().mockResolvedValue({});
+
+      const result = await service.verifyResendReplyMailboxOtp('tenant_1', '123456');
+
+      expect(result.success).toBe(true);
+      expect(mockRepo.saveResendIntegrationTransaction).toHaveBeenCalledWith(
+        'tenant_1',
+        {},
+        expect.objectContaining({
+          replyMailboxVerified: true,
+          replyMailboxOtpCode: null,
+        })
+      );
+    });
+
+    it('verifies Resend inbound receiving domain', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+
+      const result = await service.verifyResendInboundParse('tenant_1', 'reply.acme.com');
+
+      expect(result.success).toBe(true);
+      expect(mockRepo.saveResendIntegrationTransaction).toHaveBeenCalledWith(
+        'tenant_1',
+        {},
+        expect.objectContaining({
+          inboundDomain: 'reply.acme.com',
+          inboundParseVerified: true,
         })
       );
     });

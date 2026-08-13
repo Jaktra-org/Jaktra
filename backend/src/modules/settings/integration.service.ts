@@ -1,6 +1,8 @@
+import crypto from 'crypto';
 import type { RedisClientType } from 'redis';
 import sgClient from '@sendgrid/client';
-import type { IntegrationRepository, SendgridSetupProgress, SmtpSetupProgress } from './integration.repository.js';
+import { Resend } from 'resend';
+import type { IntegrationRepository, SendgridSetupProgress, SmtpSetupProgress, ResendSetupProgress } from './integration.repository.js';
 import { encrypt, decrypt } from '../../shared/encryption.js';
 import { IntegrationErrors, IntegrationError } from './integration.errors.js';
 import { logger } from '../../shared/logger.js';
@@ -9,10 +11,11 @@ import { SmtpConnectionFactory, SmtpConfig } from '../../shared/email/providers/
 import { verifyEmailDomainMx, validateInboundDomainFormat } from '../../shared/email/mx-verifier.js';
 import { ValidationError } from '../../shared/errors/index.js';
 import type { PlatformMailer } from '../platform-mail/platform-mailer.js';
+import { config } from '../../config/index.js';
 
 
 export interface IntegrationStatus {
-  provider: 'sendgrid' | 'smtp';
+  provider: 'sendgrid' | 'smtp' | 'resend';
   isConfigured: boolean;
   lastValidatedAt: Date | null;
   lastValidationResult: TenantIntegration['lastValidationResult'];
@@ -99,7 +102,7 @@ export class IntegrationService {
     const overallStatus = base?.overallStatus || 'not_configured';
     const isActive = base?.isActive ?? false;
 
-    const publicBaseUrl = process.env.PUBLIC_BASE_URL || 'https://www.jaktra.site';
+    const publicBaseUrl = config.PUBLIC_BASE_URL || process.env.PUBLIC_BASE_URL || 'https://www.jaktra.site';
     const token = (await this.repo.getWebhookToken(tenantId)) || tenantId;
     const webhookUrl = `${publicBaseUrl}/api/webhooks/sendgrid/inbound/${token}`;
 
@@ -176,11 +179,90 @@ export class IntegrationService {
     };
   }
 
-  async setActiveProvider(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<void> {
+  async getResendSetupProgress(tenantId: string): Promise<ResendSetupProgress> {
+    const integration = await this.repo.getResendIntegration(tenantId);
+    const base = integration?.base;
+    const detail = integration?.detail;
+
+    const step1Done = !!detail?.ciphertext && !!detail?.iv && !!detail?.authTag;
+
+    const senderName = base?.senderName || null;
+    const senderEmail = base?.senderEmail || null;
+    const replyTo = base?.replyTo || null;
+    const replyMode = detail?.replyMode || 'webhook_only';
+    const replyMailboxEmail = detail?.replyMailboxEmail || null;
+    const replyMailboxVerified = detail?.replyMailboxVerified ?? false;
+
+    let step2Status: 'not_started' | 'awaiting_sender_info' | 'awaiting_otp' | 'completed' = 'not_started';
+    if (!senderName && !senderEmail) {
+      step2Status = 'not_started';
+    } else if (!senderName || !senderEmail) {
+      step2Status = 'awaiting_sender_info';
+    } else if (replyMode === 'real_mailbox' && !replyMailboxVerified) {
+      step2Status = 'awaiting_otp';
+    } else {
+      step2Status = 'completed';
+    }
+
+    const step2Done = step2Status === 'completed';
+
+    const inboundDomain = detail?.inboundDomain || null;
+    const isVerified = (detail?.inboundParseVerified === true) && !!inboundDomain;
+
+    let step3Status: 'not_started' | 'awaiting_inbound_domain' | 'awaiting_mx_verification' | 'verified' = 'not_started';
+    if (!inboundDomain) {
+      step3Status = 'not_started';
+    } else if (!isVerified) {
+      step3Status = 'awaiting_mx_verification';
+    } else {
+      step3Status = 'verified';
+    }
+
+    const step3Done = isVerified;
+
+    const overallStatus = base?.overallStatus || 'not_configured';
+    const isActive = base?.isActive ?? false;
+
+    const publicBaseUrl = config.PUBLIC_BASE_URL || process.env.PUBLIC_BASE_URL || 'https://www.jaktra.site';
+    const token = (await this.repo.getWebhookToken(tenantId)) || tenantId;
+    const webhookUrl = `${publicBaseUrl}/api/webhooks/resend/inbound/${token}`;
+
+    return {
+      provider: 'resend' as const,
+      step1ApiKey: {
+        isDone: step1Done,
+        hasApiKey: step1Done,
+        lastValidationResult: (detail?.lastValidationResult as 'valid' | 'invalid' | 'untested') || 'untested',
+      },
+      step2SenderAndMode: {
+        isDone: step2Done,
+        status: step2Status,
+        senderName,
+        senderEmail,
+        replyTo,
+        replyMode,
+        replyMailboxEmail,
+        replyMailboxVerified,
+        requiresOtp: replyMode === 'real_mailbox',
+      },
+      step3InboundWebhook: {
+        isDone: step3Done,
+        status: step3Status,
+        inboundDomain,
+        webhookUrl,
+        resendSettingsUrl: 'https://resend.com/webhooks',
+        isVerified,
+      },
+      overallStatus,
+      isActive,
+    };
+  }
+
+  async setActiveProvider(tenantId: string, provider: 'sendgrid' | 'smtp' | 'resend'): Promise<void> {
     await this.repo.setActiveProvider(tenantId, provider);
   }
 
-  async deleteEmailIntegration(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<void> {
+  async deleteEmailIntegration(tenantId: string, provider: 'sendgrid' | 'smtp' | 'resend'): Promise<void> {
     await this.repo.deleteEmailIntegration(tenantId, provider);
   }
 
@@ -190,11 +272,17 @@ export class IntegrationService {
 
   async getEffectiveSenderConfig(
     tenantId: string,
-    provider?: 'sendgrid' | 'smtp' | null
+    provider?: 'sendgrid' | 'smtp' | 'resend' | null
   ): Promise<{ senderName: string; senderEmail: string; replyTo: string | null }> {
     let integration;
     if (provider) {
-      integration = provider === 'sendgrid' ? await this.repo.getSendgridIntegration(tenantId) : await this.repo.getSmtpIntegration(tenantId);
+      if (provider === 'sendgrid') {
+        integration = await this.repo.getSendgridIntegration(tenantId);
+      } else if (provider === 'smtp') {
+        integration = await this.repo.getSmtpIntegration(tenantId);
+      } else {
+        integration = await this.repo.getResendIntegration(tenantId);
+      }
     } else {
       integration = await this.repo.getActiveEmailIntegration(tenantId);
     }
@@ -243,7 +331,7 @@ export class IntegrationService {
       }
     }
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await this.repo.saveSendgridIntegrationTransaction(
@@ -390,7 +478,7 @@ export class IntegrationService {
     return this.platformMailer;
   }
 
-  async getIntegrationStatus(tenantId: string, provider: 'sendgrid' | 'smtp'): Promise<IntegrationStatus> {
+  async getIntegrationStatus(tenantId: string, provider: 'sendgrid' | 'smtp' | 'resend'): Promise<IntegrationStatus> {
     if (provider === 'sendgrid') {
       const progress = await this.getSendgridSetupProgress(tenantId);
       return {
@@ -403,7 +491,7 @@ export class IntegrationService {
         replyTo: progress.step2SenderAndMode.replyTo || null,
         isSenderConfigured: progress.step2SenderAndMode.isDone,
       };
-    } else {
+    } else if (provider === 'smtp') {
       const progress = await this.getSmtpSetupProgress(tenantId);
       const smtpIntegration = await this.repo.getSmtpIntegration(tenantId);
       const username = progress.step1ConnectionDetails.username;
@@ -417,6 +505,19 @@ export class IntegrationService {
         port: progress.step1ConnectionDetails.port,
         maskedUsername,
         securityMode: progress.step1ConnectionDetails.encryptionType,
+      };
+    } else {
+      const progress = await this.getResendSetupProgress(tenantId);
+      const resendIntegration = await this.repo.getResendIntegration(tenantId);
+      return {
+        provider: 'resend',
+        isConfigured: progress.step1ApiKey.isDone,
+        lastValidatedAt: resendIntegration?.detail?.lastValidatedAt || null,
+        lastValidationResult: (resendIntegration?.detail?.lastValidationResult as 'valid' | 'invalid' | 'unknown' | null) || (progress.step1ApiKey.isDone ? 'valid' : 'unknown'),
+        senderName: progress.step2SenderAndMode.senderName || null,
+        senderEmail: progress.step2SenderAndMode.senderEmail || null,
+        replyTo: progress.step2SenderAndMode.replyTo || null,
+        isSenderConfigured: progress.step2SenderAndMode.isDone,
       };
     }
   }
@@ -672,7 +773,325 @@ export class IntegrationService {
     await this.repo.deleteEmailIntegration(tenantId, 'smtp');
   }
 
-  async handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp', error: unknown): Promise<void> {
+  async validateAndSaveResendKey(
+    tenantId: string,
+    data: {
+      apiKey?: string;
+      senderName?: string;
+      senderEmail?: string;
+      replyTo?: string | null;
+      replyMode?: 'real_mailbox' | 'webhook_only';
+      replyMailboxEmail?: string | null;
+    }
+  ): Promise<{ message: string }> {
+    let encryptedData: Record<string, unknown> = {};
+
+    if (data.apiKey && data.apiKey !== 're_placeholder') {
+      const trimmedKey = data.apiKey.trim();
+      if (!trimmedKey.startsWith('re_')) {
+        throw new ValidationError('Resend API keys must start with "re_".');
+      }
+
+      // Validate key against Resend API
+      try {
+        const resend = new Resend(trimmedKey);
+        const { error } = await resend.domains.list();
+        if (error) {
+          logger.warn(`Resend validation failed for tenant ${tenantId}: ${error.message}`);
+          const errName = (error.name || '').toLowerCase();
+          const errLower = (error.message || '').toLowerCase();
+          if (
+            errName.includes('invalid_api_key') ||
+            errName.includes('missing_api_key') ||
+            errLower.includes('api key') ||
+            errLower.includes('unauthorized')
+          ) {
+            throw IntegrationErrors.CREDENTIAL_INVALID();
+          } else if (errName.includes('rate_limit_exceeded') || errLower.includes('rate limit')) {
+            throw IntegrationErrors.RATE_LIMITED();
+          } else {
+            throw IntegrationErrors.PROVIDER_UNAVAILABLE();
+          }
+        }
+      } catch (err: unknown) {
+        if (err instanceof IntegrationError || err instanceof ValidationError) {
+          throw err;
+        }
+        logger.warn(`Resend validation request failed for tenant ${tenantId}:`, err);
+        throw IntegrationErrors.CREDENTIAL_INVALID();
+      }
+
+      const version = 1;
+      const encrypted = encrypt(trimmedKey, this.getAadContext(tenantId, 'resend', version));
+      encryptedData = {
+        ciphertext: encrypted.ciphertext,
+        iv: encrypted.iv,
+        authTag: encrypted.authTag,
+        keyVersion: version,
+        lastValidationResult: 'valid',
+        lastValidatedAt: new Date(),
+      };
+    }
+
+    const baseData: { senderName?: string | null; senderEmail?: string | null; replyTo?: string | null } = {};
+    if (data.senderName !== undefined) baseData.senderName = data.senderName;
+    if (data.senderEmail !== undefined) baseData.senderEmail = data.senderEmail;
+    if (data.replyTo !== undefined) baseData.replyTo = data.replyTo;
+
+    const resendData: Record<string, unknown> = { ...encryptedData };
+    if (data.replyMode !== undefined) resendData.replyMode = data.replyMode;
+    if (data.replyMailboxEmail !== undefined) resendData.replyMailboxEmail = data.replyMailboxEmail;
+
+    await this.repo.saveResendIntegrationTransaction(tenantId, baseData, resendData);
+
+    return {
+      message: 'Resend email integration configured successfully.',
+    };
+  }
+
+  async setResendReplyMode(
+    tenantId: string,
+    replyMode: 'real_mailbox' | 'webhook_only',
+    replyMailboxEmail?: string
+  ): Promise<ResendSetupProgress> {
+    const existing = await this.repo.getResendIntegration(tenantId);
+    const existingMailbox = existing?.detail?.replyMailboxEmail?.trim().toLowerCase();
+    const newMailbox = replyMailboxEmail?.trim().toLowerCase();
+
+    const keepVerified = existingMailbox && newMailbox && existingMailbox === newMailbox ? existing?.detail?.replyMailboxVerified : false;
+
+    await this.repo.saveResendIntegrationTransaction(
+      tenantId,
+      {},
+      {
+        replyMode,
+        replyMailboxEmail: replyMode === 'real_mailbox' ? replyMailboxEmail : null,
+        replyMailboxVerified: keepVerified ?? false,
+        clearStep3: true,
+      }
+    );
+    return this.getResendSetupProgress(tenantId);
+  }
+
+  async sendResendReplyMailboxOtp(
+    tenantId: string,
+    replyMailboxEmail: string
+  ): Promise<{ targetEmail: string; otpCode: string; setupProgress: ResendSetupProgress }> {
+    const resendIntegration = await this.repo.getResendIntegration(tenantId);
+    if (resendIntegration?.detail?.replyMailboxOtpExpiresAt) {
+      const timeSinceLastOtp = 10 * 60 * 1000 - (new Date(resendIntegration.detail.replyMailboxOtpExpiresAt).getTime() - Date.now());
+      if (timeSinceLastOtp >= 0 && timeSinceLastOtp < 60 * 1000) {
+        const secondsLeft = Math.ceil((60 * 1000 - timeSinceLastOtp) / 1000);
+        throw new ValidationError(`Please wait ${secondsLeft} seconds before requesting another OTP code.`);
+      }
+    }
+
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.repo.saveResendIntegrationTransaction(
+      tenantId,
+      {},
+      {
+        replyMode: 'real_mailbox',
+        replyMailboxEmail,
+        replyMailboxVerified: false,
+        replyMailboxOtpCode: otpCode,
+        replyMailboxOtpExpiresAt: expiresAt,
+        clearStep3: true,
+      }
+    );
+
+    const setupProgress = await this.getResendSetupProgress(tenantId);
+    return { targetEmail: replyMailboxEmail, otpCode, setupProgress };
+  }
+
+  async verifyResendReplyMailboxOtp(
+    tenantId: string,
+    otpCode: string
+  ): Promise<{ success: boolean; message: string; setupProgress: ResendSetupProgress }> {
+    const resendIntegration = await this.repo.getResendIntegration(tenantId);
+    const detail = resendIntegration?.detail;
+
+    if (!detail || !detail.replyMailboxOtpCode || !detail.replyMailboxOtpExpiresAt) {
+      throw new ValidationError('No OTP code found. Please request a new OTP.');
+    }
+
+    if (new Date() > new Date(detail.replyMailboxOtpExpiresAt)) {
+      throw new ValidationError('OTP code has expired. Please request a new OTP.');
+    }
+
+    if (detail.replyMailboxOtpCode.trim() !== otpCode.trim()) {
+      throw new ValidationError('Invalid OTP code. Please check and try again.');
+    }
+
+    await this.repo.saveResendIntegrationTransaction(
+      tenantId,
+      {},
+      {
+        replyMailboxVerified: true,
+        replyMailboxOtpCode: null,
+        replyMailboxOtpExpiresAt: null,
+      }
+    );
+
+    const setupProgress = await this.getResendSetupProgress(tenantId);
+    return { success: true, message: 'Mailbox verified successfully!', setupProgress };
+  }
+
+  async verifyResendInboundParse(tenantId: string, inboundDomainInput?: string): Promise<{ success: boolean; message: string }> {
+    let domainToVerify: string | undefined;
+    if (inboundDomainInput && inboundDomainInput.trim()) {
+      domainToVerify = validateInboundDomainFormat(inboundDomainInput);
+    }
+
+    if (domainToVerify) {
+      await verifyEmailDomainMx(domainToVerify);
+    }
+
+    try {
+      await this.getDecryptedResendKey(tenantId);
+    } catch {
+      throw new ValidationError('Resend API Key is not configured. Please save your Resend API key first.');
+    }
+
+    await this.repo.saveResendIntegrationTransaction(
+      tenantId,
+      {},
+      {
+        inboundDomain: domainToVerify,
+        inboundParseVerified: true,
+      }
+    );
+
+    return {
+      success: true,
+      message: `Inbound receiving domain "${domainToVerify}" verified successfully!`,
+    };
+  }
+
+  async getResendConfigurationHealth(tenantId: string, senderEmail?: string): Promise<{
+    status: 'healthy' | 'warning' | 'error';
+    apiKeyValid: boolean;
+    senderVerified: boolean;
+    domainVerified: boolean;
+    inboundParseReady: boolean;
+    message?: string;
+  }> {
+    let apiKey: string;
+    try {
+      apiKey = await this.getDecryptedResendKey(tenantId);
+    } catch {
+      return {
+        status: 'error',
+        apiKeyValid: false,
+        senderVerified: false,
+        domainVerified: false,
+        inboundParseReady: false,
+        message: 'Resend API Key is not configured.',
+      };
+    }
+
+    try {
+      const resend = new Resend(apiKey);
+      const { data: domains, error } = await resend.domains.list();
+      if (error) {
+        return {
+          status: 'error',
+          apiKeyValid: false,
+          senderVerified: false,
+          domainVerified: false,
+          inboundParseReady: false,
+          message: error.message,
+        };
+      }
+
+      const progress = await this.getResendSetupProgress(tenantId);
+      const emailDomain = (senderEmail || progress.step2SenderAndMode.senderEmail || '').split('@')[1]?.toLowerCase();
+      type ResendDomainItem = { name?: string; status?: string };
+      const domainList: ResendDomainItem[] = (domains as { data?: ResendDomainItem[] })?.data || (Array.isArray(domains) ? (domains as ResendDomainItem[]) : []);
+      const domainMatch = domainList.find((d: ResendDomainItem) => d.name?.toLowerCase() === emailDomain);
+      const isDomainVerified = domainMatch ? domainMatch.status === 'verified' : false;
+
+      const isHealthy = isDomainVerified && progress.step3InboundWebhook.isVerified;
+
+      return {
+        status: isHealthy ? 'healthy' : isDomainVerified ? 'warning' : 'error',
+        apiKeyValid: true,
+        senderVerified: isDomainVerified,
+        domainVerified: isDomainVerified,
+        inboundParseReady: progress.step3InboundWebhook.isVerified,
+        message: isHealthy ? 'Resend integration is fully operational.' : 'Domain or inbound setup requires attention.',
+      };
+    } catch (err: unknown) {
+      logger.warn(`Resend health check error for tenant ${tenantId}:`, err);
+      return {
+        status: 'error',
+        apiKeyValid: false,
+        senderVerified: false,
+        domainVerified: false,
+        inboundParseReady: false,
+        message: 'Could not connect to Resend API.',
+      };
+    }
+  }
+
+  async getDecryptedResendKey(tenantId: string): Promise<string> {
+    const integration = await this.repo.getResendIntegration(tenantId);
+    if (!integration || !integration.detail?.ciphertext || !integration.detail?.iv || !integration.detail?.authTag) {
+      throw IntegrationErrors.NOT_CONFIGURED();
+    }
+
+    try {
+      const aadContext = this.getAadContext(tenantId, 'resend', integration.detail.keyVersion);
+      const decrypted = decrypt({
+        ciphertext: integration.detail.ciphertext,
+        iv: integration.detail.iv,
+        authTag: integration.detail.authTag,
+        keyVersion: integration.detail.keyVersion,
+      }, aadContext);
+
+      return decrypted;
+    } catch {
+      logger.error(`Decryption failed for tenant ${tenantId} Resend integration.`);
+      throw IntegrationErrors.CREDENTIAL_INVALID();
+    }
+  }
+
+  async deleteResendIntegration(tenantId: string): Promise<void> {
+    await this.repo.deleteEmailIntegration(tenantId, 'resend');
+  }
+
+  async testResendKey(tenantId: string, toEmail: string): Promise<{ success: boolean; message: string }> {
+    const apiKey = await this.getDecryptedResendKey(tenantId);
+    const sender = await this.getEffectiveSenderConfig(tenantId, 'resend');
+
+    if (!sender.senderEmail) {
+      throw new ValidationError('Sender email must be configured before sending a test email.');
+    }
+
+    const resend = new Resend(apiKey);
+    const fromAddress = sender.senderName ? `${sender.senderName} <${sender.senderEmail}>` : sender.senderEmail;
+
+    const { data, error } = await resend.emails.send({
+      from: fromAddress,
+      to: [toEmail],
+      subject: 'Jaktra Test Email (Resend)',
+      html: '<p>This is a test email confirming that your Resend integration with Jaktra is functioning properly.</p>',
+      replyTo: sender.replyTo || undefined,
+    });
+
+    if (error) {
+      throw new IntegrationError(`Test email failed: ${error.message}`, 'INTEGRATION_TEST_FAILED', 400);
+    }
+
+    return {
+      success: true,
+      message: `Test email sent successfully (ID: ${data?.id})`,
+    };
+  }
+
+  async handleDeliveryError(tenantId: string, provider: 'sendgrid' | 'smtp' | 'resend', error: unknown): Promise<void> {
     logger.warn(`Delivery error encountered for tenant ${tenantId} on provider ${provider}:`, error);
   }
 
