@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IntegrationRepository } from '../../../src/modules/settings/integration.repository.js';
-import { emailIntegrations, emailIntegrationSendgrid, emailIntegrationSmtp } from '../../../src/db/schema.js';
+import { emailIntegrations, emailIntegrationSendgrid, emailIntegrationSmtp, emailIntegrationResend } from '../../../src/db/schema.js';
 import { logger } from '../../../src/shared/logger.js';
 
 describe('Clean Schema Email Integrations Pipeline', () => {
@@ -77,6 +77,138 @@ describe('Clean Schema Email Integrations Pipeline', () => {
         expect.objectContaining({
           overallStatus: 'active',
           isActive: true,
+        })
+      );
+    });
+
+    it('auto-activates Resend when it is configured as the first provider with no existing active provider', async () => {
+      const mockBase = {
+        id: 'integ-resend-1',
+        tenantId: 'tenant-1',
+        provider: 'resend',
+        senderName: 'Finance Team',
+        senderEmail: 'billing@example.com',
+        overallStatus: 'not_configured',
+        isActive: false,
+      };
+
+      const mockDetail = {
+        ciphertext: 'cipher',
+        iv: 'iv',
+        authTag: 'tag',
+        lastValidationResult: 'valid',
+        inboundDomain: 'reply.example.com',
+        inboundParseVerified: true,
+        replyMode: 'webhook_only',
+        replyMailboxVerified: false,
+      };
+
+      // Select base row
+      mockDb.select.mockImplementationOnce(() => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([mockBase]),
+          }),
+        }),
+      }));
+
+      // Select detail row
+      mockDb.select.mockImplementationOnce(() => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([mockDetail]),
+          }),
+        }),
+      }));
+
+      // Query existingActive integration (returns none)
+      mockDb.select.mockImplementationOnce(() => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([]),
+          }),
+        }),
+      }));
+
+      const setMock = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
+      mockDb.update.mockReturnValue({ set: setMock });
+
+      await repository.syncOverallStatusAndActivation(mockDb, 'integ-resend-1');
+
+      expect(setMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          overallStatus: 'active',
+          isActive: true,
+        })
+      );
+    });
+
+    it('preserves existing active provider (SendGrid) when Resend is configured for the first time', async () => {
+      const mockResendBase = {
+        id: 'integ-resend-2',
+        tenantId: 'tenant-1',
+        provider: 'resend',
+        senderName: 'Finance Team',
+        senderEmail: 'billing@example.com',
+        overallStatus: 'not_configured',
+        isActive: false,
+      };
+
+      const mockResendDetail = {
+        ciphertext: 'cipher',
+        iv: 'iv',
+        authTag: 'tag',
+        lastValidationResult: 'valid',
+        inboundDomain: 'reply.example.com',
+        inboundParseVerified: true,
+        replyMode: 'webhook_only',
+      };
+
+      const existingActiveSendgrid = {
+        id: 'integ-sg-active',
+        tenantId: 'tenant-1',
+        provider: 'sendgrid',
+        overallStatus: 'active',
+        isActive: true,
+      };
+
+      // Select base row
+      mockDb.select.mockImplementationOnce(() => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([mockResendBase]),
+          }),
+        }),
+      }));
+
+      // Select detail row
+      mockDb.select.mockImplementationOnce(() => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([mockResendDetail]),
+          }),
+        }),
+      }));
+
+      // Query existingActive integration (returns active SendGrid)
+      mockDb.select.mockImplementationOnce(() => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([existingActiveSendgrid]),
+          }),
+        }),
+      }));
+
+      const setMock = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
+      mockDb.update.mockReturnValue({ set: setMock });
+
+      await repository.syncOverallStatusAndActivation(mockDb, 'integ-resend-2');
+
+      // Resend is marked as active overallStatus, but isActive remains false!
+      expect(setMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          overallStatus: 'active',
+          isActive: false,
         })
       );
     });
@@ -236,6 +368,13 @@ describe('Clean Schema Email Integrations Pipeline', () => {
       expect(emailIntegrationSmtp.allowSelfSigned.name).toBe('allow_self_signed');
       expect(emailIntegrationSmtp.lastValidationResult.name).toBe('last_validation_result');
       expect(emailIntegrationSmtp.lastValidatedAt.name).toBe('last_validated_at');
+
+      // Resend detail columns
+      expect(emailIntegrationResend.integrationId.name).toBe('integration_id');
+      expect(emailIntegrationResend.authTag.name).toBe('auth_tag');
+      expect(emailIntegrationResend.keyVersion.name).toBe('key_version');
+      expect(emailIntegrationResend.lastValidationResult.name).toBe('last_validation_result');
+      expect(emailIntegrationResend.lastValidatedAt.name).toBe('last_validated_at');
     });
   });
 
