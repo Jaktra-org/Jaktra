@@ -20,6 +20,7 @@ import type { EventService, ActorContext } from '../event/event.service.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 import { DlqService } from '../dlq/dlq.service.js';
 import { CommunicationRepository } from '../communication/communication.repository.js';
+import { config } from '../../config/index.js';
 
 export class InvoiceController {
   constructor(
@@ -798,7 +799,7 @@ export class InvoiceController {
       }
 
       const token = await this.portalService.getOrCreatePortalLink(tenantId, id);
-      const url = `https://www.jaktra.site/i/${token}`;
+      const url = `${config.FRONTEND_URL}/i/${token}`;
 
       res.status(200).json({ token, url });
     } catch (error: unknown) {
