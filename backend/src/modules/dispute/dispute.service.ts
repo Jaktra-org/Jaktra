@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { eq, and, isNull, inArray, asc } from 'drizzle-orm';
-import { invoices, tenantSettings, replyTokens, emailIntegrations, emailIntegrationSendgrid, paymentPlanInstallments, paymentPlanRequests } from '../../db/index.js';
+import { invoices, tenantSettings, replyTokens, emailIntegrations, emailIntegrationSendgrid, emailIntegrationResend, paymentPlanInstallments, paymentPlanRequests } from '../../db/index.js';
 import type { DatabaseClient, Invoice } from '../../db/index.js';
 import type { DisputeRepository } from './dispute.repository.js';
 import type { AimlService } from '../agent/aiml.service.js';
@@ -237,19 +237,32 @@ export class DisputeService {
         })
         .from(emailIntegrations)
         .innerJoin(emailIntegrationSendgrid, eq(emailIntegrations.id, emailIntegrationSendgrid.integrationId))
-        .where(eq(emailIntegrations.tenantId, tenantId))
+        .where(and(eq(emailIntegrations.tenantId, tenantId), eq(emailIntegrations.isActive, true)))
         .limit(1);
 
+      const [resendConfig] = await this.db
+        .select({
+          replyMode: emailIntegrationResend.replyMode,
+          replyMailboxVerified: emailIntegrationResend.replyMailboxVerified,
+          replyMailboxEmail: emailIntegrationResend.replyMailboxEmail,
+        })
+        .from(emailIntegrations)
+        .innerJoin(emailIntegrationResend, eq(emailIntegrations.id, emailIntegrationResend.integrationId))
+        .where(and(eq(emailIntegrations.tenantId, tenantId), eq(emailIntegrations.isActive, true)))
+        .limit(1);
+
+      const activeConfig = sendgridConfig || resendConfig;
+
       if (
-        sendgridConfig?.replyMode === 'real_mailbox' &&
-        sendgridConfig?.replyMailboxVerified &&
-        sendgridConfig?.replyMailboxEmail &&
+        activeConfig?.replyMode === 'real_mailbox' &&
+        activeConfig?.replyMailboxVerified &&
+        activeConfig?.replyMailboxEmail &&
         this.communicationService
       ) {
-        logger.info(`Auto-forwarding inbound email for invoice ${invoiceId} to verified tenant mailbox: ${sendgridConfig.replyMailboxEmail}`);
+        logger.info(`Auto-forwarding inbound email for invoice ${invoiceId} to verified tenant mailbox: ${activeConfig.replyMailboxEmail}`);
         await this.communicationService.forwardInboundEmail({
           tenantId,
-          to: sendgridConfig.replyMailboxEmail,
+          to: activeConfig.replyMailboxEmail,
           from: senderEmail,
           subject: params.subject,
           text: params.text,
