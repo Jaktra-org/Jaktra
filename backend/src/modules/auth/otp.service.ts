@@ -22,9 +22,7 @@ export class OtpService {
   }
 
   generateOtp(): string {
-    const bytes = crypto.randomBytes(3);
-    const num = (bytes.readUIntBE(0, 3) % 1000000).toString();
-    return num.padStart(6, '0');
+    return crypto.randomInt(100000, 1000000).toString();
   }
 
   hashOtp(code: string): string {
