@@ -33,6 +33,7 @@ import { createSettingsRouter } from './modules/settings/settings.routes.js';
 import { SettingsController } from './modules/settings/settings.controller.js';
 import { createWebhookRouter } from './modules/webhook/webhook.routes.js';
 import { SendgridWebhookController } from './modules/webhook/sendgrid-webhook.controller.js';
+import { ResendWebhookController } from './modules/webhook/resend-webhook.controller.js';
 import { PaymentWebhookController } from './modules/webhook/payment-webhook.controller.js';
 import { createTeamRouter } from './modules/team/team.routes.js';
 import { TeamController } from './modules/team/team.controller.js';
@@ -193,7 +194,8 @@ export function createApp(config: AppConfig): Application {
     // Shared Services
     const integrationService = new IntegrationService(integrationRepo, lockoutRedis as unknown as RedisClientType | null, platformMailer);
 
-    const tenantEmailConfigResolver = new DbTenantEmailConfigResolver(integrationService, communicationRepo);
+    const tenantEmailConfigResolver = new DbTenantEmailConfigResolver(integrationService);
+
     const tenantMailer = new TenantMailer(tenantEmailConfigResolver, communicationRepo, invoiceRepo, eventService, dlqRepo);
 
     const portalRepo = new PortalRepository(config.db);
@@ -243,6 +245,12 @@ export function createApp(config: AppConfig): Application {
       disputeService,
       lockoutRedis as unknown as RedisClientType | null
     );
+    const resendWebhookController = new ResendWebhookController(
+      settingsRepo,
+      disputeService,
+      lockoutRedis as unknown as RedisClientType | null,
+      communicationService
+    );
     const paymentWebhookController = new PaymentWebhookController(
       gatewayFactory,
       webhookService,
@@ -250,7 +258,7 @@ export function createApp(config: AppConfig): Application {
       settingsRepo
     );
 
-    app.use('/api/webhooks', createWebhookRouter(sendgridWebhookController, paymentWebhookController));
+    app.use('/api/webhooks', createWebhookRouter(sendgridWebhookController, paymentWebhookController, resendWebhookController));
     app.use('/api/public/portal', createPortalRouter(portalController, portalTokenAuth));
     app.use('/api/portal', createPortalRouter(portalController, portalTokenAuth));
     app.use('/public/portal', createPortalRouter(portalController, portalTokenAuth));
