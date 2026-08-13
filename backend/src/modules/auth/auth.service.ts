@@ -490,7 +490,7 @@ export class AuthService {
     const user = await this.userRepo.findFirstByEmail(normalizedEmail);
 
     if (!user) {
-      await new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * 100));
+      await new Promise((resolve) => setTimeout(resolve, 200 + crypto.randomInt(0, 101)));
       return;
     }
 
