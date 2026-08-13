@@ -259,6 +259,7 @@ export class PaymentPlanService {
       if (!invoice || !invoice.contactEmail) return;
 
       let companyName = 'Billing Team';
+      const senderEmail = process.env.PLATFORM_FROM_EMAIL || 'no-reply@jaktra.site';
       if (this.settingsRepo) {
         const settings = await this.settingsRepo.getSettings(tenantId);
         if (settings?.companyName) {
@@ -317,7 +318,7 @@ export class PaymentPlanService {
 
       await this.tenantMailer.sendCollectionEmail(tenantId, {
         to: invoice.contactEmail,
-        from: { name: companyName, email: 'no-reply@jaktra.site' },
+        from: { name: companyName, email: senderEmail },
         subject,
         html,
       }, { invoiceId });
