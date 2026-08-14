@@ -57,7 +57,11 @@ describe('Agent page controls', () => {
   it('runs the agent using the selected tone when the run button is clicked', async () => {
     vi.mocked(agentService.getRuns).mockResolvedValue({ runs: [] });
     vi.mocked(settingsService.getSettings).mockResolvedValue(mockSettings as any);
-    vi.mocked(settingsService.getIntegrations).mockResolvedValue(mockIntegrations as any);
+    vi.mocked(settingsService.getIntegrations).mockResolvedValue({
+      ...mockIntegrations,
+      smtp: { isConfigured: true, lastValidationResult: 'valid', provider: 'smtp' },
+      smtpProgress: { isActive: true, overallStatus: 'active' },
+    } as any);
     vi.mocked(agentService.runAgent).mockResolvedValue({} as any);
 
     renderWithProviders(<Agent />);

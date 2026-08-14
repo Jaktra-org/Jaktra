@@ -63,10 +63,12 @@ export function Agent() {
   const emailReady = !!(
     integrations?.sendgrid?.isConfigured ||
     integrations?.smtp?.isConfigured ||
+    integrations?.resend?.isConfigured ||
     integrations?.sendgridProgress?.isActive ||
     integrations?.smtpProgress?.isActive ||
-    (settings?.defaultEmailProvider && settings?.senderEmail)
+    integrations?.resendProgress?.isActive
   );
+
 
   const runMutation = useMutation({
     mutationFn: (tone?: string) => agentService.runAgent(tone),
