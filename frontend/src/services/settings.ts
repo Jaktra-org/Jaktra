@@ -58,12 +58,33 @@ export const settingsService = {
     return response.data;
   },
 
-  setDefaultProvider: async (provider: 'sendgrid' | 'smtp' | null): Promise<{ message: string }> => {
+  saveResendKey: async (data: {
+    apiKey?: string;
+    senderName?: string;
+    senderEmail?: string;
+    replyTo?: string | null;
+    replyMode?: 'real_mailbox' | 'webhook_only';
+    replyMailboxEmail?: string | null;
+  }): Promise<{ message: string }> => {
+    const response = await api.post('/settings/integrations/resend', data);
+    return response.data;
+  },
+
+  disconnectResend: async (): Promise<void> => {
+    await api.delete('/settings/integrations/resend');
+  },
+
+  testResendEmail: async (to: string): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post('/settings/integrations/resend/test', { to });
+    return response.data;
+  },
+
+  setDefaultProvider: async (provider: 'sendgrid' | 'smtp' | 'resend' | null): Promise<{ message: string }> => {
     const response = await api.patch('/settings/integrations/default-provider', { provider });
     return response.data;
   },
 
-  activateProvider: async (provider: 'sendgrid' | 'smtp'): Promise<{ message: string }> => {
+  activateProvider: async (provider: 'sendgrid' | 'smtp' | 'resend'): Promise<{ message: string }> => {
     const response = await api.post(`/settings/integrations/${provider}/activate`);
     return response.data;
   },
@@ -114,6 +135,43 @@ export const settingsService = {
 
   verifyInboundWebhook: async (data?: { inboundDomain?: string }): Promise<{ message: string; isVerified: boolean }> => {
     const response = await api.post('/settings/integrations/sendgrid/inbound/verify', data || {});
+    return response.data;
+  },
+
+  getResendHealth: async (): Promise<{
+    status: 'healthy' | 'warning' | 'error';
+    apiKeyValid: boolean;
+    senderVerified: boolean;
+    domainVerified: boolean;
+    inboundParseReady: boolean;
+    message?: string;
+  }> => {
+    const response = await api.get('/settings/integrations/resend/health');
+    return response.data;
+  },
+
+  setResendReplyMode: async (data: { replyMode: 'real_mailbox' | 'webhook_only'; replyMailboxEmail?: string }): Promise<{
+    message: string;
+    replyMode: 'real_mailbox' | 'webhook_only';
+    replyMailboxEmail?: string;
+    replyMailboxVerified: boolean;
+  }> => {
+    const response = await api.post('/settings/integrations/resend/reply-mode', data);
+    return response.data;
+  },
+
+  sendResendReplyMailboxOtp: async (data?: { replyMailboxEmail?: string }): Promise<{ message: string }> => {
+    const response = await api.post('/settings/integrations/resend/reply-mailbox/send-otp', data || {});
+    return response.data;
+  },
+
+  verifyResendReplyMailboxOtp: async (otp: string): Promise<{ message: string; replyMailboxVerified: boolean }> => {
+    const response = await api.post('/settings/integrations/resend/reply-mailbox/verify-otp', { otp });
+    return response.data;
+  },
+
+  verifyResendInbound: async (data?: { inboundDomain?: string }): Promise<{ message: string; isVerified: boolean }> => {
+    const response = await api.post('/settings/integrations/resend/inbound/verify', data || {});
     return response.data;
   },
 };
