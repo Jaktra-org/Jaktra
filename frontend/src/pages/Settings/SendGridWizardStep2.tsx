@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { settingsService } from '../../services/settings';
@@ -31,14 +31,16 @@ export function SendGridWizardStep2({ progress, refetch, onNext, onBack }: Props
 
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setTimeout(() => {
+      setOtpCooldown(prev => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [otpCooldown]);
+
   const startCooldown = () => {
     setOtpCooldown(60);
-    const tick = setInterval(() => {
-      setOtpCooldown(prev => {
-        if (prev <= 1) { clearInterval(tick); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   const saveSenderMutation = useMutation({
