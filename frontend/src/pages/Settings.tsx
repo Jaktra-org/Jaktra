@@ -18,6 +18,7 @@ import { MfaSetup } from './Settings/MfaSetup';
 import { SendGridWizardStep1 } from './Settings/SendGridWizardStep1';
 import { SendGridWizardStep2 } from './Settings/SendGridWizardStep2';
 import { SendGridWizardStep3 } from './Settings/SendGridWizardStep3';
+import { ResendSetupModal } from './Settings/ResendSetupModal';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { MultiStepForm } from '../components/ui/multi-step-form';
 
@@ -392,7 +393,7 @@ function IntegrationsSection() {
               Email Integration
             </h3>
             <p className="text-xs text-[#8a8f98] mt-0.5">
-              Connect SendGrid API or custom outbound SMTP server for automated collection emails.
+              Connect Resend, SendGrid API, or custom outbound SMTP server for automated collection emails.
             </p>
           </div>
           <div className="flex items-center gap-2 text-[#8a8f98] flex-shrink-0 ml-4">
@@ -415,6 +416,7 @@ function EmailSettings() {
   const { user } = useAuth();
   const [smtpModalOpen, setSmtpModalOpen] = useState(false);
   const [sendgridModalOpen, setSendgridModalOpen] = useState(false);
+  const [resendModalOpen, setResendModalOpen] = useState(false);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
@@ -444,8 +446,16 @@ function EmailSettings() {
     },
   });
 
+  const disconnectResendMutation = useMutation({
+    mutationFn: () => settingsService.disconnectResend(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+    },
+  });
+
   const activateProviderMutation = useMutation({
-    mutationFn: (provider: 'sendgrid' | 'smtp') => settingsService.activateProvider(provider),
+    mutationFn: (provider: 'sendgrid' | 'smtp' | 'resend') => settingsService.activateProvider(provider),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integrations'] });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
@@ -462,8 +472,10 @@ function EmailSettings() {
 
   const smtp = integrations?.smtp;
   const sendgrid = integrations?.sendgrid;
+  const resend = integrations?.resend;
   const sendgridProgress = integrations?.sendgridProgress;
   const smtpProgress = integrations?.smtpProgress;
+  const resendProgress = integrations?.resendProgress;
 
   return (
     <div className="space-y-6 text-[#f7f8f8]">
@@ -478,7 +490,7 @@ function EmailSettings() {
               type="radio"
               name="defaultProvider"
               value="sendgrid"
-              checked={sendgridProgress?.isActive || settings?.defaultEmailProvider === 'sendgrid'}
+              checked={sendgridProgress?.isActive === true}
               onChange={() => activateProviderMutation.mutate('sendgrid')}
               disabled={sendgridProgress?.overallStatus !== 'active' && (!sendgrid?.isConfigured || sendgrid?.lastValidationResult !== 'valid')}
               className="w-4 h-4 accent-[#f7f8f8] bg-[#0f1011] border-[#23252a] cursor-pointer"
@@ -490,12 +502,24 @@ function EmailSettings() {
               type="radio"
               name="defaultProvider"
               value="smtp"
-              checked={smtpProgress?.isActive || settings?.defaultEmailProvider === 'smtp'}
+              checked={smtpProgress?.isActive === true}
               onChange={() => activateProviderMutation.mutate('smtp')}
               disabled={smtpProgress?.overallStatus !== 'active' && (!smtp?.isConfigured || smtp?.lastValidationResult !== 'valid')}
               className="w-4 h-4 accent-[#f7f8f8] bg-[#0f1011] border-[#23252a] cursor-pointer"
             />
             <span className="text-xs font-medium text-[#f7f8f8]">Custom SMTP</span>
+          </label>
+          <label className="flex items-center space-x-2.5 cursor-pointer">
+            <input
+              type="radio"
+              name="defaultProvider"
+              value="resend"
+              checked={resendProgress?.isActive === true}
+              onChange={() => activateProviderMutation.mutate('resend')}
+              disabled={resendProgress?.overallStatus !== 'active' && (!resend?.isConfigured || resend?.lastValidationResult !== 'valid')}
+              className="w-4 h-4 accent-[#f7f8f8] bg-[#0f1011] border-[#23252a] cursor-pointer"
+            />
+            <span className="text-xs font-medium text-[#f7f8f8]">Resend API</span>
           </label>
         </div>
       </div>
@@ -543,6 +567,77 @@ function EmailSettings() {
           </div>
         </div>
 
+        {/* Resend API Provider */}
+        {(() => {
+          const isResendFullyActive =
+            resendProgress?.overallStatus === 'active' ||
+            (!!resend?.isConfigured &&
+              resend.lastValidationResult === 'valid' &&
+              !!resendProgress?.step2SenderAndMode?.isDone &&
+              !!resendProgress?.step3InboundWebhook?.isVerified);
+
+          const isResendPartial =
+            resendProgress?.overallStatus === 'partially_configured' ||
+            (!!resend?.isConfigured && !isResendFullyActive);
+
+          const nextStep = !resendProgress?.step1ApiKey?.isDone
+            ? 1
+            : !resendProgress?.step2SenderAndMode?.isDone
+            ? 2
+            : 3;
+
+          return (
+            <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center space-x-3">
+                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${resendProgress?.isActive ? 'bg-[#27a644]' : isResendFullyActive ? 'bg-[#27a644]' : isResendPartial ? 'bg-amber-400' : 'bg-[#34343a]'}`} />
+                <div>
+                  <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
+                    Resend API
+                    {resendProgress?.isActive && (
+                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">Active</span>
+                    )}
+                    {!resendProgress?.isActive && isResendFullyActive && (
+                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#8a8f98] bg-[#8a8f98]/10 px-2 py-0.5 rounded-full border border-[#8a8f98]/20">Ready to Activate</span>
+                    )}
+                    {isResendPartial && !resendProgress?.isActive && (
+                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">Setup Incomplete</span>
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                    {isResendFullyActive
+                      ? 'Connected • Inbound Webhook verified'
+                      : isResendPartial
+                      ? `Setup partially completed. Complete Step ${nextStep} to activate.`
+                      : 'Connect your Resend account for automated email dispatch and inbound reply processing.'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setResendModalOpen(true)}
+                  className="px-3.5 py-1.5 text-xs font-medium text-[#f7f8f8] bg-[#18191c] border border-[#34343a] hover:bg-[#23252a] rounded-xl transition-all cursor-pointer"
+                >
+                  {isResendFullyActive
+                    ? 'Configure Settings'
+                    : isResendPartial
+                    ? `Continue Setup (Step ${nextStep})`
+                    : 'Set Up Resend'}
+                </button>
+                {(resendProgress?.step1ApiKey?.isDone || resend?.isConfigured) && (
+                  <button
+                    type="button"
+                    onClick={() => disconnectResendMutation.mutate()}
+                    className="px-3.5 py-1.5 text-xs font-medium text-red-400 bg-red-950/20 border border-red-900/40 hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* SendGrid API Provider */}
         {(() => {
           const isSendgridFullyActive =
@@ -559,37 +654,26 @@ function EmailSettings() {
           return (
             <div className="p-4 border border-[#23252a] rounded-xl bg-[#010102] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center space-x-3">
-                <span
-                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                    isSendgridFullyActive
-                      ? 'bg-[#27a644]'
-                      : sendgrid?.isConfigured && sendgrid.lastValidationResult !== 'valid'
-                      ? 'bg-red-400'
-                      : isSendgridPartial
-                      ? 'bg-amber-400'
-                      : 'bg-[#34343a]'
-                  }`}
-                />
+                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${sendgridProgress?.isActive ? 'bg-[#27a644]' : isSendgridFullyActive ? (sendgridProgress?.isActive ? 'bg-[#27a644]' : 'bg-[#27a644]') : isSendgridPartial ? 'bg-amber-400' : 'bg-[#34343a]'}`} />
                 <div>
                   <h4 className="text-xs font-semibold text-[#f7f8f8] flex items-center">
-                    SendGrid API Integration
-                    {isSendgridFullyActive && (
-                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">
-                        Active
-                      </span>
+                    SendGrid API
+                    {sendgridProgress?.isActive && (
+                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#27a644] bg-[#27a644]/10 px-2 py-0.5 rounded-full border border-[#27a644]/20">Active</span>
                     )}
-                    {isSendgridPartial && (
-                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                        Incomplete Setup (Step {nextStep} of 3)
-                      </span>
+                    {!sendgridProgress?.isActive && isSendgridFullyActive && (
+                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-[#8a8f98] bg-[#8a8f98]/10 px-2 py-0.5 rounded-full border border-[#8a8f98]/20">Ready to Activate</span>
+                    )}
+                    {isSendgridPartial && !sendgridProgress?.isActive && (
+                      <span className="ml-2 text-[9px] uppercase font-bold tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">Setup Incomplete</span>
                     )}
                   </h4>
                   <p className="text-[11px] text-[#8a8f98] mt-0.5">
                     {isSendgridFullyActive
-                      ? `Connected (${sendgrid?.senderEmail || settings?.senderEmail || 'Sender Configured'}) • High-speed API delivery & inbound webhook active`
+                      ? 'Connected • Inbound Parse webhook verified'
                       : isSendgridPartial
-                      ? `Setup in progress • Step ${nextStep} pending: ${nextStep === 2 ? 'Sender Identity & Mode' : 'Inbound Webhook Verification'}`
-                      : 'High-speed API email delivery with bounce tracking, verified sender identity, and inbound reply parsing.'}
+                      ? `Setup partially completed. Complete Step ${nextStep} to activate.`
+                      : 'Connect your SendGrid account for automated email dispatch and inbound reply processing.'}
                   </p>
                 </div>
               </div>
@@ -636,6 +720,15 @@ function EmailSettings() {
           isOpen={sendgridModalOpen}
           onClose={() => setSendgridModalOpen(false)}
           sendgridProgress={sendgridProgress}
+          refetch={refetchIntegrations}
+        />
+      )}
+
+      {resendModalOpen && (
+        <ResendSetupModal
+          isOpen={resendModalOpen}
+          onClose={() => setResendModalOpen(false)}
+          resendProgress={resendProgress}
           refetch={refetchIntegrations}
         />
       )}
