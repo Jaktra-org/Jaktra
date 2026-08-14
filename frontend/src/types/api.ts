@@ -246,7 +246,7 @@ export interface TenantSettings {
   currency?: string;
   scheduleHour: number;
   idempotencyWindowHours: number;
-  defaultEmailProvider?: 'sendgrid' | 'smtp' | null;
+
   skipPaymentWarning: boolean;
   autoPurgeEnabled: boolean;
   autoPurgeDays: number;
@@ -273,6 +273,14 @@ export interface SmtpIntegrationStatus extends BaseIntegrationStatus {
   maskedUsername?: string;
   port?: number;
   securityMode?: string;
+}
+
+export interface ResendIntegrationStatus extends BaseIntegrationStatus {
+  provider: 'resend';
+  senderName?: string | null;
+  senderEmail?: string | null;
+  replyTo?: string | null;
+  isSenderConfigured?: boolean;
 }
 
 export interface RazorpayIntegrationStatus extends BaseIntegrationStatus {
@@ -351,13 +359,51 @@ export interface SmtpSetupProgress {
   isActive: boolean;
 }
 
+export interface SetupProgressStep1Resend {
+  isDone: boolean;
+  hasApiKey: boolean;
+  lastValidationResult: 'valid' | 'invalid' | 'untested';
+}
+
+export interface SetupProgressStep2Resend {
+  isDone: boolean;
+  status: 'not_started' | 'awaiting_sender_info' | 'awaiting_otp' | 'completed';
+  senderName: string | null;
+  senderEmail: string | null;
+  replyTo: string | null;
+  replyMode: 'real_mailbox' | 'webhook_only';
+  replyMailboxEmail: string | null;
+  replyMailboxVerified: boolean;
+  requiresOtp: boolean;
+}
+
+export interface SetupProgressStep3Resend {
+  isDone: boolean;
+  status: 'not_started' | 'awaiting_inbound_domain' | 'awaiting_mx_verification' | 'verified';
+  inboundDomain: string | null;
+  webhookUrl: string;
+  resendSettingsUrl: string;
+  isVerified: boolean;
+}
+
+export interface ResendSetupProgress {
+  provider: 'resend';
+  step1ApiKey: SetupProgressStep1Resend;
+  step2SenderAndMode: SetupProgressStep2Resend;
+  step3InboundWebhook: SetupProgressStep3Resend;
+  overallStatus: 'not_configured' | 'partially_configured' | 'active';
+  isActive: boolean;
+}
+
 export interface IntegrationsResponse {
   sendgrid: SendgridIntegrationStatus;
   smtp: SmtpIntegrationStatus;
+  resend?: ResendIntegrationStatus;
   razorpay: RazorpayIntegrationStatus;
   inboundParse?: InboundParseIntegrationStatus;
   sendgridProgress?: SendgridSetupProgress;
   smtpProgress?: SmtpSetupProgress;
+  resendProgress?: ResendSetupProgress;
 }
 
 export interface TeamMember {
