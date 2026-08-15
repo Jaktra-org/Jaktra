@@ -213,7 +213,7 @@ export class InvoiceRepository {
         AND ppi.status IN ('pending', 'overdue')
     ), ${invoices.dueDate})`;
 
-    const effectiveDaysOverdueSql = sql`GREATEST(0, DATEDIFF(CURRENT_DATE(), ${effectiveDueDateSql}))`;
+    const effectiveDaysOverdueSql = sql`GREATEST(0, (CURRENT_DATE - (${effectiveDueDateSql})::date))`;
 
     if (params.daysOverdueMin !== undefined) {
       conditions.push(sql`${effectiveDaysOverdueSql} >= ${params.daysOverdueMin}`);
