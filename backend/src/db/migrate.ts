@@ -1,4 +1,5 @@
-import { migrate } from 'drizzle-orm/mysql2/migrator';
+import 'dotenv/config';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { createDatabaseClient } from './client.js';
 import { logger } from '../shared/logger.js';
 import path from 'path';
@@ -34,24 +35,20 @@ function isSchemaAlreadyExistsError(error: unknown): boolean {
   const combinedStr = [
     typeof errRecord['message'] === 'string' ? errRecord['message'] : '',
     typeof causeRecord['message'] === 'string' ? causeRecord['message'] : '',
-    typeof causeRecord['sqlMessage'] === 'string' ? causeRecord['sqlMessage'] : '',
     typeof causeRecord['code'] === 'string' ? causeRecord['code'] : '',
+    typeof errRecord['code'] === 'string' ? errRecord['code'] : '',
     String(error),
   ].join(' ');
 
   return (
     combinedStr.includes('already exists') ||
-    combinedStr.includes('Duplicate column name') ||
-    combinedStr.includes('Duplicate foreign key constraint') ||
-    combinedStr.includes('Duplicate key') ||
-    combinedStr.includes('ER_DUP_KEY') ||
-    combinedStr.includes('ER_DUP_FIELDNAME') ||
-    combinedStr.includes('ER_TABLE_EXISTS_ERROR') ||
-    combinedStr.includes('ER_FK_DUP_NAME') ||
-    combinedStr.includes('ER_DUP_KEYNAME') ||
-    combinedStr.includes("Can't DROP") ||
-    combinedStr.includes('check that column/key exists') ||
-    combinedStr.includes('ER_CANT_DROP_FIELD_OR_KEY')
+    combinedStr.includes('42P07') || // duplicate_table
+    combinedStr.includes('42701') || // duplicate_column
+    combinedStr.includes('42710') || // duplicate_object
+    combinedStr.includes('23505') || // unique_violation
+    combinedStr.includes('Duplicate') ||
+    combinedStr.includes('relation') ||
+    combinedStr.includes('type')
   );
 }
 
@@ -80,10 +77,10 @@ export async function runMigrations(): Promise<void> {
           const journal: Journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
           
           await db.$pool.query(
-            `CREATE TABLE IF NOT EXISTS \`__drizzle_migrations\` (
-              \`id\` serial PRIMARY KEY,
-              \`hash\` text NOT NULL,
-              \`created_at\` bigint
+            `CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+              id serial PRIMARY KEY,
+              hash text NOT NULL,
+              created_at bigint
             )`
           );
 
@@ -93,12 +90,12 @@ export async function runMigrations(): Promise<void> {
               const sqlContent = fs.readFileSync(sqlPath, 'utf8');
               const hash = crypto.createHash('sha256').update(sqlContent).digest('hex');
               
-              const [rows] = await db.$pool.query(
-                `SELECT id FROM \`__drizzle_migrations\` WHERE \`created_at\` = ?`,
+              const result = await db.$pool.query(
+                `SELECT id FROM "__drizzle_migrations" WHERE created_at = $1`,
                 [entry.when]
               );
 
-              if (!Array.isArray(rows) || rows.length === 0) {
+              if (!result.rows || result.rows.length === 0) {
                 const statements = sqlContent.split(/--> statement-breakpoint|;/).map((s) => s.trim()).filter(Boolean);
                 for (const statement of statements) {
                   try {
@@ -109,7 +106,7 @@ export async function runMigrations(): Promise<void> {
                 }
 
                 await db.$pool.query(
-                  `INSERT INTO \`__drizzle_migrations\` (\`hash\`, \`created_at\`) VALUES (?, ?)`,
+                  `INSERT INTO "__drizzle_migrations" (hash, created_at) VALUES ($1, $2)`,
                   [hash, entry.when]
                 );
               }
