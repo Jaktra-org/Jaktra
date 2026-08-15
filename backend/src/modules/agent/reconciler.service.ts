@@ -22,7 +22,7 @@ export class ReconcilerService {
   ) {}
 
   async reconcile(tenantId: string): Promise<ReconcilerResult> {
-    const [rows] = await this.db.execute(sql`
+    const result = await this.db.execute(sql`
         SELECT
             i.id as invoice_id,
             i.invoice_no,
@@ -38,20 +38,22 @@ export class ReconcilerService {
         WHERE i.tenant_id = ${tenantId}
         AND i.deleted_at IS NULL
         AND i.followup_count != COALESCE(c.sent_count, 0)
-    `) as unknown as [Record<string, unknown>[]];
+    `) as unknown as { rows?: Record<string, unknown>[] } | Record<string, unknown>[];
+
+    const rows = Array.isArray(result) ? result : (result?.rows || []);
 
     for (const m of rows) {
-      await this.invoiceRepo.updateFollowupCount(m.invoice_id as string, Number(m.new_followup_count));
+      await this.invoiceRepo.updateFollowupCount(m['invoice_id'] as string, Number(m['new_followup_count']));
     }
 
     return {
       checked: await this.invoiceRepo.countByTenant(tenantId),
       mismatches: rows.length,
       corrections: rows.map((m: Record<string, unknown>) => ({
-        invoiceId: m.invoice_id as string,
-        invoiceNo: m.invoice_no as string,
-        oldFollowupCount: Number(m.old_followup_count),
-        newFollowupCount: Number(m.new_followup_count),
+        invoiceId: m['invoice_id'] as string,
+        invoiceNo: m['invoice_no'] as string,
+        oldFollowupCount: Number(m['old_followup_count']),
+        newFollowupCount: Number(m['new_followup_count']),
       })),
     };
   }
