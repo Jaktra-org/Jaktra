@@ -270,14 +270,14 @@ describe('Portal Token Security & Isolation Tests', () => {
         senderEmail: 'test@example.com',
         overallStatus: 'active',
         isActive: true,
-      }).onDuplicateKeyUpdate({ set: { overallStatus: 'active', isActive: true } });
+      }).onConflictDoUpdate({ target: emailIntegrations.id, set: { overallStatus: 'active', isActive: true } });
 
       await db.insert(emailIntegrationSendgrid).values({
         id: 'integ-sg-portal-test',
         integrationId: 'integ-portal-test',
         inboundDomain: 'reply.jaktra.site',
         inboundParseVerified: true,
-      }).onDuplicateKeyUpdate({ set: { inboundParseVerified: true } });
+      }).onConflictDoUpdate({ target: emailIntegrationSendgrid.id, set: { inboundParseVerified: true } });
 
       try {
         // Send first follow-up email
