@@ -32,7 +32,8 @@ export class DlqRepository {
         firstFailure: new Date(),
         lastFailure: new Date(),
       })
-      .onDuplicateKeyUpdate({
+      .onConflictDoUpdate({
+        target: dlqEntries.invoiceId,
         set: {
           consecutiveFailures: sql`${dlqEntries.consecutiveFailures} + 1`,
           lastError: errorMsg,
