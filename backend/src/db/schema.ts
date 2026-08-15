@@ -1,91 +1,68 @@
 import {
-  mysqlTable,
-  mysqlEnum,
+  pgTable,
+  pgEnum,
   varchar,
   text,
-  int,
-  datetime,
+  integer,
+  timestamp,
   date,
-  decimal,
-  json,
+  numeric,
+  jsonb,
   uniqueIndex,
   index,
   boolean,
-  unique,
-} from 'drizzle-orm/mysql-core';
+} from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import crypto from 'crypto';
 
-export const userRoleEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['admin', 'manager', 'viewer']),
-  { enumValues: ['admin', 'manager', 'viewer'] as const }
-);
+export const userRoleEnum = pgEnum('user_role', ['admin', 'manager', 'viewer']);
 
-export const providerEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['sendgrid', 'smtp', 'razorpay']),
-  { enumValues: ['sendgrid', 'smtp', 'razorpay'] as const }
-);
+export const providerEnum = pgEnum('provider', ['sendgrid', 'smtp', 'razorpay']);
 
-export const paymentLinkStatusEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['active', 'paid', 'expired', 'cancelled']),
-  { enumValues: ['active', 'paid', 'expired', 'cancelled'] as const }
-);
+export const paymentLinkStatusEnum = pgEnum('payment_link_status', ['active', 'paid', 'expired', 'cancelled']);
 
-export const defaultEmailProviderEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['sendgrid', 'smtp']),
-  { enumValues: ['sendgrid', 'smtp'] as const }
-);
+export const defaultEmailProviderEnum = pgEnum('default_email_provider', ['sendgrid', 'smtp']);
 
-export const validationResultEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['valid', 'invalid', 'revoked', 'insufficient_scope', 'unverified_sender', 'unknown']),
-  { enumValues: ['valid', 'invalid', 'revoked', 'insufficient_scope', 'unverified_sender', 'unknown'] as const }
-);
+export const validationResultEnum = pgEnum('validation_result', ['valid', 'invalid', 'revoked', 'insufficient_scope', 'unverified_sender', 'unknown']);
 
-export const communicationSourceEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['bulk_ai_agent', 'invoice_manual', 'dispute_agent', 'system']),
-  { enumValues: ['bulk_ai_agent', 'invoice_manual', 'dispute_agent', 'system'] as const }
-);
+export const communicationSourceEnum = pgEnum('communication_source', ['bulk_ai_agent', 'invoice_manual', 'dispute_agent', 'system']);
 
-export const inboundEmailStatusEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['pending', 'resolved', 'archived']),
-  { enumValues: ['pending', 'resolved', 'archived'] as const }
-);
+export const inboundEmailStatusEnum = pgEnum('inbound_email_status', ['pending', 'resolved', 'archived']);
 
-export const paymentPlanStatusEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['pending', 'approved', 'denied', 'cancelled']),
-  { enumValues: ['pending', 'approved', 'denied', 'cancelled'] as const }
-);
+export const paymentPlanStatusEnum = pgEnum('payment_plan_status', ['pending', 'approved', 'denied', 'cancelled']);
 
-export const installmentStatusEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['pending', 'paid', 'overdue']),
-  { enumValues: ['pending', 'paid', 'overdue'] as const }
-);
+export const installmentStatusEnum = pgEnum('installment_status', ['pending', 'paid', 'overdue']);
 
-export const paymentStatusEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['Pending', 'Paid', 'Overdue', 'Written Off']),
-  { enumValues: ['Pending', 'Paid', 'Overdue', 'Written Off'] as const }
-);
+export const paymentStatusEnum = pgEnum('payment_status', ['Pending', 'Paid', 'Overdue', 'Written Off']);
 
-export const communicationChannelEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['email', 'sms', 'whatsapp']),
-  { enumValues: ['email', 'sms', 'whatsapp'] as const }
-);
+export const communicationChannelEnum = pgEnum('communication_channel', ['email', 'sms', 'whatsapp']);
 
-export const communicationStatusEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['pending', 'sent', 'failed']),
-  { enumValues: ['pending', 'sent', 'failed'] as const }
-);
+export const communicationStatusEnum = pgEnum('communication_status', ['pending', 'sent', 'failed']);
 
-export const tenants = mysqlTable('tenants', {
+export const emailProviderEnum = pgEnum('email_provider', ['sendgrid', 'smtp', 'resend']);
+
+export const integrationOverallStatusEnum = pgEnum('integration_overall_status', ['not_configured', 'partially_configured', 'active']);
+
+export const sendgridReplyModeEnum = pgEnum('sendgrid_reply_mode', ['real_mailbox', 'webhook_only']);
+
+export const smtpEncryptionTypeEnum = pgEnum('smtp_encryption_type', ['tls', 'ssl', 'none']);
+
+export const smtpValidationResultEnum = pgEnum('smtp_validation_result', ['valid', 'invalid', 'untested']);
+
+export const resendValidationResultEnum = pgEnum('resend_validation_result', ['valid', 'invalid', 'untested']);
+
+export const resendReplyModeEnum = pgEnum('resend_reply_mode', ['real_mailbox', 'webhook_only']);
+
+export const tenants = pgTable('tenants', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
-  createdAt: datetime('created_at', { mode: 'date' })
+  createdAt: timestamp('created_at', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const users = mysqlTable(
+export const users = pgTable(
   'users',
   {
     id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -96,16 +73,16 @@ export const users = mysqlTable(
     email: varchar('email', { length: 255 }).notNull(),
     passwordHash: text('password_hash').notNull(),
     role: userRoleEnum('role').notNull().default('viewer'),
-    createdAt: datetime('created_at', { mode: 'date' })
+    createdAt: timestamp('created_at', { mode: 'date' })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
     mfaEnabled: boolean('mfa_enabled').notNull().default(false),
     mfaSecret: text('mfa_secret'),
     mfaSecretIv: text('mfa_secret_iv'),
     mfaSecretAuthTag: text('mfa_secret_auth_tag'),
-    mfaSecretKeyVersion: int('mfa_secret_key_version'),
+    mfaSecretKeyVersion: integer('mfa_secret_key_version'),
     mfaBackupCodes: text('mfa_backup_codes'),
-    mfaLastUsedStep: int('mfa_last_used_step'),
+    mfaLastUsedStep: integer('mfa_last_used_step'),
     emailVerified: boolean('email_verified').notNull().default(false),
   },
   (table) => [
@@ -113,7 +90,7 @@ export const users = mysqlTable(
   ]
 );
 
-export const invoices = mysqlTable(
+export const invoices = pgTable(
   'invoices',
   {
     id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -122,24 +99,24 @@ export const invoices = mysqlTable(
       .references(() => tenants.id, { onDelete: 'cascade' }),
     invoiceNo: varchar('invoice_no', { length: 255 }).notNull(),
     clientName: text('client_name').notNull(),
-    invoiceAmount: decimal('invoice_amount', { precision: 14, scale: 2 }).notNull(),
+    invoiceAmount: numeric('invoice_amount', { precision: 14, scale: 2 }).notNull(),
     currency: varchar('currency', { length: 10 }).notNull().default('INR'),
     dueDate: date('due_date', { mode: 'string' }).notNull(),
     contactEmail: varchar('contact_email', { length: 255 }).notNull(),
     subject: text('subject'),
     paymentStatus: paymentStatusEnum('payment_status').notNull().default('Pending'),
-    followupCount: int('followup_count').notNull().default(0),
-    lastFollowupDate: datetime('last_followup_date', { mode: 'date' }),
+    followupCount: integer('followup_count').notNull().default(0),
+    lastFollowupDate: timestamp('last_followup_date', { mode: 'date' }),
     externalRefId: varchar('external_ref_id', { length: 255 }),
-    createdAt: datetime('created_at', { mode: 'date' })
+    createdAt: timestamp('created_at', { mode: 'date' })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: datetime('updated_at', { mode: 'date' })
+    updatedAt: timestamp('updated_at', { mode: 'date' })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    deletedAt: datetime('deleted_at', { mode: 'date' }),
+    deletedAt: timestamp('deleted_at', { mode: 'date' }),
     hasActivePaymentPlan: boolean('has_active_payment_plan').notNull().default(false),
-    paymentStatusChangedAt: datetime('payment_status_changed_at', { mode: 'date' }),
+    paymentStatusChangedAt: timestamp('payment_status_changed_at', { mode: 'date' }),
   },
   (table) => [
     uniqueIndex('invoices_invoice_no_tenant_id_uniq').on(
@@ -154,7 +131,7 @@ export const invoices = mysqlTable(
   ]
 );
 
-export const communications = mysqlTable(
+export const communications = pgTable(
   'communications',
   {
     id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -170,9 +147,9 @@ export const communications = mysqlTable(
     status: communicationStatusEnum('status').notNull().default('pending'),
     source: communicationSourceEnum('source').notNull().default('system'),
     aiSummary: text('ai_summary'),
-    sentAt: datetime('sent_at', { mode: 'date' }),
+    sentAt: timestamp('sent_at', { mode: 'date' }),
     error: text('error'),
-    createdAt: datetime('created_at', { mode: 'date' })
+    createdAt: timestamp('created_at', { mode: 'date' })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
   },
@@ -186,7 +163,7 @@ export const communications = mysqlTable(
   ]
 );
 
-export const events = mysqlTable(
+export const events = pgTable(
   'events',
   {
     id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -202,11 +179,11 @@ export const events = mysqlTable(
     actionType: varchar('action_type', { length: 100 }).notNull().default('legacy.event'),
     description: text('description'),
     source: varchar('source', { length: 50 }).notNull().default('system'),
-    oldValues: json('old_values'),
-    newValues: json('new_values'),
+    oldValues: jsonb('old_values'),
+    newValues: jsonb('new_values'),
     eventType: varchar('event_type', { length: 100 }).notNull(),
-    payload: json('payload'),
-    createdAt: datetime('created_at', { mode: 'date' })
+    payload: jsonb('payload'),
+    createdAt: timestamp('created_at', { mode: 'date' })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
   },
@@ -231,7 +208,7 @@ export const events = mysqlTable(
   ]
 );
 
-export const agentRuns = mysqlTable(
+export const agentRuns = pgTable(
   'agent_runs',
   {
     id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -239,17 +216,17 @@ export const agentRuns = mysqlTable(
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
     status: varchar('status', { length: 50 }).notNull().default('running'),
-    startTime: datetime('start_time', { mode: 'date' })
+    startTime: timestamp('start_time', { mode: 'date' })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    endTime: datetime('end_time', { mode: 'date' }),
-    invoicesProcessed: int('invoices_processed').notNull().default(0),
-    emailsSent: int('emails_sent').notNull().default(0),
-    errors: int('errors').notNull().default(0),
+    endTime: timestamp('end_time', { mode: 'date' }),
+    invoicesProcessed: integer('invoices_processed').notNull().default(0),
+    emailsSent: integer('emails_sent').notNull().default(0),
+    errors: integer('errors').notNull().default(0),
     errorDetails: text('error_details'),
-    chunkSize: int('chunk_size').notNull().default(10),
-    totalInvoices: int('total_invoices').notNull().default(0),
-    createdAt: datetime('created_at', { mode: 'date' })
+    chunkSize: integer('chunk_size').notNull().default(10),
+    totalInvoices: integer('total_invoices').notNull().default(0),
+    createdAt: timestamp('created_at', { mode: 'date' })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
   },
@@ -261,7 +238,7 @@ export const agentRuns = mysqlTable(
   ]
 );
 
-export const agentRunChunks = mysqlTable(
+export const agentRunChunks = pgTable(
   'agent_run_chunks',
   {
     id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -271,17 +248,17 @@ export const agentRunChunks = mysqlTable(
     tenantId: varchar('tenant_id', { length: 36 })
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
-    chunkIndex: int('chunk_index').notNull(),
-    totalChunks: int('total_chunks').notNull(),
-    invoiceIds: json('invoice_ids').notNull(),
+    chunkIndex: integer('chunk_index').notNull(),
+    totalChunks: integer('total_chunks').notNull(),
+    invoiceIds: jsonb('invoice_ids').notNull(),
     status: varchar('status', { length: 50 }).notNull().default('queued'),
-    invoicesProcessed: int('invoices_processed').notNull().default(0),
-    emailsSent: int('emails_sent').notNull().default(0),
-    errors: int('errors').notNull().default(0),
+    invoicesProcessed: integer('invoices_processed').notNull().default(0),
+    emailsSent: integer('emails_sent').notNull().default(0),
+    errors: integer('errors').notNull().default(0),
     errorDetails: text('error_details'),
-    startTime: datetime('start_time', { mode: 'date' }),
-    endTime: datetime('end_time', { mode: 'date' }),
-    createdAt: datetime('created_at', { mode: 'date' })
+    startTime: timestamp('start_time', { mode: 'date' }),
+    endTime: timestamp('end_time', { mode: 'date' }),
+    createdAt: timestamp('created_at', { mode: 'date' })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
   },
@@ -291,28 +268,28 @@ export const agentRunChunks = mysqlTable(
   ]
 );
 
-export const dlqEntries = mysqlTable('dlq_entries', {
+export const dlqEntries = pgTable('dlq_entries', {
   invoiceId: varchar('invoice_id', { length: 36 })
     .primaryKey()
     .references(() => invoices.id, { onDelete: 'cascade' }),
   tenantId: varchar('tenant_id', { length: 36 })
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
-  consecutiveFailures: int('consecutive_failures').notNull().default(1),
+  consecutiveFailures: integer('consecutive_failures').notNull().default(1),
   lastError: text('last_error'),
   lastErrorDisplay: text('last_error_display'),
   lastErrorTechnical: text('last_error_technical'),
-  firstFailure: datetime('first_failure', { mode: 'date' })
+  firstFailure: timestamp('first_failure', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  lastFailure: datetime('last_failure', { mode: 'date' })
+  lastFailure: timestamp('last_failure', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
   index('dlq_entries_tenant_id_idx').on(table.tenantId),
 ]);
 
-export const tenantSettings = mysqlTable('tenant_settings', {
+export const tenantSettings = pgTable('tenant_settings', {
   tenantId: varchar('tenant_id', { length: 36 })
     .primaryKey()
     .references(() => tenants.id, { onDelete: 'cascade' }),
@@ -320,57 +297,22 @@ export const tenantSettings = mysqlTable('tenant_settings', {
   paymentLink: text('payment_link'),
   bankDetails: text('bank_details'),
   timezone: varchar('timezone', { length: 100 }).notNull().default('UTC'),
-  scheduleHour: int('schedule_hour').notNull().default(9),
-  idempotencyWindowHours: int('idempotency_window_hours').notNull().default(20),
-  updatedAt: datetime('updated_at', { mode: 'date' })
+  scheduleHour: integer('schedule_hour').notNull().default(9),
+  idempotencyWindowHours: integer('idempotency_window_hours').notNull().default(20),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
   webhookToken: varchar('webhook_token', { length: 255 }),
   skipPaymentWarning: boolean('skip_payment_warning').notNull().default(false),
   autoPurgeEnabled: boolean('auto_purge_enabled').notNull().default(false),
-  autoPurgeDays: int('auto_purge_days').notNull().default(30),
-  dlqThreshold: int('dlq_threshold').notNull().default(3),
+  autoPurgeDays: integer('auto_purge_days').notNull().default(30),
+  dlqThreshold: integer('dlq_threshold').notNull().default(3),
   mfaRequired: boolean('mfa_required').notNull().default(false),
   inboundBlockedByAdmin: boolean('inbound_blocked_by_admin').notNull().default(false),
-  autoPurgeArchivedDisputesDays: int('auto_purge_archived_disputes_days').notNull().default(30),
+  autoPurgeArchivedDisputesDays: integer('auto_purge_archived_disputes_days').notNull().default(30),
 });
 
-export const emailProviderEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['sendgrid', 'smtp', 'resend']),
-  { enumValues: ['sendgrid', 'smtp', 'resend'] as const }
-);
-
-export const integrationOverallStatusEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['not_configured', 'partially_configured', 'active']),
-  { enumValues: ['not_configured', 'partially_configured', 'active'] as const }
-);
-
-export const sendgridReplyModeEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['real_mailbox', 'webhook_only']),
-  { enumValues: ['real_mailbox', 'webhook_only'] as const }
-);
-
-export const smtpEncryptionTypeEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['tls', 'ssl', 'none']),
-  { enumValues: ['tls', 'ssl', 'none'] as const }
-);
-
-export const smtpValidationResultEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['valid', 'invalid', 'untested']),
-  { enumValues: ['valid', 'invalid', 'untested'] as const }
-);
-
-export const resendValidationResultEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['valid', 'invalid', 'untested']),
-  { enumValues: ['valid', 'invalid', 'untested'] as const }
-);
-
-export const resendReplyModeEnum = Object.assign(
-  (name: string) => mysqlEnum(name, ['real_mailbox', 'webhook_only']),
-  { enumValues: ['real_mailbox', 'webhook_only'] as const }
-);
-
-export const emailIntegrations = mysqlTable('email_integrations', {
+export const emailIntegrations = pgTable('email_integrations', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 })
     .notNull()
@@ -382,15 +324,15 @@ export const emailIntegrations = mysqlTable('email_integrations', {
   overallStatus: integrationOverallStatusEnum('overall_status').notNull().default('not_configured'),
   isActive: boolean('is_active').notNull().default(false),
   activeTenantId: varchar('active_tenant_id', { length: 36 }),
-  createdAt: datetime('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: datetime('updated_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
   uniqueIndex('unq_tenant_provider').on(table.tenantId, table.provider),
   uniqueIndex('unq_single_active_provider').on(table.activeTenantId),
   index('idx_email_integrations_tenant').on(table.tenantId),
 ]);
 
-export const emailIntegrationSendgrid = mysqlTable('email_integration_sendgrid', {
+export const emailIntegrationSendgrid = pgTable('email_integration_sendgrid', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   integrationId: varchar('integration_id', { length: 36 })
     .notNull()
@@ -398,7 +340,7 @@ export const emailIntegrationSendgrid = mysqlTable('email_integration_sendgrid',
   ciphertext: text('ciphertext'),
   iv: varchar('iv', { length: 64 }),
   authTag: varchar('auth_tag', { length: 64 }),
-  keyVersion: int('key_version').notNull().default(1),
+  keyVersion: integer('key_version').notNull().default(1),
   inboundDomain: varchar('inbound_domain', { length: 255 }),
   inboundParseVerified: boolean('inbound_parse_verified').notNull().default(false),
   webhookUrl: varchar('webhook_url', { length: 512 }),
@@ -406,32 +348,32 @@ export const emailIntegrationSendgrid = mysqlTable('email_integration_sendgrid',
   replyMailboxEmail: varchar('reply_mailbox_email', { length: 255 }),
   replyMailboxVerified: boolean('reply_mailbox_verified').notNull().default(false),
   replyMailboxOtpCode: varchar('reply_mailbox_otp_code', { length: 6 }),
-  replyMailboxOtpExpiresAt: datetime('reply_mailbox_otp_expires_at', { mode: 'date' }),
+  replyMailboxOtpExpiresAt: timestamp('reply_mailbox_otp_expires_at', { mode: 'date' }),
 }, (table) => [
   uniqueIndex('unq_sendgrid_integration_id').on(table.integrationId),
 ]);
 
-export const emailIntegrationSmtp = mysqlTable('email_integration_smtp', {
+export const emailIntegrationSmtp = pgTable('email_integration_smtp', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   integrationId: varchar('integration_id', { length: 36 })
     .notNull()
     .references(() => emailIntegrations.id, { onDelete: 'cascade' }),
   host: varchar('host', { length: 255 }).notNull(),
-  port: int('port').notNull().default(587),
+  port: integer('port').notNull().default(587),
   username: varchar('username', { length: 255 }),
   ciphertext: text('ciphertext').notNull(),
   iv: varchar('iv', { length: 64 }).notNull(),
   authTag: varchar('auth_tag', { length: 64 }).notNull(),
-  keyVersion: int('key_version').notNull().default(1),
+  keyVersion: integer('key_version').notNull().default(1),
   encryptionType: smtpEncryptionTypeEnum('encryption_type').notNull().default('tls'),
   allowSelfSigned: boolean('allow_self_signed').notNull().default(false),
   lastValidationResult: smtpValidationResultEnum('last_validation_result').notNull().default('untested'),
-  lastValidatedAt: datetime('last_validated_at', { mode: 'date' }),
+  lastValidatedAt: timestamp('last_validated_at', { mode: 'date' }),
 }, (table) => [
   uniqueIndex('unq_smtp_integration_id').on(table.integrationId),
 ]);
 
-export const emailIntegrationResend = mysqlTable('email_integration_resend', {
+export const emailIntegrationResend = pgTable('email_integration_resend', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   integrationId: varchar('integration_id', { length: 36 })
     .notNull()
@@ -439,9 +381,9 @@ export const emailIntegrationResend = mysqlTable('email_integration_resend', {
   ciphertext: text('ciphertext'),
   iv: varchar('iv', { length: 64 }),
   authTag: varchar('auth_tag', { length: 64 }),
-  keyVersion: int('key_version').notNull().default(1),
+  keyVersion: integer('key_version').notNull().default(1),
   lastValidationResult: resendValidationResultEnum('last_validation_result').notNull().default('untested'),
-  lastValidatedAt: datetime('last_validated_at', { mode: 'date' }),
+  lastValidatedAt: timestamp('last_validated_at', { mode: 'date' }),
   inboundDomain: varchar('inbound_domain', { length: 255 }),
   inboundParseVerified: boolean('inbound_parse_verified').notNull().default(false),
   webhookUrl: varchar('webhook_url', { length: 512 }),
@@ -449,31 +391,29 @@ export const emailIntegrationResend = mysqlTable('email_integration_resend', {
   replyMailboxEmail: varchar('reply_mailbox_email', { length: 255 }),
   replyMailboxVerified: boolean('reply_mailbox_verified').notNull().default(false),
   replyMailboxOtpCode: varchar('reply_mailbox_otp_code', { length: 6 }),
-  replyMailboxOtpExpiresAt: datetime('reply_mailbox_otp_expires_at', { mode: 'date' }),
+  replyMailboxOtpExpiresAt: timestamp('reply_mailbox_otp_expires_at', { mode: 'date' }),
 }, (table) => [
   uniqueIndex('unq_resend_integration_id').on(table.integrationId),
 ]);
 
-export const tenantIntegrations = mysqlTable('tenant_integrations', {
+export const tenantIntegrations = pgTable('tenant_integrations', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 }).notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   provider: providerEnum('provider').notNull(),
   ciphertext: text('ciphertext').notNull(),
   iv: varchar('iv', { length: 100 }).notNull(),
   authTag: varchar('auth_tag', { length: 100 }).notNull(),
-  keyVersion: int('key_version').notNull().default(1),
-  lastValidatedAt: datetime('last_validated_at', { mode: 'date' }),
+  keyVersion: integer('key_version').notNull().default(1),
+  lastValidatedAt: timestamp('last_validated_at', { mode: 'date' }),
   lastValidationResult: validationResultEnum('last_validation_result').notNull().default('unknown'),
   lastOperationalErrorCode: varchar('last_operational_error_code', { length: 100 }),
-  createdAt: datetime('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: datetime('updated_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (table) => {
-  return {
-    tenantProviderUniq: unique('tenant_integrations_tenant_provider_uniq').on(table.tenantId, table.provider)
-  };
-});
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex('tenant_integrations_tenant_provider_uniq').on(table.tenantId, table.provider),
+]);
 
-export const paymentWebhookEvents = mysqlTable('payment_webhook_events', {
+export const paymentWebhookEvents = pgTable('payment_webhook_events', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 }).notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   provider: providerEnum('provider').notNull(),
@@ -481,9 +421,9 @@ export const paymentWebhookEvents = mysqlTable('payment_webhook_events', {
   paymentId: varchar('payment_id', { length: 255 }),
   invoiceId: varchar('invoice_id', { length: 36 }).references(() => invoices.id, { onDelete: 'set null' }),
   status: varchar('status', { length: 50 }).notNull(),
-  rawPayload: json('raw_payload'),
-  receivedAt: datetime('received_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  processedAt: datetime('processed_at', { mode: 'date' }),
+  rawPayload: jsonb('raw_payload'),
+  receivedAt: timestamp('received_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  processedAt: timestamp('processed_at', { mode: 'date' }),
 }, (table) => [
   uniqueIndex('payment_webhook_events_tenant_provider_external_event_uniq').on(table.tenantId, table.provider, table.externalEventId),
   index('payment_webhook_events_tenant_id_idx').on(table.tenantId),
@@ -491,7 +431,7 @@ export const paymentWebhookEvents = mysqlTable('payment_webhook_events', {
   index('payment_webhook_events_payment_id_idx').on(table.paymentId),
 ]);
 
-export const invoicePaymentLinks = mysqlTable('invoice_payment_links', {
+export const invoicePaymentLinks = pgTable('invoice_payment_links', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 }).notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   invoiceId: varchar('invoice_id', { length: 36 }).notNull().references(() => invoices.id, { onDelete: 'cascade' }),
@@ -500,12 +440,12 @@ export const invoicePaymentLinks = mysqlTable('invoice_payment_links', {
   providerOrderId: varchar('provider_order_id', { length: 255 }),
   paymentUrl: text('payment_url').notNull(),
   status: paymentLinkStatusEnum('status').notNull().default('active'),
-  amount: decimal('amount', { precision: 14, scale: 2 }).notNull(),
+  amount: numeric('amount', { precision: 14, scale: 2 }).notNull(),
   currency: varchar('currency', { length: 10 }).notNull(),
-  metadata: json('metadata'),
-  expiresAt: datetime('expires_at', { mode: 'date' }),
-  createdAt: datetime('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: datetime('updated_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  metadata: jsonb('metadata'),
+  expiresAt: timestamp('expires_at', { mode: 'date' }),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
   uniqueIndex('invoice_payment_links_tenant_invoice_provider_uniq').on(table.tenantId, table.invoiceId, table.provider),
   index('invoice_payment_links_tenant_id_idx').on(table.tenantId),
@@ -513,24 +453,24 @@ export const invoicePaymentLinks = mysqlTable('invoice_payment_links', {
   index('invoice_payment_links_provider_link_id_idx').on(table.providerPaymentLinkId),
 ]);
 
-export const teamInvitations = mysqlTable('team_invitations', {
+export const teamInvitations = pgTable('team_invitations', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 }).notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   email: varchar('email', { length: 255 }).notNull(),
   role: userRoleEnum('role').default('viewer').notNull(),
   tokenHash: varchar('token_hash', { length: 255 }).notNull().unique(),
   invitedByUserId: varchar('invited_by_user_id', { length: 36 }).references(() => users.id, { onDelete: 'set null' }),
-  expiresAt: datetime('expires_at', { mode: 'date' }).notNull(),
-  acceptedAt: datetime('accepted_at', { mode: 'date' }),
-  revokedAt: datetime('revoked_at', { mode: 'date' }),
+  expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
+  acceptedAt: timestamp('accepted_at', { mode: 'date' }),
+  revokedAt: timestamp('revoked_at', { mode: 'date' }),
   deliveryStatus: varchar('delivery_status', { length: 50 }).default('pending').notNull(),
   deliveryError: text('delivery_error'),
-  lastSentAt: datetime('last_sent_at', { mode: 'date' }),
-  createdAt: datetime('created_at', { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-  updatedAt: datetime('updated_at', { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  lastSentAt: timestamp('last_sent_at', { mode: 'date' }),
+  createdAt: timestamp('created_at', { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-export const inboundEmails = mysqlTable('inbound_emails', {
+export const inboundEmails = pgTable('inbound_emails', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 })
     .notNull()
@@ -541,17 +481,17 @@ export const inboundEmails = mysqlTable('inbound_emails', {
   subject: text('subject'),
   body: text('body'),
   classification: varchar('classification', { length: 100 }),
-  confidence: decimal('confidence', { precision: 4, scale: 3 }),
+  confidence: numeric('confidence', { precision: 4, scale: 3 }),
   reasoning: text('reasoning'),
   aiSummary: text('ai_summary'),
   status: inboundEmailStatusEnum('status').notNull().default('pending'),
   reviewedBy: varchar('reviewed_by', { length: 36 })
     .references(() => users.id, { onDelete: 'set null' }),
-  reviewedAt: datetime('reviewed_at', { mode: 'date' }),
-  createdAt: datetime('created_at', { mode: 'date' })
+  reviewedAt: timestamp('reviewed_at', { mode: 'date' }),
+  createdAt: timestamp('created_at', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: datetime('updated_at', { mode: 'date' })
+  updatedAt: timestamp('updated_at', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
   source: varchar('source', { length: 50 }).notNull().default('email'),
@@ -560,23 +500,23 @@ export const inboundEmails = mysqlTable('inbound_emails', {
   index('inbound_emails_invoice_id_idx').on(table.invoiceId),
 ]);
 
-export const replyTokens = mysqlTable('reply_tokens', {
+export const replyTokens = pgTable('reply_tokens', {
   tokenHash: varchar('token_hash', { length: 64 }).primaryKey(),
   tenantId: varchar('tenant_id', { length: 36 }).notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   communicationId: varchar('communication_id', { length: 36 }),
   invoiceId: varchar('invoice_id', { length: 36 }).references(() => invoices.id, { onDelete: 'cascade' }),
-  expiresAt: datetime('expires_at', { mode: 'date' }),
-  revokedAt: datetime('revoked_at', { mode: 'date' }),
-  lastUsedAt: datetime('last_used_at', { mode: 'date' }),
-  replyCount: int('reply_count').notNull().default(0),
-  createdAt: datetime('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (table) => ({
-  tenantCommIdx: index('reply_tokens_tenant_comm_idx').on(table.tenantId, table.communicationId),
-  tenantInvIdx: index('reply_tokens_tenant_inv_idx').on(table.tenantId, table.invoiceId),
-  expiresAtIdx: index('reply_tokens_expires_at_idx').on(table.expiresAt),
-}));
+  expiresAt: timestamp('expires_at', { mode: 'date' }),
+  revokedAt: timestamp('revoked_at', { mode: 'date' }),
+  lastUsedAt: timestamp('last_used_at', { mode: 'date' }),
+  replyCount: integer('reply_count').notNull().default(0),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('reply_tokens_tenant_comm_idx').on(table.tenantId, table.communicationId),
+  index('reply_tokens_tenant_inv_idx').on(table.tenantId, table.invoiceId),
+  index('reply_tokens_expires_at_idx').on(table.expiresAt),
+]);
 
-export const invoicePortalLinks = mysqlTable('invoice_portal_links', {
+export const invoicePortalLinks = pgTable('invoice_portal_links', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 })
     .notNull()
@@ -585,17 +525,17 @@ export const invoicePortalLinks = mysqlTable('invoice_portal_links', {
     .notNull()
     .references(() => invoices.id, { onDelete: 'cascade' }),
   tokenHash: varchar('token_hash', { length: 255 }).notNull().unique(),
-  createdAt: datetime('created_at', { mode: 'date' })
+  createdAt: timestamp('created_at', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  revokedAt: datetime('revoked_at', { mode: 'date' }),
-  viewedAt: datetime('viewed_at', { mode: 'date' }),
+  revokedAt: timestamp('revoked_at', { mode: 'date' }),
+  viewedAt: timestamp('viewed_at', { mode: 'date' }),
 }, (table) => [
   index('invoice_portal_links_token_hash_idx').on(table.tokenHash),
   index('invoice_portal_links_invoice_id_idx').on(table.invoiceId),
 ]);
 
-export const paymentPlanRequests = mysqlTable('payment_plan_requests', {
+export const paymentPlanRequests = pgTable('payment_plan_requests', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 })
     .notNull()
@@ -603,14 +543,14 @@ export const paymentPlanRequests = mysqlTable('payment_plan_requests', {
   invoiceId: varchar('invoice_id', { length: 36 })
     .notNull()
     .references(() => invoices.id, { onDelete: 'cascade' }),
-  installments: int('installments').notNull(),
-  proposedAmountPerMonth: decimal('proposed_amount_per_month', { precision: 14, scale: 2 }).notNull(),
+  installments: integer('installments').notNull(),
+  proposedAmountPerMonth: numeric('proposed_amount_per_month', { precision: 14, scale: 2 }).notNull(),
   reason: text('reason'),
   status: paymentPlanStatusEnum('status').notNull().default('pending'),
   reviewedBy: varchar('reviewed_by', { length: 36 })
     .references(() => users.id, { onDelete: 'set null' }),
-  reviewedAt: datetime('reviewed_at', { mode: 'date' }),
-  createdAt: datetime('created_at', { mode: 'date' })
+  reviewedAt: timestamp('reviewed_at', { mode: 'date' }),
+  createdAt: timestamp('created_at', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
@@ -618,7 +558,7 @@ export const paymentPlanRequests = mysqlTable('payment_plan_requests', {
   index('payment_plan_requests_invoice_id_idx').on(table.invoiceId),
 ]);
 
-export const paymentPlanInstallments = mysqlTable('payment_plan_installments', {
+export const paymentPlanInstallments = pgTable('payment_plan_installments', {
   id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   tenantId: varchar('tenant_id', { length: 36 })
     .notNull()
@@ -629,14 +569,14 @@ export const paymentPlanInstallments = mysqlTable('payment_plan_installments', {
   invoiceId: varchar('invoice_id', { length: 36 })
     .notNull()
     .references(() => invoices.id, { onDelete: 'cascade' }),
-  installmentNumber: int('installment_number').notNull(),
+  installmentNumber: integer('installment_number').notNull(),
   dueDate: date('due_date', { mode: 'string' }).notNull(),
-  amount: decimal('amount', { precision: 14, scale: 2 }).notNull(),
+  amount: numeric('amount', { precision: 14, scale: 2 }).notNull(),
   currency: varchar('currency', { length: 10 }).notNull().default('INR'),
   status: installmentStatusEnum('status').notNull().default('pending'),
-  paidAt: datetime('paid_at', { mode: 'date' }),
+  paidAt: timestamp('paid_at', { mode: 'date' }),
   paymentTransactionId: varchar('payment_transaction_id', { length: 255 }),
-  createdAt: datetime('created_at', { mode: 'date' })
+  createdAt: timestamp('created_at', { mode: 'date' })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
@@ -836,6 +776,11 @@ export type PaymentPlanInstallment = typeof paymentPlanInstallments.$inferSelect
 export type NewPaymentPlanInstallment = typeof paymentPlanInstallments.$inferInsert;
 export type ReplyToken = typeof replyTokens.$inferSelect;
 export type NewReplyToken = typeof replyTokens.$inferInsert;
+export type EmailIntegration = typeof emailIntegrations.$inferSelect;
+export type NewEmailIntegration = typeof emailIntegrations.$inferInsert;
+export type EmailIntegrationSendgrid = typeof emailIntegrationSendgrid.$inferSelect;
+export type NewEmailIntegrationSendgrid = typeof emailIntegrationSendgrid.$inferInsert;
+export type EmailIntegrationSmtp = typeof emailIntegrationSmtp.$inferSelect;
+export type NewEmailIntegrationSmtp = typeof emailIntegrationSmtp.$inferInsert;
 export type EmailIntegrationResend = typeof emailIntegrationResend.$inferSelect;
 export type NewEmailIntegrationResend = typeof emailIntegrationResend.$inferInsert;
-

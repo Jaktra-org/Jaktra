@@ -77,6 +77,12 @@ export type {
   NewPaymentPlanInstallment,
   ReplyToken,
   NewReplyToken,
+  EmailIntegration,
+  NewEmailIntegration,
+  EmailIntegrationSendgrid,
+  NewEmailIntegrationSendgrid,
+  EmailIntegrationSmtp,
+  NewEmailIntegrationSmtp,
   EmailIntegrationResend,
   NewEmailIntegrationResend,
 } from './schema.js';
