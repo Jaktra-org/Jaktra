@@ -123,7 +123,8 @@ export class CommunicationRepository {
         webhookToken: token,
         updatedAt: new Date(),
       })
-      .onDuplicateKeyUpdate({
+      .onConflictDoUpdate({
+        target: tenantSettings.tenantId,
         set: {
           ...settings,
           updatedAt: new Date(),
