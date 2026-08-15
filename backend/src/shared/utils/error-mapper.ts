@@ -97,15 +97,15 @@ export function mapErrorToDisplayMessage(error: unknown): string {
     return 'Invalid request data';
   }
 
-  // Database unique violation (MySQL ER_DUP_ENTRY / Postgres 23505)
+  // Database unique violation (PostgreSQL 23505 / duplicate key)
   if (
     errMsg.includes('unique constraint') || 
     errMsg.includes('23505') || 
     errMsg.includes('unique violation') || 
     errMsg.includes('already exists') ||
-    errMsg.includes('ER_DUP_ENTRY') ||
-    (error as Record<string, unknown>)?.code === 'ER_DUP_ENTRY' ||
-    (error as Record<string, unknown>)?.errno === 1062
+    errMsg.includes('duplicate key value') ||
+    (error as Record<string, unknown>)?.code === '23505' ||
+    ((error as Record<string, unknown>)?.cause as Record<string, unknown>)?.code === '23505'
   ) {
     return 'Record already exists';
   }
