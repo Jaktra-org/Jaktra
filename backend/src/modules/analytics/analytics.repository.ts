@@ -22,7 +22,7 @@ export class AnalyticsRepository {
       .select({
         totalReceivable: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} IN ('Pending', 'Overdue') THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
         totalCollected: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
-        totalOverdue: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Overdue' OR (${invoices.paymentStatus} != 'Paid' AND ${invoices.dueDate} < NOW()) THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
+        totalOverdue: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Overdue' OR (${invoices.paymentStatus} != 'Paid' AND ${invoices.dueDate} < CURRENT_DATE) THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
         totalPaymentPlan: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.hasActivePaymentPlan} = true THEN ${invoices.invoiceAmount} ELSE 0 END), 0)`,
         paymentPlanCount: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.hasActivePaymentPlan} = true THEN 1 ELSE 0 END), 0)`,
         invoiceCount: sql<number>`COUNT(*)`,
@@ -53,12 +53,12 @@ export class AnalyticsRepository {
         AND ppi.status IN ('pending', 'overdue')
     ), ${invoices.dueDate})`;
 
-    const effectiveDaysOverdueSql = sql`GREATEST(0, DATEDIFF(CURRENT_DATE(), ${effectiveDueDateSql}))`;
+    const effectiveDaysOverdueSql = sql`GREATEST(0, (CURRENT_DATE - (${effectiveDueDateSql})::date))`;
 
     let baseConditions = and(
       eq(invoices.tenantId, tenantId),
       isNull(invoices.deletedAt),
-      sql`${invoices.paymentStatus} != 'Paid' AND ${effectiveDueDateSql} < CURRENT_DATE()`
+      sql`${invoices.paymentStatus} != 'Paid' AND ${effectiveDueDateSql} < CURRENT_DATE`
     );
 
     if (fromDate) {
@@ -180,7 +180,7 @@ export class AnalyticsRepository {
       .select({
         totalFollowedUp: sql<number>`COUNT(*)`,
         paidAfterFollowUp: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN 1 ELSE 0 END), 0)`,
-        avgDaysToPayment: sql<number | null>`AVG(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN TIMESTAMPDIFF(SECOND, ${invoices.createdAt}, ${invoices.updatedAt}) / 86400 ELSE NULL END)`
+        avgDaysToPayment: sql<number | null>`AVG(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN EXTRACT(EPOCH FROM (${invoices.updatedAt} - ${invoices.createdAt})) / 86400 ELSE NULL END)`
       })
       .from(invoices)
       .where(baseConditions);
@@ -261,10 +261,10 @@ export class AnalyticsRepository {
 
     const computedTierSql = sql<string>`
       CASE 
-        WHEN DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) >= 31 THEN 'legal_escalation'
-        WHEN DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 22 AND 30 THEN 'stage_4_stern'
-        WHEN DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 15 AND 21 THEN 'stage_3_serious'
-        WHEN DATEDIFF(CURRENT_DATE(), ${invoices.dueDate}) BETWEEN 8 AND 14 THEN 'stage_2_firm'
+        WHEN (CURRENT_DATE - (${invoices.dueDate})::date) >= 31 THEN 'legal_escalation'
+        WHEN (CURRENT_DATE - (${invoices.dueDate})::date) BETWEEN 22 AND 30 THEN 'stage_4_stern'
+        WHEN (CURRENT_DATE - (${invoices.dueDate})::date) BETWEEN 15 AND 21 THEN 'stage_3_serious'
+        WHEN (CURRENT_DATE - (${invoices.dueDate})::date) BETWEEN 8 AND 14 THEN 'stage_2_firm'
         ELSE 'stage_1_warm'
       END
     `;
@@ -274,7 +274,7 @@ export class AnalyticsRepository {
         tier: computedTierSql,
         totalFollowedUp: sql<number>`COUNT(*)`,
         paidAfterFollowUp: sql<number>`COALESCE(SUM(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN 1 ELSE 0 END), 0)`,
-        avgDaysToPayment: sql<number | null>`AVG(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN TIMESTAMPDIFF(SECOND, ${invoices.createdAt}, ${invoices.updatedAt}) / 86400 ELSE NULL END)`,
+        avgDaysToPayment: sql<number | null>`AVG(CASE WHEN ${invoices.paymentStatus} = 'Paid' THEN EXTRACT(EPOCH FROM (${invoices.updatedAt} - ${invoices.createdAt})) / 86400 ELSE NULL END)`,
       })
       .from(invoices)
       .where(baseConditions)
@@ -299,13 +299,13 @@ export class AnalyticsRepository {
 
     const result = await this.db
       .select({
-        date: sql<string>`DATE_FORMAT(${agentRuns.startTime}, '%Y-%m-%d')`,
+        date: sql<string>`TO_CHAR(${agentRuns.startTime}, 'YYYY-MM-DD')`,
         emailsSent: sql<number>`COALESCE(SUM(${agentRuns.emailsSent}), 0)`,
       })
       .from(agentRuns)
       .where(runConditions)
-      .groupBy(sql`DATE_FORMAT(${agentRuns.startTime}, '%Y-%m-%d')`)
-      .orderBy(sql`DATE_FORMAT(${agentRuns.startTime}, '%Y-%m-%d') ASC`);
+      .groupBy(sql`TO_CHAR(${agentRuns.startTime}, 'YYYY-MM-DD')`)
+      .orderBy(sql`TO_CHAR(${agentRuns.startTime}, 'YYYY-MM-DD') ASC`);
 
     return result.map(row => ({
       date: row.date,
