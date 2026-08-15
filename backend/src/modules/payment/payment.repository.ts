@@ -12,7 +12,8 @@ export class PaymentRepository {
     const data = { ...event, id };
     await this.db.insert(paymentWebhookEvents)
       .values(data as typeof paymentWebhookEvents.$inferInsert)
-      .onDuplicateKeyUpdate({
+      .onConflictDoUpdate({
+        target: [paymentWebhookEvents.tenantId, paymentWebhookEvents.provider, paymentWebhookEvents.externalEventId],
         set: {
           status: 'pending',
           rawPayload: event.rawPayload,
@@ -94,8 +95,8 @@ export class PaymentRepository {
     const data = { ...link, id };
     await this.db
       .insert(invoicePaymentLinks)
-      .ignore()
-      .values(data);
+      .values(data)
+      .onConflictDoNothing();
   }
 
   async updatePaymentLinkStatus(id: string, status: 'active' | 'paid' | 'expired' | 'cancelled'): Promise<InvoicePaymentLink> {
