@@ -19,8 +19,10 @@ export class ReplyTokenCleanupService {
           )
         );
 
-      logger.info('[ReplyTokenCleanupService] Completed token retention cleanup task');
-      return Number((result as unknown as { affectedRows?: number })?.affectedRows || 0);
+      const count = (result as unknown as { rowCount?: number; affectedRows?: number })?.rowCount
+        ?? (result as unknown as { rowCount?: number; affectedRows?: number })?.affectedRows
+        ?? 0;
+      return Number(count);
     } catch (err: unknown) {
       logger.error(err instanceof Error ? err : new Error(String(err)), '[ReplyTokenCleanupService] Token cleanup task failed');
       return 0;
