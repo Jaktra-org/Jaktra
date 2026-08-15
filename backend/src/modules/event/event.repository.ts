@@ -35,7 +35,7 @@ export class EventRepository {
     return this.db
       .select()
       .from(events)
-      .where(sql`JSON_UNQUOTE(JSON_EXTRACT(${events.payload}, '$.runId')) = ${runId}`)
+      .where(sql`${events.payload}->>'runId' = ${runId}`)
       .orderBy(asc(events.createdAt));
   }
 
