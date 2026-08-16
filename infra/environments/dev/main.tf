@@ -16,8 +16,8 @@ data "terraform_remote_state" "base" {
 
 resource "aws_security_group_rule" "allow_backend_to_rds" {
   type                     = "ingress"
-  from_port                = 3306
-  to_port                  = 3306
+  from_port                = 5432
+  to_port                  = 5432
   protocol                 = "tcp"
   security_group_id        = data.terraform_remote_state.base.outputs.rds_security_group_id
   source_security_group_id = module.ec2.ec2_sg_id
