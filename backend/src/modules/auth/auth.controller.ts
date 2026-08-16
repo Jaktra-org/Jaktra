@@ -5,18 +5,20 @@ import { AuthError, ValidationError } from '../../shared/errors/index.js';
 import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 
 
-export const passwordSchema = z.string().min(8).max(100);
+export const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters long')
+  .max(100, 'Password cannot exceed 100 characters');
 
 const onboardSchema = z.object({
-  name: z.string().min(1),
-  companyName: z.string().min(1),
-  email: z.string().email(),
+  name: z.string().min(1, 'Full name is required'),
+  companyName: z.string().min(1, 'Company name is required'),
+  email: z.string().email('Please enter a valid email address'),
   password: passwordSchema,
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 const updateProfileSchema = z.object({
@@ -24,54 +26,58 @@ const updateProfileSchema = z.object({
 });
 
 const mfaVerifySchema = z.object({
-  mfaPendingToken: z.string().min(1),
-  code: z.string().min(1),
+  mfaPendingToken: z.string().min(1, 'MFA pending token is required'),
+  code: z.string().min(1, 'Verification code is required'),
 });
 
 const mfaConfirmSchema = z.object({
-  code: z.string().length(6),
+  code: z.string().length(6, 'Verification code must be 6 digits'),
 });
 
 const mfaDisableSchema = z.object({
-  code: z.string().length(6),
+  code: z.string().length(6, 'Verification code must be 6 digits'),
 });
 
 const verifyEmailSchema = z.object({
-  email: z.string().email(),
-  code: z.string().length(6),
+  email: z.string().email('Please enter a valid email address'),
+  code: z.string().length(6, 'Verification code must be 6 digits'),
 });
 
 const resendVerificationSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email('Please enter a valid email address'),
 });
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email('Please enter a valid email address'),
 });
 
 const resetPasswordVerifySchema = z.object({
-  email: z.string().email(),
-  code: z.string().length(6),
+  email: z.string().email('Please enter a valid email address'),
+  code: z.string().length(6, 'Verification code must be 6 digits'),
 });
 
 const resetPasswordConfirmSchema = z.object({
-  resetToken: z.string().min(1),
+  resetToken: z.string().min(1, 'Reset token is required'),
   newPassword: passwordSchema,
 });
 
 const resetPasswordResendSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email('Please enter a valid email address'),
 });
 
+function formatZodError(error: z.ZodError): string {
+  const first = error.issues[0];
+  if (!first) return 'Invalid request data';
+  return first.message || 'Invalid request data';
+}
 
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-
   onboard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const parsed = onboardSchema.safeParse(req.body);
     if (!parsed.success) {
-      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      next(new ValidationError(formatZodError(parsed.error), JSON.stringify(parsed.error.issues)));
       return;
     }
 
@@ -86,7 +92,7 @@ export class AuthController {
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      next(new ValidationError('Validation failed', JSON.stringify(parsed.error.issues)));
+      next(new ValidationError(formatZodError(parsed.error), JSON.stringify(parsed.error.issues)));
       return;
     }
 

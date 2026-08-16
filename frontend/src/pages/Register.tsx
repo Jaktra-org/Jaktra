@@ -46,6 +46,30 @@ export function Register() {
     setError("");
     setFieldErrors({});
 
+    if (!name.trim()) {
+      setError("Please enter your full name");
+      setFieldErrors({ name: true });
+      return;
+    }
+
+    if (!companyName.trim()) {
+      setError("Please enter your company name");
+      setFieldErrors({ companyName: true });
+      return;
+    }
+
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Please enter a valid email address");
+      setFieldErrors({ email: true });
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      setFieldErrors({ password: true });
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       setFieldErrors({ password: true, confirmPassword: true });
