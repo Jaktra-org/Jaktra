@@ -77,5 +77,22 @@ else
   echo -e "  • Estimated Prod Cost:  \033[1;32m\$0/month\033[0m"
 fi
 
+# ----------------------------------------------------
+# 4. FREE-TIER ENVIRONMENT STATUS (Vercel + Render + Upstash + Neon)
+# ----------------------------------------------------
+echo -e "\033[1;34m[4/4] FREE-TIER ENVIRONMENT (Vercel + Render + Upstash + Neon)\033[0m"
+FT_DIR="${ROOT_DIR}/infra/environments/free_tier"
+if [[ -d "$FT_DIR" ]]; then
+  FT_FRONTEND=$(cd "$FT_DIR" 2>/dev/null && terraform output -raw frontend_url 2>/dev/null || echo "https://jaktra-frontend.vercel.app")
+  FT_BACKEND=$(cd "$FT_DIR" 2>/dev/null && terraform output -raw backend_url 2>/dev/null || echo "https://jaktra-backend.onrender.com")
+  FT_AI=$(cd "$FT_DIR" 2>/dev/null && terraform output -raw ai_service_url 2>/dev/null || echo "https://jaktra-ai-service.onrender.com")
+  
+  echo -e "  • Vercel Frontend:      \033[1;32m${FT_FRONTEND}\033[0m"
+  echo -e "  • Render Backend API:   \033[1;32m${FT_BACKEND}\033[0m"
+  echo -e "  • Render AI Service:    \033[1;32m${FT_AI}\033[0m"
+  echo -e "  • Estimated Cloud Bill: \033[1;32m$0.00/month (100% Free Forever)\033[0m"
+fi
+
 echo ""
 echo -e "\033[1;36m========================================================\033[0m"
+
