@@ -1,21 +1,21 @@
 output "db_instance_id" {
-  value = aws_db_instance.mysql.id
+  value = aws_db_instance.postgres.id
 }
 
 output "endpoint" {
-  value = aws_db_instance.mysql.endpoint
+  value = aws_db_instance.postgres.endpoint
 }
 
 output "address" {
-  value = aws_db_instance.mysql.address
+  value = aws_db_instance.postgres.address
 }
 
 output "port" {
-  value = aws_db_instance.mysql.port
+  value = aws_db_instance.postgres.port
 }
 
 output "username" {
-  value = aws_db_instance.mysql.username
+  value = aws_db_instance.postgres.username
 }
 
 output "security_group_id" {
@@ -23,6 +23,6 @@ output "security_group_id" {
 }
 
 output "connection_url" {
-  value     = "mysql://${aws_db_instance.mysql.username}:${var.database_password}@${aws_db_instance.mysql.endpoint}/${aws_db_instance.mysql.db_name}"
+  value     = "postgresql://${aws_db_instance.postgres.username}:${var.database_password}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}"
   sensitive = true
 }
