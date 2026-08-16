@@ -14,14 +14,14 @@ echo ""
 # 1. BASE LAYER STATUS
 # ----------------------------------------------------
 echo -e "\033[1;34m[1/3] BASE INFRASTRUCTURE (Foundation)\033[0m"
-RDS_STATUS=$(aws rds describe-db-instances --db-instance-identifier "jaktra-base-mysql" --region "$AWS_REGION" --query "DBInstances[0].DBInstanceStatus" --output text 2>/dev/null || echo "NOT CREATED")
+RDS_STATUS=$(aws rds describe-db-instances --db-instance-identifier "jaktra-base-postgres" --region "$AWS_REGION" --query "DBInstances[0].DBInstanceStatus" --output text 2>/dev/null || echo "NOT CREATED")
 CF_DIST_ID=$(cd "${ROOT_DIR}/infra/environments/base" 2>/dev/null && terraform output -raw cloudfront_distribution_id 2>/dev/null || echo "")
 CF_STATUS="NOT CREATED"
 if [[ -n "$CF_DIST_ID" ]]; then
   CF_STATUS=$(aws cloudfront get-distribution --id "$CF_DIST_ID" --query "Distribution.Status" --output text 2>/dev/null || echo "NOT CREATED")
 fi
 
-echo -e "  • RDS MySQL Database:  \033[1;32m${RDS_STATUS}\033[0m (db.t4g.micro, ~\$14/mo)"
+echo -e "  • RDS PostgreSQL 18 Database:  \033[1;32m${RDS_STATUS}\033[0m (db.t4g.micro, ~\$14/mo)"
 echo -e "  • CloudFront CDN:      \033[1;32m${CF_STATUS}\033[0m (${CF_DIST_ID:-N/A}, Pay-per-request)"
 echo -e "  • S3 Frontend Bucket:  \033[1;32mACTIVE\033[0m (jaktra-base-frontend)"
 echo -e "  • ECR Container Repos: \033[1;32mACTIVE\033[0m (backend, ai-service)"
