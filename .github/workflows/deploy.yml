@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy (Free-Tier)
 
 on:
   push:
@@ -9,25 +9,22 @@ on:
         description: "Skip CI tests"
         type: boolean
         default: false
-      force_build_all:
-        description: "Force build and deploy all services"
+      force_deploy_all:
+        description: "Force redeploy all services"
         type: boolean
         default: false
 
 permissions:
-  id-token: write
   contents: read
-
-env:
-  AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
 
 jobs:
   detect-changes:
+    name: Detect Changed Services
     runs-on: ubuntu-latest
     outputs:
-      backend: ${{ steps.filter.outputs.backend == 'true' || inputs.force_build_all == true }}
-      ai-service: ${{ steps.filter.outputs.ai-service == 'true' || inputs.force_build_all == true }}
-      frontend: ${{ steps.filter.outputs.frontend == 'true' || inputs.force_build_all == true }}
+      backend: ${{ steps.filter.outputs.backend == 'true' || inputs.force_deploy_all == true }}
+      ai-service: ${{ steps.filter.outputs.ai-service == 'true' || inputs.force_deploy_all == true }}
+      frontend: ${{ steps.filter.outputs.frontend == 'true' || inputs.force_deploy_all == true }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -48,224 +45,80 @@ jobs:
               - '.github/workflows/ci.yml'
 
   test:
+    name: Run Test Suite
     if: ${{ !inputs.skip_tests }}
     uses: ./.github/workflows/ci.yml
     secrets: inherit
 
-  build-backend:
-    needs: [detect-changes, test]
-    if: ${{ (needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
-    runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.meta.outputs.tag }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Ensure ECR repository exists
-        run: |
-          aws ecr describe-repositories --repository-names jaktra/base/backend || \
-          aws ecr create-repository --repository-name jaktra/base/backend --image-scanning-configuration scanOnPush=true
-
-      - name: Set image tag
-        id: meta
-        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-
-      - name: Build and push backend to ECR
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          push: true
-          platforms: linux/amd64
-          tags: |
-            ${{ steps.ecr.outputs.registry }}/jaktra/base/backend:${{ steps.meta.outputs.tag }}
-            ${{ steps.ecr.outputs.registry }}/jaktra/base/backend:latest
-
-  build-ai-service:
-    needs: [detect-changes, test]
-    if: ${{ (needs.detect-changes.outputs.ai-service == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
-    runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.meta.outputs.tag }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Ensure ECR repository exists
-        run: |
-          aws ecr describe-repositories --repository-names jaktra/base/ai-service || \
-          aws ecr create-repository --repository-name jaktra/base/ai-service --image-scanning-configuration scanOnPush=true
-
-      - name: Set image tag
-        id: meta
-        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-
-      - name: Build and push AI service to ECR
-        uses: docker/build-push-action@v6
-        with:
-          context: ./ai-service
-          push: true
-          platforms: linux/amd64
-          tags: |
-            ${{ steps.ecr.outputs.registry }}/jaktra/base/ai-service:${{ steps.meta.outputs.tag }}
-            ${{ steps.ecr.outputs.registry }}/jaktra/base/ai-service:latest
-
   deploy-frontend:
+    name: Deploy Frontend (Vercel)
     needs: [detect-changes, test]
     if: ${{ (needs.detect-changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install and build
+      - name: Install dependencies and build
         working-directory: frontend
-        env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         run: |
           npm ci
           npm run build
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Deploy to Vercel (Free-Tier)
-        if: ${{ env.VERCEL_TOKEN != '' }}
+      - name: Deploy to Vercel
+        working-directory: frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: frontend
         run: |
-          echo "⚡ Deploying Frontend to Vercel..."
-          npx -y vercel --prod --token "$VERCEL_TOKEN" --yes || true
-
-      - name: Deploy to S3 (AWS)
-        if: ${{ env.VERCEL_TOKEN == '' && env.AWS_REGION != '' }}
-        working-directory: frontend
-        run: |
-          BUCKET="${{ secrets.FRONTEND_S3_BUCKET || 'jaktra-base-frontend' }}"
-          aws s3 sync dist/ "s3://${BUCKET}/" \
-            --delete \
-            --cache-control "public,max-age=31536000,immutable" \
-            --exclude "index.html" || true
-          aws s3 cp dist/index.html "s3://${BUCKET}/index.html" \
-            --cache-control "no-cache,no-store,must-revalidate" \
-            --content-type "text/html" || true
-
-      - name: Invalidate CloudFront
-        if: ${{ env.VERCEL_TOKEN == '' && env.AWS_REGION != '' }}
-        run: |
-          DIST_ID="${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
-          if [ -z "$DIST_ID" ] || [ "$DIST_ID" == "null" ]; then
-            DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[0].Id" --output text 2>/dev/null || echo "")
-          fi
-          if [ -n "$DIST_ID" ]; then
-            echo "Invalidating CloudFront CDN cache..."
-            aws cloudfront create-invalidation --distribution-id "${DIST_ID}" --paths "/*" || true
+          if [ -n "$VERCEL_TOKEN" ]; then
+            echo "⚡ Deploying Frontend to Vercel Production..."
+            npx -y vercel deploy --prod --token "$VERCEL_TOKEN" --yes
+          else
+            echo "ℹ️ VERCEL_TOKEN not set in GitHub Secrets. Skipping Vercel deploy."
           fi
 
-  trigger-active-deployments:
-    needs: [detect-changes, build-backend, build-ai-service, deploy-frontend]
-    if: ${{ always() && (needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.ai-service == 'true' || needs.detect-changes.outputs.frontend == 'true') }}
+  deploy-backend:
+    name: Deploy Backend (Render)
+    needs: [detect-changes, test]
+    if: ${{ (needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger Free-Tier Render Redeployment
+      - name: Trigger Render Backend Redeploy
         env:
-          BACKEND_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
-          AISERVICE_HOOK: ${{ secrets.RENDER_AI_SERVICE_DEPLOY_HOOK }}
-          BACKEND_CHANGED: ${{ needs.detect-changes.outputs.backend }}
-          AISERVICE_CHANGED: ${{ needs.detect-changes.outputs.ai-service }}
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
         run: |
-          if [ "$BACKEND_CHANGED" == "true" ] && [ -n "$BACKEND_HOOK" ]; then
-            echo "⚡ Triggering Render Backend redeployment..."
-            curl -s -X POST "$BACKEND_HOOK?clearCache=clear" || true
-          fi
-          if [ "$AISERVICE_CHANGED" == "true" ] && [ -n "$AISERVICE_HOOK" ]; then
-            echo "⚡ Triggering Render AI Service redeployment..."
-            curl -s -X POST "$AISERVICE_HOOK?clearCache=clear" || true
+          if [ -n "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
+            echo "⚡ Triggering Render Backend redeploy with cache refresh..."
+            curl -s -X POST "$RENDER_BACKEND_DEPLOY_HOOK?clearCache=clear"
+            echo "✓ Render Backend deployment triggered successfully!"
+          else
+            echo "ℹ️ RENDER_BACKEND_DEPLOY_HOOK not set. Render will auto-deploy from GitHub commit push."
           fi
 
-      - name: Configure AWS credentials
-        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+  deploy-ai-service:
+    name: Deploy AI Service (Render)
+    needs: [detect-changes, test]
+    if: ${{ (needs.detect-changes.outputs.ai-service == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    runs-on: ubuntu-latest
 
-      - name: Detect active AWS environment and trigger pull
-        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+    steps:
+      - name: Trigger Render AI Service Redeploy
+        env:
+          RENDER_AI_SERVICE_DEPLOY_HOOK: ${{ secrets.RENDER_AI_SERVICE_DEPLOY_HOOK }}
         run: |
-          BACKEND_CHANGED="${{ needs.detect-changes.outputs.backend }}"
-          AISERVICE_CHANGED="${{ needs.detect-changes.outputs.ai-service }}"
-
-          # 1. Detect Production ECS Cluster
-          ECS_STATUS=$(aws ecs describe-services --cluster jaktra-production --services jaktra-production-backend --query 'services[0].status' --output text 2>/dev/null || echo "INACTIVE")
-          if [ "$ECS_STATUS" == "ACTIVE" ]; then
-            echo "⚡ Active ECS Production Cluster detected!"
-            if [ "$BACKEND_CHANGED" == "true" ]; then
-              echo "Re-deploying ECS backend service..."
-              aws ecs update-service --cluster jaktra-production --service jaktra-production-backend --force-new-deployment --no-cli-pager > /dev/null || true
-            fi
-            if [ "$AISERVICE_CHANGED" == "true" ]; then
-              echo "Re-deploying ECS AI Service..."
-              aws ecs update-service --cluster jaktra-production --service jaktra-production-ai-service --force-new-deployment --no-cli-pager > /dev/null || true
-            fi
+          if [ -n "$RENDER_AI_SERVICE_DEPLOY_HOOK" ]; then
+            echo "⚡ Triggering Render AI Service redeploy with cache refresh..."
+            curl -s -X POST "$RENDER_AI_SERVICE_DEPLOY_HOOK?clearCache=clear"
+            echo "✓ Render AI Service deployment triggered successfully!"
+          else
+            echo "ℹ️ RENDER_AI_SERVICE_DEPLOY_HOOK not set. Render will auto-deploy from GitHub commit push."
           fi
-
-          # 2. Detect Dev EC2 Instance
-          if [ "$BACKEND_CHANGED" == "true" ] || [ "$AISERVICE_CHANGED" == "true" ]; then
-            EC2_ID=$(aws ec2 describe-instances --region ap-south-1 \
-              --filters "Name=tag:Name,Values=jaktra-dev-ec2,jaktra-dev-instance" "Name=instance-state-name,Values=running" \
-              --query "Reservations[0].Instances[0].InstanceId" --output text 2>/dev/null || echo "None")
-
-            if [ "$EC2_ID" != "None" ] && [ -n "$EC2_ID" ]; then
-              SSM_ONLINE=$(aws ssm describe-instance-information --region ap-south-1 --filters "Key=InstanceIds,Values=$EC2_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null || echo "Offline")
-              if [ "$SSM_ONLINE" == "Online" ]; then
-                echo "⚡ Active Dev EC2 Instance ($EC2_ID) is SSM-Online! Triggering docker pull..."
-                aws ssm send-command --region ap-south-1 \
-                  --instance-ids "$EC2_ID" \
-                  --document-name "AWS-RunShellScript" \
-                  --parameters 'commands=["cd /opt/jaktra && sudo docker compose pull && sudo docker compose up -d"]' || true
-              fi
-            fi
-          fi
-
