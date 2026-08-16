@@ -164,19 +164,32 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy to S3
+      - name: Deploy to Vercel (Free-Tier)
+        if: ${{ env.VERCEL_TOKEN != '' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        working-directory: frontend
+        run: |
+          echo "⚡ Deploying Frontend to Vercel..."
+          npx -y vercel --prod --token "$VERCEL_TOKEN" --yes || true
+
+      - name: Deploy to S3 (AWS)
+        if: ${{ env.VERCEL_TOKEN == '' && env.AWS_REGION != '' }}
         working-directory: frontend
         run: |
           BUCKET="${{ secrets.FRONTEND_S3_BUCKET || 'jaktra-base-frontend' }}"
           aws s3 sync dist/ "s3://${BUCKET}/" \
             --delete \
             --cache-control "public,max-age=31536000,immutable" \
-            --exclude "index.html"
+            --exclude "index.html" || true
           aws s3 cp dist/index.html "s3://${BUCKET}/index.html" \
             --cache-control "no-cache,no-store,must-revalidate" \
-            --content-type "text/html"
+            --content-type "text/html" || true
 
       - name: Invalidate CloudFront
+        if: ${{ env.VERCEL_TOKEN == '' && env.AWS_REGION != '' }}
         run: |
           DIST_ID="${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
           if [ -z "$DIST_ID" ] || [ "$DIST_ID" == "null" ]; then
@@ -184,16 +197,33 @@ jobs:
           fi
           if [ -n "$DIST_ID" ]; then
             echo "Invalidating CloudFront CDN cache..."
-            aws cloudfront create-invalidation --distribution-id "${DIST_ID}" --paths "/*"
+            aws cloudfront create-invalidation --distribution-id "${DIST_ID}" --paths "/*" || true
           fi
 
   trigger-active-deployments:
     needs: [detect-changes, build-backend, build-ai-service, deploy-frontend]
-    if: ${{ always() && (needs.build-backend.result == 'success' || needs.build-ai-service.result == 'success' || needs.deploy-frontend.result == 'success') }}
+    if: ${{ always() && (needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.ai-service == 'true' || needs.detect-changes.outputs.frontend == 'true') }}
     runs-on: ubuntu-latest
 
     steps:
+      - name: Trigger Free-Tier Render Redeployment
+        env:
+          BACKEND_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+          AISERVICE_HOOK: ${{ secrets.RENDER_AI_SERVICE_DEPLOY_HOOK }}
+          BACKEND_CHANGED: ${{ needs.detect-changes.outputs.backend }}
+          AISERVICE_CHANGED: ${{ needs.detect-changes.outputs.ai-service }}
+        run: |
+          if [ "$BACKEND_CHANGED" == "true" ] && [ -n "$BACKEND_HOOK" ]; then
+            echo "⚡ Triggering Render Backend redeployment..."
+            curl -s -X POST "$BACKEND_HOOK?clearCache=clear" || true
+          fi
+          if [ "$AISERVICE_CHANGED" == "true" ] && [ -n "$AISERVICE_HOOK" ]; then
+            echo "⚡ Triggering Render AI Service redeployment..."
+            curl -s -X POST "$AISERVICE_HOOK?clearCache=clear" || true
+          fi
+
       - name: Configure AWS credentials
+        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -201,7 +231,8 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Detect active environment and trigger pull
+      - name: Detect active AWS environment and trigger pull
+        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
         run: |
           BACKEND_CHANGED="${{ needs.detect-changes.outputs.backend }}"
           AISERVICE_CHANGED="${{ needs.detect-changes.outputs.ai-service }}"
@@ -213,18 +244,11 @@ jobs:
             if [ "$BACKEND_CHANGED" == "true" ]; then
               echo "Re-deploying ECS backend service..."
               aws ecs update-service --cluster jaktra-production --service jaktra-production-backend --force-new-deployment --no-cli-pager > /dev/null || true
-            else
-              echo "Backend unchanged. Skipping ECS backend redeployment."
             fi
-
             if [ "$AISERVICE_CHANGED" == "true" ]; then
               echo "Re-deploying ECS AI Service..."
               aws ecs update-service --cluster jaktra-production --service jaktra-production-ai-service --force-new-deployment --no-cli-pager > /dev/null || true
-            else
-              echo "AI Service unchanged. Skipping ECS AI Service redeployment."
             fi
-          else
-            echo "ℹ️ No active ECS Production cluster running."
           fi
 
           # 2. Detect Dev EC2 Instance
@@ -241,12 +265,7 @@ jobs:
                   --instance-ids "$EC2_ID" \
                   --document-name "AWS-RunShellScript" \
                   --parameters 'commands=["cd /opt/jaktra && sudo docker compose pull && sudo docker compose up -d"]' || true
-              else
-                echo "ℹ️ Dev EC2 Instance ($EC2_ID) detected but SSM Agent is currently offline/stopped."
               fi
-            else
-              echo "ℹ️ No active Dev EC2 instance running."
             fi
-          else
-            echo "Neither backend nor AI service changed. Skipping EC2 Docker pull."
           fi
+
