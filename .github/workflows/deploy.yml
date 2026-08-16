@@ -135,7 +135,13 @@ jobs:
             exit 1
           fi
           echo "⚡ Triggering Backend redeploy with cache refresh..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_BACKEND_DEPLOY_HOOK?clearCache=clear")
+          HOOK_URL="$RENDER_BACKEND_DEPLOY_HOOK"
+          if [[ "$HOOK_URL" == *"?"* ]]; then
+            HOOK_URL="${HOOK_URL}&clearCache=clear"
+          else
+            HOOK_URL="${HOOK_URL}?clearCache=clear"
+          fi
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOOK_URL")
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
             echo "✓ Backend deployment triggered successfully (HTTP $HTTP_STATUS)!"
           else
@@ -181,7 +187,13 @@ jobs:
             exit 1
           fi
           echo "⚡ Triggering AI Service redeploy with cache refresh..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_AI_SERVICE_DEPLOY_HOOK?clearCache=clear")
+          HOOK_URL="$RENDER_AI_SERVICE_DEPLOY_HOOK"
+          if [[ "$HOOK_URL" == *"?"* ]]; then
+            HOOK_URL="${HOOK_URL}&clearCache=clear"
+          else
+            HOOK_URL="${HOOK_URL}?clearCache=clear"
+          fi
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOOK_URL")
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
             echo "✓ AI Service deployment triggered successfully (HTTP $HTTP_STATUS)!"
           else
