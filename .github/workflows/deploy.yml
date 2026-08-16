@@ -50,23 +50,68 @@ jobs:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
 
+  # ==========================================
+  # 1. FRONTEND PIPELINE
+  # ==========================================
+  build-frontend:
+    name: Build Frontend
+    needs: [detect-changes, test]
+    if: ${{ (needs.detect-changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies and compile
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: [build-frontend]
+    if: ${{ needs.build-frontend.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Deploy Frontend
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "❌ Error: Required secret VERCEL_TOKEN is not configured in GitHub Repository Secrets."
+            echo "👉 Please add VERCEL_TOKEN under Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          echo "⚡ Deploying Frontend to Vercel Production..."
+          npm ci && npm run build
+          npx -y vercel deploy --prod --token "$VERCEL_TOKEN" --yes
+
+  # ==========================================
+  # 2. BACKEND PIPELINE
+  # ==========================================
   build-backend:
     name: Build Backend
     needs: [detect-changes, test]
     if: ${{ (needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: backend/package-lock.json
-
       - name: Install dependencies and compile
         working-directory: backend
         run: |
@@ -74,23 +119,45 @@ jobs:
           npm run type-check
           npm run build
 
+  deploy-backend:
+    name: Deploy Backend
+    needs: [build-backend]
+    if: ${{ needs.build-backend.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Backend Redeploy
+        env:
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
+            echo "❌ Error: Required secret RENDER_BACKEND_DEPLOY_HOOK is not configured in GitHub Repository Secrets."
+            echo "👉 Please copy the Deploy Hook from Render Dashboard (jaktra-backend -> Settings -> Deploy Hook) and add it to GitHub Secrets."
+            exit 1
+          fi
+          echo "⚡ Triggering Backend redeploy with cache refresh..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_BACKEND_DEPLOY_HOOK?clearCache=clear")
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✓ Backend deployment triggered successfully (HTTP $HTTP_STATUS)!"
+          else
+            echo "❌ Error: Failed to trigger Render backend deployment (HTTP $HTTP_STATUS)."
+            exit 1
+          fi
+
+  # ==========================================
+  # 3. AI SERVICE PIPELINE
+  # ==========================================
   build-ai-service:
     name: Build AI Service
     needs: [detect-changes, test]
     if: ${{ (needs.detect-changes.outputs.ai-service == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
           cache-dependency-path: ai-service/requirements.txt
-
       - name: Install dependencies and compile
         working-directory: ai-service
         run: |
@@ -98,75 +165,26 @@ jobs:
           pip install -r requirements.txt
           python -m py_compile src/api/main.py
 
-  deploy-frontend:
-    name: Deploy Frontend
-    needs: [detect-changes, test]
-    if: ${{ (needs.detect-changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies and build
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
-
-      - name: Deploy Frontend
-        working-directory: frontend
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          if [ -n "$VERCEL_TOKEN" ]; then
-            echo "⚡ Deploying Frontend Production..."
-            npx -y vercel deploy --prod --token "$VERCEL_TOKEN" --yes
-          else
-            echo "ℹ️ VERCEL_TOKEN not set in GitHub Secrets. Skipping Vercel deploy."
-          fi
-
-  deploy-backend:
-    name: Deploy Backend
-    needs: [detect-changes, test, build-backend]
-    if: ${{ (needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.build-backend.result == 'success') }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Trigger Backend Redeploy
-        env:
-          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
-        run: |
-          if [ -n "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
-            echo "⚡ Triggering Backend redeploy with cache refresh..."
-            curl -s -X POST "$RENDER_BACKEND_DEPLOY_HOOK?clearCache=clear"
-            echo "✓ Backend deployment triggered successfully!"
-          else
-            echo "ℹ️ RENDER_BACKEND_DEPLOY_HOOK not set. Service will auto-deploy from GitHub commit push."
-          fi
-
   deploy-ai-service:
     name: Deploy AI Service
-    needs: [detect-changes, test, build-ai-service]
-    if: ${{ (needs.detect-changes.outputs.ai-service == 'true' || github.event_name == 'workflow_dispatch') && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.build-ai-service.result == 'success') }}
+    needs: [build-ai-service]
+    if: ${{ needs.build-ai-service.result == 'success' }}
     runs-on: ubuntu-latest
-
     steps:
       - name: Trigger AI Service Redeploy
         env:
           RENDER_AI_SERVICE_DEPLOY_HOOK: ${{ secrets.RENDER_AI_SERVICE_DEPLOY_HOOK }}
         run: |
-          if [ -n "$RENDER_AI_SERVICE_DEPLOY_HOOK" ]; then
-            echo "⚡ Triggering AI Service redeploy with cache refresh..."
-            curl -s -X POST "$RENDER_AI_SERVICE_DEPLOY_HOOK?clearCache=clear"
-            echo "✓ AI Service deployment triggered successfully!"
+          if [ -z "$RENDER_AI_SERVICE_DEPLOY_HOOK" ]; then
+            echo "❌ Error: Required secret RENDER_AI_SERVICE_DEPLOY_HOOK is not configured in GitHub Repository Secrets."
+            echo "👉 Please copy the Deploy Hook from Render Dashboard (jaktra-ai-service -> Settings -> Deploy Hook) and add it to GitHub Secrets."
+            exit 1
+          fi
+          echo "⚡ Triggering AI Service redeploy with cache refresh..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_AI_SERVICE_DEPLOY_HOOK?clearCache=clear")
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✓ AI Service deployment triggered successfully (HTTP $HTTP_STATUS)!"
           else
-            echo "ℹ️ RENDER_AI_SERVICE_DEPLOY_HOOK not set. Service will auto-deploy from GitHub commit push."
+            echo "❌ Error: Failed to trigger Render AI service deployment (HTTP $HTTP_STATUS)."
+            exit 1
           fi
