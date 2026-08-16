@@ -11,15 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:8.4
+      postgres:
+        image: postgres:18-alpine
         env:
-          MYSQL_ROOT_PASSWORD: rootpassword
-          MYSQL_DATABASE: jaktra
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: rootpassword
+          POSTGRES_DB: jaktra
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="pg_isready -U postgres -d jaktra"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -43,7 +44,7 @@ jobs:
         run: npx tsx src/db/migrate.ts
         working-directory: backend
         env:
-          DATABASE_URL: mysql://root:rootpassword@127.0.0.1:3306/jaktra
+          DATABASE_URL: postgresql://postgres:rootpassword@127.0.0.1:5432/jaktra
 
       - name: Type-check
         run: npm run type-check
@@ -57,7 +58,7 @@ jobs:
         run: npm run test:run
         working-directory: backend
         env:
-          DATABASE_URL: mysql://root:rootpassword@127.0.0.1:3306/jaktra
+          DATABASE_URL: postgresql://postgres:rootpassword@127.0.0.1:5432/jaktra
           JWT_SECRET: dev-secret-key-at-least-32-chars-long
 
   frontend-ci:
