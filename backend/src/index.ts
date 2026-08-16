@@ -5,13 +5,39 @@ import { createDatabaseClient } from './db/index.js';
 import { logger } from './shared/logger.js';
 import { runMigrations } from './db/migrate.js';
 
-// Auto-run migrations on startup
+import { createClient as createRedisClient } from 'redis';
+
 await runMigrations().catch((err) => {
   logger.error('Failed to run database migrations on startup:', err);
   process.exit(1);
 });
 
+async function waitForRedis(url?: string, maxAttempts = 5, delayMs = 2000): Promise<void> {
+  if (!url || process.env['NODE_ENV'] === 'test') return;
+  const client = createRedisClient({ url });
+  client.on('error', () => {}); 
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await client.connect();
+      await client.ping();
+      logger.info('✓ Redis service connected and healthy');
+      await client.disconnect();
+      return;
+    } catch {
+      logger.warn(`Waiting for Redis readiness (attempt ${attempt}/${maxAttempts})...`);
+      if (attempt === maxAttempts) {
+        logger.warn('Redis unavailable after max attempts — starting in fail-open mode');
+        return;
+      }
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+}
+
+await waitForRedis(config.REDIS_URL);
+
 const db = createDatabaseClient({ connectionString: config.DATABASE_URL });
+
 
 const app = createApp({
   corsOrigins: config.CORS_ORIGINS,
