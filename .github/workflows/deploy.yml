@@ -67,7 +67,14 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies and compile
         working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         run: |
+          if [ -z "$VITE_API_BASE_URL" ]; then
+            echo "❌ Error: Required secret VITE_API_BASE_URL is not configured in GitHub Repository Secrets."
+            echo "👉 Please add VITE_API_BASE_URL under Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
           npm ci
           npm run build
 
@@ -87,10 +94,16 @@ jobs:
         working-directory: frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then
             echo "❌ Error: Required secret VERCEL_TOKEN is not configured in GitHub Repository Secrets."
             echo "👉 Please add VERCEL_TOKEN under Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          if [ -z "$VITE_API_BASE_URL" ]; then
+            echo "❌ Error: Required secret VITE_API_BASE_URL is not configured in GitHub Repository Secrets."
+            echo "👉 Please add VITE_API_BASE_URL under Repository Settings -> Secrets and variables -> Actions."
             exit 1
           fi
           echo "⚡ Deploying Frontend to Vercel Production..."
