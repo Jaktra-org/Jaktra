@@ -1,0 +1,59 @@
+# =============================================================================
+# JAKTRA FREE-TIER ENVIRONMENT CONFIGURATION EXAMPLE
+# Copy this file to terraform.tfvars and fill in your actual values.
+# =============================================================================
+
+project_name = "jaktra"
+environment  = "free-tier"
+github_repo  = "Jaktra-org/Jaktra"
+
+# -----------------------------------------------------------------------------
+# 1. Vercel Configuration (Frontend)
+# -----------------------------------------------------------------------------
+# Generate token at: https://vercel.com/account/tokens
+vercel_api_token = "vcp_your_vercel_api_token_here"
+vercel_team_id   = null
+
+# -----------------------------------------------------------------------------
+# 2. Render Configuration (Backend & AI Service)
+# -----------------------------------------------------------------------------
+# Generate key at: https://dashboard.render.com/u/settings#api-keys
+render_api_key  = "rnd_your_render_api_key_here"
+render_owner_id = "tea_your_render_workspace_owner_id"
+render_region   = "singapore"
+
+# -----------------------------------------------------------------------------
+# 3. Upstash Configuration (Serverless Redis)
+# -----------------------------------------------------------------------------
+# Get key at: https://console.upstash.com/account/api
+upstash_email   = "your-email@example.com"
+upstash_api_key = "your_upstash_api_key_uuid_here"
+upstash_region  = "ap-south-1"
+
+# -----------------------------------------------------------------------------
+# 4. External Neon Tech PostgreSQL Database
+# -----------------------------------------------------------------------------
+# Copy from: https://console.neon.tech -> Connection Details
+neon_database_url = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+# -----------------------------------------------------------------------------
+# 5. AI Service Environment (ai-service/.env)
+# -----------------------------------------------------------------------------
+groq_api_key      = "gsk_your_groq_api_key_here"
+llm_model         = "llama-3.1-8b-instant"
+ai_ml_service_key = "your-shared-service-key-here"
+
+# -----------------------------------------------------------------------------
+# 6. Backend Environment (backend/.env)
+# -----------------------------------------------------------------------------
+jwt_secret                    = "your-32-character-or-longer-jwt-secret"
+jwt_expires_in                = "7d"
+encryption_key                = "your-32-byte-base64-encryption-key-here"
+platform_email_provider       = "resend"
+platform_resend_api_key       = "re_your_resend_api_key_here"
+platform_sendgrid_api_key     = "SG.your_sendgrid_api_key_here"
+platform_smtp_url             = "smtps://user%40gmail.com:password@smtp.gmail.com:465"
+platform_smtp_password        = "your-smtp-app-password"
+platform_from_email           = "no-reply@jaktra.site"
+platform_from_name            = "Jaktra"
+sendgrid_inbound_parse_secret = "your-inbound-parse-secret-here"
