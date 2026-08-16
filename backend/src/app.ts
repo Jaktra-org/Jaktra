@@ -338,6 +338,14 @@ export function createApp(config: AppConfig): Application {
   const healthController = new HealthController(config.db, config.aimlServiceUrl ? app.locals.aimlService : undefined);
   app.use('/api/health', createHealthRouter(healthController));
 
+  // Root health / probe handler for platform health monitors
+  app.get('/', (_req: Request, res: Response) => {
+    res.json({ status: 'ok', name: 'Jaktra Backend API', version: '0.1.0' });
+  });
+  app.head('/', (_req: Request, res: Response) => {
+    res.status(200).end();
+  });
+
   // 404 Fallback
   app.use((req: Request, _res: Response, next: NextFunction) => {
     next(new NotFoundError(`Route ${req.method} ${req.path} not found`));
