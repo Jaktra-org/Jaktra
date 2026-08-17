@@ -220,6 +220,7 @@ export function Dashboard() {
     if (invoices.length === 0) {
       return {
         hasData: false,
+        hasComparison: false,
         percentage: 0,
         isPositive: true,
         path: "",
@@ -231,15 +232,50 @@ export function Dashboard() {
 
     const now = new Date();
 
-    // Find oldest invoice timestamp
-    const oldestTimestamp = Math.min(
-      ...invoices.map((inv) => new Date(inv.createdAt || inv.dueDate).getTime())
+    const invoiceDates = invoices
+      .map((inv) => new Date(inv.createdAt || inv.dueDate))
+      .filter((d) => !isNaN(d.getTime()));
+
+    if (invoiceDates.length === 0) {
+      return {
+        hasData: false,
+        hasComparison: false,
+        percentage: 0,
+        isPositive: true,
+        path: "",
+        points: [],
+        svgWidth: 240,
+        svgHeight: 48
+      };
+    }
+
+    const distinctInvoiceMonths = new Set(
+      invoiceDates.map((d) => `${d.getFullYear()}-${d.getMonth()}`)
     );
+
+    const oldestTimestamp = Math.min(...invoiceDates.map((d) => d.getTime()));
     const oldestDate = new Date(oldestTimestamp);
 
     // Calculate how many months span from oldest invoice to now (max 6)
     const monthsAgo = (now.getFullYear() - oldestDate.getFullYear()) * 12 + (now.getMonth() - oldestDate.getMonth());
-    const spanMonths = Math.min(Math.max(monthsAgo + 1, 1), 6);
+
+    // Only show graph if invoices span >= 2 distinct months, or if from 1 month only, at least 1 full month has passed
+    const hasEnoughHistory = distinctInvoiceMonths.size >= 2 || monthsAgo >= 1;
+
+    if (!hasEnoughHistory) {
+      return {
+        hasData: false,
+        hasComparison: false,
+        percentage: 0,
+        isPositive: true,
+        path: "",
+        points: [],
+        svgWidth: 240,
+        svgHeight: 48
+      };
+    }
+
+    const spanMonths = Math.min(Math.max(monthsAgo + 1, 2), 6);
 
     // Generate month buckets
     const buckets: { monthName: string; total: number; date: Date }[] = [];
@@ -252,6 +288,7 @@ export function Dashboard() {
     // Populate totals
     invoices.forEach((inv) => {
       const invDate = new Date(inv.createdAt || inv.dueDate);
+      if (isNaN(invDate.getTime())) return;
       buckets.forEach((b) => {
         if (b.date.getMonth() === invDate.getMonth() && b.date.getFullYear() === invDate.getFullYear()) {
           b.total += Number(inv.invoiceAmount || 0);
@@ -262,11 +299,19 @@ export function Dashboard() {
     const currentMonthVal = buckets[buckets.length - 1]?.total || 0;
     const prevMonthVal = buckets.length > 1 ? buckets[buckets.length - 2]?.total || 0 : 0;
 
+    let hasComparison = false;
     let percentage = 0;
+    let isPositive = true;
+
     if (prevMonthVal > 0) {
-      percentage = Math.round(((currentMonthVal - prevMonthVal) / prevMonthVal) * 100);
-    } else if (currentMonthVal > 0) {
-      percentage = 12;
+      const diff = currentMonthVal - prevMonthVal;
+      percentage = Math.round((diff / prevMonthVal) * 100);
+      isPositive = percentage >= 0;
+      hasComparison = true;
+    } else if (currentMonthVal > 0 && prevMonthVal === 0) {
+      percentage = 100;
+      isPositive = true;
+      hasComparison = true;
     }
 
     const totals = buckets.map((b) => b.total);
@@ -291,23 +336,19 @@ export function Dashboard() {
       };
     });
 
-    let path: string;
-    if (points.length === 1) {
-      path = `M ${points[0].x - 20},${points[0].y} L ${points[0].x + 20},${points[0].y}`;
-    } else {
-      path = `M ${points[0].x},${points[0].y}`;
-      for (let i = 0; i < points.length - 1; i++) {
-        const curr = points[i];
-        const next = points[i + 1];
-        const mx = (curr.x + next.x) / 2;
-        path += ` C ${mx},${curr.y} ${mx},${next.y} ${next.x},${next.y}`;
-      }
+    let path = `M ${points[0].x},${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const curr = points[i];
+      const next = points[i + 1];
+      const mx = (curr.x + next.x) / 2;
+      path += ` C ${mx},${curr.y} ${mx},${next.y} ${next.x},${next.y}`;
     }
 
     return {
       hasData: true,
+      hasComparison,
       percentage: Math.abs(percentage),
-      isPositive: percentage >= 0,
+      isPositive,
       path,
       points,
       svgWidth: SVG_WIDTH,
@@ -395,14 +436,16 @@ export function Dashboard() {
                       </span>
                     </div>
 
-                <div className="flex items-center text-xs mt-2 font-medium">
-                  {monthlyData.hasData && (
-                    <span className={`flex items-center font-semibold ${monthlyData.isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-                      <TrendingUp className={`w-3.5 h-3.5 mr-1 ${!monthlyData.isPositive ? 'rotate-180' : ''}`} />
-                      {monthlyData.isPositive ? '+' : '-'}{monthlyData.percentage}%
-                    </span>
-                  )}
-                  <span className="text-[#8a8f98] ml-2">vs last month</span>
+                <div className="flex items-center text-xs mt-2 font-medium min-h-[20px]">
+                  {monthlyData.hasData && monthlyData.hasComparison ? (
+                    <>
+                      <span className={`flex items-center font-semibold ${monthlyData.isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <TrendingUp className={`w-3.5 h-3.5 mr-1 ${!monthlyData.isPositive ? 'rotate-180' : ''}`} />
+                        {monthlyData.isPositive ? '+' : '-'}{monthlyData.percentage}%
+                      </span>
+                      <span className="text-[#8a8f98] ml-2">vs last month</span>
+                    </>
+                  ) : null}
                 </div>
               </div>
 
@@ -468,7 +511,7 @@ export function Dashboard() {
                     ))}
                   </svg>
                 ) : (
-                  <div className="h-12 flex items-center text-[11px] text-[#62666d]">No historical invoices recorded</div>
+                  <div className="h-12 flex items-center text-[11px] text-[#62666d]"></div>
                 )}
               </div>
             </div>
