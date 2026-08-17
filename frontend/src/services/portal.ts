@@ -8,6 +8,8 @@ export interface PortalInvoiceDetails {
     id: string;
     invoiceNo: string;
     clientName: string;
+    contactEmail?: string;
+    subject?: string;
     invoiceAmount: string;
     currency: string;
     dueDate: string;
