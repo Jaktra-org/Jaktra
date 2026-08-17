@@ -14,7 +14,7 @@ import {
   Search, Bell, Plus, ChevronRight, TrendingUp, AlertCircle,
   AlertTriangle, Scale, ShieldAlert, Loader2,
   FileText, Calendar, CheckCircle2, Clock, Bot, XCircle,
-  Shield, Zap, CreditCard, RotateCcw, Trash2, Settings as SettingsIcon, Play, History
+  Shield, Zap, CreditCard, RotateCcw, Trash2, Settings as SettingsIcon, Play, History, Activity
 } from "lucide-react";
 import { IconStack } from "../components/ui/reui-icon-stack";
 import { DarkGradientBg } from "../components/ui/DarkGradientBg";
@@ -407,7 +407,7 @@ export function Dashboard() {
               </div>
 
               {/* Dynamic SVG Sparkline Graph with Vertical Tick Lines & Month Names */}
-              <div className="mt-3 pt-1 w-full overflow-visible">
+              <div className="mt-3 pt-1 w-full h-12 overflow-visible">
                 {monthlyData.hasData ? (
                   <svg
                     className="w-full h-12 overflow-visible"
@@ -468,7 +468,7 @@ export function Dashboard() {
                     ))}
                   </svg>
                 ) : (
-                  <div className="text-[11px] text-[#62666d] py-1">No historical invoices recorded</div>
+                  <div className="h-12 flex items-center text-[11px] text-[#62666d]">No historical invoices recorded</div>
                 )}
               </div>
             </div>
@@ -686,53 +686,55 @@ export function Dashboard() {
       {/* Bottom Section: Recent Activity Feed & Autopilot Widget */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch -mt-4">
         {/* Card 1: Recent Activity Feed */}
-        <div>
-          <Card className="border border-[#1e2025] bg-[#0e1013] rounded-2xl flex flex-col justify-between shadow-xl h-full">
-            <CardHeader className="py-2.5 px-4 border-b border-[#1b1e24] flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-semibold text-[#f7f8f8]">
-                Recent activity
-              </CardTitle>
-              <Link to="/activity-log" className="text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
-                View all
-              </Link>
-            </CardHeader>
-            <CardContent className="p-3.5 pb-1.7 flex-1 flex flex-col justify-between">
-
-              <div className="space-y-3">
-                {isEventsLoading ? (
-                  <div className="flex items-center justify-center py-6 text-xs text-[#8a8f98]">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#8a8f98] mr-2" /> Loading feed...
-                  </div>
-                ) : eventsFeed && eventsFeed.length > 0 ? (
-                  eventsFeed.slice(0, 6).map((evt) => {
-                    const { icon, containerClass } = getDashboardEventIcon(evt.actionType, evt.description);
-                    return (
-                      <div key={evt.id} className="flex items-center justify-between text-xs py-0.5">
-                        <div className="flex items-center space-x-2.5 min-w-0 pr-2">
-                          <div className={`p-1.5 rounded-lg flex items-center justify-center flex-shrink-0 ${containerClass}`}>
-                            {icon}
-                          </div>
-                          <h5 className="font-semibold text-[#f7f8f8] truncate">{evt.description || evt.actionType}</h5>
-                        </div>
-                        <span className="text-[10px] text-[#62666d] flex-shrink-0">
-                          {new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-6 text-center text-xs text-[#8a8f98]">
-                    No recent system activity recorded.
-                  </div>
-                )}
+        <Card className="border border-[#1e2025] bg-[#0e1013] rounded-2xl flex flex-col justify-between shadow-xl h-[314px]">
+          <CardHeader className="py-2.5 px-4 border-b border-[#1b1e24] flex flex-row items-center justify-between space-y-0 flex-shrink-0">
+            <CardTitle className="text-sm font-semibold text-[#f7f8f8]">
+              Recent activity
+            </CardTitle>
+            <Link to="/activity-log" className="text-xs font-medium text-[#8a8f98] hover:text-[#f7f8f8] transition-colors">
+              View all
+            </Link>
+          </CardHeader>
+          <CardContent className="p-3.5 pb-2.5 flex-1 flex flex-col justify-between">
+            {isEventsLoading ? (
+              <div className="flex-1 flex items-center justify-center text-xs text-[#8a8f98]">
+                <Loader2 className="w-4 h-4 animate-spin text-[#8a8f98] mr-2" /> Loading feed...
               </div>
-
-            </CardContent>
-          </Card>
-        </div>
+            ) : eventsFeed && eventsFeed.length > 0 ? (
+              <div className="space-y-3">
+                {eventsFeed.slice(0, 6).map((evt) => {
+                  const { icon, containerClass } = getDashboardEventIcon(evt.actionType, evt.description);
+                  return (
+                    <div key={evt.id} className="flex items-center justify-between text-xs py-0.5">
+                      <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                        <div className={`p-1.5 rounded-lg flex items-center justify-center flex-shrink-0 ${containerClass}`}>
+                          {icon}
+                        </div>
+                        <h5 className="font-semibold text-[#f7f8f8] truncate">{evt.description || evt.actionType}</h5>
+                      </div>
+                      <span className="text-[10px] text-[#62666d] flex-shrink-0">
+                        {new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-6 px-4">
+                <div className="w-9 h-9 rounded-xl bg-[#13161c] border border-[#1d212a] flex items-center justify-center text-[#62666d] mb-2">
+                  <Activity className="w-4 h-4 text-[#8a8f98]" />
+                </div>
+                <p className="text-xs font-semibold text-[#f7f8f8]">No recent activity</p>
+                <p className="text-[11px] text-[#8a8f98] mt-0.5 max-w-[220px]">
+                  System events and invoice actions will appear here.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Card 2: Autopilot Status Widget */}
-        <Card className="border border-[#1e2025] bg-[#0e1013] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xl relative overflow-hidden h-full">
+        <Card className="border border-[#1e2025] bg-[#0e1013] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xl relative overflow-hidden h-[314px]">
           {/* Top Section & Large SVG */}
           <div className="relative">
             {/* Header */}
@@ -755,7 +757,7 @@ export function Dashboard() {
             </div>
 
             {/* Large SVG Graphic positioned so robot wheels touch the stats container line */}
-            <div className="absolute right-0 -top-5.5 pointer-events-none z-0">
+            <div className="absolute right-0 -top-[26px] pointer-events-none z-0">
               <img 
                 src={botSendingMailsSvg} 
                 alt="Autopilot Sending Mails"  
