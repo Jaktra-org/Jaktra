@@ -1042,19 +1042,19 @@ export function InvoiceDetail() {
         {/* LEFT COLUMN (2/3 Width) - Tabs & Tab Panels */}
         <div className="lg:col-span-2 flex flex-col h-full min-h-0 overflow-hidden">
           {/* TABBED SUB-NAVIGATION BAR */}
-          <div className="flex items-center gap-1.5 p-1 bg-transparent border border-[#1e2025]/80 rounded-xl flex-shrink-0 mb-4 w-fit">
+          <div className="inline-flex items-center gap-1.5 p-1 bg-[#0f1011] border border-[#23252a] rounded-xl flex-shrink-0 mb-4 w-fit">
             <button
               onClick={() => setActiveTab('timeline')}
               className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
                 activeTab === 'timeline'
-                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                  ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
                   : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
               <Activity className="w-4 h-4" />
               <span>Activity Timeline</span>
               {accumulatedTimeline.length > 0 && (
-                <span className="ml-1 px-2 py-0.2 rounded-full text-[10px] bg-[#13161c] border border-[#1e2025] text-[#8a8f98]">
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-[#23252a] text-[#8a8f98] font-bold">
                   {totalTimelineCount}
                 </span>
               )}
@@ -1064,14 +1064,14 @@ export function InvoiceDetail() {
               onClick={() => setActiveTab('emails')}
               className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
                 activeTab === 'emails'
-                  ? 'bg-[#1a1e2e] text-[#5e6ad2] border border-[#282f45] font-semibold shadow-sm'
+                  ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
                   : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
               }`}
             >
               <Mail className="w-4 h-4" />
               <span>Emails &amp; Messages</span>
               {communications && communications.length > 0 && (
-                <span className="ml-1 px-2 py-0.2 rounded-full text-[10px] bg-[#13161c] border border-[#1e2025] text-[#8a8f98]">
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-[#23252a] text-[#8a8f98] font-bold">
                   {communications.length}
                 </span>
               )}
@@ -1082,12 +1082,15 @@ export function InvoiceDetail() {
                 onClick={() => setActiveTab('payment-plan')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-2 transition-all cursor-pointer ${
                   activeTab === 'payment-plan'
-                    ? 'bg-[#1a1e2e] text-[#27a644] border border-[#282f45] font-semibold shadow-sm'
+                    ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] font-semibold shadow-xs'
                     : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] border border-transparent font-medium'
                 }`}
               >
-                <Calendar className="w-4 h-4 text-[#27a644]" />
+                <Calendar className="w-4 h-4 text-emerald-400" />
                 <span>Payment Plan</span>
+                <span className="ml-1 px-2 py-0.2 rounded-full text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold">
+                  Active
+                </span>
               </button>
             )}
           </div>
@@ -1247,9 +1250,9 @@ export function InvoiceDetail() {
                     <button
                       onClick={handleTriggerFollowup}
                       disabled={agentMutation.isPending}
-                      className="inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all bg-[#5e6ad2] text-white hover:bg-[#828fff] h-9 px-4 disabled:opacity-40 shadow-lg shadow-[#5e6ad2]/20 active:scale-[0.98]"
+                      className="inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] h-9 px-4 disabled:opacity-40 cursor-pointer shadow-xs"
                     >
-                      {agentMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-1.5 h-3.5 w-3.5" />}
+                      {agentMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin text-[#010102]" /> : <Zap className="mr-1.5 h-3.5 w-3.5 fill-current" />}
                       Trigger Follow-up
                     </button>
                   )}
