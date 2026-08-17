@@ -67,19 +67,19 @@ const eventCategoryMap: {
   colorClass: string;
   badgeStyle: string;
 }[] = [
-    { prefix: 'user.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
-    { prefix: 'auth.', icon: Shield, colorClass: 'text-violet-600', badgeStyle: 'bg-violet-50 text-violet-700 border-violet-100' },
-    { prefix: 'settings.', icon: SettingsIcon, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
-    { prefix: 'integration.', icon: Zap, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-    { prefix: 'payment.received', icon: CheckCircle2, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-    { prefix: 'payment.', icon: CreditCard, colorClass: 'text-cyan-600', badgeStyle: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
-    { prefix: 'invoice.trashed', icon: Trash2, colorClass: 'text-amber-600', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
-    { prefix: 'invoice.restored', icon: RotateCcw, colorClass: 'text-emerald-600', badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-    { prefix: 'invoice.permanently_deleted', icon: XCircle, colorClass: 'text-rose-600', badgeStyle: 'bg-rose-50 text-rose-700 border-rose-100' },
-    { prefix: 'invoice.', icon: FileText, colorClass: 'text-blue-600', badgeStyle: 'bg-blue-50 text-blue-700 border-blue-100' },
-    { prefix: 'dlq.', icon: AlertTriangle, colorClass: 'text-amber-500', badgeStyle: 'bg-amber-50 text-amber-700 border-amber-100' },
-    { prefix: 'agent.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
-    { prefix: 'reconciler.run_triggered', icon: Play, colorClass: 'text-indigo-600', badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+    { prefix: 'user.', icon: Shield, colorClass: 'text-violet-400', badgeStyle: 'bg-violet-500/10 text-violet-300 border border-violet-500/30' },
+    { prefix: 'auth.', icon: Shield, colorClass: 'text-violet-400', badgeStyle: 'bg-violet-500/10 text-violet-300 border border-violet-500/30' },
+    { prefix: 'settings.', icon: SettingsIcon, colorClass: 'text-amber-400', badgeStyle: 'bg-amber-500/10 text-amber-300 border border-amber-500/30' },
+    { prefix: 'integration.', icon: Zap, colorClass: 'text-emerald-400', badgeStyle: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' },
+    { prefix: 'payment.received', icon: CheckCircle2, colorClass: 'text-emerald-400', badgeStyle: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' },
+    { prefix: 'payment.', icon: CreditCard, colorClass: 'text-cyan-400', badgeStyle: 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30' },
+    { prefix: 'invoice.trashed', icon: Trash2, colorClass: 'text-amber-400', badgeStyle: 'bg-amber-500/10 text-amber-300 border border-amber-500/30' },
+    { prefix: 'invoice.restored', icon: RotateCcw, colorClass: 'text-emerald-400', badgeStyle: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' },
+    { prefix: 'invoice.permanently_deleted', icon: XCircle, colorClass: 'text-rose-400', badgeStyle: 'bg-rose-500/10 text-rose-300 border border-rose-500/30' },
+    { prefix: 'invoice.', icon: FileText, colorClass: 'text-[#828fff]', badgeStyle: 'bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/30' },
+    { prefix: 'dlq.', icon: AlertTriangle, colorClass: 'text-amber-400', badgeStyle: 'bg-amber-500/10 text-amber-300 border border-amber-500/30' },
+    { prefix: 'agent.run_triggered', icon: Play, colorClass: 'text-[#828fff]', badgeStyle: 'bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/30' },
+    { prefix: 'reconciler.run_triggered', icon: Play, colorClass: 'text-[#828fff]', badgeStyle: 'bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/30' },
   ];
 
 const getEventConfig = (actionType: string) => {

@@ -401,39 +401,39 @@ export function InvoiceDetail() {
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
     if (type.includes('received') || (event.newValues && event.newValues.paymentStatus === 'Paid')) {
-      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
     }
     
     if (type === 'invoice.updated' && (event.oldValues || event.newValues)) {
       const changedKeys = Object.keys({ ...event.oldValues, ...event.newValues });
       if (changedKeys.includes('invoiceAmount')) {
-        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+        return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
       }
       if (changedKeys.includes('dueDate')) {
-        return 'bg-amber-50 text-amber-600 border-amber-100';
+        return 'bg-amber-500/10 text-amber-400 border border-amber-500/30';
       }
       if (changedKeys.includes('paymentStatus')) {
-        return 'bg-blue-50 text-blue-600 border-blue-100';
+        return 'bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/30';
       }
     }
     if (type === 'invoice.trashed') {
-      return 'bg-amber-50 text-amber-600 border-amber-100';
+      return 'bg-amber-500/10 text-amber-400 border border-amber-500/30';
     }
     if (type === 'invoice.restored') {
-      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
     }
     if (type === 'invoice.permanently_deleted') {
-      return 'bg-red-50 text-red-600 border-red-100';
+      return 'bg-red-500/10 text-red-400 border border-red-500/30';
     }
 
     if (type.includes('create') || type.includes('import')) {
-      return 'bg-blue-50 text-blue-600 border-blue-100';
+      return 'bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/30';
     }
     if (type.includes('sent') || type.includes('open') || type.includes('click')) {
-      return 'bg-purple-50 text-purple-600 border-purple-100';
+      return 'bg-[#5e6ad2]/10 text-[#828fff] border border-[#5e6ad2]/30';
     }
     if (type.includes('halt') || type.includes('bounce') || type.includes('dlq') || type.includes('error')) {
-      return 'bg-red-50 text-red-600 border-red-100';
+      return 'bg-red-500/10 text-red-400 border border-red-500/30';
     }
     
     return 'bg-[#141516] text-[#8a8f98] border border-[#23252a]';
@@ -1109,7 +1109,7 @@ export function InvoiceDetail() {
                     No activity recorded yet for this invoice.
                   </div>
                 ) : (
-                  <div className="relative border-l border-[#1e2025] ml-3.5 space-y-4 py-1">
+                  <div className="relative border-l border-[#23252a] ml-3.5 space-y-4 py-1">
                     {(() => {
                       const displayTimeline = groupTimelineEvents(accumulatedTimeline);
                       const toggleGroup = (id: string) => {
@@ -1124,11 +1124,11 @@ export function InvoiceDetail() {
 
                         return (
                           <div key={event.id} className="relative pl-6">
-                            <div className={`absolute -left-3 top-1.5 h-6 w-6 rounded-full bg-[#13161c] border border-[#1e2025] flex items-center justify-center ${getEventIconStyles(event)}`}>
+                            <div className={`absolute -left-3 top-1.5 h-6 w-6 rounded-full flex items-center justify-center ${getEventIconStyles(event)}`}>
                               {renderEventIcon(event)}
                             </div>
 
-                            <div className="bg-[#13161c]/40 rounded-xl p-3.5 border border-[#1e2025]/80 hover:bg-[#13161c]/70 transition-all">
+                            <div className="bg-[#0f1011] rounded-xl p-3.5 border border-[#23252a] hover:bg-[#141516] transition-all">
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
                                 <div className="text-xs text-[#f7f8f8] leading-snug">
                                   {getEventHeading(event)}
