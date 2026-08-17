@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { portalService } from '../services/portal';
-import { Loader2, AlertCircle, Calendar, CreditCard, FileText, Check } from 'lucide-react';
+import { Loader2, AlertCircle, Check } from 'lucide-react';
 
 export function DebtorPortal() {
   const { token } = useParams<{ token: string }>();
@@ -151,361 +151,373 @@ export function DebtorPortal() {
   const isResolved = invoice.paymentStatus === 'Paid' || invoice.paymentStatus === 'Written Off';
 
   return (
-    <div className="min-h-screen bg-[#010102] flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8 text-[#f7f8f8] font-sans selection:bg-[#5e6ad2]/30 selection:text-white">
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl relative">
+    <div className="min-h-screen bg-[#010102] flex flex-col justify-center py-10 px-4 sm:px-6 text-[#f7f8f8] font-sans selection:bg-[#5e6ad2]/30 selection:text-white">
+      <div className="max-w-xl w-full mx-auto space-y-5">
+        
         {/* Brand Header */}
-        <div className="flex items-center justify-center space-x-2.5 mb-8">
-          <div className="h-9 w-9 bg-[#5e6ad2] rounded-lg flex items-center justify-center shadow-none">
-            <FileText className="h-4 h-4 text-white" />
+        <div className="flex items-center justify-between pb-4 border-b border-[#23252a]">
+          <div className="flex items-baseline space-x-3">
+            <span className="text-xl font-bold tracking-tight text-[#f7f8f8]">
+              {tenant.companyName}
+            </span>
+            <span className="text-xs text-[#8a8f98] font-mono">
+              Invoice #{invoice.invoiceNo}
+            </span>
           </div>
-          <span className="text-lg font-bold tracking-tight text-[#f7f8f8]">
-            {tenant.companyName}
-          </span>
         </div>
 
-        {/* Invoice Main Dashboard */}
-        <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl shadow-none overflow-hidden">
-          {/* Hero Header Area */}
-          <div className="p-8 text-center border-b border-[#23252a] bg-[#010102]/40">
-            <div className="mb-3">{getStatusBadge(invoice.paymentStatus)}</div>
-            <p className="text-[11px] text-[#8a8f98] uppercase tracking-wider font-semibold mb-1">
-              Outstanding Amount
-            </p>
-            <h1 className="text-4xl font-extrabold tracking-tight text-[#f7f8f8]">
+        {/* Unified Vertical Portal Card */}
+        <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl p-6 space-y-6 shadow-xl">
+          
+          {/* Top: Invoice Summary Hero */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-[#8a8f98] uppercase tracking-wider font-semibold">
+                Outstanding Amount
+              </span>
+              <div>{getStatusBadge(invoice.paymentStatus)}</div>
+            </div>
+
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#f7f8f8]">
               {formatCurrency(invoice.invoiceAmount, invoice.currency)}
             </h1>
-            <p className="text-xs text-[#8a8f98] mt-2 font-mono">
-              Invoice #{invoice.invoiceNo}
-            </p>
-          </div>
 
-          {/* Details Section */}
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Client Info */}
-              <div className="flex items-start space-x-3 p-3 bg-[#010102]/60 rounded-xl border border-[#23252a]">
-                <div className="h-8 w-8 bg-[#141516] rounded-lg flex items-center justify-center text-[#5e6ad2] shrink-0 mt-0.5">
-                  <CreditCard className="h-4 h-4" />
+            {/* Clean side-by-side metadata details without inner boxes */}
+            <div className={`grid grid-cols-1 ${invoice.subject ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4 pt-4 border-t border-[#23252a]`}>
+              {/* Invoice Description */}
+              {invoice.subject && (
+                <div className="space-y-1">
+                  <span className="text-[10px] text-[#8a8f98] font-semibold uppercase tracking-wider block">Description</span>
+                  <p className="text-xs font-semibold text-[#f7f8f8] leading-snug">{invoice.subject}</p>
                 </div>
-                <div>
-                  <p className="text-[10px] text-[#8a8f98] font-medium uppercase tracking-wider">Billed To</p>
-                  <p className="text-xs font-semibold text-[#f7f8f8] mt-0.5">{invoice.clientName}</p>
-                </div>
+              )}
+
+              {/* Billed To */}
+              <div className="space-y-1">
+                <span className="text-[10px] text-[#8a8f98] font-semibold uppercase tracking-wider block">Billed To</span>
+                <p className="text-xs font-semibold text-[#f7f8f8] truncate">{invoice.clientName}</p>
+                {invoice.contactEmail && (
+                  <p className="text-[11px] text-[#8a8f98] truncate">{invoice.contactEmail}</p>
+                )}
               </div>
 
               {/* Due Date */}
-              <div className="flex items-start space-x-3 p-3 bg-[#010102]/60 rounded-xl border border-[#23252a]">
-                <div className="h-8 w-8 bg-[#141516] rounded-lg flex items-center justify-center text-[#5e6ad2] shrink-0 mt-0.5">
-                  <Calendar className="h-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-[#8a8f98] font-medium uppercase tracking-wider">Due Date</p>
-                  <p className="text-xs font-semibold text-[#f7f8f8] mt-0.5">{formatDate(invoice.dueDate)}</p>
-                </div>
+              <div className="space-y-1">
+                <span className="text-[10px] text-[#8a8f98] font-semibold uppercase tracking-wider block">Due Date</span>
+                <p className="text-xs font-semibold text-[#f7f8f8]">{formatDate(invoice.dueDate)}</p>
+                <p className="text-[11px] text-[#8a8f98]">Status: {invoice.paymentStatus}</p>
               </div>
             </div>
+          </div>
 
-            {/* Pay Now or Plan Section */}
-            {!isResolved && (
-              <div className="pt-5 border-t border-[#23252a] space-y-5">
-                {/* Tab Headers */}
-                <div className="flex bg-[#010102] p-1 rounded-xl border border-[#23252a]">
-                  <button
-                    onClick={() => setActiveTab('pay')}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                      activeTab === 'pay'
-                        ? 'bg-[#141516] text-[#f7f8f8] border border-[#23252a]'
-                        : 'text-[#8a8f98] hover:text-[#f7f8f8]'
-                    }`}
-                  >
-                    Pay Invoice
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('plan')}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                      activeTab === 'plan'
-                        ? 'bg-[#141516] text-[#f7f8f8] border border-[#23252a]'
-                        : 'text-[#8a8f98] hover:text-[#f7f8f8]'
-                    }`}
-                  >
-                    Payment Plan
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('dispute')}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                      activeTab === 'dispute'
-                        ? 'bg-[#141516] text-[#f7f8f8] border border-[#23252a]'
-                        : 'text-[#8a8f98] hover:text-[#f7f8f8]'
-                    }`}
-                  >
-                    Raise Dispute
-                  </button>
-                </div>
+          {/* Bottom: Action Hub */}
+          {!isResolved ? (
+            <div className="pt-5 border-t border-[#23252a] space-y-5">
+              {/* Tab Headers */}
+              <div className="inline-flex w-full items-center gap-1.5 p-1 bg-[#010102] border border-[#23252a] rounded-xl">
+                <button
+                  onClick={() => setActiveTab('pay')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    activeTab === 'pay'
+                      ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] shadow-xs'
+                      : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] font-medium'
+                  }`}
+                >
+                  Pay Invoice
+                </button>
+                <button
+                  onClick={() => setActiveTab('plan')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    activeTab === 'plan'
+                      ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] shadow-xs'
+                      : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] font-medium'
+                  }`}
+                >
+                  Payment Plan
+                </button>
+                <button
+                  onClick={() => setActiveTab('dispute')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    activeTab === 'dispute'
+                      ? 'bg-[#18191c] text-[#f7f8f8] border border-[#34343a] shadow-xs'
+                      : 'bg-transparent text-[#8a8f98] hover:text-[#f7f8f8] font-medium'
+                  }`}
+                >
+                  Raise Dispute
+                </button>
+              </div>
 
-                {/* Pay Invoice Tab Pane */}
-                {activeTab === 'pay' && (
-                  <div className="space-y-4">
-                    {payError && (
-                      <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3.5 flex items-start space-x-3 text-red-400">
-                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
-                        <p className="text-xs">{payError}</p>
+              {/* Pay Invoice Tab Pane */}
+              {activeTab === 'pay' && (
+                <div className="space-y-4">
+                  <div className="p-3.5 bg-[#010102]/60 border border-[#23252a] rounded-xl space-y-1.5">
+                    <h3 className="text-xs font-semibold text-[#f7f8f8]">Instant Payment Settlement</h3>
+                    <p className="text-xs text-[#8a8f98] leading-relaxed">
+                      Pay your invoice online securely via instant card, UPI, or net banking checkout.
+                    </p>
+                  </div>
+
+                  {payError && (
+                    <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex items-start space-x-2.5 text-red-400">
+                      <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
+                      <p className="text-xs">{payError}</p>
+                    </div>
+                  )}
+
+                  {invoice.hasActivePaymentPlan ? (
+                    <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-3.5 flex items-start space-x-3 text-[#27a644]">
+                      <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-xs font-semibold">Payment Plan Active</h4>
+                        <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                          This invoice is currently under an active payment plan. Automated collection reminders are paused.
+                        </p>
                       </div>
-                    )}
-                    {invoice.hasActivePaymentPlan ? (
-                      <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3 text-[#27a644]">
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setPayError(null);
+                        payMutation.mutate();
+                      }}
+                      disabled={payMutation.isPending}
+                      className="w-full py-3 px-5 rounded-xl bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] font-semibold text-xs shadow-xs disabled:opacity-40 transition duration-150 flex items-center justify-center space-x-2 cursor-pointer"
+                    >
+                      {payMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#010102]" />
+                          <span>Generating payment checkout...</span>
+                        </>
+                      ) : (
+                        <span>Pay Invoice Now ({formatCurrency(invoice.invoiceAmount, invoice.currency)})</span>
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Request Payment Plan Tab Pane */}
+              {activeTab === 'plan' && (
+                <div className="space-y-4">
+                  {invoice.hasActivePaymentPlan ? (
+                    <div className="space-y-3">
+                      <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-3.5 flex items-start space-x-3 text-[#27a644]">
                         <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-xs font-semibold">Payment Plan Active</h4>
                           <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                            This invoice is currently under an active payment plan. Automated collection reminders are paused.
+                            This invoice is currently under an active payment plan.
                           </p>
                         </div>
                       </div>
-                    ) : (
+
+                      {installmentsData?.data && installmentsData.data.length > 0 && (
+                        <div className="space-y-2 pt-1">
+                          <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider">Agreed Installment Schedule</h4>
+                          <div className="bg-[#010102] border border-[#23252a] rounded-xl overflow-hidden divide-y divide-[#23252a] text-xs">
+                            {installmentsData.data.map((item) => (
+                              <div key={item.id} className="p-3 flex justify-between items-center">
+                                <div>
+                                  <span className="font-semibold text-[#f7f8f8]">Installment #{item.installmentNumber}</span>
+                                  <span className="block text-[11px] text-[#8a8f98]">Due {formatDate(item.dueDate)}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-semibold text-[#f7f8f8]">{formatCurrency(item.amount, item.currency)}</span>
+                                  <span className={`block text-[10px] font-semibold uppercase ${
+                                    item.status === 'paid' ? 'text-[#27a644]' : item.status === 'overdue' ? 'text-red-400' : 'text-amber-400'
+                                  }`}>
+                                    {item.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : invoice.hasPendingPaymentPlan ? (
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 flex items-start space-x-3 text-amber-400">
+                      <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-xs font-semibold">Request Pending Review</h4>
+                        <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                          Your request for a payment plan is pending review by our management team. We will notify you once a decision is made.
+                        </p>
+                      </div>
+                    </div>
+                  ) : planSuccess ? (
+                    <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-3.5 flex items-start space-x-3 text-[#27a644]">
+                      <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-xs font-semibold">Request Submitted</h4>
+                        <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                          Your request for a payment plan has been submitted successfully.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3.5">
+                      <div>
+                        <label className="block text-xs font-medium text-[#8a8f98] mb-1">Installment Duration</label>
+                        <select
+                          value={installments}
+                          onChange={(e) => setInstallments(parseInt(e.target.value))}
+                          className="w-full bg-[#010102] border border-[#23252a] rounded-xl px-3 py-2 text-xs text-[#f7f8f8] focus:outline-none focus:border-[#555761] focus:ring-1 focus:ring-white/20 transition-colors"
+                        >
+                          <option value={3}>3 Months</option>
+                          <option value={6}>6 Months</option>
+                          <option value={9}>9 Months</option>
+                          <option value={12}>12 Months</option>
+                          <option value={18}>18 Months</option>
+                          <option value={24}>24 Months</option>
+                        </select>
+                      </div>
+
+                      <div className="bg-[#010102] p-3 rounded-xl border border-[#23252a] flex justify-between items-center text-xs">
+                        <span className="text-[#8a8f98]">Calculated Monthly Amount:</span>
+                        <span className="font-semibold text-[#f7f8f8]">
+                          {formatCurrency((parseFloat(invoice.invoiceAmount) / installments).toString(), invoice.currency)} / month
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-[#8a8f98] mb-1">Reason for request</label>
+                        <textarea
+                          value={reason}
+                          onChange={(e) => setReason(e.target.value)}
+                          rows={3}
+                          placeholder="Please provide a brief reason..."
+                          className="w-full bg-[#010102] border border-[#23252a] rounded-xl px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#555761] focus:ring-1 focus:ring-white/20 transition-colors"
+                        />
+                      </div>
+
+                      {planError && (
+                        <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex items-start space-x-2.5 text-red-400">
+                          <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
+                          <p className="text-xs">{planError}</p>
+                        </div>
+                      )}
+
                       <button
                         onClick={() => {
-                          setPayError(null);
-                          payMutation.mutate();
+                          setPlanError(null);
+                          planMutation.mutate();
                         }}
-                        disabled={payMutation.isPending}
-                        className="w-full py-3 px-5 rounded-md bg-[#5e6ad2] hover:bg-[#828fff] text-white font-medium text-xs shadow-none disabled:opacity-40 transition duration-150 flex items-center justify-center space-x-2"
+                        disabled={planMutation.isPending}
+                        className="w-full py-2.5 px-4 rounded-xl bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] font-semibold text-xs transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-40 cursor-pointer shadow-xs"
                       >
-                        {payMutation.isPending ? (
+                        {planMutation.isPending ? (
                           <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            <span>Generating payment checkout...</span>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#010102]" />
+                            <span>Submitting Plan...</span>
                           </>
                         ) : (
-                          <span>Pay Invoice Now</span>
+                          <span>Submit Plan Request</span>
                         )}
                       </button>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
+              )}
 
-                {/* Request Payment Plan Tab Pane */}
-                {activeTab === 'plan' && (
-                  <div className="space-y-4">
-                    {invoice.hasActivePaymentPlan ? (
-                      <div className="space-y-4">
-                        <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3 text-[#27a644]">
+              {/* Raise Dispute Tab Pane */}
+              {activeTab === 'dispute' && (
+                <div className="space-y-4">
+                  {disputeSuccess ? (
+                    <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-3.5 flex items-start space-x-3 text-[#27a644]">
+                      <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-xs font-semibold">Dispute Submitted</h4>
+                        <p className="text-[11px] text-[#8a8f98] mt-0.5">
+                          Your dispute has been submitted and will be reviewed by our team.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3.5">
+                      <div>
+                        <label className="block text-xs font-medium text-[#8a8f98] mb-1">Reason for dispute</label>
+                        <textarea
+                          value={disputeReason}
+                          onChange={(e) => setDisputeReason(e.target.value)}
+                          rows={4}
+                          placeholder="Please explain the reason for raising a dispute..."
+                          className="w-full bg-[#010102] border border-[#23252a] rounded-xl px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#555761] focus:ring-1 focus:ring-white/20 transition-colors"
+                        />
+                      </div>
+
+                      {disputeError && (
+                        <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex items-start space-x-2.5 text-red-400">
                           <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
-                          <div>
-                            <h4 className="text-xs font-semibold">Payment Plan Active</h4>
-                            <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                              This invoice is currently under an active payment plan. Automated collection reminders are paused.
-                            </p>
-                          </div>
+                          <p className="text-xs">{disputeError}</p>
                         </div>
+                      )}
 
-                        {installmentsData?.data && installmentsData.data.length > 0 && (
-                          <div className="space-y-2 pt-1">
-                            <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider">Agreed Installment Schedule</h4>
-                            <div className="bg-[#010102] border border-[#23252a] rounded-xl overflow-hidden divide-y divide-[#23252a] text-xs">
-                              {installmentsData.data.map((item) => (
-                                <div key={item.id} className="p-3 flex justify-between items-center">
-                                  <div>
-                                    <span className="font-semibold text-[#f7f8f8]">Installment #{item.installmentNumber}</span>
-                                    <span className="block text-[11px] text-[#8a8f98]">Due {formatDate(item.dueDate)}</span>
-                                  </div>
-                                  <div className="text-right">
-                                    <span className="font-semibold text-[#5e6ad2]">{formatCurrency(item.amount, item.currency)}</span>
-                                    <span className={`block text-[10px] font-semibold uppercase ${
-                                      item.status === 'paid' ? 'text-[#27a644]' : item.status === 'overdue' ? 'text-red-400' : 'text-amber-400'
-                                    }`}>
-                                      {item.status}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+                      <button
+                        onClick={() => {
+                          setDisputeError(null);
+                          disputeMutation.mutate();
+                        }}
+                        disabled={disputeMutation.isPending}
+                        className="w-full py-2.5 px-4 rounded-xl bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] font-semibold text-xs transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-40 cursor-pointer shadow-xs"
+                      >
+                        {disputeMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#010102]" />
+                            <span>Submitting Dispute...</span>
+                          </>
+                        ) : (
+                          <span>Submit Dispute</span>
                         )}
-                      </div>
-                    ) : invoice.hasPendingPaymentPlan ? (
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start space-x-3 text-amber-400">
-                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="text-xs font-semibold">Request Pending Review</h4>
-                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                            Your request for a payment plan is pending review by our management team. We will notify you once a decision is made.
-                          </p>
-                        </div>
-                      </div>
-                    ) : planSuccess ? (
-                      <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3 text-[#27a644]">
-                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="text-xs font-semibold">Request Submitted</h4>
-                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                            Your request for a payment plan has been submitted successfully.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3.5">
-                        <div>
-                          <label className="block text-xs font-medium text-[#8a8f98] mb-1">Installment Count</label>
-                          <select
-                            value={installments}
-                            onChange={(e) => setInstallments(parseInt(e.target.value))}
-                            className="w-full bg-[#010102] border border-[#23252a] rounded-md px-3 py-2 text-xs text-[#f7f8f8] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
-                          >
-                            <option value={3}>3 Months</option>
-                            <option value={6}>6 Months</option>
-                            <option value={9}>9 Months</option>
-                            <option value={12}>12 Months</option>
-                            <option value={18}>18 Months</option>
-                            <option value={24}>24 Months</option>
-                          </select>
-                        </div>
-
-                        <div className="bg-[#010102] p-2.5 rounded-lg border border-[#23252a] flex justify-between items-center text-xs">
-                          <span className="text-[#8a8f98]">Monthly Amount:</span>
-                          <span className="font-semibold text-[#f7f8f8]">
-                            {formatCurrency((parseFloat(invoice.invoiceAmount) / installments).toString(), invoice.currency)} / month
-                          </span>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-[#8a8f98] mb-1">Reason for request</label>
-                          <textarea
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            rows={3}
-                            placeholder="Please provide a brief reason..."
-                            className="w-full bg-[#010102] border border-[#23252a] rounded-md px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
-                          />
-                        </div>
-
-                        {planError && (
-                          <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex items-start space-x-2.5 text-red-400">
-                            <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
-                            <p className="text-xs">{planError}</p>
-                          </div>
-                        )}
-
-                        <button
-                          onClick={() => {
-                            setPlanError(null);
-                            planMutation.mutate();
-                          }}
-                          disabled={planMutation.isPending}
-                          className="w-full py-2.5 px-4 rounded-md bg-[#5e6ad2] hover:bg-[#828fff] text-white font-medium text-xs transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-40"
-                        >
-                          {planMutation.isPending ? (
-                            <>
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              <span>Submitting Plan...</span>
-                            </>
-                          ) : (
-                            <span>Submit Plan Request</span>
-                          )}
-                        </button>
-                      </div>
-                    )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="pt-5 border-t border-[#23252a] space-y-4">
+              {invoice.paymentStatus === 'Paid' && (
+                <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-3.5 flex items-start space-x-3">
+                  <div className="h-5 w-5 bg-[#27a644]/20 text-[#27a644] rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3" />
                   </div>
-                )}
-
-                {/* Raise Dispute Tab Pane */}
-                {activeTab === 'dispute' && (
-                  <div className="space-y-4">
-                    {disputeSuccess ? (
-                      <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3 text-[#27a644]">
-                        <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="text-xs font-semibold">Dispute Submitted</h4>
-                          <p className="text-[11px] text-[#8a8f98] mt-0.5">
-                            Your dispute has been submitted and will be reviewed by our team.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3.5">
-                        <div>
-                          <label className="block text-xs font-medium text-[#8a8f98] mb-1">Reason for dispute</label>
-                          <textarea
-                            value={disputeReason}
-                            onChange={(e) => setDisputeReason(e.target.value)}
-                            rows={4}
-                            placeholder="Please explain the reason for raising a dispute..."
-                            className="w-full bg-[#010102] border border-[#23252a] rounded-md px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:ring-1 focus:ring-[#5e69d1]"
-                          />
-                        </div>
-
-                        {disputeError && (
-                          <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex items-start space-x-2.5 text-red-400">
-                            <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
-                            <p className="text-xs">{disputeError}</p>
-                          </div>
-                        )}
-
-                        <button
-                          onClick={() => {
-                            setDisputeError(null);
-                            disputeMutation.mutate();
-                          }}
-                          disabled={disputeMutation.isPending}
-                          className="w-full py-2.5 px-4 rounded-md bg-[#5e6ad2] hover:bg-[#828fff] text-white font-medium text-xs transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-40"
-                        >
-                          {disputeMutation.isPending ? (
-                            <>
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              <span>Submitting Dispute...</span>
-                            </>
-                          ) : (
-                            <span>Submit Dispute</span>
-                          )}
-                        </button>
-                      </div>
-                    )}
+                  <div>
+                    <h4 className="text-xs font-semibold text-[#27a644]">Payment Resolved</h4>
+                    <p className="text-xs text-[#8a8f98] mt-0.5">
+                      Thank you. This invoice is settled and requires no further action.
+                      {invoice.paymentStatusChangedAt && (
+                        <span className="block mt-1 text-[11px] text-[#8a8f98]">
+                          Resolved on {formatDate(invoice.paymentStatusChangedAt)}
+                        </span>
+                      )}
+                    </p>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
 
-            {/* Success Banner if Resolved */}
-            {invoice.paymentStatus === 'Paid' && (
-              <div className="bg-[#27a644]/10 border border-[#27a644]/20 rounded-xl p-4 flex items-start space-x-3">
-                <div className="h-5 w-5 bg-[#27a644]/20 text-[#27a644] rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="w-3 h-3" />
+              {invoice.paymentStatus === 'Written Off' && (
+                <div className="bg-[#141516] border border-[#23252a] rounded-xl p-3.5 flex items-start space-x-3">
+                  <div className="h-5 w-5 bg-[#23252a] text-[#8a8f98] rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-[#f7f8f8]">Invoice Inactive</h4>
+                    <p className="text-xs text-[#8a8f98] mt-0.5">
+                      No payment is currently due on this invoice.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-[#27a644]">Payment Resolved</h4>
-                  <p className="text-xs text-[#8a8f98] mt-0.5">
-                    Thank you. This invoice is settled and requires no further action.
-                    {invoice.paymentStatusChangedAt && (
-                      <span className="block mt-1 text-[11px] text-[#8a8f98]">
-                        Resolved on {formatDate(invoice.paymentStatusChangedAt)}
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
+          )}
 
-            {invoice.paymentStatus === 'Written Off' && (
-              <div className="bg-[#141516] border border-[#23252a] rounded-xl p-4 flex items-start space-x-3">
-                <div className="h-5 w-5 bg-[#23252a] text-[#8a8f98] rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="w-3 h-3" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-[#f7f8f8]">Invoice Inactive</h4>
-                  <p className="text-xs text-[#8a8f98] mt-0.5">
-                    No payment is currently due on this invoice.
-                  </p>
-                </div>
-              </div>
-            )}
+          {/* Footer Security Notice */}
+          <div className="pt-4 text-[11px] text-[#8a8f98] border-t border-[#23252a] text-center">
+            <span>Secured by Jaktra Infrastructure</span>
           </div>
         </div>
-      </div>
 
-      {/* Brand Footer */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center mt-12 relative z-10">
-        <p className="text-[11px] text-[#8a8f98]">
-          Secured by Jaktra Payment Infrastructure.
-        </p>
       </div>
     </div>
   );
