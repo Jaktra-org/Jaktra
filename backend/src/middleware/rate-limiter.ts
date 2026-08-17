@@ -9,16 +9,18 @@ const redisClient = config.REDIS_URL && process.env['NODE_ENV'] !== 'test'
 
 let isRedisConnected = false;
 
-if (redisClient) {
-  redisClient.connect()
-    .then(() => {
-      isRedisConnected = true;
-    })
-    .catch((err: Error) => {
-      console.error('Failed to connect to Redis for Rate Limiting, falling back to in-memory:', err.message);
-      isRedisConnected = false;
-    });
+const redisConnectPromise: Promise<void> | null = redisClient
+  ? redisClient.connect()
+      .then(() => {
+        isRedisConnected = true;
+      })
+      .catch((err: Error) => {
+        console.error('Failed to connect to Redis for Rate Limiting, falling back to in-memory:', err.message);
+        isRedisConnected = false;
+      })
+  : null;
 
+if (redisClient) {
   redisClient.on('connect', () => {
     isRedisConnected = true;
   });
@@ -32,6 +34,8 @@ if (redisClient) {
     isRedisConnected = false;
   });
 }
+
+let hasLoggedInitWarning = false;
 
 interface RedisStoreWithOptionalMethods extends RedisStore {
   resetAll?: () => Promise<void>;
@@ -61,23 +65,38 @@ class FallbackStore implements Store {
       return;
     }
 
-    let timeoutId: NodeJS.Timeout | undefined;
-    try {
-      // Race the Redis initialization with a 2-second timeout to prevent blocking startup
-      await Promise.race([
-        this.redisStore.init(options),
-        new Promise<void>((_, reject) => {
-          timeoutId = setTimeout(() => reject(new Error('Connection timeout')), 2000);
-        }),
-      ]);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.warn(`Redis rate limit store initialization deferred: ${message}. Rate limiting will fall back to memory until Redis is available.`);
-    } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+    if (redisClient) {
+      // Wait for initial connection attempt to complete (up to 2000ms) before initializing Redis store
+      if (redisConnectPromise && !isRedisConnected) {
+        await Promise.race([
+          redisConnectPromise,
+          new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+        ]);
+      }
+
+      if (isRedisConnected && redisClient.isOpen) {
+        try {
+          let timeoutId: NodeJS.Timeout | undefined;
+          await Promise.race([
+            this.redisStore.init(options),
+            new Promise<void>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('Connection timeout')), 2000);
+            }),
+          ]);
+          if (timeoutId) clearTimeout(timeoutId);
+        } catch (err: unknown) {
+          if (!hasLoggedInitWarning) {
+            hasLoggedInitWarning = true;
+            const message = err instanceof Error ? err.message : String(err);
+            console.warn(`Redis rate limit store initialization deferred: ${message}. Rate limiting will fall back to memory until Redis is available.`);
+          }
+        }
+      } else if (!hasLoggedInitWarning) {
+        hasLoggedInitWarning = true;
+        console.warn('Redis rate limit store initialization deferred: Redis is not connected. Rate limiting will fall back to memory until Redis is available.');
       }
     }
+
     this.memoryStore.init(options);
   }
 
