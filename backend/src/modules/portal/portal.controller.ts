@@ -27,6 +27,8 @@ export class PortalController {
           id: invoice.id,
           invoiceNo: invoice.invoiceNo,
           clientName: invoice.clientName,
+          contactEmail: invoice.contactEmail,
+          subject: invoice.subject,
           invoiceAmount: invoice.invoiceAmount,
           currency: invoice.currency,
           dueDate: invoice.dueDate,
