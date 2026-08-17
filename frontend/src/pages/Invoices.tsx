@@ -779,9 +779,7 @@ export function Invoices() {
                     <tr 
                       key={invoice.id} 
                       onClick={() => navigate(`/invoices/${invoice.id}`)}
-                      className={`transition-colors hover:bg-[#181a22]/50 cursor-pointer ${
-                        isLegalEscalation ? 'bg-red-950/20 hover:bg-red-950/30' : ''
-                      }`}
+                      className="transition-colors hover:bg-[#181a22]/50 cursor-pointer"
                     >
                       <td className="p-3.5 px-4 align-middle font-medium text-[#f7f8f8]">
                         <div className="flex items-center gap-1.5">
