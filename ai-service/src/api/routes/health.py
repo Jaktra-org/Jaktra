@@ -14,13 +14,22 @@ stats = {
     "is_processing": False
 }
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "HEAD"])
 async def get_health():
     return {
         "status": "ok",
         "version": "1.0.0",
         "model": "llama-3.1-8b-instant",
         "provider": "groq",
+        "uptime_seconds": int(time.time() - START_TIME)
+    }
+
+@router.api_route("/", methods=["GET", "HEAD"])
+async def root_health():
+    return {
+        "status": "ok",
+        "service": "jaktra-ai-service",
+        "version": "1.0.0",
         "uptime_seconds": int(time.time() - START_TIME)
     }
 
