@@ -365,10 +365,13 @@ export class IntegrationController {
   saveResendKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tenantId = (req as AuthenticatedRequest).user.tenantId;
-      const { apiKey, senderName, senderEmail, replyTo } = req.body;
+      const { apiKey, senderName, senderEmail, replyTo, replyMode, replyMailboxEmail } = req.body;
 
-      if (!apiKey) {
-        throw new ValidationError('API key is required.');
+      if (!apiKey || (typeof apiKey === 'string' && apiKey.trim() === '')) {
+        const existing = await this.integrationService.getResendSetupProgress(tenantId);
+        if (!existing.step1ApiKey.isDone && !existing.step1ApiKey.hasApiKey) {
+          throw new ValidationError('API key is required.');
+        }
       }
 
       if (senderEmail && typeof senderEmail === 'string' && senderEmail.trim() !== '') {
@@ -386,10 +389,12 @@ export class IntegrationController {
       }
 
       const result = await this.integrationService.validateAndSaveResendKey(tenantId, {
-        apiKey,
-        senderName: senderName ? String(senderName).trim() : undefined,
-        senderEmail: senderEmail ? String(senderEmail).trim() : undefined,
-        replyTo: replyTo ? String(replyTo).trim() : null,
+        apiKey: apiKey && typeof apiKey === 'string' && apiKey.trim() !== '' ? apiKey.trim() : undefined,
+        senderName: senderName !== undefined ? String(senderName).trim() : undefined,
+        senderEmail: senderEmail !== undefined ? String(senderEmail).trim() : undefined,
+        replyTo: replyTo !== undefined ? (replyTo ? String(replyTo).trim() : null) : undefined,
+        replyMode: replyMode && ['real_mailbox', 'webhook_only'].includes(replyMode) ? replyMode : undefined,
+        replyMailboxEmail: replyMailboxEmail !== undefined ? (replyMailboxEmail ? String(replyMailboxEmail).trim() : null) : undefined,
       });
 
       const setupProgress = await this.integrationService.getResendSetupProgress(tenantId);

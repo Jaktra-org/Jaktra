@@ -785,6 +785,7 @@ export class IntegrationService {
     }
   ): Promise<{ message: string }> {
     let encryptedData: Record<string, unknown> = {};
+    let fetchedDomains: unknown = null;
 
     if (data.apiKey && data.apiKey !== 're_placeholder') {
       const trimmedKey = data.apiKey.trim();
@@ -795,7 +796,7 @@ export class IntegrationService {
       // Validate key against Resend API
       try {
         const resend = new Resend(trimmedKey);
-        const { error } = await resend.domains.list();
+        const { data: domains, error } = await resend.domains.list();
         if (error) {
           logger.warn(`Resend validation failed for tenant ${tenantId}: ${error.message}`);
           const errName = (error.name || '').toLowerCase();
@@ -813,6 +814,7 @@ export class IntegrationService {
             throw IntegrationErrors.PROVIDER_UNAVAILABLE();
           }
         }
+        fetchedDomains = domains;
       } catch (err: unknown) {
         if (err instanceof IntegrationError || err instanceof ValidationError) {
           throw err;
@@ -831,6 +833,42 @@ export class IntegrationService {
         lastValidationResult: 'valid',
         lastValidatedAt: new Date(),
       };
+    }
+
+    if (data.senderEmail && data.senderEmail.trim() !== '') {
+      const emailDomain = data.senderEmail.trim().split('@')[1]?.toLowerCase();
+      let domains = fetchedDomains;
+
+      if (!domains) {
+        let activeKey: string | null = null;
+        try {
+          activeKey = await this.getDecryptedResendKey(tenantId);
+        } catch {
+          // No key configured yet
+        }
+
+        if (activeKey) {
+          try {
+            const resend = new Resend(activeKey);
+            const listRes = await resend.domains.list();
+            if (!listRes.error && listRes.data) {
+              domains = listRes.data;
+            }
+          } catch (domainErr: unknown) {
+            logger.warn(`Could not verify domain against Resend API during sender save:`, domainErr);
+          }
+        }
+      }
+
+      if (domains) {
+        type ResendDomainItem = { name?: string; status?: string };
+        const domainList: ResendDomainItem[] = (domains as { data?: ResendDomainItem[] })?.data || (Array.isArray(domains) ? (domains as ResendDomainItem[]) : []);
+        const domainMatch = domainList.find((d: ResendDomainItem) => d.name?.toLowerCase() === emailDomain);
+
+        if (!domainMatch && emailDomain !== 'resend.dev') {
+          throw new ValidationError(`The domain "${emailDomain}" is not registered in your Resend account. Please add "${emailDomain}" to your Resend domains dashboard or use a domain configured in your Resend account.`);
+        }
+      }
     }
 
     const baseData: { senderName?: string | null; senderEmail?: string | null; replyTo?: string | null } = {};

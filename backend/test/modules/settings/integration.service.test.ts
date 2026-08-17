@@ -354,7 +354,7 @@ describe('IntegrationService', () => {
 
   describe('Resend Integration Operations', () => {
     it('validates, encrypts, and saves Resend integration', async () => {
-      mockResendDomainsList.mockResolvedValueOnce({ data: [], error: null });
+      mockResendDomainsList.mockResolvedValueOnce({ data: [{ name: 'acme.com', status: 'verified' }], error: null });
       mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
       mockRepo.getResendIntegration = vi.fn().mockResolvedValue(null);
 
@@ -382,6 +382,20 @@ describe('IntegrationService', () => {
           lastValidationResult: 'valid',
         })
       );
+    });
+
+    it('rejects sender email when domain is not registered in Resend account', async () => {
+      mockResendDomainsList.mockResolvedValueOnce({ data: [{ name: 'acme.com', status: 'verified' }], error: null });
+      mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue(null);
+
+      await expect(
+        service.validateAndSaveResendKey('tenant_1', {
+          apiKey: 're_valid_api_key_123',
+          senderName: 'Test Company',
+          senderEmail: 'invoice@jakhar.xyz',
+        })
+      ).rejects.toThrow('The domain "jakhar.xyz" is not registered in your Resend account');
     });
 
     it('rejects API key without "re_" prefix', async () => {
