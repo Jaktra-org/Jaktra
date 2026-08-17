@@ -898,9 +898,9 @@ function ItemActionArea({
             type="button"
             disabled={sendReplyPending || !activeDraftContent}
             onClick={() => onSendReply(item)}
-            className="px-4 py-2 bg-[#5e6ad2] hover:bg-[#4b55c4] text-white rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center space-x-1.5 transition-all shadow-none cursor-pointer"
+            className="px-4 py-2 bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer"
           >
-            {sendReplyPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            {sendReplyPending ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#010102]" /> : <Send className="w-3.5 h-3.5 fill-current" />}
             <span>Send Reply</span>
           </button>
         </div>
