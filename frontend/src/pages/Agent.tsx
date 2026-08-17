@@ -242,7 +242,7 @@ export function Agent() {
                 <div className="p-0">
                   {isLoading ? (
                     <div className="flex justify-center items-center py-12">
-                      <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
+                      <Loader2 className="w-6 h-6 animate-spin text-[#8a8f98]" />
                     </div>
                   ) : runsList.length > 0 ? (
                     <RunList runs={runsList} />
