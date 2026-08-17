@@ -9,7 +9,7 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: string[] }) {
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-[#010102]">
-        <Spinner className="h-8 w-8 text-[#5e6ad2]" />
+        <Spinner className="h-7 w-7 text-[#f7f8f8]" />
       </div>
     );
   }

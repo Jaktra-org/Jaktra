@@ -70,7 +70,7 @@ export function DebtorPortal() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#010102] flex flex-col items-center justify-center text-[#f7f8f8]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#5e6ad2] mb-3" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#8a8f98] mb-3" />
         <p className="text-[#8a8f98] text-xs font-medium">Retrieving invoice details...</p>
       </div>
     );

@@ -329,7 +329,7 @@ export function Analytics() {
           <div className="space-y-4 pt-2 my-auto">
             {isAgingLoading ? (
               <div className="h-[220px] flex items-center justify-center text-xs text-[#8a8f98]">
-                <Loader2 className="w-6 h-6 animate-spin text-[#5e6ad2]" />
+                <Loader2 className="w-6 h-6 animate-spin text-[#8a8f98]" />
               </div>
             ) : (
               agingTiersAnalytics.map((tier) => {
@@ -451,7 +451,7 @@ function MetricScorecard({ title, value, loading, formatter, subtext, badge, ico
       </div>
       <div>
         <div className={`text-2xl font-bold font-mono tracking-tight ${valueColor}`}>
-          {loading ? <Loader2 className="w-5 h-5 animate-spin text-[#5e6ad2]" /> : (formatter && typeof value === 'number' ? formatter(value) : (value || '$0'))}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin text-[#8a8f98]" /> : (formatter && typeof value === 'number' ? formatter(value) : (value || '$0'))}
         </div>
         <div className="flex items-center justify-between mt-1 text-[11px]">
           {subtext && <span className="text-[#8a8f98]">{subtext}</span>}

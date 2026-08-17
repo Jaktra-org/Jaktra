@@ -159,7 +159,7 @@ export function PaymentPlans() {
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-64">
-            <Loader2 className="h-7 w-7 animate-spin text-[#5e6ad2] mb-3" />
+            <Loader2 className="h-7 w-7 animate-spin text-[#8a8f98] mb-3" />
             <p className="text-xs text-[#8a8f98]">Loading plan requests...</p>
           </div>
         ) : plansList.length === 0 ? (

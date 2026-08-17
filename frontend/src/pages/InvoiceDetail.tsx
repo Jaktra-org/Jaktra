@@ -288,7 +288,7 @@ export function InvoiceDetail() {
   if (isInvoiceLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-[#5e6ad2] mb-3" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#8a8f98] mb-3" />
         <p className="text-[#8a8f98] text-xs">Loading invoice details...</p>
       </div>
     );
@@ -1099,7 +1099,7 @@ export function InvoiceDetail() {
               <div className="space-y-4 animate-in fade-in duration-150">
                 {isTimelineLoading && accumulatedTimeline.length === 0 ? (
                   <div className="flex justify-center py-12">
-                    <Loader2 className="h-7 w-7 animate-spin text-[#5e6ad2]" />
+                    <Loader2 className="h-7 w-7 animate-spin text-[#8a8f98]" />
                   </div>
                 ) : accumulatedTimeline.length === 0 ? (
                   <div className="text-center py-12 text-[#8a8f98] text-xs">
@@ -1226,7 +1226,7 @@ export function InvoiceDetail() {
                       disabled={isFetchingNextPage}
                       className="px-4 py-2 border border-[#1e2025] hover:border-[#2e3444] text-xs font-medium rounded-xl bg-[#13161c] text-[#f7f8f8] hover:bg-[#1d212a] transition-all disabled:opacity-40 inline-flex items-center gap-2"
                     >
-                      {isFetchingNextPage && <Loader2 className="h-4 w-4 animate-spin text-[#5e6ad2]" />}
+                      {isFetchingNextPage && <Loader2 className="h-4 w-4 animate-spin text-[#8a8f98]" />}
                       Load More Events
                     </button>
                   </div>
@@ -1257,7 +1257,7 @@ export function InvoiceDetail() {
 
                 {isCommsLoading ? (
                   <div className="flex justify-center py-12">
-                    <Loader2 className="h-7 w-7 animate-spin text-[#5e6ad2]" />
+                    <Loader2 className="h-7 w-7 animate-spin text-[#8a8f98]" />
                   </div>
                 ) : (
                   <CommunicationList communications={communications || []} />

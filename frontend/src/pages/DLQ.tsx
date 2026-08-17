@@ -131,7 +131,7 @@ export function DLQ({ embedded = false }: { embedded?: boolean }) {
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-16 text-center text-[#8a8f98]">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#5e6ad2]" />
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#8a8f98]" />
                     Loading queue...
                   </td>
                 </tr>
@@ -183,7 +183,7 @@ export function DLQ({ embedded = false }: { embedded?: boolean }) {
                         <div className="flex justify-end items-center space-x-2">
                           {isRetrying ? (
                             <button disabled className="inline-flex items-center justify-center rounded-xl text-xs font-semibold bg-[#13161c] text-[#8a8f98] px-3.5 py-1.5 opacity-70 cursor-not-allowed border border-[#1e2025]">
-                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#5e6ad2]" />
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#8a8f98]" />
                               Retrying...
                             </button>
                           ) : (

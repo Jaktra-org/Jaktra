@@ -123,7 +123,7 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-6 text-xs text-[#8a8f98]">
-        <Loader2 className="w-4 h-4 animate-spin text-[#5e6ad2] mr-2" />
+        <Loader2 className="w-4 h-4 animate-spin text-[#8a8f98] mr-2" />
         Loading run details...
       </div>
     );

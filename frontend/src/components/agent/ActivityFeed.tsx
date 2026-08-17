@@ -97,7 +97,7 @@ export function ActivityFeed({ isRunning }: ActivityFeedProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[600px]">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <Loader2 className="w-5 h-5 animate-spin text-[#5e6ad2]" />
+            <Loader2 className="w-5 h-5 animate-spin text-[#8a8f98]" />
           </div>
         ) : filteredEvents.length === 0 ? (
           <div className="text-center py-8 text-[#8a8f98]">
