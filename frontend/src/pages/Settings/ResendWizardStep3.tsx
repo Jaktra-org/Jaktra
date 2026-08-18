@@ -151,8 +151,9 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
       </p>
 
       {errorMsg && (
-        <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 font-medium">
-          {errorMsg}
+        <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl text-xs text-red-400 font-medium space-y-1">
+          <p className="font-bold">Verification Failed:</p>
+          <p className="whitespace-pre-wrap leading-relaxed">{errorMsg}</p>
         </div>
       )}
 
@@ -162,84 +163,110 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
         </div>
       )}
 
-      {/* Domain Input */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-[#8a8f98]">
-          Inbound Receiving Domain <span className="text-red-400">*</span>
+      {/* Step 1: Domain Input */}
+      <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-1.5">
+        <label className="text-xs font-bold text-[#f7f8f8] block">
+          1. Inbound Receiving Domain <span className="text-red-400">*</span>
         </label>
+        <p className="text-[11px] text-[#8a8f98]">
+          Enter a dedicated subdomain (e.g. <code className="text-[#d0d6e0] font-mono">reply.yourdomain.com</code>) to receive debtor replies without affecting your personal inboxes.
+        </p>
         <input
           type="text"
           value={domainInput}
           onChange={(e) => { setDomainInput(e.target.value); setErrorMsg(''); }}
-          placeholder="reply.acme.com"
-          className="w-full p-2.5 border border-[#23252a] bg-[#010102] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none font-mono"
+          placeholder="reply.yourdomain.com"
+          className="w-full p-2.5 border border-[#23252a] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none font-mono"
         />
       </div>
 
-      {/* DNS Instructions Table */}
-      <div className="p-3.5 bg-[#0f1011] border border-[#23252a] rounded-xl space-y-2.5">
-        <p className="text-xs font-semibold text-[#f7f8f8]">1. Add DNS MX Record at your DNS provider</p>
+      {/* Step 2: Add in Resend Domains */}
+      <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-[#f7f8f8]">2. Add Domain in Resend Dashboard & Enable Receiving</p>
+          <a
+            href="https://resend.com/domains"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-[#f7f8f8] hover:underline inline-flex items-center gap-1 font-medium"
+          >
+            Open Resend Domains <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+        <p className="text-[11px] text-[#8a8f98] leading-relaxed">
+          In your Resend dashboard under <strong className="text-[#d0d6e0]">Domains</strong>, click <strong className="text-[#d0d6e0]">Add Domain</strong>, enter <code className="text-[#f7f8f8] font-mono">{domainInput.trim() || 'reply.yourdomain.com'}</code>, and turn <strong>ON</strong> the <strong>Enable Receiving</strong> toggle.
+        </p>
+      </div>
+
+      {/* Step 3: DNS Instructions Table */}
+      <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-2.5">
+        <p className="text-xs font-bold text-[#f7f8f8]">3. Add DNS MX Record at your DNS provider</p>
+        <p className="text-[11px] text-[#8a8f98]">
+          Add this MX record in your DNS provider (e.g. GoDaddy, Cloudflare) pointing to the Resend inbound receiving server:
+        </p>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono">
+          <table className="w-full text-left text-xs font-mono border border-[#23252a] bg-[#0f1011] rounded-lg">
             <thead>
-              <tr className="text-[#8a8f98] border-b border-[#23252a] text-[10px]">
-                <th className="pb-1.5 font-semibold">TYPE</th>
-                <th className="pb-1.5 font-semibold">HOST</th>
-                <th className="pb-1.5 font-semibold">VALUE / TARGET</th>
-                <th className="pb-1.5 font-semibold">PRIORITY</th>
+              <tr className="bg-[#141516] text-[#8a8f98] border-b border-[#23252a] text-[10px]">
+                <th className="px-2.5 py-1.5 font-semibold">TYPE</th>
+                <th className="px-2.5 py-1.5 font-semibold">HOST / NAME</th>
+                <th className="px-2.5 py-1.5 font-semibold">VALUE / TARGET</th>
+                <th className="px-2.5 py-1.5 font-semibold">PRIORITY</th>
+                <th className="px-2.5 py-1.5 text-right font-semibold">ACTION</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#23252a]/40 text-[11px]">
               <tr>
-                <td className="py-2 text-[#f7f8f8]">MX</td>
-                <td className="py-2 text-[#d0d6e0]">
-                  <span className="inline-flex items-center gap-1">
-                    {dnsPrefix}
+                <td className="px-2.5 py-2 text-[#f7f8f8]">MX</td>
+                <td className="px-2.5 py-2 font-bold text-[#f7f8f8]">
+                  {domainInput.trim() ? dnsPrefix : <span className="text-[#62666d] italic font-sans text-[10px]">Enter domain above</span>}
+                </td>
+                <td className="px-2.5 py-2 text-[#d0d6e0]">
+                  inbound-smtp.*.amazonaws.com
+                </td>
+                <td className="px-2.5 py-2 text-[#8a8f98]">10</td>
+                <td className="px-2.5 py-2 text-right">
+                  <div className="inline-flex gap-1">
                     <button
                       type="button"
                       onClick={() => copy(dnsPrefix, setCopiedDnsHost)}
-                      className="text-[#8a8f98] hover:text-[#f7f8f8] cursor-pointer"
+                      disabled={!domainInput.trim()}
+                      className="px-2 py-0.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] border border-[#34343a] transition-all cursor-pointer disabled:opacity-30"
                     >
-                      {copiedDnsHost ? <Check className="w-3 h-3 text-[#27a644]" /> : <Copy className="w-3 h-3" />}
+                      {copiedDnsHost ? 'Copied Host' : 'Copy Host'}
                     </button>
-                  </span>
-                </td>
-                <td className="py-2 text-[#d0d6e0]">
-                  <span className="inline-flex items-center gap-1">
-                    {mxTarget}
                     <button
                       type="button"
                       onClick={() => copy(mxTarget, setCopiedMxTarget)}
-                      className="text-[#8a8f98] hover:text-[#f7f8f8] cursor-pointer"
+                      className="px-2 py-0.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] border border-[#34343a] transition-all cursor-pointer"
                     >
-                      {copiedMxTarget ? <Check className="w-3 h-3 text-[#27a644]" /> : <Copy className="w-3 h-3" />}
+                      {copiedMxTarget ? 'Copied Target' : 'Copy Target'}
                     </button>
-                  </span>
+                  </div>
                 </td>
-                <td className="py-2 text-[#8a8f98]">10</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Webhook Configuration in Resend Dashboard */}
-      <div className="p-3.5 bg-[#0f1011] border border-[#23252a] rounded-xl space-y-2">
+      {/* Step 4: Webhook Configuration in Resend Dashboard */}
+      <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-[#f7f8f8]">2. Configure Webhook in Resend</p>
+          <p className="text-xs font-bold text-[#f7f8f8]">4. Configure Webhook in Resend</p>
           <a
             href="https://resend.com/webhooks"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] text-[#f7f8f8] hover:underline inline-flex items-center gap-1"
+            className="text-[11px] text-[#f7f8f8] hover:underline inline-flex items-center gap-1 font-medium"
           >
             Open Resend Webhooks <ExternalLink className="w-3 h-3" />
           </a>
         </div>
         <p className="text-[11px] text-[#8a8f98]">
-          In your Resend dashboard, add a webhook with event <code className="text-[#d0d6e0] font-mono">email.received</code> pointing to your endpoint URL:
+          In Resend under <strong className="text-[#d0d6e0]">Webhooks</strong>, add a webhook with event <code className="text-[#d0d6e0] font-mono">email.received</code> pointing to:
         </p>
-        <div className="flex items-center gap-2 p-2 bg-[#010102] border border-[#23252a] rounded-lg">
+        <div className="flex items-center gap-2 p-2 bg-[#0f1011] border border-[#23252a] rounded-lg">
           <span className="text-[11px] font-mono text-[#8a8f98] flex-1 break-all select-all">
             {w.webhookUrl}
           </span>

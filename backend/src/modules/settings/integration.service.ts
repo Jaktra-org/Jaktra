@@ -987,10 +987,47 @@ export class IntegrationService {
       await verifyInboundMxForProvider(domainToVerify, 'resend');
     }
 
+    let apiKey: string;
     try {
-      await this.getDecryptedResendKey(tenantId);
+      apiKey = await this.getDecryptedResendKey(tenantId);
     } catch {
       throw new ValidationError('Resend API Key is not configured. Please save your Resend API key first.');
+    }
+
+    // Verify against Resend Domains API that domain/subdomain is registered in the account
+    if (domainToVerify && domainToVerify !== 'resend.dev') {
+      try {
+        const resend = new Resend(apiKey);
+        const { data: domains, error } = await resend.domains.list();
+        if (error) {
+          logger.warn(`Failed to list domains in Resend for tenant ${tenantId}:`, error);
+        } else if (domains) {
+          type ResendDomainItem = { id?: string; name?: string; status?: string };
+          const domainList: ResendDomainItem[] =
+            (domains as { data?: ResendDomainItem[] })?.data ||
+            (Array.isArray(domains) ? (domains as ResendDomainItem[]) : []);
+
+          const exactMatch = domainList.find(
+            (d) => d.name?.toLowerCase() === domainToVerify?.toLowerCase()
+          );
+
+          if (!exactMatch) {
+            const rootDomain = domainToVerify.split('.').slice(-2).join('.');
+            const rootMatch = domainList.find((d) => d.name?.toLowerCase() === rootDomain.toLowerCase());
+
+            if (!rootMatch) {
+              const configuredDomains = domainList.map((d) => d.name).filter(Boolean).join(', ');
+              const domainsMsg = configuredDomains ? ` (Configured domains in your Resend account: ${configuredDomains})` : '';
+              throw new ValidationError(
+                `The domain "${domainToVerify}" is not registered in your Resend account.${domainsMsg} Please add "${domainToVerify}" in your Resend Domains dashboard and enable Receiving.`
+              );
+            }
+          }
+        }
+      } catch (err: unknown) {
+        if (err instanceof ValidationError) throw err;
+        logger.warn(`Could not verify domain with Resend API:`, err);
+      }
     }
 
     await this.repo.saveResendIntegrationTransaction(
