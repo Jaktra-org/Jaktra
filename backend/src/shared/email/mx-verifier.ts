@@ -1,3 +1,4 @@
+import type { MxRecord } from 'dns';
 import dns from 'dns/promises';
 import { ValidationError } from '../errors/index.js';
 import { logger } from '../logger.js';
@@ -22,6 +23,16 @@ export function validateInboundDomainFormat(domainInput: string): string {
   return trimmed;
 }
 
+async function resolveMxFresh(domain: string): Promise<MxRecord[]> {
+  try {
+    const resolver = new dns.Resolver();
+    resolver.setServers(['1.1.1.1', '8.8.8.8', '1.0.0.1', '8.8.4.4']);
+    return await resolver.resolveMx(domain);
+  } catch {
+    return await dns.resolveMx(domain);
+  }
+}
+
 /**
  * Validates that an email address or domain name has active MX records capable of receiving email.
  * If MX lookup fails or returns empty, throws a ValidationError.
@@ -42,7 +53,7 @@ export async function verifyEmailDomainMx(emailOrDomain: string): Promise<string
   }
 
   try {
-    const mxRecords = await dns.resolveMx(domain);
+    const mxRecords = await resolveMxFresh(domain);
     if (!mxRecords || mxRecords.length === 0) {
       throw new ValidationError(`The domain "${domain}" does not have valid MX records and cannot receive incoming emails.`);
     }
@@ -64,7 +75,7 @@ export async function verifyInboundMxForProvider(
   const normalizedDomain = validateInboundDomainFormat(domain);
 
   try {
-    const mxRecords = await dns.resolveMx(normalizedDomain);
+    const mxRecords = await resolveMxFresh(normalizedDomain);
     if (!mxRecords || mxRecords.length === 0) {
       throw new ValidationError(
         `The domain "${normalizedDomain}" has no active DNS MX records. Please add an MX record pointing to your ${provider === 'sendgrid' ? 'SendGrid (mx.sendgrid.net)' : 'Resend'} inbound mail server.`

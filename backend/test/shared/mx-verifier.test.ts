@@ -7,11 +7,23 @@ import {
 } from '../../src/shared/email/mx-verifier.js';
 import { ValidationError } from '../../src/shared/errors/index.js';
 
-vi.mock('dns/promises', () => ({
-  default: {
-    resolveMx: vi.fn(),
-  },
+const { mockResolveMx } = vi.hoisted(() => ({
+  mockResolveMx: vi.fn(),
 }));
+
+vi.mock('dns/promises', () => {
+  class MockResolver {
+    setServers = vi.fn();
+    resolveMx = mockResolveMx;
+  }
+  return {
+    default: {
+      resolveMx: mockResolveMx,
+      Resolver: MockResolver,
+    },
+    Resolver: MockResolver,
+  };
+});
 
 describe('MX Verifier Module', () => {
   beforeEach(() => {

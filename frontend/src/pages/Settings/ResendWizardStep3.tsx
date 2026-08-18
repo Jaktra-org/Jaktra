@@ -222,7 +222,7 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
                   {domainInput.trim() ? dnsPrefix : <span className="text-[#62666d] italic font-sans text-[10px]">Enter domain above</span>}
                 </td>
                 <td className="px-2.5 py-2 text-[#d0d6e0]">
-                  inbound-smtp.*.amazonaws.com
+                  {mxTarget}
                 </td>
                 <td className="px-2.5 py-2 text-[#8a8f98]">10</td>
                 <td className="px-2.5 py-2 text-right">
