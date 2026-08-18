@@ -53,3 +53,59 @@ export async function verifyEmailDomainMx(emailOrDomain: string): Promise<string
     throw new ValidationError(`The domain "${domain}" does not have valid MX records to receive emails.`);
   }
 }
+
+/**
+ * Validates that an inbound reply domain has active MX records specifically pointing to the target provider.
+ */
+export async function verifyInboundMxForProvider(
+  domain: string,
+  provider: 'sendgrid' | 'resend'
+): Promise<string> {
+  const normalizedDomain = validateInboundDomainFormat(domain);
+
+  try {
+    const mxRecords = await dns.resolveMx(normalizedDomain);
+    if (!mxRecords || mxRecords.length === 0) {
+      throw new ValidationError(
+        `The domain "${normalizedDomain}" has no active DNS MX records. Please add an MX record pointing to your ${provider === 'sendgrid' ? 'SendGrid (mx.sendgrid.net)' : 'Resend'} inbound mail server.`
+      );
+    }
+
+    const exchanges = mxRecords.map((r) => (r.exchange || '').toLowerCase().trim());
+
+    if (provider === 'sendgrid') {
+      const isSendgrid = exchanges.some((ex) => ex.includes('sendgrid.net'));
+      if (!isSendgrid) {
+        const found = exchanges.join(', ') || 'none';
+        throw new ValidationError(
+          `The MX records for "${normalizedDomain}" do not point to SendGrid. Found: [${found}]. Please update your DNS MX record to point to "mx.sendgrid.net" with priority 10.`
+        );
+      }
+    } else if (provider === 'resend') {
+      const isResend = exchanges.some(
+        (ex) =>
+          ex.includes('resend.com') ||
+          ex.includes('resend.dev') ||
+          ex.includes('resend.app') ||
+          ex.includes('inbound.resend') ||
+          ex.includes('amazonses.com') ||
+          ex.includes('feedback-smtp')
+      );
+      if (!isResend) {
+        const found = exchanges.join(', ') || 'none';
+        throw new ValidationError(
+          `The MX records for "${normalizedDomain}" do not point to Resend. Found: [${found}]. Please configure your DNS MX record to point to your Resend inbound receiving server (as shown in your Resend Domains dashboard) with priority 10.`
+        );
+      }
+    }
+
+    return normalizedDomain;
+  } catch (err: unknown) {
+    if (err instanceof ValidationError) throw err;
+    logger.warn(`MX lookup failed for provider ${provider} on domain "${normalizedDomain}":`, err);
+    throw new ValidationError(
+      `Failed to verify DNS MX records for "${normalizedDomain}": ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+

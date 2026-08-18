@@ -8,7 +8,7 @@ import { IntegrationErrors, IntegrationError } from './integration.errors.js';
 import { logger } from '../../shared/logger.js';
 import type { TenantIntegration } from '../../db/index.js';
 import { SmtpConnectionFactory, SmtpConfig } from '../../shared/email/providers/smtp-email.provider.js';
-import { verifyEmailDomainMx, validateInboundDomainFormat } from '../../shared/email/mx-verifier.js';
+import { verifyEmailDomainMx, validateInboundDomainFormat, verifyInboundMxForProvider } from '../../shared/email/mx-verifier.js';
 import { ValidationError } from '../../shared/errors/index.js';
 import type { PlatformMailer } from '../platform-mail/platform-mailer.js';
 import { config } from '../../config/index.js';
@@ -399,9 +399,9 @@ export class IntegrationService {
       domainToVerify = validateInboundDomainFormat(inboundDomainInput);
     }
 
-    // Stage 2: MX Routing Verification
+    // Stage 2: Provider-Specific MX Routing Verification
     if (domainToVerify) {
-      await verifyEmailDomainMx(domainToVerify);
+      await verifyInboundMxForProvider(domainToVerify, 'sendgrid');
     }
 
     // Stage 3 & 4: Fetch decrypted SendGrid API key & check parse settings
@@ -984,7 +984,7 @@ export class IntegrationService {
     }
 
     if (domainToVerify) {
-      await verifyEmailDomainMx(domainToVerify);
+      await verifyInboundMxForProvider(domainToVerify, 'resend');
     }
 
     try {

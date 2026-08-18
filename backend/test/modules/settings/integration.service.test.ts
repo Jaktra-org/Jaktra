@@ -27,6 +27,7 @@ vi.mock('@sendgrid/client', () => {
 
 vi.mock('../../../src/shared/email/mx-verifier.js', () => ({
   verifyEmailDomainMx: vi.fn().mockResolvedValue(undefined),
+  verifyInboundMxForProvider: vi.fn().mockResolvedValue(undefined),
   validateInboundDomainFormat: (d: string) => d,
 }));
 
