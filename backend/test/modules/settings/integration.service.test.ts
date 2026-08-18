@@ -5,10 +5,11 @@ import { encrypt } from '../../../src/shared/encryption.js';
 import sgClient from '@sendgrid/client';
 
 const mockResendDomainsList = vi.fn();
+const mockResendDomainsGet = vi.fn();
 const mockResendEmailsSend = vi.fn();
 vi.mock('resend', () => {
   class MockResend {
-    domains = { list: mockResendDomainsList };
+    domains = { list: mockResendDomainsList, get: mockResendDomainsGet };
     emails = { send: mockResendEmailsSend };
   }
   return {
@@ -594,6 +595,23 @@ describe('IntegrationService', () => {
       await expect(
         service.verifyResendInboundParse('tenant_1', 'reply.acme.com')
       ).rejects.toThrow('The subdomain "reply.acme.com" is not registered in your Resend account');
+    });
+
+    it('rejects Resend inbound receiving domain when receiving capability is disabled', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockResendDomainsList.mockResolvedValueOnce({
+        data: [{ id: 'dom_123', name: 'reply.acme.com', status: 'verified' }],
+      });
+      mockResendDomainsGet.mockResolvedValueOnce({
+        data: { id: 'dom_123', name: 'reply.acme.com', capabilities: { receiving: 'disabled' } },
+      });
+
+      await expect(
+        service.verifyResendInboundParse('tenant_1', 'reply.acme.com')
+      ).rejects.toThrow('Receiving is disabled for "reply.acme.com" in Resend');
     });
   });
 });

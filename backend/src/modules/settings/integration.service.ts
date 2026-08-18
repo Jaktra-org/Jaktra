@@ -1066,6 +1066,28 @@ export class IntegrationService {
               `The subdomain "${domainToVerify}" is not registered in your Resend account. Please add it under Resend Domains and enable Receiving.`
             );
           }
+
+          if (exactMatch.id) {
+            try {
+              const { data: domainDetail } = await resend.domains.get(exactMatch.id);
+              const detail = domainDetail as {
+                capabilities?: { receiving?: string | boolean };
+                records?: Array<{ record?: string; type?: string; status?: string }>;
+              } | null;
+
+              if (
+                detail?.capabilities?.receiving === 'disabled' ||
+                detail?.capabilities?.receiving === false
+              ) {
+                throw new ValidationError(
+                  `Receiving is disabled for "${domainToVerify}" in Resend. Please toggle ON "Enable Receiving" under Resend Domains.`
+                );
+              }
+            } catch (detailErr: unknown) {
+              if (detailErr instanceof ValidationError) throw detailErr;
+              logger.warn(`Could not check receiving capability for domain ${exactMatch.id}:`, detailErr);
+            }
+          }
         }
       } catch (err: unknown) {
         if (err instanceof ValidationError) throw err;

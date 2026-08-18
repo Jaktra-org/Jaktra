@@ -47,8 +47,6 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
   const baseDomain = extractBaseDomain(s2?.senderEmail, w.inboundDomain);
   const [hostPrefix, setHostPrefix] = useState(() => getInitialHost(w.inboundDomain));
   const [copiedSubdomain, setCopiedSubdomain] = useState(false);
-  const [copiedDnsHost, setCopiedDnsHost] = useState(false);
-  const [copiedMxTarget, setCopiedMxTarget] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [infoMsg, setInfoMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -151,9 +149,6 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
   }
 
   // EDIT MODE
-  const mxTarget = w.expectedMxTarget || 'inbound-smtp.ap-northeast-1.amazonaws.com';
-  const mxPriority = w.expectedPriority ?? 10;
-
   return (
     <div className="space-y-4 text-[#f7f8f8]">
       <div className="flex items-center justify-between border-b border-[#23252a] pb-2">
@@ -196,10 +191,10 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
         </div>
       </div>
 
-      {/* Step 1: Add Subdomain in Resend */}
+      {/* Step 1: Add Subdomain in Resend & Enable Receiving */}
       <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-[#f7f8f8]">1. Add Subdomain in Resend</p>
+          <p className="text-xs font-bold text-[#f7f8f8]">1. Add Subdomain in Resend & Enable Receiving</p>
           <a
             href="https://resend.com/domains"
             target="_blank"
@@ -210,7 +205,7 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
           </a>
         </div>
         <p className="text-[11px] text-[#8a8f98]">
-          Under <strong>Domains</strong>, add this subdomain and enable <strong>Receiving</strong>:
+          Under <strong>Domains</strong>, add this subdomain, turn <strong>ON</strong> the <strong>Enable Receiving</strong> toggle, and complete the DNS setup in Resend:
         </p>
         <div className="flex items-center gap-2 p-2 bg-[#0f1011] border border-[#23252a] rounded-lg">
           <span className="text-[11px] font-mono text-[#f7f8f8] flex-1 font-bold">
@@ -227,57 +222,10 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
         </div>
       </div>
 
-      {/* Step 2: Add DNS MX Record */}
-      <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-2.5">
-        <p className="text-xs font-bold text-[#f7f8f8]">2. Add DNS MX Record at DNS Provider</p>
-        <p className="text-[11px] text-[#8a8f98]">
-          Add this MX record in your DNS provider (e.g. GoDaddy, Cloudflare):
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono border border-[#23252a] bg-[#0f1011] rounded-lg">
-            <thead>
-              <tr className="bg-[#141516] text-[#8a8f98] border-b border-[#23252a] text-[10px]">
-                <th className="px-2.5 py-1.5 font-semibold">TYPE</th>
-                <th className="px-2.5 py-1.5 font-semibold">HOST</th>
-                <th className="px-2.5 py-1.5 font-semibold">VALUE / TARGET</th>
-                <th className="px-2.5 py-1.5 font-semibold">PRIORITY</th>
-                <th className="px-2.5 py-1.5 text-right font-semibold">ACTION</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#23252a]/40 text-[11px]">
-              <tr>
-                <td className="px-2.5 py-2 text-[#f7f8f8]">MX</td>
-                <td className="px-2.5 py-2 font-bold text-[#f7f8f8]">{hostPrefix || 'reply'}</td>
-                <td className="px-2.5 py-2 text-[#d0d6e0]">{mxTarget}</td>
-                <td className="px-2.5 py-2 text-[#8a8f98]">{mxPriority}</td>
-                <td className="px-2.5 py-2 text-right">
-                  <div className="inline-flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => copy(hostPrefix || 'reply', setCopiedDnsHost)}
-                      className="px-2 py-0.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] border border-[#34343a] transition-all cursor-pointer"
-                    >
-                      {copiedDnsHost ? 'Copied Host' : 'Copy Host'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => copy(mxTarget, setCopiedMxTarget)}
-                      className="px-2 py-0.5 bg-[#18191c] hover:bg-[#23252a] text-[#f7f8f8] rounded text-[10px] border border-[#34343a] transition-all cursor-pointer"
-                    >
-                      {copiedMxTarget ? 'Copied Target' : 'Copy Target'}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Step 3: Configure Webhook */}
+      {/* Step 2: Configure Webhook in Resend */}
       <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-[#f7f8f8]">3. Configure Webhook in Resend</p>
+          <p className="text-xs font-bold text-[#f7f8f8]">2. Configure Webhook in Resend</p>
           <a
             href="https://resend.com/webhooks"
             target="_blank"
