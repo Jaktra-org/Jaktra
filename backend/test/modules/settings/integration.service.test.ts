@@ -407,6 +407,19 @@ describe('IntegrationService', () => {
       ).rejects.toThrow('Resend API keys must start with "re_"');
     });
 
+    it('throws "Invalid Resend API Key." when Resend API key validation fails', async () => {
+      mockResendDomainsList.mockResolvedValueOnce({
+        data: null,
+        error: { name: 'invalid_api_key', message: 'API key is invalid' },
+      });
+
+      await expect(
+        service.validateAndSaveResendKey('tenant_1', {
+          apiKey: 're_invalid_secret_key',
+        })
+      ).rejects.toThrow('Invalid Resend API Key.');
+    });
+
     it('decrypts Resend API key from email_integration_resend', async () => {
       mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
         base: { provider: 'resend', overallStatus: 'active' },

@@ -164,11 +164,16 @@ export class IntegrationError extends AppError {
 }
 
 export const IntegrationErrors = {
-  NOT_CONFIGURED: () => new IntegrationError('Integration is not configured', 'INTEGRATION_NOT_CONFIGURED', 400),
-  CREDENTIAL_INVALID: () => new IntegrationError('Invalid SendGrid API Key.', 'INTEGRATION_CREDENTIAL_INVALID', 422),
-  INSUFFICIENT_SCOPE: () => new IntegrationError('Integration key lacks required scopes', 'INTEGRATION_INSUFFICIENT_SCOPE', 403),
-  SENDER_UNVERIFIED: () => new IntegrationError('Sender identity is unverified in SendGrid', 'INTEGRATION_SENDER_UNVERIFIED', 403),
-  PROVIDER_UNAVAILABLE: () => new IntegrationError('Integration provider is temporarily unavailable', 'INTEGRATION_PROVIDER_UNAVAILABLE', 502),
+  NOT_CONFIGURED: (provider?: string) =>
+    new IntegrationError(provider ? `${provider} integration is not configured` : 'Integration is not configured', 'INTEGRATION_NOT_CONFIGURED', 400),
+  CREDENTIAL_INVALID: (provider?: string) =>
+    new IntegrationError(provider ? `Invalid ${provider} API Key.` : 'Invalid API Key.', 'INTEGRATION_CREDENTIAL_INVALID', 422),
+  INSUFFICIENT_SCOPE: (provider?: string) =>
+    new IntegrationError(provider ? `${provider} key lacks required permissions` : 'Integration key lacks required scopes', 'INTEGRATION_INSUFFICIENT_SCOPE', 403),
+  SENDER_UNVERIFIED: (provider?: string) =>
+    new IntegrationError(provider ? `Sender identity is unverified in ${provider}` : 'Sender identity is unverified', 'INTEGRATION_SENDER_UNVERIFIED', 403),
+  PROVIDER_UNAVAILABLE: (provider?: string) =>
+    new IntegrationError(provider ? `${provider} is temporarily unavailable` : 'Integration provider is temporarily unavailable', 'INTEGRATION_PROVIDER_UNAVAILABLE', 502),
   RATE_LIMITED: () => new IntegrationError('Too many requests. Please try again later.', 'INTEGRATION_RATE_LIMITED', 429),
 };
 

@@ -41,7 +41,9 @@ export function ResendWizardStep1({ progress, refetch, onNext }: Props) {
         lower.includes('credential') ||
         lower.includes('auth') ||
         lower.includes('unauthorized') ||
-        lower.includes('forbidden')
+        lower.includes('forbidden') ||
+        lower.includes('sendgrid') ||
+        lower.includes('api key')
       ) {
         setErrorMsg('Invalid Resend API Key.');
       } else {
