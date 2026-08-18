@@ -533,12 +533,15 @@ describe('IntegrationService', () => {
       );
     });
 
-    it('verifies Resend inbound receiving domain', async () => {
+    it('verifies Resend inbound receiving domain when subdomain is registered', async () => {
       mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
         base: { provider: 'resend' },
         detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
       });
       mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      mockResendDomainsList.mockResolvedValueOnce({
+        data: [{ name: 'reply.acme.com', status: 'verified' }],
+      });
 
       const result = await service.verifyResendInboundParse('tenant_1', 'reply.acme.com');
 
@@ -551,6 +554,20 @@ describe('IntegrationService', () => {
           inboundParseVerified: true,
         })
       );
+    });
+
+    it('rejects Resend inbound receiving domain when subdomain is missing from Resend account', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockResendDomainsList.mockResolvedValueOnce({
+        data: [{ name: 'acme.com', status: 'verified' }],
+      });
+
+      await expect(
+        service.verifyResendInboundParse('tenant_1', 'reply.acme.com')
+      ).rejects.toThrow('The receiving subdomain "reply.acme.com" is not registered in your Resend account');
     });
   });
 });

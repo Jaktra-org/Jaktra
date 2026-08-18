@@ -43,13 +43,16 @@ describe('MX Verifier Module', () => {
 
     it('rejects email addresses containing @', () => {
       expect(() => validateInboundDomainFormat('user@example.com')).toThrow(
-        'Inbound reply domain cannot be an email address'
+        'cannot be an email address'
       );
     });
 
-    it('rejects single-word domains without dots', () => {
+    it('rejects root domains without dedicated subdomain', () => {
+      expect(() => validateInboundDomainFormat('jaktra.site')).toThrow(
+        'is a root domain'
+      );
       expect(() => validateInboundDomainFormat('localhost')).toThrow(
-        'is not a full domain name'
+        'is a root domain'
       );
     });
   });

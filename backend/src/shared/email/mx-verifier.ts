@@ -4,21 +4,24 @@ import { ValidationError } from '../errors/index.js';
 import { logger } from '../logger.js';
 
 /**
- * Validates that an inbound reply domain string is a valid domain name (not an email address).
+ * Validates that an inbound reply domain string is a valid subdomain name (not a root domain or email address).
  */
 export function validateInboundDomainFormat(domainInput: string): string {
   const trimmed = domainInput.trim().toLowerCase();
   if (!trimmed) {
-    throw new ValidationError('Inbound reply domain is required.');
+    throw new ValidationError('Inbound reply subdomain is required.');
   }
   if (trimmed.includes('@')) {
-    throw new ValidationError('Inbound reply domain cannot be an email address. Enter a full domain name such as reply.acme.com.');
+    throw new ValidationError('Inbound reply subdomain cannot be an email address. Enter a dedicated subdomain (e.g., reply.yourdomain.com).');
   }
   if (trimmed.includes('/') || trimmed.includes(':') || trimmed.includes(' ')) {
-    throw new ValidationError('Inbound reply domain must be a valid domain name (e.g., reply.acme.com).');
+    throw new ValidationError('Inbound reply subdomain must be a valid subdomain format (e.g., reply.yourdomain.com).');
   }
-  if (!trimmed.includes('.')) {
-    throw new ValidationError(`"${trimmed}" is not a full domain name. Enter the full domain name (e.g., ${trimmed}.jaktra.site or reply.yourdomain.com).`);
+  const parts = trimmed.split('.');
+  if (parts.length < 3) {
+    throw new ValidationError(
+      `"${trimmed}" is a root domain. Please use a dedicated subdomain (e.g. reply.${trimmed}) to prevent overriding your root email inboxes.`
+    );
   }
   return trimmed;
 }

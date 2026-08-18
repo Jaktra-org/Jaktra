@@ -1012,16 +1012,11 @@ export class IntegrationService {
           );
 
           if (!exactMatch) {
-            const rootDomain = domainToVerify.split('.').slice(-2).join('.');
-            const rootMatch = domainList.find((d) => d.name?.toLowerCase() === rootDomain.toLowerCase());
-
-            if (!rootMatch) {
-              const configuredDomains = domainList.map((d) => d.name).filter(Boolean).join(', ');
-              const domainsMsg = configuredDomains ? ` (Configured domains in your Resend account: ${configuredDomains})` : '';
-              throw new ValidationError(
-                `The domain "${domainToVerify}" is not registered in your Resend account.${domainsMsg} Please add "${domainToVerify}" in your Resend Domains dashboard and enable Receiving.`
-              );
-            }
+            const configuredDomains = domainList.map((d) => d.name).filter(Boolean).join(', ');
+            const domainsMsg = configuredDomains ? ` (Found in your Resend account: ${configuredDomains})` : '';
+            throw new ValidationError(
+              `The receiving subdomain "${domainToVerify}" is not registered in your Resend account.${domainsMsg} Please add "${domainToVerify}" under Resend -> Domains and enable Receiving.`
+            );
           }
         }
       } catch (err: unknown) {

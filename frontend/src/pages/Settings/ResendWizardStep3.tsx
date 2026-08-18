@@ -163,27 +163,37 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
         </div>
       )}
 
-      {/* Step 1: Domain Input */}
+      {/* Step 1: Subdomain Input */}
       <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-1.5">
         <label className="text-xs font-bold text-[#f7f8f8] block">
-          1. Inbound Receiving Domain <span className="text-red-400">*</span>
+          1. Inbound Receiving Subdomain <span className="text-red-400">*</span>
         </label>
         <p className="text-[11px] text-[#8a8f98]">
-          Enter a dedicated subdomain (e.g. <code className="text-[#d0d6e0] font-mono">reply.yourdomain.com</code>) to receive debtor replies without affecting your personal inboxes.
+          Enter a dedicated subdomain (e.g. <code className="text-[#d0d6e0] font-mono">reply.yourdomain.com</code>). Using a subdomain ensures your personal email inboxes on your root domain remain untouched.
         </p>
         <input
           type="text"
           value={domainInput}
-          onChange={(e) => { setDomainInput(e.target.value); setErrorMsg(''); }}
+          onChange={(e) => {
+            const val = e.target.value;
+            setDomainInput(val);
+            if (val.includes('@')) {
+              setErrorMsg('Enter a subdomain name, not an email address.');
+            } else if (val.trim() && val.trim().split('.').length < 3 && val.trim().includes('.')) {
+              setErrorMsg(`"${val.trim()}" is a root domain. Please use a subdomain (e.g. reply.${val.trim()}) to protect your root mailboxes.`);
+            } else {
+              setErrorMsg('');
+            }
+          }}
           placeholder="reply.yourdomain.com"
           className="w-full p-2.5 border border-[#23252a] bg-[#0f1011] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none font-mono"
         />
       </div>
 
-      {/* Step 2: Add in Resend Domains */}
+      {/* Step 2: Add Subdomain in Resend Domains */}
       <div className="p-3.5 bg-[#010102] border border-[#23252a] rounded-xl space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-[#f7f8f8]">2. Add Domain in Resend Dashboard & Enable Receiving</p>
+          <p className="text-xs font-bold text-[#f7f8f8]">2. Add Subdomain in Resend Dashboard & Enable Receiving</p>
           <a
             href="https://resend.com/domains"
             target="_blank"
@@ -194,7 +204,7 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
           </a>
         </div>
         <p className="text-[11px] text-[#8a8f98] leading-relaxed">
-          In your Resend dashboard under <strong className="text-[#d0d6e0]">Domains</strong>, click <strong className="text-[#d0d6e0]">Add Domain</strong>, enter <code className="text-[#f7f8f8] font-mono">{domainInput.trim() || 'reply.yourdomain.com'}</code>, and turn <strong>ON</strong> the <strong>Enable Receiving</strong> toggle.
+          In your Resend dashboard under <strong className="text-[#d0d6e0]">Domains</strong>, click <strong className="text-[#d0d6e0]">Add Domain</strong>, enter the subdomain <code className="text-[#f7f8f8] font-mono">{domainInput.trim() || 'reply.yourdomain.com'}</code>, and turn <strong>ON</strong> the <strong>Enable Receiving</strong> toggle.
         </p>
       </div>
 
