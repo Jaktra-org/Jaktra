@@ -54,7 +54,34 @@ export class ResendWebhookController {
     }
 
     const payload = req.body || {};
+    const eventType = payload.type;
     const emailData = payload.data || payload;
+
+    // Handle delivery/bounce events gracefully if webhook is subscribed to multiple event types
+    if (eventType && eventType !== 'email.received') {
+      if (this.communicationService && (eventType === 'email.bounced' || eventType === 'email.complained')) {
+        const data = payload.data || {};
+        const communicationId = data.tags?.communication_id || data.communication_id;
+        const invoiceId = data.tags?.invoice_id || data.invoice_id;
+        const tenantId = tenantSettingsObj.tenantId;
+        const runId = data.tags?.run_id || data.run_id;
+        if (communicationId && invoiceId) {
+          await this.communicationService.handleEmailEvent(
+            tenantId,
+            communicationId,
+            invoiceId,
+            'bounced',
+            new Date(data.created_at || Date.now()),
+            data,
+            runId
+          ).catch((err) => {
+            logger.error('Failed to handle Resend bounce event:', err);
+          });
+        }
+      }
+      res.status(200).json({ status: 'success', event: eventType });
+      return;
+    }
 
     const from = typeof emailData.from === 'string' ? emailData.from : emailData.from?.email || '';
     const to = Array.isArray(emailData.to) ? emailData.to[0] : (typeof emailData.to === 'string' ? emailData.to : '');
