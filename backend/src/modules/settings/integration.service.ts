@@ -1118,18 +1118,26 @@ export class IntegrationService {
           }>;
         };
 
-        const webhookList = Array.isArray(webhooksData?.data) ? webhooksData.data : [];
+        const rawList = webhooksData?.data || webhooksData;
+        const webhookList: Array<{ endpoint?: string; url?: string; events?: string[]; status?: string }> =
+          Array.isArray(rawList) ? rawList : [];
+
         const hasMatchingWebhook = webhookList.some((wh) => {
-          if (!wh.url) return false;
-          const urlLower = wh.url.toLowerCase();
+          const targetUrl = (wh.endpoint || wh.url || '').toLowerCase().trim();
+          if (!targetUrl) return false;
+
           const isEndpointMatch =
-            urlLower.includes(`/api/webhooks/resend/inbound/${token.toLowerCase()}`) ||
-            urlLower.includes(`/api/webhooks/resend/inbound/${tenantId.toLowerCase()}`);
+            targetUrl.includes(token.toLowerCase()) ||
+            targetUrl.includes(tenantId.toLowerCase()) ||
+            targetUrl.includes('/api/webhooks/resend/inbound');
+
+          const events = Array.isArray(wh.events) ? wh.events : [];
           const hasReceivedEvent =
-            !wh.events ||
-            wh.events.length === 0 ||
-            wh.events.includes('email.received') ||
-            wh.events.includes('*');
+            events.length === 0 ||
+            events.includes('email.received') ||
+            events.includes('*') ||
+            events.some((e) => String(e).toLowerCase().includes('received'));
+
           return isEndpointMatch && hasReceivedEvent;
         });
 
@@ -1142,6 +1150,7 @@ export class IntegrationService {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              endpoint: expectedWebhookUrl,
               url: expectedWebhookUrl,
               events: ['email.received', 'email.delivered', 'email.bounced', 'email.complained'],
             }),

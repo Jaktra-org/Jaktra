@@ -645,5 +645,42 @@ describe('IntegrationService', () => {
         globalThis.fetch = originalFetch;
       }
     });
+
+    it('passes Resend inbound verification when webhook exists in Resend via endpoint field', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockRepo.saveResendIntegrationTransaction = vi.fn().mockResolvedValue(undefined);
+      mockResendDomainsList.mockResolvedValueOnce({
+        data: [{ id: 'dom_123', name: 'reply.acme.com', status: 'verified' }],
+      });
+      mockResendDomainsGet.mockResolvedValueOnce({
+        data: { id: 'dom_123', name: 'reply.acme.com', capabilities: { receiving: 'enabled' } },
+      });
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: 'wh_123',
+              endpoint: 'https://www.jaktra.site/api/webhooks/resend/inbound/tenant_1',
+              events: ['contact.created', 'email.received', 'email.sent'],
+              status: 'enabled',
+            },
+          ],
+        }),
+      } as any);
+
+      try {
+        const result = await service.verifyResendInboundParse('tenant_1', 'reply.acme.com');
+        expect(result.success).toBe(true);
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1); // Did not attempt creation
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
   });
 });
