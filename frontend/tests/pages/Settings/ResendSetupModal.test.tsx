@@ -179,6 +179,6 @@ describe('ResendSetupModal component', () => {
 
     expect(screen.getByText('Inbound Domain & Webhook')).toBeInTheDocument();
     expect(screen.getByText('reply.acme.com')).toBeInTheDocument();
-    expect(screen.getByText('DNS MX record verified and inbound webhook active.')).toBeInTheDocument();
+    expect(screen.getByText('DNS MX record verified and inbound reply receiving active.')).toBeInTheDocument();
   });
 });
