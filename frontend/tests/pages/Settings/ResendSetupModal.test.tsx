@@ -140,6 +140,33 @@ describe('ResendSetupModal component', () => {
     });
   });
 
+  it('displays insufficient access error when API key lacks full access', async () => {
+    vi.mocked(settingsService.saveResendKey).mockRejectedValueOnce(
+      new Error('The Resend API key lacks full access permissions. Please create and provide an API key with "Full access".')
+    );
+
+    renderWithProviders(
+      <ResendSetupModal
+        isOpen={true}
+        onClose={onCloseMock}
+        resendProgress={unconfiguredProgress}
+        refetch={refetchMock}
+      />
+    );
+
+    const keyInput = screen.getByPlaceholderText('re_123456789_abcdefg');
+    await userEvent.type(keyInput, 're_restricted_key_123');
+
+    const submitBtn = screen.getByRole('button', { name: /Save & Next/i });
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/lacks full access permissions/i)).toBeInTheDocument();
+    });
+  });
+
   it('renders Step 3 Inbound Webhook verification when configured and on Step 3', () => {
     renderWithProviders(
       <ResendSetupModal

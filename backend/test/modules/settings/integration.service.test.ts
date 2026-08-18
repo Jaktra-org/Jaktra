@@ -420,6 +420,19 @@ describe('IntegrationService', () => {
       ).rejects.toThrow('Invalid Resend API Key.');
     });
 
+    it('throws insufficient access error when Resend API key is restricted and lacks full access', async () => {
+      mockResendDomainsList.mockResolvedValueOnce({
+        data: null,
+        error: { name: 'restricted_api_key', message: 'This API key is restricted and does not have permission to access domains.' },
+      });
+
+      await expect(
+        service.validateAndSaveResendKey('tenant_1', {
+          apiKey: 're_restricted_secret_key',
+        })
+      ).rejects.toThrow('The Resend API key lacks full access permissions. Please create and provide an API key with "Full access".');
+    });
+
     it('decrypts Resend API key from email_integration_resend', async () => {
       mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
         base: { provider: 'resend', overallStatus: 'active' },

@@ -621,7 +621,9 @@ export class IntegrationService {
 
       logger.warn(`SendGrid validation failed for tenant ${tenantId}. Status: ${status}`);
 
-      if (status === 400 || status === 401 || status === 403) {
+      if (status === 403) {
+        throw IntegrationErrors.INSUFFICIENT_SCOPE('SendGrid');
+      } else if (status === 400 || status === 401) {
         throw IntegrationErrors.CREDENTIAL_INVALID('SendGrid');
       } else if (status === 429) {
         throw IntegrationErrors.RATE_LIMITED();
@@ -835,10 +837,25 @@ export class IntegrationService {
           const errName = (error.name || '').toLowerCase();
           const errLower = (error.message || '').toLowerCase();
           if (
+            errName.includes('restricted') ||
+            errName.includes('forbidden') ||
+            errName.includes('permission') ||
+            errName.includes('scope') ||
+            errLower.includes('restricted') ||
+            errLower.includes('permission') ||
+            errLower.includes('forbidden') ||
+            errLower.includes('scope') ||
+            errLower.includes('full access') ||
+            errLower.includes('does not have permission') ||
+            errLower.includes('not have access')
+          ) {
+            throw IntegrationErrors.INSUFFICIENT_SCOPE('Resend');
+          } else if (
             errName.includes('invalid_api_key') ||
             errName.includes('missing_api_key') ||
             errLower.includes('api key') ||
-            errLower.includes('unauthorized')
+            errLower.includes('unauthorized') ||
+            errLower.includes('invalid')
           ) {
             throw IntegrationErrors.CREDENTIAL_INVALID('Resend');
           } else if (errName.includes('rate_limit_exceeded') || errLower.includes('rate limit')) {

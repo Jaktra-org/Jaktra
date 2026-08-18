@@ -39,10 +39,16 @@ export function SendGridWizardStep1({ progress, refetch, onNext }: Props) {
       const serverMsg = getErrorMessage(err);
       const lower = serverMsg.toLowerCase();
       if (
+        lower.includes('full access') ||
+        lower.includes('scope') ||
+        lower.includes('permission') ||
+        lower.includes('access')
+      ) {
+        setErrorMsg(serverMsg || 'The SendGrid API key lacks required permissions. Please provide an API key with "Full access".');
+      } else if (
         lower.includes('credential') ||
-        lower.includes('auth') ||
         lower.includes('unauthorized') ||
-        lower.includes('forbidden')
+        lower.includes('invalid')
       ) {
         setErrorMsg('Invalid SendGrid API Key.');
       } else {

@@ -38,16 +38,21 @@ export function ResendWizardStep1({ progress, refetch, onNext }: Props) {
       const serverMsg = getErrorMessage(err);
       const lower = serverMsg.toLowerCase();
       if (
+        lower.includes('full access') ||
+        lower.includes('restricted') ||
+        lower.includes('scope') ||
+        lower.includes('permission') ||
+        lower.includes('access')
+      ) {
+        setErrorMsg(serverMsg || 'The Resend API key lacks full access permissions. Please create an API key with "Full access".');
+      } else if (
         lower.includes('credential') ||
-        lower.includes('auth') ||
         lower.includes('unauthorized') ||
-        lower.includes('forbidden') ||
-        lower.includes('sendgrid') ||
-        lower.includes('api key')
+        lower.includes('invalid')
       ) {
         setErrorMsg('Invalid Resend API Key.');
       } else {
-        setErrorMsg(serverMsg || 'Invalid Resend API Key.');
+        setErrorMsg(serverMsg.replace(/sendgrid/gi, 'Resend') || 'Invalid Resend API Key.');
       }
     },
   });

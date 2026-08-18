@@ -169,7 +169,13 @@ export const IntegrationErrors = {
   CREDENTIAL_INVALID: (provider?: string) =>
     new IntegrationError(provider ? `Invalid ${provider} API Key.` : 'Invalid API Key.', 'INTEGRATION_CREDENTIAL_INVALID', 422),
   INSUFFICIENT_SCOPE: (provider?: string) =>
-    new IntegrationError(provider ? `${provider} key lacks required permissions` : 'Integration key lacks required scopes', 'INTEGRATION_INSUFFICIENT_SCOPE', 403),
+    new IntegrationError(
+      provider
+        ? `The ${provider} API key lacks full access permissions. Please create and provide an API key with "Full access".`
+        : 'The API key lacks full access permissions. Please provide an API key with "Full access".',
+      'INTEGRATION_INSUFFICIENT_SCOPE',
+      403
+    ),
   SENDER_UNVERIFIED: (provider?: string) =>
     new IntegrationError(provider ? `Sender identity is unverified in ${provider}` : 'Sender identity is unverified', 'INTEGRATION_SENDER_UNVERIFIED', 403),
   PROVIDER_UNAVAILABLE: (provider?: string) =>
