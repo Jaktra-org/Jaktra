@@ -613,5 +613,37 @@ describe('IntegrationService', () => {
         service.verifyResendInboundParse('tenant_1', 'reply.acme.com')
       ).rejects.toThrow('Receiving is disabled for "reply.acme.com" in Resend');
     });
+
+    it('rejects Resend inbound verification when webhook is missing and auto-creation fails', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockResendDomainsList.mockResolvedValueOnce({
+        data: [{ id: 'dom_123', name: 'reply.acme.com', status: 'verified' }],
+      });
+      mockResendDomainsGet.mockResolvedValueOnce({
+        data: { id: 'dom_123', name: 'reply.acme.com', capabilities: { receiving: 'enabled' } },
+      });
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }), // No webhooks configured
+        } as any)
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({ error: { message: 'Forbidden' } }), // Auto-create failed
+        } as any);
+
+      try {
+        await expect(
+          service.verifyResendInboundParse('tenant_1', 'reply.acme.com')
+        ).rejects.toThrow('Webhook is not configured in Resend.');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
   });
 });

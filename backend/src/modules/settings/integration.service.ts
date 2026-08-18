@@ -1095,6 +1095,73 @@ export class IntegrationService {
       }
     }
 
+    // Verify or auto-create the inbound webhook in Resend
+    const publicBaseUrl = config.PUBLIC_BASE_URL || process.env.PUBLIC_BASE_URL || 'https://www.jaktra.site';
+    const token = (await this.repo.getWebhookToken(tenantId)) || tenantId;
+    const expectedWebhookUrl = `${publicBaseUrl}/api/webhooks/resend/inbound/${token}`;
+
+    try {
+      const webhooksRes = await fetch('https://api.resend.com/webhooks', {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(5000) : undefined,
+      });
+
+      if (webhooksRes.ok) {
+        const webhooksData = (await webhooksRes.json()) as {
+          data?: Array<{
+            id?: string;
+            url?: string;
+            events?: string[];
+            status?: string;
+          }>;
+        };
+
+        const webhookList = Array.isArray(webhooksData?.data) ? webhooksData.data : [];
+        const hasMatchingWebhook = webhookList.some((wh) => {
+          if (!wh.url) return false;
+          const urlLower = wh.url.toLowerCase();
+          const isEndpointMatch =
+            urlLower.includes(`/api/webhooks/resend/inbound/${token.toLowerCase()}`) ||
+            urlLower.includes(`/api/webhooks/resend/inbound/${tenantId.toLowerCase()}`);
+          const hasReceivedEvent =
+            !wh.events ||
+            wh.events.length === 0 ||
+            wh.events.includes('email.received') ||
+            wh.events.includes('*');
+          return isEndpointMatch && hasReceivedEvent;
+        });
+
+        if (!hasMatchingWebhook) {
+          // Attempt automatic creation if missing
+          const createRes = await fetch('https://api.resend.com/webhooks', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              url: expectedWebhookUrl,
+              events: ['email.received', 'email.delivered', 'email.bounced', 'email.complained'],
+            }),
+            signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(5000) : undefined,
+          });
+
+          if (!createRes.ok) {
+            const errBody = await createRes.json().catch(() => null);
+            logger.warn(`Could not auto-create Resend webhook for tenant ${tenantId}:`, errBody);
+            throw new ValidationError(
+              `Webhook is not configured in Resend. Please add the webhook URL in your Resend Webhooks dashboard for event "email.received".`
+            );
+          }
+        }
+      }
+    } catch (whErr: unknown) {
+      if (whErr instanceof ValidationError) throw whErr;
+      logger.warn(`Could not verify webhooks with Resend API:`, whErr);
+    }
+
     await this.repo.saveResendIntegrationTransaction(
       tenantId,
       {},
