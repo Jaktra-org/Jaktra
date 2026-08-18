@@ -136,7 +136,7 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
 
   // EDIT MODE
   const dnsPrefix = getDnsHostPrefix(domainInput || 'reply');
-  const mxTarget = 'feedback-smtp.us-east-1.amazonses.com';
+  const mxTarget = 'inbound-smtp.us-east-1.amazonaws.com';
 
   return (
     <div className="space-y-4 text-[#f7f8f8]">

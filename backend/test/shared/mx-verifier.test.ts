@@ -91,12 +91,23 @@ describe('MX Verifier Module', () => {
         expect(domain).toBe('reply.jaktra.site');
       });
 
-      it('accepts domains with AWS SES inbound feedback records used by Resend', async () => {
+      it('accepts domains with Resend AWS Inbound SMTP records (inbound-smtp.us-east-1.amazonaws.com)', async () => {
         vi.mocked(dns.resolveMx).mockResolvedValueOnce([
-          { exchange: 'feedback-smtp.us-east-1.amazonses.com', priority: 10 },
+          { exchange: 'inbound-smtp.us-east-1.amazonaws.com', priority: 10 },
         ]);
         const domain = await verifyInboundMxForProvider('reply.jaktra.site', 'resend');
         expect(domain).toBe('reply.jaktra.site');
+      });
+
+      it('rejects feedback-smtp bounce-only records because they cannot receive incoming debtor replies', async () => {
+        vi.mocked(dns.resolveMx).mockResolvedValueOnce([
+          { exchange: 'feedback-smtp.us-east-1.amazonses.com', priority: 10 },
+        ]);
+        await expect(
+          verifyInboundMxForProvider('reply.jaktra.site', 'resend')
+        ).rejects.toThrow(
+          'The MX records for "reply.jaktra.site" do not point to Resend. Found: [feedback-smtp.us-east-1.amazonses.com]'
+        );
       });
 
       it('rejects domains pointing to SendGrid or standard mail servers when configuring Resend', async () => {

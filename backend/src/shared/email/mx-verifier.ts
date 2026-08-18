@@ -84,12 +84,12 @@ export async function verifyInboundMxForProvider(
     } else if (provider === 'resend') {
       const isResend = exchanges.some(
         (ex) =>
+          ex.includes('inbound-smtp') ||
+          ex.includes('inbound.resend') ||
           ex.includes('resend.com') ||
           ex.includes('resend.dev') ||
           ex.includes('resend.app') ||
-          ex.includes('inbound.resend') ||
-          ex.includes('amazonses.com') ||
-          ex.includes('feedback-smtp')
+          (ex.includes('amazonaws.com') && ex.includes('inbound'))
       );
       if (!isResend) {
         const found = exchanges.join(', ') || 'none';
