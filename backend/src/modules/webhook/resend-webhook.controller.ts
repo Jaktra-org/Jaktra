@@ -7,6 +7,8 @@ import type { RedisClientType } from 'redis';
 import { logger } from '../../shared/logger.js';
 import { Resend } from 'resend';
 
+import type { IntegrationService } from '../settings/integration.service.js';
+
 const WEBHOOK_RATE_LIMIT_THRESHOLD = 15;
 const WEBHOOK_RATE_LIMIT_WINDOW_SECONDS = 15 * 60; // 15 minutes
 
@@ -15,7 +17,8 @@ export class ResendWebhookController {
     private settingsRepo: SettingsRepository,
     private disputeService?: DisputeService,
     private redisClient?: RedisClientType | null,
-    private communicationService?: CommunicationService
+    private communicationService?: CommunicationService,
+    private integrationService?: IntegrationService
   ) {}
 
   handleResendInbound = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
@@ -59,21 +62,54 @@ export class ResendWebhookController {
     let text = emailData.text || '';
     let html = emailData.html || '';
 
-    // If Resend only sent metadata (email_id) without body, attempt to fetch the full content
-    if ((!text && !html) && emailData.email_id && (emailData.apiKey || process.env.RESEND_API_KEY)) {
-      try {
-        const resend = new Resend(emailData.apiKey || process.env.RESEND_API_KEY);
-        const resendEmails = resend.emails as unknown as {
-          receiving?: { get?: (id: string) => Promise<{ data?: { text?: string; html?: string } }> };
-          get: (id: string) => Promise<{ data?: { text?: string; html?: string } }>;
-        };
-        const received = await resendEmails.receiving?.get?.(emailData.email_id) || await resendEmails.get(emailData.email_id);
-        if (received?.data) {
-          text = received.data.text || text;
-          html = received.data.html || html;
+    // If Resend only sent metadata (email_id) without body, fetch the full content using the tenant's Resend key
+    if (!text && !html && emailData.email_id) {
+      let apiKey = process.env.RESEND_API_KEY;
+      if (!apiKey && this.integrationService && tenantSettingsObj.tenantId) {
+        try {
+          apiKey = await this.integrationService.getDecryptedResendKey(tenantSettingsObj.tenantId);
+        } catch (keyErr) {
+          logger.warn(`Could not decrypt Resend API key for tenant ${tenantSettingsObj.tenantId}:`, keyErr);
         }
-      } catch (fetchErr) {
-        logger.warn('Failed to fetch received email content from Resend API:', fetchErr);
+      }
+
+      if (apiKey) {
+        try {
+          const resend = new Resend(apiKey);
+          const resendEmails = resend.emails as unknown as {
+            receiving?: { get?: (id: string) => Promise<{ data?: { text?: string; html?: string; body?: string } }> };
+          };
+          if (resendEmails.receiving?.get) {
+            const received = await resendEmails.receiving.get(emailData.email_id);
+            if (received?.data) {
+              text = received.data.text || received.data.body || text;
+              html = received.data.html || html;
+            }
+          }
+        } catch {
+          // Fall through to direct REST fetch
+        }
+
+        if (!text && !html) {
+          try {
+            const resp = await fetch(`https://api.resend.com/emails/receiving/${emailData.email_id}`, {
+              headers: { Authorization: `Bearer ${apiKey}` },
+            });
+            if (resp.ok) {
+              const bodyJson = (await resp.json()) as {
+                text?: string;
+                html?: string;
+                body?: string;
+                data?: { text?: string; html?: string; body?: string };
+              };
+              const emailContent = bodyJson.data || bodyJson;
+              text = emailContent.text || emailContent.body || text;
+              html = emailContent.html || html;
+            }
+          } catch (httpErr) {
+            logger.warn('Failed to fetch received email content from Resend API:', httpErr);
+          }
+        }
       }
     }
 

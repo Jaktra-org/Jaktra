@@ -133,6 +133,51 @@ describe('ResendWebhookController', () => {
       });
     });
 
+    it('fetches email content using integrationService when payload contains email_id without body', async () => {
+      const mockIntegrationService = {
+        getDecryptedResendKey: vi.fn().mockResolvedValue('re_test_key_123'),
+      };
+      const controllerWithIntegration = new ResendWebhookController(
+        mockSettingsRepo as any,
+        mockDisputeService as any,
+        redis,
+        undefined,
+        mockIntegrationService as any
+      );
+
+      // Mock global fetch for Resend Receiving API
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ text: 'Fetched body from Resend API', html: '<p>Fetched body</p>' }),
+      } as any);
+
+      const req = makeReq(VALID_SECRET, '1.2.3.4', {
+        type: 'email.received',
+        data: {
+          email_id: 're_received_msg_789',
+          from: 'debtor@customer.com',
+          to: ['r_abc12345@reply.acme.com'],
+          subject: 'Payment dispute',
+        },
+      });
+      const res = mockRes();
+
+      await controllerWithIntegration.handleResendInbound(req, res, vi.fn());
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(mockDisputeService.processInboundEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: 'debtor@customer.com',
+          to: 'r_abc12345@reply.acme.com',
+          subject: 'Payment dispute',
+          text: 'Fetched body from Resend API',
+        })
+      );
+
+      global.fetch = originalFetch;
+    });
+
     it('rate limits after 15 invalid token attempts', async () => {
       redis = makeRedis({
         get: vi.fn(async () => '15'),

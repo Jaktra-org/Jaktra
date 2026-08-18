@@ -567,7 +567,7 @@ describe('IntegrationService', () => {
 
       await expect(
         service.verifyResendInboundParse('tenant_1', 'reply.acme.com')
-      ).rejects.toThrow('The receiving subdomain "reply.acme.com" is not registered in your Resend account');
+      ).rejects.toThrow('The subdomain "reply.acme.com" is not registered in your Resend account');
     });
   });
 });

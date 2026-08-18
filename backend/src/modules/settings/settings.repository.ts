@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import crypto from 'crypto';
 import type { DatabaseClient } from '../../db/index.js';
 import { tenantSettings, tenants, type TenantSettings } from '../../db/schema.js';
@@ -20,7 +20,12 @@ export class SettingsRepository {
     const result = await this.db
       .select()
       .from(tenantSettings)
-      .where(eq(tenantSettings.webhookToken, webhookToken))
+      .where(
+        or(
+          eq(tenantSettings.webhookToken, webhookToken),
+          eq(tenantSettings.tenantId, webhookToken)
+        )
+      )
       .limit(1);
     return result[0] || null;
   }

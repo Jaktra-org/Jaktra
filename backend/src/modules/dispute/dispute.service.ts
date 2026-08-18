@@ -137,14 +137,17 @@ export class DisputeService {
       return;
     }
 
-    const contactEmail = invoice.contactEmail;
-    const expectedDomain = getEmailDomain(contactEmail).trim().toLowerCase();
-    const actualDomain = getEmailDomain(senderEmail).trim().toLowerCase();
-    if (actualDomain !== expectedDomain) {
-      logger.warn(
-        `Security Warning: Inbound email sender domain (${actualDomain}) does not match expected contact email domain (${expectedDomain}) for invoice ID ${invoice.id} — dropping`
-      );
-      return;
+    const isTokenAuth = !!tokenMatch;
+    if (!isTokenAuth) {
+      const contactEmail = invoice.contactEmail;
+      const expectedDomain = getEmailDomain(contactEmail).trim().toLowerCase();
+      const actualDomain = getEmailDomain(senderEmail).trim().toLowerCase();
+      if (actualDomain !== expectedDomain) {
+        logger.warn(
+          `Security Warning: Inbound email sender domain (${actualDomain}) does not match expected contact email domain (${expectedDomain}) for invoice ID ${invoice.id} — dropping`
+        );
+        return;
+      }
     }
 
     const invoiceId = invoice.id;

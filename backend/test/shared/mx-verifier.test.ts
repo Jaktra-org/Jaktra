@@ -69,7 +69,7 @@ describe('MX Verifier Module', () => {
     it('throws when no MX records found', async () => {
       vi.mocked(dns.resolveMx).mockResolvedValueOnce([]);
       await expect(verifyEmailDomainMx('company.com')).rejects.toThrow(
-        'does not have valid MX records'
+        'No DNS MX records found for "company.com"'
       );
     });
   });
@@ -92,7 +92,7 @@ describe('MX Verifier Module', () => {
         await expect(
           verifyInboundMxForProvider('reply.jaktra.site', 'sendgrid')
         ).rejects.toThrow(
-          'The MX records for "reply.jaktra.site" do not point to SendGrid. Found: [aspmx.l.google.com, alt1.aspmx.l.google.com]'
+          'The MX records for "reply.jaktra.site" do not point to SendGrid'
         );
       });
     });
@@ -121,7 +121,7 @@ describe('MX Verifier Module', () => {
         await expect(
           verifyInboundMxForProvider('reply.jaktra.site', 'resend')
         ).rejects.toThrow(
-          'The MX records for "reply.jaktra.site" do not point to Resend. Found: [feedback-smtp.us-east-1.amazonses.com]'
+          'The MX records for "reply.jaktra.site" do not point to Resend'
         );
       });
 
@@ -132,7 +132,7 @@ describe('MX Verifier Module', () => {
         await expect(
           verifyInboundMxForProvider('reply.jaktra.site', 'resend')
         ).rejects.toThrow(
-          'The MX records for "reply.jaktra.site" do not point to Resend. Found: [mx.sendgrid.net]'
+          'The MX records for "reply.jaktra.site" do not point to Resend'
         );
       });
 
@@ -141,7 +141,7 @@ describe('MX Verifier Module', () => {
         await expect(
           verifyInboundMxForProvider('reply.jaktra.site', 'resend')
         ).rejects.toThrow(
-          'The domain "reply.jaktra.site" has no active DNS MX records.'
+          'No DNS MX records found for "reply.jaktra.site"'
         );
       });
     });

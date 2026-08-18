@@ -58,13 +58,13 @@ export async function verifyEmailDomainMx(emailOrDomain: string): Promise<string
   try {
     const mxRecords = await resolveMxFresh(domain);
     if (!mxRecords || mxRecords.length === 0) {
-      throw new ValidationError(`The domain "${domain}" does not have valid MX records and cannot receive incoming emails.`);
+      throw new ValidationError(`No DNS MX records found for "${domain}".`);
     }
     return domain;
   } catch (err: unknown) {
     if (err instanceof ValidationError) throw err;
     logger.warn(`MX lookup failed for domain "${domain}":`, err);
-    throw new ValidationError(`The domain "${domain}" does not have valid MX records to receive emails.`);
+    throw new ValidationError(`No DNS MX records found for "${domain}".`);
   }
 }
 
@@ -81,7 +81,7 @@ export async function verifyInboundMxForProvider(
     const mxRecords = await resolveMxFresh(normalizedDomain);
     if (!mxRecords || mxRecords.length === 0) {
       throw new ValidationError(
-        `The domain "${normalizedDomain}" has no active DNS MX records. Please add an MX record pointing to your ${provider === 'sendgrid' ? 'SendGrid (mx.sendgrid.net)' : 'Resend'} inbound mail server.`
+        `No DNS MX records found for "${normalizedDomain}". Please add the MX record in your DNS provider.`
       );
     }
 
@@ -90,9 +90,8 @@ export async function verifyInboundMxForProvider(
     if (provider === 'sendgrid') {
       const isSendgrid = exchanges.some((ex) => ex.includes('sendgrid.net'));
       if (!isSendgrid) {
-        const found = exchanges.join(', ') || 'none';
         throw new ValidationError(
-          `The MX records for "${normalizedDomain}" do not point to SendGrid. Found: [${found}]. Please update your DNS MX record to point to "mx.sendgrid.net" with priority 10.`
+          `The MX records for "${normalizedDomain}" do not point to SendGrid. Please update your DNS MX record to "mx.sendgrid.net" with priority 10.`
         );
       }
     } else if (provider === 'resend') {
@@ -106,9 +105,8 @@ export async function verifyInboundMxForProvider(
           (ex.includes('amazonaws.com') && ex.includes('inbound'))
       );
       if (!isResend) {
-        const found = exchanges.join(', ') || 'none';
         throw new ValidationError(
-          `The MX records for "${normalizedDomain}" do not point to Resend. Found: [${found}]. Please configure your DNS MX record to point to your Resend inbound receiving server (as shown in your Resend Domains dashboard) with priority 10.`
+          `The MX records for "${normalizedDomain}" do not point to Resend. Please update your DNS MX record with priority 10.`
         );
       }
     }
@@ -118,7 +116,7 @@ export async function verifyInboundMxForProvider(
     if (err instanceof ValidationError) throw err;
     logger.warn(`MX lookup failed for provider ${provider} on domain "${normalizedDomain}":`, err);
     throw new ValidationError(
-      `Failed to verify DNS MX records for "${normalizedDomain}": ${err instanceof Error ? err.message : String(err)}`
+      `No DNS MX records found for "${normalizedDomain}". Please add the MX record in your DNS provider.`
     );
   }
 }

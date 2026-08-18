@@ -1045,10 +1045,8 @@ export class IntegrationService {
           );
 
           if (!exactMatch) {
-            const configuredDomains = domainList.map((d) => d.name).filter(Boolean).join(', ');
-            const domainsMsg = configuredDomains ? ` (Found in your Resend account: ${configuredDomains})` : '';
             throw new ValidationError(
-              `The receiving subdomain "${domainToVerify}" is not registered in your Resend account.${domainsMsg} Please add "${domainToVerify}" under Resend -> Domains and enable Receiving.`
+              `The subdomain "${domainToVerify}" is not registered in your Resend account. Please add it under Resend Domains and enable Receiving.`
             );
           }
         }
