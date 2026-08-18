@@ -227,6 +227,36 @@ export class IntegrationService {
     const token = (await this.repo.getWebhookToken(tenantId)) || tenantId;
     const webhookUrl = `${publicBaseUrl}/api/webhooks/resend/inbound/${token}`;
 
+    let detectedRegion: string | undefined;
+    if (step1Done) {
+      try {
+        const apiKey = await this.getDecryptedResendKey(tenantId);
+        const resend = new Resend(apiKey);
+        const { data: domains } = await resend.domains.list();
+        if (domains) {
+          type ResendDomainItem = { id?: string; name?: string; region?: string; status?: string };
+          const domainList: ResendDomainItem[] =
+            (domains as { data?: ResendDomainItem[] })?.data ||
+            (Array.isArray(domains) ? (domains as ResendDomainItem[]) : []);
+
+          const match = inboundDomain
+            ? domainList.find((d) => d.name?.toLowerCase() === inboundDomain.toLowerCase())
+            : domainList[0];
+
+          if (match?.region) {
+            detectedRegion = match.region;
+          } else if (domainList[0]?.region) {
+            detectedRegion = domainList[0].region;
+          }
+        }
+      } catch {
+        // Graceful fallback
+      }
+    }
+
+    const region = detectedRegion || 'ap-northeast-1';
+    const expectedMxTarget = `inbound-smtp.${region}.amazonaws.com`;
+
     return {
       provider: 'resend' as const,
       step1ApiKey: {
@@ -252,6 +282,9 @@ export class IntegrationService {
         webhookUrl,
         resendSettingsUrl: 'https://resend.com/webhooks',
         isVerified,
+        expectedMxTarget,
+        expectedPriority: 10,
+        region,
       },
       overallStatus,
       isActive,

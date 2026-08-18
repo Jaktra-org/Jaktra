@@ -136,7 +136,8 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
 
   // EDIT MODE
   const dnsPrefix = getDnsHostPrefix(domainInput || 'reply');
-  const mxTarget = 'inbound-smtp.us-east-1.amazonaws.com';
+  const mxTarget = w.expectedMxTarget || 'inbound-smtp.ap-northeast-1.amazonaws.com';
+  const mxPriority = w.expectedPriority ?? 10;
 
   return (
     <div className="space-y-4 text-[#f7f8f8]">
@@ -234,7 +235,7 @@ export function ResendWizardStep3({ progress, refetch, onBack, onComplete }: Pro
                 <td className="px-2.5 py-2 text-[#d0d6e0]">
                   {mxTarget}
                 </td>
-                <td className="px-2.5 py-2 text-[#8a8f98]">10</td>
+                <td className="px-2.5 py-2 text-[#8a8f98]">{mxPriority}</td>
                 <td className="px-2.5 py-2 text-right">
                   <div className="inline-flex gap-1">
                     <button

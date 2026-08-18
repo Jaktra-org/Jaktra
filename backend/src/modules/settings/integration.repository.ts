@@ -103,6 +103,9 @@ export interface SetupProgressStep3Resend {
   webhookUrl: string;
   resendSettingsUrl: string;
   isVerified: boolean;
+  expectedMxTarget?: string;
+  expectedPriority?: number;
+  region?: string;
 }
 
 export interface ResendSetupProgress {
