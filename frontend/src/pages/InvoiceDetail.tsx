@@ -1349,7 +1349,7 @@ export function InvoiceDetail() {
         <div className="lg:col-span-1 flex flex-col h-full min-h-0 overflow-y-auto custom-scrollbar">
           <div className="bg-[#13161c]/40 p-6 rounded-2xl border border-[#1e2025]/80 space-y-6">
             
-            {/* 1. Summary Section: Amount, Status, Company Name, Contact, Description */}
+            {/* 1. Summary Section: Amount, Status, Client Name, Contact, Description */}
             <div className="space-y-4 pb-5 border-b border-[#1e2025]/80">
               <div>
                 <span className="text-[11px] font-medium text-[#8a8f98] uppercase tracking-wider block mb-1">Amount</span>
@@ -1368,7 +1368,7 @@ export function InvoiceDetail() {
 
               <div className="space-y-2 text-xs pt-1">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-[#8a8f98]">Company Name</span>
+                  <span className="text-[#8a8f98]">Client Name</span>
                   <span className="font-semibold text-[#f7f8f8]">{invoice.clientName}</span>
                 </div>
 

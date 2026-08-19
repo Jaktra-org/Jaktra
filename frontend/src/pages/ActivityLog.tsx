@@ -307,7 +307,7 @@ export function ActivityLog() {
       const vals = event.oldValues;
       const formattedFields = [
         vals.invoiceNo ? { label: "Invoice No", value: vals.invoiceNo } : null,
-        vals.clientName ? { label: "Client", value: vals.clientName } : null,
+        vals.clientName ? { label: "Client Name", value: vals.clientName } : null,
         vals.contactEmail ? { label: "Contact Email", value: vals.contactEmail } : null,
         vals.invoiceAmount !== undefined ? { label: "Amount", value: formatCurrency(vals.invoiceAmount) } : null,
         vals.dueDate ? { label: "Due Date", value: formatDateValue(vals.dueDate) } : null,
