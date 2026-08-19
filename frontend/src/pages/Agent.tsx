@@ -49,12 +49,12 @@ export function Agent() {
   const dlqCount = dlqList.length;
   const dlqCriticalCount = dlqList.filter(e => (e?.consecutiveFailures || 0) >= 3).length;
 
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading: isSettingsLoading } = useQuery({
     queryKey: ['tenant-settings'],
     queryFn: settingsService.getSettings,
   });
 
-  const { data: integrations } = useQuery({
+  const { data: integrations, isLoading: isIntegrationsLoading } = useQuery({
     queryKey: ['integrations'],
     queryFn: settingsService.getIntegrations,
     retry: false,
@@ -90,6 +90,8 @@ export function Agent() {
   const runsList = Array.isArray(runsResponse?.runs) ? runsResponse.runs : [];
   const isRunning = runsList[0]?.status === 'running' || runMutation.isPending;
 
+  const isDataLoading = isIntegrationsLoading || isSettingsLoading;
+
   return (
     <div className="h-full w-full flex flex-col text-[#f7f8f8] overflow-hidden space-y-4">
       {/* Top Fixed Header */}
@@ -107,13 +109,13 @@ export function Agent() {
                 <ToneSelector
                   value={selectedTone}
                   onChange={setSelectedTone}
-                  disabled={isRunning || !emailReady}
+                  disabled={isRunning || isDataLoading || !emailReady}
                   className="h-9 border-[#1e2025] bg-[#13161c] text-[#f7f8f8] text-xs rounded-xl"
                 />
                 <button
                   onClick={handleRunAgent}
-                  disabled={isRunning || !emailReady}
-                  title={!emailReady ? 'Email is not configured. Set up an email provider in Settings first.' : undefined}
+                  disabled={isRunning || isDataLoading || !emailReady}
+                  title={!isDataLoading && !emailReady ? 'Email is not configured. Set up an email provider in Settings first.' : undefined}
                   className="inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] h-9 px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer"
                 >
                   {isRunning ? (
@@ -172,14 +174,14 @@ export function Agent() {
         ) : (
           <>
             {/* Email not configured warning */}
-            {settings && !emailReady && (
+            {!isIntegrationsLoading && !isSettingsLoading && settings && !emailReady && (
               <div className="bg-amber-950/40 border border-amber-900/50 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in">
                 <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-amber-300 text-xs">Email not configured</h4>
                   <p className="text-amber-200/80 text-xs mt-1 leading-relaxed">
                     Autopilot cannot run because no email provider is set up.
-                    Connect <strong>SendGrid</strong> or <strong>SMTP</strong> and set a sender email address —
+                    Connect <strong>Resend</strong>, <strong>SendGrid</strong>, or <strong>SMTP</strong> and set a sender email address —
                     otherwise follow-up emails would be generated but never delivered.
                   </p>
                 </div>
