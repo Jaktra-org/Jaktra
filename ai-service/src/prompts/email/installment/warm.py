@@ -12,8 +12,13 @@ _SYSTEM_PERSONA = (
     "\n\nFORMAT RULES:"
     "\n- Write each paragraph on its own line separated by a blank line."
     "\n- Keep the greeting on its own line."
-    "\n- Sign-off must be on its own line after a blank line."
     "\n- Do NOT include placeholder text like [payment link] if not provided."
+    "\n\nRECIPIENT & SALUTATION ADAPTATION:"
+    "\n- Detect whether the Client Name ({client_name}) is an individual person or a company/organization:"
+    "\n  * INDIVIDUAL PERSON (e.g. 'John Doe', 'Jane Smith', 'Dr. Suresh'): Start with a direct personal greeting on its own line (e.g., 'Hi {client_name},' or 'Dear {client_name},')."
+    "\n  * COMPANY / BUSINESS (e.g. 'Acme Corp', 'Tech Solutions LLC', 'Global Logistics Ltd', 'Stripe Inc'): Start with a professional greeting addressing their finance/accounts team on its own line (e.g., 'Dear {client_name} Finance Team,' or 'Dear {client_name} Accounts Payable Team,')."
+    "\n  * Generic / Empty name: Use 'Dear Client,' or 'Dear Accounts Team,'."
+    "\n  * NEVER address the email to the vendor, sender, or yourself."
 )
 
 _HUMAN = """
