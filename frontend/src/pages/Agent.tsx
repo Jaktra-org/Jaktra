@@ -96,16 +96,12 @@ export function Agent() {
 
   const runsList = Array.isArray(runsResponse?.runs) ? runsResponse.runs : [];
   const isRunning = runsList[0]?.status === 'running' || runMutation.isPending;
-  const totalInvoicesProcessed = runsList.reduce((acc, run) => acc + (run?.invoicesProcessed || 0), 0);
+  const activeRunInvoicesProcessed = isRunning ? (runsList[0]?.status === 'running' ? (runsList[0]?.invoicesProcessed || 0) : 0) : 0;
 
   const isDataLoading = isIntegrationsLoading || isSettingsLoading;
 
   useEffect(() => {
-    if (!isRunning) {
-      setRunningTextIdx(0);
-      setIsFading(false);
-      return;
-    }
+    if (!isRunning) return;
 
     const interval = setInterval(() => {
       setIsFading(true);
@@ -115,7 +111,11 @@ export function Agent() {
       }, 300);
     }, 2500);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setRunningTextIdx(0);
+      setIsFading(false);
+    };
   }, [isRunning]);
 
   return (
@@ -123,39 +123,27 @@ export function Agent() {
       {/* Top Fixed Header */}
       <div className="flex-shrink-0 space-y-3 pb-3 border-b border-[#1e2025]/80">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div>
             <h1 className="text-2xl font-bold tracking-tight text-[#f7f8f8]">
               Autopilot
             </h1>
-
-            {/* Top-Left Integrated Status & Total Processed Pill */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#13161c] border border-[#1e2025] rounded-full text-xs">
-              <span className="relative flex h-2 w-2">
-                {isRunning ? (
-                  <>
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </>
-                ) : (
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#62666d]"></span>
-                )}
-              </span>
-              <span className="text-[#8a8f98] font-medium">
-                {isRunning ? (
-                  <span className="text-emerald-400 font-semibold">Running</span>
-                ) : (
-                  'Idle'
-                )}
-              </span>
-              <span className="text-[#3e3e44]">•</span>
-              <span className="text-[#f7f8f8] font-semibold font-mono">{totalInvoicesProcessed}</span>
-              <span className="text-[#8a8f98]">Processed</span>
-            </div>
           </div>
 
-          <div className="flex items-center space-x-3 self-start sm:self-auto">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {/* Live Processed Counter Badge (Only visible when agent is actively running) */}
+            {isRunning && (
+              <div className="inline-flex items-center gap-2 h-9 px-3 bg-[#13161c] border border-[#1e2025] rounded-xl text-xs animate-in fade-in">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="text-[#f7f8f8] font-semibold font-mono">{activeRunInvoicesProcessed}</span>
+                <span className="text-[#8a8f98]">Processed</span>
+              </div>
+            )}
+
             {user?.role !== 'viewer' && (
-              <div className="flex items-center gap-2">
+              <>
                 <ToneSelector
                   value={selectedTone}
                   onChange={setSelectedTone}
@@ -190,7 +178,7 @@ export function Agent() {
                     </>
                   )}
                 </button>
-              </div>
+              </>
             )}
           </div>
         </div>

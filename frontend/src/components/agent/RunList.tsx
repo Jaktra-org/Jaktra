@@ -2,9 +2,36 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { agentService } from '../../services/agent';
 import type { AgentRun, AgentRunChunk, AgentRunChunksResponse } from '../../types/api';
-import { ChevronDown, ChevronUp, Clock, CheckCircle2, AlertTriangle, Send, FileText, Loader2, Info } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, AlertTriangle, Send, FileText, Loader2, Info, Bot } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { Link } from 'react-router-dom';
+
+interface EventPayload {
+  invoiceId?: string;
+  entityId?: string;
+  invoiceNumber?: string;
+  number?: string;
+  recipient?: string;
+  recipientEmail?: string;
+  email?: string;
+  tone?: string;
+  toneSource?: string;
+  reason?: string;
+  tier?: string;
+  triggeredBy?: string;
+  source?: string;
+  subject?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
+interface EventItem {
+  eventType?: string;
+  invoiceId?: string;
+  entityId?: string;
+  createdAt?: string;
+  payload?: EventPayload | null;
+}
 
 interface RunListProps {
   runs: AgentRun[];
@@ -113,6 +140,85 @@ export function RunList({ runs }: RunListProps) {
   );
 }
 
+function getEventInfo(event: EventItem) {
+  const payload = (event?.payload && typeof event.payload === 'object' ? event.payload : {}) as EventPayload;
+  
+  // 1. Identify invoice ID and display label
+  const rawInvoiceId = event?.invoiceId || event?.entityId || payload.invoiceId || payload.entityId;
+  let invoiceNumber = payload.invoiceNumber || payload.number;
+  if (!invoiceNumber && rawInvoiceId) {
+    invoiceNumber = rawInvoiceId.length > 8 ? `INV-${rawInvoiceId.substring(0, 6).toUpperCase()}` : `INV-${rawInvoiceId}`;
+  }
+
+  const eventType = (event?.eventType || '').toLowerCase();
+
+  // 2. Format human-readable summary & status tag
+  let description: string;
+  let statusText: string;
+  let badgeVariant: 'success' | 'warning' | 'danger' | 'default';
+
+  const recipient = payload.recipient || payload.recipientEmail || payload.email || '';
+  const recipientStr = recipient ? ` to ${recipient}` : '';
+  const tone = (payload.tone || payload.toneSource || '').toLowerCase();
+  const reason = (payload.reason || '').toLowerCase();
+  const tier = (payload.tier || '').toLowerCase();
+
+  if (eventType === 'email_sent' || eventType === 'email_generated') {
+    statusText = 'Email Sent';
+    badgeVariant = 'success';
+    
+    let toneDescription = 'follow-up email';
+    if (tone.includes('stern') || tone.includes('stage_4') || tone.includes('stage_3') || tone.includes('urgent')) {
+      toneDescription = 'firm & stern reminder email';
+    } else if (tone.includes('warm') || tone.includes('friendly') || tone.includes('stage_1') || tone.includes('stage_2')) {
+      toneDescription = 'friendly reminder email';
+    } else if (tone.includes('legal') || tone.includes('escalation')) {
+      toneDescription = 'serious escalation notice';
+    }
+
+    description = `A ${toneDescription} was dispatched${recipientStr}.`;
+  } else if (eventType === 'halted' || eventType === 'failed' || eventType === 'error') {
+    statusText = eventType === 'halted' ? 'Halted' : 'Failed';
+    badgeVariant = 'danger';
+
+    let reasonText: string;
+    if (reason === 'no_automated_channel') {
+      reasonText = 'No automated communication channel configured';
+    } else if (reason === 'payment_plan_active') {
+      reasonText = 'Active payment plan currently in effect';
+    } else if (reason === 'dispute_open') {
+      reasonText = 'Open invoice dispute under review';
+    } else if (reason === 'max_reminders_exceeded') {
+      reasonText = 'Maximum reminder limit reached';
+    } else if (reason) {
+      reasonText = reason.replace(/_/g, ' ');
+    } else {
+      reasonText = 'Processing halted by safety rules';
+    }
+
+    const tierStr = tier ? ` (${tier.replace(/_/g, ' ')})` : '';
+    description = `${reasonText}${tierStr}${recipientStr}.`;
+  } else if (eventType.includes('run') || eventType.includes('trigger')) {
+    statusText = 'Triggered';
+    badgeVariant = 'default';
+    const source = payload.triggeredBy || payload.source || 'manual';
+    description = `Autopilot execution triggered (${source}).`;
+  } else {
+    statusText = eventType.replace(/_/g, ' ');
+    badgeVariant = 'default';
+    description = payload.subject || payload.message || `Processed event ${eventType}.`;
+  }
+
+  return {
+    rawInvoiceId,
+    invoiceNumber,
+    description,
+    statusText,
+    badgeVariant,
+    subject: payload.subject,
+  };
+}
+
 function RunDetailsPanel({ run }: { run: AgentRun }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['agent-run-details', run.id],
@@ -153,44 +259,51 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
     <div>
       <ChunkBreakdown runId={run.id} />
       <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider mb-2.5 mt-4">Invoice Processing Breakdown</h4>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
-        {events.map((event, idx) => (
-          <div key={idx} className="flex items-start p-3 border border-[#23252a] rounded-md bg-[#0f1011]">
-            <div className="mt-0.5">
-              {event.eventType === 'email_sent' || event.eventType === 'email_generated' ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#27a644] mr-2.5" />
-              ) : event.eventType === 'halted' ? (
-                <AlertTriangle className="w-3.5 h-3.5 text-red-400 mr-2.5" />
-              ) : (
-                <FileText className="w-3.5 h-3.5 text-[#62666d] mr-2.5" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <Link to={`/invoices/${event.invoiceId}`} className="text-xs font-medium text-[#5e6ad2] hover:text-[#828fff] truncate">
-                  Invoice {event.invoiceId ? (event.invoiceId.length > 8 ? `${event.invoiceId.substring(0, 8)}...` : event.invoiceId) : 'N/A'}
-                </Link>
-                <span className="text-[10px] text-[#8a8f98] ml-2">
-                  {event.createdAt && !isNaN(new Date(event.createdAt).getTime()) ? new Date(event.createdAt).toLocaleTimeString() : ''}
-                </span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {events.map((event, idx) => {
+          const { rawInvoiceId, invoiceNumber, description, statusText, badgeVariant, subject } = getEventInfo(event);
+
+          return (
+            <div key={idx} className="flex flex-col justify-between p-3.5 border border-[#23252a] rounded-xl bg-[#0f1011] hover:border-[#34343a] transition-all">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                {rawInvoiceId ? (
+                  <Link
+                    to={`/invoices/${rawInvoiceId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-xs font-semibold text-[#5e6ad2] hover:text-[#828fff] hover:underline truncate flex items-center gap-1.5"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#5e6ad2] flex-shrink-0" />
+                    <span className="truncate">{invoiceNumber}</span>
+                  </Link>
+                ) : (
+                  <span className="text-xs font-semibold text-[#8a8f98] flex items-center gap-1.5">
+                    <Bot className="w-3.5 h-3.5 text-[#8a8f98] flex-shrink-0" />
+                    <span>System Event</span>
+                  </span>
+                )}
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Badge variant={badgeVariant}>
+                    {statusText}
+                  </Badge>
+                  <span className="text-[10px] text-[#8a8f98] font-mono">
+                    {event.createdAt && !isNaN(new Date(event.createdAt).getTime()) ? new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                </div>
               </div>
-              <p className="text-[11px] text-[#d0d6e0] mt-0.5 capitalize font-medium">
-                {(event.eventType || '').replace('_', ' ')}
+
+              <p className="text-xs text-[#d0d6e0] leading-relaxed">
+                {description}
               </p>
-              {event.payload && typeof event.payload === 'object' && (
-                <div className="mt-1.5 text-[11px] text-[#8a8f98] bg-[#010102] p-2 rounded border border-[#23252a] font-mono overflow-x-auto whitespace-nowrap">
-                  {Object.entries(event.payload)
-                    .filter(([k]) => k !== 'runId' && k !== 'bodyPreview')
-                    .map(([k, v]) => (
-                    <span key={k} className="mr-3">
-                      <span className="text-[#62666d]">{k}:</span> <span className="text-[#f7f8f8]">{String(v)}</span>
-                    </span>
-                  ))}
+
+              {subject && (
+                <div className="mt-2 text-[11px] text-[#8a8f98] italic truncate border-t border-[#1e2025] pt-1.5">
+                  Subject: "{subject}"
                 </div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -201,7 +314,6 @@ function ChunkBreakdown({ runId }: { runId: string }) {
     queryKey: ['agent-run-chunks', runId],
     queryFn: () => agentService.getRunChunks(runId),
     refetchInterval: (query) => {
-      // Poll chunks list if any chunk is running or queued
       const data = query.state.data as AgentRunChunksResponse | undefined;
       const chunks = data?.chunks || [];
       const hasActive = chunks.some((c: AgentRunChunk) => c.status === 'running' || c.status === 'queued');
@@ -215,9 +327,9 @@ function ChunkBreakdown({ runId }: { runId: string }) {
   return (
     <div className="mb-3">
       <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider mb-2">Chunk Processing Details</h4>
-      <div className="space-y-1.5 max-h-40 overflow-y-auto pr-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
         {data.chunks.map((chunk: AgentRunChunk) => (
-          <div key={chunk.id} className="flex items-center justify-between text-xs border border-[#23252a] bg-[#0f1011] p-2 rounded">
+          <div key={chunk.id} className="flex items-center justify-between text-xs border border-[#23252a] bg-[#0f1011] p-2.5 rounded-xl hover:border-[#34343a] transition-all">
             <div className="flex items-center gap-2">
               <Badge variant={
                 chunk.status === 'completed' ? 'success' :
@@ -226,11 +338,11 @@ function ChunkBreakdown({ runId }: { runId: string }) {
               }>
                 {chunk.status}
               </Badge>
-              <span className="font-medium text-[#f7f8f8]">Chunk #{chunk.chunkIndex + 1} of {chunk.totalChunks}</span>
+              <span className="font-semibold text-[#f7f8f8]">Chunk #{chunk.chunkIndex + 1} of {chunk.totalChunks}</span>
             </div>
-            <div className="text-[#8a8f98] flex items-center gap-3 text-[11px]">
-              <span>Processed: {chunk.invoicesProcessed}</span>
-              <span>Sent: {chunk.emailsSent}</span>
+            <div className="text-[#8a8f98] flex items-center gap-2 text-[11px]">
+              <span>Processed: <strong className="text-[#f7f8f8]">{chunk.invoicesProcessed}</strong></span>
+              <span>Sent: <strong className="text-[#f7f8f8]">{chunk.emailsSent}</strong></span>
               {chunk.errors > 0 && <span className="text-red-400 font-semibold">Errors: {chunk.errors}</span>}
             </div>
           </div>
@@ -239,5 +351,6 @@ function ChunkBreakdown({ runId }: { runId: string }) {
     </div>
   );
 }
+
 
 
