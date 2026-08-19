@@ -118,7 +118,7 @@ export function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps)
             required
             value={formData.clientName}
             onChange={handleChange}
-            placeholder="Acme Corp"
+            placeholder="Client Name (e.g. Acme Corp or John Doe)"
             className="flex h-9 w-full rounded-xl border border-[#23252a] bg-[#010102] px-3 py-1.5 text-xs text-[#f7f8f8] placeholder:text-[#62666d] focus:outline-none focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] transition-colors"
           />
         </div>
