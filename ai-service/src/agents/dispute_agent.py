@@ -171,8 +171,24 @@ class DisputeAgent:
             return DisputeDraftResponse(suggested_response=suggested_response)
         except Exception as e:
             logger.error("dispute_draft_generation_failed", error=str(e), exc_info=True)
+            salutation = _format_client_salutation(clean_client_name)
             return DisputeDraftResponse(
-                suggested_response=f"Dear {clean_client_name},\n\nThank you for reaching out regarding invoice #{clean_invoice_no}. {clean_tenant_instruction}.\n\nBest regards,\nFinance Department"
+                suggested_response=f"Dear {salutation},\n\nThank you for reaching out regarding invoice #{clean_invoice_no}. {clean_tenant_instruction}.\n\nBest regards,\nFinance Department"
             )
+
+
+def _format_client_salutation(name: str) -> str:
+    cleaned = (name or "").strip()
+    if not cleaned:
+        return "Customer"
+    lower = cleaned.lower()
+    company_indicators = [
+        "corp", "inc", "llc", "ltd", "co.", "company", "technologies", "tech",
+        "solutions", "services", "enterprises", "industries", "group", "holdings",
+        "pvt", "limited", "llp", "gmbh", "sa", "bv", "ag", "plc"
+    ]
+    is_company = any(re.search(rf"\b{re.escape(ind)}\b|\b{re.escape(ind)}\.", lower) for ind in company_indicators)
+    return f"{cleaned} Finance Team" if is_company else cleaned
+
 
 

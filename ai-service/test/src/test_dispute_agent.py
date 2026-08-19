@@ -138,3 +138,36 @@ def test_dispute_draft_api_endpoint():
         assert "Dear Beta LLC" in data["suggested_response"]
 
 
+@pytest.mark.asyncio
+async def test_dispute_agent_draft_fallback_salutations():
+    agent = DisputeAgent()
+    # 1. Company name should have "Finance Team" in fallback salutation
+    req_company = DisputeDraftRequest(
+        tenant_instruction="Amount is verified",
+        inbound_text="Dispute inquiry",
+        invoice_id="inv-1",
+        invoice_no="INV-1",
+        client_name="Acme Corp",
+        invoice_amount="500",
+        due_date="2026-08-15"
+    )
+    with patch("src.agents.dispute_agent.llm_client.generate", side_effect=Exception("LLM down")):
+        res_comp = await agent.generate_draft(req_company)
+        assert "Dear Acme Corp Finance Team," in res_comp.suggested_response
+
+    # 2. Individual person name should directly use person's name
+    req_person = DisputeDraftRequest(
+        tenant_instruction="Amount is verified",
+        inbound_text="Dispute inquiry",
+        invoice_id="inv-2",
+        invoice_no="INV-2",
+        client_name="John Doe",
+        invoice_amount="500",
+        due_date="2026-08-15"
+    )
+    with patch("src.agents.dispute_agent.llm_client.generate", side_effect=Exception("LLM down")):
+        res_pers = await agent.generate_draft(req_person)
+        assert "Dear John Doe," in res_pers.suggested_response
+
+
+
