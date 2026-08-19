@@ -303,7 +303,7 @@ export function Invoices() {
   const handleExportCSV = () => {
     if (!activeData?.data || activeData.data.length === 0) return;
     
-    const headers = ['Invoice No', 'Client', 'Amount', 'Due Date', 'Status', 'Days Overdue', 'Follow-ups'];
+    const headers = ['Invoice No', 'Client Name', 'Amount', 'Due Date', 'Status', 'Days Overdue', 'Follow-ups'];
     const rows = activeData!.data.map(inv => [
       inv.invoiceNo,
       `"${inv.clientName}"`, // Quote to handle commas
@@ -626,7 +626,7 @@ export function Invoices() {
                   <div className="flex items-center">Invoice No {renderSortIcon('invoiceNo')}</div>
                 </th>
                 <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('clientName')}>
-                  <div className="flex items-center">Client {renderSortIcon('clientName')}</div>
+                  <div className="flex items-center">Client Name {renderSortIcon('clientName')}</div>
                 </th>
                 <th className="h-10 px-4 text-left align-middle font-medium text-[#8a8f98] cursor-pointer select-none hover:text-[#f7f8f8]" onClick={() => handleSort('invoiceAmount')}>
                   <div className="flex items-center">Amount {renderSortIcon('invoiceAmount')}</div>
