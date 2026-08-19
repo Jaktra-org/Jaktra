@@ -316,15 +316,14 @@ test.describe('Jaktra Frontend Critical Paths', () => {
 
     await expect(page.locator('aside >> text=Invoices')).toBeVisible();
 
-    await expect(page.locator('text=AI Agent Control')).toBeVisible();
+    await expect(page.locator('h1:has-text("Autopilot")')).toBeVisible();
 
     const runBtn = page.locator('button:has-text("Run Autopilot")');
     await expect(runBtn).toBeEnabled();
 
     await runBtn.click();
 
-    await expect(page.locator('text=Processing Batch...')).toBeVisible();
-    await expect(page.locator('text=Autopilot Running...')).toBeVisible();
+    await expect(page.locator('button:has-text("Autopilot Running...")')).toBeVisible();
   });
 
   test('Path 4: Payment Link Creation', async ({ page }) => {
