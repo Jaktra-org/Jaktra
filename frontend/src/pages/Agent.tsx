@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { agentService } from '../services/agent';
@@ -13,11 +13,19 @@ import { Bot, Play, AlertCircle, Loader2, AlertTriangle, Settings } from 'lucide
 import { getErrorMessage } from '../utils/error-utils';
 import { DLQ } from './DLQ';
 
+const RUNNING_TEXTS = [
+  'Autopilot Running...',
+  'Processing Batch...',
+  'Dispatching Emails...',
+];
+
 export function Agent() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTone, setSelectedTone] = useState<string>('');
+  const [runningTextIdx, setRunningTextIdx] = useState(0);
+  const [isFading, setIsFading] = useState(false);
 
   const activeTab = searchParams.get('tab') === 'dlq' ? 'dlq' : 'overview';
 
@@ -69,7 +77,6 @@ export function Agent() {
     integrations?.resendProgress?.isActive
   );
 
-
   const runMutation = useMutation({
     mutationFn: (tone?: string) => agentService.runAgent(tone),
     onSuccess: () => {
@@ -89,21 +96,64 @@ export function Agent() {
 
   const runsList = Array.isArray(runsResponse?.runs) ? runsResponse.runs : [];
   const isRunning = runsList[0]?.status === 'running' || runMutation.isPending;
+  const totalInvoicesProcessed = runsList.reduce((acc, run) => acc + (run?.invoicesProcessed || 0), 0);
 
   const isDataLoading = isIntegrationsLoading || isSettingsLoading;
+
+  useEffect(() => {
+    if (!isRunning) {
+      setRunningTextIdx(0);
+      setIsFading(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setIsFading(true);
+      setTimeout(() => {
+        setRunningTextIdx((prev) => (prev + 1) % RUNNING_TEXTS.length);
+        setIsFading(false);
+      }, 300);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [isRunning]);
 
   return (
     <div className="h-full w-full flex flex-col text-[#f7f8f8] overflow-hidden space-y-4">
       {/* Top Fixed Header */}
       <div className="flex-shrink-0 space-y-3 pb-3 border-b border-[#1e2025]/80">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-[#f7f8f8]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-[#f7f8f8]">
               Autopilot
             </h1>
-            <p className="text-xs text-[#8a8f98] mt-1">AI Agent Control — Manage and monitor automated invoice processing, AI triage, and follow-up dispatching.</p>
+
+            {/* Top-Left Integrated Status & Total Processed Pill */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#13161c] border border-[#1e2025] rounded-full text-xs">
+              <span className="relative flex h-2 w-2">
+                {isRunning ? (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </>
+                ) : (
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#62666d]"></span>
+                )}
+              </span>
+              <span className="text-[#8a8f98] font-medium">
+                {isRunning ? (
+                  <span className="text-emerald-400 font-semibold">Running</span>
+                ) : (
+                  'Idle'
+                )}
+              </span>
+              <span className="text-[#3e3e44]">•</span>
+              <span className="text-[#f7f8f8] font-semibold font-mono">{totalInvoicesProcessed}</span>
+              <span className="text-[#8a8f98]">Processed</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-3 self-start md:self-auto">
+
+          <div className="flex items-center space-x-3 self-start sm:self-auto">
             {user?.role !== 'viewer' && (
               <div className="flex items-center gap-2">
                 <ToneSelector
@@ -116,12 +166,22 @@ export function Agent() {
                   onClick={handleRunAgent}
                   disabled={isRunning || isDataLoading || !emailReady}
                   title={!isDataLoading && !emailReady ? 'Email is not configured. Set up an email provider in Settings first.' : undefined}
-                  className="inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] h-9 px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer"
+                  className={`inline-flex items-center justify-center rounded-xl text-xs font-semibold transition-all h-9 px-4 py-2 disabled:cursor-not-allowed shadow-xs cursor-pointer ${
+                    isRunning
+                      ? 'bg-[#5e6ad2] text-white border border-[#6e7be2]'
+                      : 'bg-[#f7f8f8] text-[#010102] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] disabled:opacity-40'
+                  }`}
                 >
                   {isRunning ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                      Autopilot Running...
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin flex-shrink-0" />
+                      <span
+                        className={`transition-opacity duration-300 inline-block min-w-[125px] text-left ${
+                          isFading ? 'opacity-0' : 'opacity-100'
+                        }`}
+                      >
+                        {RUNNING_TEXTS[runningTextIdx]}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -206,37 +266,6 @@ export function Agent() {
             )}
 
             <div className="space-y-4">
-              <div className="bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl p-5 space-y-4">
-                <div className="text-xs font-semibold text-[#8a8f98] uppercase tracking-wider">Autopilot Status</div>
-                <div className="flex items-center space-x-4">
-                  <div className="relative flex h-3.5 w-3.5">
-                    {isRunning ? (
-                      <>
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5e6ad2] opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#5e6ad2]"></span>
-                      </>
-                    ) : (
-                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#3e3e44]"></span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[#f7f8f8] text-base">
-                      {isRunning ? 'Processing Batch...' : 'Idle / Ready'}
-                    </p>
-                    <p className="text-xs text-[#8a8f98] mt-0.5">
-                      {isRunning ? 'Analyzing invoices and dispatching emails.' : 'Waiting for next scheduled run or manual trigger.'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-[#1e2025]/80">
-                  <p className="text-xs text-[#8a8f98] mb-1">Total Invoices Processed (All Time)</p>
-                  <p className="text-2xl font-bold text-[#f7f8f8] font-mono">
-                    {runsList.reduce((acc, run) => acc + (run?.invoicesProcessed || 0), 0)}
-                  </p>
-                </div>
-              </div>
-
               <div className="bg-[#13161c]/40 border border-[#1e2025]/80 rounded-2xl overflow-hidden">
                 <div className="p-4 border-b border-[#1e2025]/80">
                   <h3 className="text-sm font-semibold text-[#f7f8f8]">Run History</h3>
@@ -272,3 +301,4 @@ export function Agent() {
     </div>
   );
 }
+
