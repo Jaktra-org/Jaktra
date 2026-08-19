@@ -7,7 +7,7 @@ import type { EventService, ActorContext } from '../event/event.service.js';
 import type { PortalService } from '../portal/portal.service.js';
 import type { TenantMailer } from '../communication/tenant-mailer.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
-import { ValidationError } from '../../shared/errors/index.js';
+import { ValidationError, NotFoundError } from '../../shared/errors/index.js';
 import { logger } from '../../shared/logger.js';
 import { config } from '../../config/env.js';
 
@@ -277,6 +277,8 @@ export class PaymentPlanService {
       const formattedBalance = `${currency} ${parseFloat(invoice.invoiceAmount).toLocaleString(locale, { minimumFractionDigits: 2 })}`;
       const formattedMonthly = `${currency} ${parseFloat(proposedAmountPerMonth).toLocaleString(locale, { minimumFractionDigits: 2 })}`;
 
+      const clientSalutation = this.formatClientSalutation(invoice.clientName);
+
       let subject = '';
       let html = '';
 
@@ -285,7 +287,7 @@ export class PaymentPlanService {
         html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; padding: 20px;">
             <h2 style="color: #0f172a; margin-bottom: 16px;">Payment Plan Approved</h2>
-            <p>Dear ${invoice.clientName || 'Customer'},</p>
+            <p>Dear ${clientSalutation},</p>
             <p>Your requested payment plan for <strong>Invoice #${invoice.invoiceNo}</strong> (Total: ${formattedBalance}) has been <strong>APPROVED</strong>.</p>
             
             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
@@ -305,7 +307,7 @@ export class PaymentPlanService {
         html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; padding: 20px;">
             <h2 style="color: #0f172a; margin-bottom: 16px;">Payment Plan Request Update</h2>
-            <p>Dear ${invoice.clientName || 'Customer'},</p>
+            <p>Dear ${clientSalutation},</p>
             <p>Your recent payment plan proposal for <strong>Invoice #${invoice.invoiceNo}</strong> (Total: ${formattedBalance}) was <strong>NOT APPROVED</strong>.</p>
             <p>Please arrange to settle the outstanding balance as per the original invoice terms or reach out to our billing department.</p>
             <p style="margin-top: 24px;">
@@ -327,11 +329,27 @@ export class PaymentPlanService {
     }
   }
 
+  private formatClientSalutation(clientName: string | null | undefined): string {
+    const name = (clientName || '').trim();
+    if (!name) return 'Customer';
+    const lower = name.toLowerCase();
+    const companyIndicators = [
+      'corp', 'inc', 'llc', 'ltd', 'co.', 'company', 'technologies', 'tech',
+      'solutions', 'services', 'enterprises', 'industries', 'group', 'holdings',
+      'pvt', 'limited', 'llp', 'gmbh', 'sa', 'bv', 'ag', 'plc'
+    ];
+    const isCompany = companyIndicators.some((ind) => {
+      const regex = new RegExp(`\\b${ind}\\b|\\b${ind}\\.`, 'i');
+      return regex.test(lower);
+    });
+    return isCompany ? `${name} Finance Team` : name;
+  }
+
   async cancelActivePlan(invoiceId: string, tenantId: string, actor: ActorContext): Promise<void> {
     // 1. Fetch active approved plan for the invoice
     const approvedPlan = await this.repo.findActiveApprovedByInvoiceId(invoiceId);
     if (!approvedPlan || approvedPlan.tenantId !== tenantId) {
-      throw new ValidationError('No active, approved payment plan was found for this invoice.');
+      throw new NotFoundError('No active approved payment plan found for this invoice.');
     }
 
     // 2. Fetch invoice and ensure it is currently marked as having an active payment plan
