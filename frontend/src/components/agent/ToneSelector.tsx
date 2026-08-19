@@ -21,7 +21,7 @@ export function ToneSelector({
   placement = 'bottom',
 }: ToneSelectorProps) {
   const options = [
-    ...(includeAuto ? [{ label: "Auto (Triage Engine)", value: "" }] : []),
+    ...(includeAuto ? [{ label: "Triage Engine (Auto)", value: "" }] : []),
     { label: "Warm (Stage 1)", value: "stage_1_warm" },
     { label: "Firm (Stage 2)", value: "stage_2_firm" },
     { label: "Serious (Stage 3)", value: "stage_3_serious" },

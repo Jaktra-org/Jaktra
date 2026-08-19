@@ -20,6 +20,6 @@ describe('ToneSelector component', () => {
   it('hides Auto option if includeAuto is false', () => {
     render(<ToneSelector value="" onChange={() => {}} includeAuto={false} />);
     
-    expect(screen.queryByText('Auto (Triage Engine)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Triage Engine (Auto)')).not.toBeInTheDocument();
   });
 });
