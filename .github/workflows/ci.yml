@@ -1,4 +1,4 @@
-name: Jaktra CI
+﻿name: Jaktra CI
 
 on:
   pull_request:
@@ -9,6 +9,7 @@ jobs:
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -68,6 +69,7 @@ jobs:
   frontend-ci:
     name: Frontend CI
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -100,8 +102,23 @@ jobs:
         run: npm ci
         working-directory: tests/e2e
 
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('tests/e2e/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install Playwright Browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install chromium --with-deps
+        working-directory: tests/e2e
+
+      - name: Install Playwright System Dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
         working-directory: tests/e2e
 
       - name: Run Playwright E2E Tests
@@ -111,6 +128,7 @@ jobs:
   ai-service-ci:
     name: AI Service CI
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -138,4 +156,3 @@ jobs:
           ENVIRONMENT: development
           SERVICE_KEY: test-service-key
           LLM_API_KEY: test-llm-api-key
-
