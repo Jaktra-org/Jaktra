@@ -47,12 +47,11 @@ async def test_llm_client_fallback_success(mock_litellm_completion):
         "api_key": "test-fallback-key"
     }
     
-    # Primary fails with a non-retryable exception or exhausts retries, fallback succeeds
-    # side_effect can be a list: first element is raised on first call, second returned on second call
+    # Primary fails on attempt 1 & 2, then fallback succeeds on attempt 1
     primary_err = RuntimeError("Primary API offline")
     success_resp = mock_litellm_completion.create_response(content="Fallback response", model="llama-fallback")
     
-    mock_litellm_completion.side_effect = [primary_err, success_resp]
+    mock_litellm_completion.side_effect = [primary_err, primary_err, success_resp]
     
     response = await client.generate(["Hello"])
     assert response.content == "Fallback response"
@@ -91,12 +90,50 @@ async def test_llm_client_tenacity_retries(mock_litellm_completion):
     )
     success_resp = mock_litellm_completion.create_response(content="Successful after retry")
     
-    # Fail twice, succeed on third
-    mock_litellm_completion.side_effect = [rate_limit_err, rate_limit_err, success_resp]
+    # Fail once on attempt 1, succeed on attempt 2 (primary)
+    mock_litellm_completion.side_effect = [rate_limit_err, success_resp]
     
-    # Patch asyncio.sleep to make the test run instantly without waiting min 2s
+    # Patch asyncio.sleep to make the test run instantly
     with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
         response = await client.generate(["Hello"])
         assert response.content == "Successful after retry"
         assert response.used_fallback is False
-        assert mock_sleep.call_count == 2
+        assert mock_sleep.call_count == 1
+
+@pytest.mark.anyio
+async def test_llm_client_normal_groq_request_success(mock_litellm_completion):
+    client = LLMClient()
+    client.primary = {"model": "groq/llama-3.3-70b-versatile", "api_key": "gsk_valid_key"}
+    client.fallback = {"model": "gemini/gemini-3.6-flash", "api_key": "valid_gemini_key"}
+
+    success_resp = mock_litellm_completion.create_response(content="Groq generated payment reminder")
+    mock_litellm_completion.return_value = success_resp
+
+    response = await client.generate(["Generate invoice reminder"])
+    assert response.content == "Groq generated payment reminder"
+    assert response.used_fallback is False
+    assert response.provider == "groq"
+
+@pytest.mark.anyio
+async def test_llm_client_intentional_groq_failure_triggers_gemini_fallback(mock_litellm_completion):
+    client = LLMClient()
+    client.primary = {"model": "groq/llama-3.3-70b-versatile", "api_key": "gsk_invalid_key"}
+    client.fallback = {"model": "gemini/gemini-3.6-flash", "api_key": "valid_gemini_key"}
+
+    groq_err = litellm.exceptions.AuthenticationError(
+        message="Invalid API Key",
+        model="llama",
+        response=None,
+        llm_provider="groq"
+    )
+    gemini_resp = mock_litellm_completion.create_response(content="Gemini fallback generated payment reminder", model="gemini-3.6-flash")
+
+    # Groq fails on attempt 1 & 2, then Gemini fallback succeeds on attempt 1
+    mock_litellm_completion.side_effect = [groq_err, groq_err, gemini_resp]
+
+    with patch("asyncio.sleep", new_callable=AsyncMock):
+        response = await client.generate(["Generate invoice reminder"])
+        assert response.content == "Gemini fallback generated payment reminder"
+        assert response.used_fallback is True
+        assert response.provider == "gemini"
+
