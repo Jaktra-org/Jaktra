@@ -1,9 +1,11 @@
+import os
 import time
+import asyncio
 import litellm
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from dataclasses import dataclass
 from src.exceptions import LLMGenerationError
 from src.api.config import settings
+from src.api.logging import logger
 
 @dataclass
 class LLMResponse:
@@ -15,44 +17,51 @@ class LLMResponse:
     generation_ms: float
     used_fallback: bool
 
-_RETRYABLE_LITELLM_ERRORS = (
-    litellm.exceptions.RateLimitError,
-    litellm.exceptions.APIConnectionError,
-    litellm.exceptions.InternalServerError,
-    litellm.exceptions.ServiceUnavailableError,
-)
+def _format_model_string(provider: str | None, model: str | None) -> str | None:
+    if not model:
+        return None
+    if "/" in model:
+        return model
+    if provider:
+        return f"{provider}/{model}"
+    return model
 
 class LLMClient:
     def __init__(self):
-        self.primary = {
-            "model": f"{settings.LLM_PROVIDER}/{settings.LLM_MODEL}",
-            "api_key": settings.LLM_API_KEY,
-        }
+        self.primary = None
         self.fallback = None
-        if getattr(settings, "LLM_FALLBACK_PROVIDER", None) and getattr(settings, "LLM_FALLBACK_MODEL", None):
-            self.fallback = {
-                "model": f"{settings.LLM_FALLBACK_PROVIDER}/{settings.LLM_FALLBACK_MODEL}",
-                "api_key": getattr(settings, "LLM_FALLBACK_API_KEY", None),
-            }
+        self.refresh_providers()
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=8),
-        retry=retry_if_exception_type(_RETRYABLE_LITELLM_ERRORS),
-        reraise=True
-    )
-    async def _invoke_with_retry(self, messages, provider_config, temperature):
-        start_time = time.perf_counter()
-        response = await litellm.acompletion(
-            messages=messages,
-            temperature=temperature,
-            timeout=settings.LLM_TIMEOUT_SECONDS,
-            **provider_config
-        )
-        duration_ms = (time.perf_counter() - start_time) * 1000
-        return response, duration_ms
+    def refresh_providers(self):
+        if self.primary is None:
+            primary_model = _format_model_string(settings.LLM_PROVIDER, settings.LLM_MODEL)
+            primary_key = (settings.LLM_API_KEY or "").strip()
+            self.primary = {
+                "model": primary_model,
+                "api_key": primary_key,
+            } if primary_model and primary_key else None
+
+        if self.fallback is None:
+            fallback_key = (
+                settings.LLM_FALLBACK_API_KEY 
+                or os.environ.get("Gemini_API_Key") 
+                or os.environ.get("GEMINI_API_KEY") 
+                or os.environ.get("GEMINI_KEY") 
+                or ""
+            ).strip()
+
+            fallback_provider = settings.LLM_FALLBACK_PROVIDER or "gemini"
+            fallback_model_name = settings.LLM_FALLBACK_MODEL or "gemini-3.6-flash"
+            fallback_model = _format_model_string(fallback_provider, fallback_model_name)
+
+            self.fallback = {
+                "model": fallback_model,
+                "api_key": fallback_key,
+            } if fallback_model and fallback_key else None
 
     async def generate(self, messages: list, temperature: float = 0.4) -> LLMResponse:
+        self.refresh_providers()
+
         litellm_messages = []
         for msg in messages:
             role = "user"
@@ -60,39 +69,68 @@ class LLMClient:
             if msg_type == "system":
                 role = "system"
             litellm_messages.append({"role": role, "content": getattr(msg, "content", str(msg))})
-        try:
-            response, duration_ms = await self._invoke_with_retry(litellm_messages, self.primary, temperature)
-            used_fallback = False
-            provider_used = self.primary["model"].split("/")[0]
-        except Exception as primary_error:
-            if isinstance(primary_error, litellm.exceptions.BadRequestError):
-                raise LLMGenerationError("LLM provider error occurred") from primary_error
 
-            if self.fallback:
+        providers_to_try = []
+        if self.primary and self.primary.get("api_key"):
+            providers_to_try.append(("primary", self.primary))
+        if self.fallback and self.fallback.get("api_key"):
+            providers_to_try.append(("fallback", self.fallback))
+
+        if not providers_to_try:
+            default_model = _format_model_string(settings.LLM_PROVIDER, settings.LLM_MODEL) or "groq/llama-3.3-70b-versatile"
+            providers_to_try.append(("primary", {"model": default_model, "api_key": settings.LLM_API_KEY}))
+
+        errors = []
+        max_attempts_per_provider = 2
+
+        for provider_name, provider_config in providers_to_try:
+            for attempt in range(1, max_attempts_per_provider + 1):
                 try:
-                    response, duration_ms = await self._invoke_with_retry(litellm_messages, self.fallback, temperature)
-                    used_fallback = True
-                    provider_used = self.fallback["model"].split("/")[0]
-                except Exception as fallback_error:
-                    raise LLMGenerationError("LLM provider error occurred") from fallback_error
-            else:
-                raise LLMGenerationError("LLM provider error occurred") from primary_error
+                    start_time = time.perf_counter()
+                    response = await litellm.acompletion(
+                        messages=litellm_messages,
+                        temperature=temperature,
+                        timeout=settings.LLM_TIMEOUT_SECONDS,
+                        **provider_config
+                    )
+                    duration_ms = (time.perf_counter() - start_time) * 1000
+                    used_fallback = (provider_name == "fallback")
+                    provider_used = provider_config["model"].split("/")[0]
 
-        if hasattr(response, "usage") and response.usage:
-            prompt_tokens = getattr(response.usage, "prompt_tokens", 0)
-            completion_tokens = getattr(response.usage, "completion_tokens", 0)
-        else:
-            prompt_tokens = 0
-            completion_tokens = 0
+                    prompt_tokens = 0
+                    completion_tokens = 0
+                    if hasattr(response, "usage") and response.usage:
+                        prompt_tokens = getattr(response.usage, "prompt_tokens", 0)
+                        completion_tokens = getattr(response.usage, "completion_tokens", 0)
 
-        return LLMResponse(
-            content=response.choices[0].message.content,
-            model=response.model,
-            provider=provider_used,
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            generation_ms=duration_ms,
-            used_fallback=used_fallback
-        )
+                    resp_model = getattr(response, "model", None) or provider_config["model"]
+
+                    return LLMResponse(
+                        content=response.choices[0].message.content,
+                        model=resp_model,
+                        provider=provider_used,
+                        prompt_tokens=prompt_tokens,
+                        completion_tokens=completion_tokens,
+                        generation_ms=duration_ms,
+                        used_fallback=used_fallback
+                    )
+                except Exception as exc:
+                    err_msg = str(exc)
+                    logger.warning(
+                        "llm_provider_attempt_failed",
+                        provider=provider_name,
+                        model=provider_config["model"],
+                        attempt=attempt,
+                        error=err_msg
+                    )
+                    errors.append(f"[{provider_name}:{provider_config['model']} attempt {attempt}] {err_msg}")
+                    
+                    if attempt < max_attempts_per_provider:
+                        await asyncio.sleep(0.2 * attempt)
+
+        summary_error = "; ".join(errors)
+        logger.error("all_llm_providers_failed", summary=summary_error)
+        raise LLMGenerationError(f"LLM provider error occurred: {summary_error}")
 
 llm_client = LLMClient()
+
