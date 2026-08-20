@@ -274,7 +274,7 @@ export class AgentService {
         try {
           const batchResult = await this.aimlService.triggerBatchFollowup({
             invoices: followupRequests,
-            concurrency: 5,
+            concurrency: 2,
           });
 
           for (const res of batchResult.results) {

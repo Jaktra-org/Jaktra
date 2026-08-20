@@ -176,7 +176,7 @@ export class AimlService {
         installment_number: invoice.installmentNumber ?? null,
         total_installments: invoice.totalInstallments ?? null,
       })),
-      concurrency: request.concurrency ?? 5,
+      concurrency: request.concurrency ?? 2,
     };
 
     const raw = await this.request<{
