@@ -4,6 +4,7 @@ from typing import Optional, Literal
 from src.api.services.content_generator import ContentGenerator
 from src.prompt_registry import registry
 from src.llm_client import llm_client
+from src.api.config import settings
 import asyncio
 import time
 
@@ -128,11 +129,14 @@ async def generate_followup(request: FollowupRequest):
         )
     )
 
-async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Semaphore) -> dict:
+async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Semaphore, delay: float = 0.0) -> dict:
     from src.exceptions import LLMGenerationError, OutputValidationError, PromptInjectionDetectedError
     from src.api.routes.health import stats
     from src.api.logging import logger
     
+    if delay > 0:
+        await asyncio.sleep(delay)
+
     async with sem:
         stats["is_processing"] = True
         start_time = time.perf_counter()
@@ -226,10 +230,11 @@ async def generate_followup_batch(request: BatchFollowupRequest):
     if request.concurrency < 1 or request.concurrency > 10:
         raise HTTPException(status_code=400, detail="Invalid concurrency. Must be between 1 and 10.")
         
-    sem = asyncio.Semaphore(request.concurrency)
+    effective_concurrency = min(request.concurrency, settings.MAX_CONCURRENT_LLM_CALLS)
+    sem = asyncio.Semaphore(effective_concurrency)
     start_time = time.perf_counter()
     
-    tasks = [_process_invoice_for_batch(inv, sem) for inv in request.invoices]
+    tasks = [_process_invoice_for_batch(inv, sem, delay=idx * 0.15) for idx, inv in enumerate(request.invoices)]
     results_raw = await asyncio.gather(*tasks)
     
     results = []
