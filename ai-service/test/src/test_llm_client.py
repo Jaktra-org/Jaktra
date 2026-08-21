@@ -128,8 +128,8 @@ async def test_llm_client_intentional_groq_failure_triggers_gemini_fallback(mock
     )
     gemini_resp = mock_litellm_completion.create_response(content="Gemini fallback generated payment reminder", model="gemini-3.6-flash")
 
-    # Groq fails on attempt 1 & 2, then Gemini fallback succeeds on attempt 1
-    mock_litellm_completion.side_effect = [groq_err, groq_err, gemini_resp]
+    # Groq fails on primary auth error, then Gemini fallback succeeds on attempt 1
+    mock_litellm_completion.side_effect = [groq_err, gemini_resp]
 
     with patch("asyncio.sleep", new_callable=AsyncMock):
         response = await client.generate(["Generate invoice reminder"])

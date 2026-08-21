@@ -6,13 +6,16 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     SERVICE_HOST: str = "0.0.0.0"
     SERVICE_PORT: int = 8000
-    SERVICE_KEY: str = Field(default="dev-service-key-placeholder", alias="SERVICE_KEY")
+    SERVICE_KEY: str = Field(
+        default="dev-service-key-placeholder",
+        validation_alias=AliasChoices("SERVICE_KEY", "AI_ML_SERVICE_KEY")
+    )
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "json"
 
     LLM_PROVIDER: str = "groq"
-    LLM_MODEL: str = "llama-3.3-70b-versatile"
-    LLM_API_KEY: str = Field(default="gsk_placeholder_key", alias="LLM_API_KEY")
+    LLM_MODEL: str = "llama-3.1-8b-instant"
+    LLM_API_KEY: str = Field(default="", alias="LLM_API_KEY")
     LLM_TEMPERATURE: float = 0.4
     LLM_MAX_TOKENS: int = 1024
     LLM_TIMEOUT_SECONDS: int = 30

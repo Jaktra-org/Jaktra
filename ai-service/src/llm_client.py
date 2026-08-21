@@ -20,11 +20,12 @@ class LLMResponse:
 def _format_model_string(provider: str | None, model: str | None) -> str | None:
     if not model:
         return None
-    if "/" in model:
-        return model
+    model_str = model.strip()
     if provider:
-        return f"{provider}/{model}"
-    return model
+        p = provider.strip().lower()
+        if not model_str.startswith(f"{p}/"):
+            return f"{p}/{model_str}"
+    return model_str
 
 class LLMClient:
     def __init__(self):
@@ -125,8 +126,15 @@ class LLMClient:
                     )
                     errors.append(f"[{provider_name}:{provider_config['model']} attempt {attempt}] {err_msg}")
                     
+                    # If authentication/invalid key error, don't waste retries on this provider
+                    err_msg_lower = err_msg.lower()
+                    if any(k in err_msg_lower for k in ["authenticationerror", "incorrect api key", "invalid api key", "invalid_api_key"]):
+                        break
+
                     if attempt < max_attempts_per_provider:
-                        await asyncio.sleep(0.2 * attempt)
+                        # Longer backoff for rate limits
+                        sleep_time = 2.0 if ("RateLimitError" in err_msg or "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg) else (0.2 * attempt)
+                        await asyncio.sleep(sleep_time)
 
         summary_error = "; ".join(errors)
         logger.error("all_llm_providers_failed", summary=summary_error)

@@ -171,11 +171,12 @@ function getEventInfo(event: EventItem) {
   const tone = safeStr(payload.tone || payload.toneSource);
   const reason = safeStr(payload.reason);
   const rawDescription = safeStr(payload.description || event?.eventType);
+  const errorStr = safeStr(payload.error || payload.errorMessage);
 
   let description: string;
   let statusText: string;
   let statusCategory: 'sent' | 'halted' | 'skipped';
-  let haltedReasonCategory: 'legal' | 'invalid_email' | 'skipped_policy' | 'other_error' = 'other_error';
+  let haltedReasonCategory: 'legal' | 'invalid_email' | 'skipped_policy' | 'ai_error' | 'other_error' = 'other_error';
 
   if (eventType === 'email_sent' || eventType === 'email_generated' || eventType.includes('sent')) {
     statusText = 'Email Sent';
@@ -200,6 +201,11 @@ function getEventInfo(event: EventItem) {
     } else if (reason === 'mail_invalid' || rawDescription.includes('invalid') || rawDescription.includes('mail invalid')) {
       haltedReasonCategory = 'invalid_email';
       description = `Halted: Invalid recipient email address${recipientStr}.`;
+    } else if (errorStr.includes('llm') || errorStr.includes('ratelimit') || errorStr.includes('quota') || errorStr.includes('429') || errorStr.includes('authentication') || errorStr.includes('provider') || errorStr.includes('key')) {
+      haltedReasonCategory = 'ai_error';
+      description = errorStr.includes('authentication') || errorStr.includes('key')
+        ? `Halted: AI provider API key error (Groq/Gemini).`
+        : `Halted: AI service rate limit / provider quota exceeded.`;
     } else if (reason === 'max_reminders_exceeded') {
       haltedReasonCategory = 'skipped_policy';
       description = `Halted: Maximum automated reminder limit reached.`;
@@ -322,7 +328,7 @@ function EventGroupSection({
 }
 
 function RunDetailsPanel({ run }: { run: AgentRun }) {
-  const [filter, setFilter] = useState<'all' | 'sent' | 'legal' | 'invalid_email' | 'skipped'>('all');
+  const [filter, setFilter] = useState<'all' | 'sent' | 'legal' | 'invalid_email' | 'skipped' | 'ai_error'>('all');
   const { data, isLoading, error } = useQuery({
     queryKey: ['agent-run-details', run.id],
     queryFn: () => agentService.getRunDetails(run.id),
@@ -369,6 +375,7 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
   const legalHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'legal');
   const invalidEmailHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'invalid_email');
   const skippedPolicyHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'skipped_policy');
+  const aiHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'ai_error');
   const otherErrorsHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'other_error');
 
   return (
@@ -403,6 +410,14 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
               className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'invalid_email' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
             >
               Invalid Email ({invalidEmailHalted.length})
+            </button>
+          )}
+          {aiHalted.length > 0 && (
+            <button
+              onClick={() => setFilter('ai_error')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'ai_error' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+            >
+              AI Errors ({aiHalted.length})
             </button>
           )}
           {skippedPolicyHalted.length > 0 && (
@@ -441,6 +456,15 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
           icon={AlertTriangle}
           colorClass="text-rose-400"
           events={invalidEmailHalted}
+        />
+      )}
+
+      {(filter === 'all' || filter === 'ai_error') && (
+        <EventGroupSection
+          title="AI Generation Service Errors"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={aiHalted}
         />
       )}
 
