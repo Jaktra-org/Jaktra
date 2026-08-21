@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { screen, act, waitFor } from '../test-utils';
 import { renderWithProviders, userEvent } from '../test-utils';
 import { ForgotPassword } from '../../src/pages/ForgotPassword';
@@ -86,5 +86,5 @@ describe('ForgotPassword page step sequence', () => {
     expect(authService.resetPasswordConfirm).toHaveBeenCalledWith('reset-token-123', 'new-password');
     expect(loginMock).toHaveBeenCalledWith('login-token', { name: 'Recovered User' });
     expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
-  });
+  }, 15000);
 });

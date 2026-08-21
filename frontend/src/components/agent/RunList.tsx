@@ -149,6 +149,16 @@ function getEventInfo(event: EventItem) {
   
   const rawNum = payload.invoiceNo || payload.invoiceNumber || payload.number || (event as Record<string, unknown>).invoiceNo || (event as Record<string, unknown>).invoiceNumber;
   let invoiceNumber: string | undefined = typeof rawNum === 'string' && rawNum ? rawNum : undefined;
+
+  // Regex fallback: extract e.g. "INV-1000" or "INV-1002" from email subject or message text
+  if (!invoiceNumber) {
+    const textToSearch = `${payload.subject || ''} ${payload.message || ''} ${payload.description || ''}`;
+    const match = textToSearch.match(/(INV-\d+|INV-[A-Za-z0-9-]+)/i);
+    if (match && match[1]) {
+      invoiceNumber = match[1].toUpperCase();
+    }
+  }
+
   if (!invoiceNumber && !isSystem && rawInvoiceId) {
     invoiceNumber = rawInvoiceId.length > 8 ? `INV-${rawInvoiceId.substring(0, 6).toUpperCase()}` : `INV-${rawInvoiceId}`;
   }
@@ -249,12 +259,20 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
   }
 
   const events = Array.isArray(data.events) ? data.events : [];
+  const invoiceEvents = events.filter(e => {
+    const rawId = e.invoiceId || e.entityId || (e.payload && typeof e.payload === 'object' ? (e.payload as Record<string, unknown>).invoiceId : undefined);
+    const evtType = (e.eventType || '').toLowerCase();
+    return typeof rawId === 'string' && rawId.toLowerCase() !== 'system' && !evtType.includes('run') && !evtType.includes('trigger');
+  });
 
-  if (events.length === 0) {
+  if (invoiceEvents.length === 0) {
     return (
-      <div className="text-[#8a8f98] text-xs py-4 flex items-center">
-        <Info className="w-4 h-4 mr-2 text-[#5e6ad2]" />
-        No actions were taken during this run (no overdue invoices or all skipped).
+      <div>
+        <ChunkBreakdown runId={run.id} />
+        <div className="text-[#8a8f98] text-xs py-4 flex items-center border-t border-[#23252a] mt-2">
+          <Info className="w-4 h-4 mr-2 text-[#5e6ad2]" />
+          No invoice actions were recorded during this run.
+        </div>
       </div>
     );
   }
@@ -264,7 +282,7 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
       <ChunkBreakdown runId={run.id} />
       <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider mb-2.5 mt-4">Invoice Processing Breakdown</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {events.map((event, idx) => {
+        {invoiceEvents.map((event, idx) => {
           const { rawInvoiceId, invoiceNumber, isSystem, description, statusText, badgeVariant, subject } = getEventInfo(event);
 
           return (

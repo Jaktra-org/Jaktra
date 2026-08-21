@@ -703,7 +703,7 @@ export class AgentService {
     const nonInvoiceEvents: typeof events = [];
 
     for (const event of events) {
-      if (!event.entityId) {
+      if (!event.entityId || event.entityId === 'system') {
         nonInvoiceEvents.push(event);
         continue;
       }
@@ -718,9 +718,40 @@ export class AgentService {
       ...nonInvoiceEvents
     ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
+    // Enrich events with invoiceNo from database
+    const invoiceIds = Array.from(new Set(
+      sortedEvents
+        .map(e => e.entityId || (e.payload as Record<string, unknown> | undefined)?.invoiceId as string | undefined)
+        .filter((id): id is string => Boolean(id && id !== 'system'))
+    ));
+
+    const invoiceNoMap = new Map<string, string>();
+    if (invoiceIds.length > 0 && typeof this.invoiceRepo?.findByIds === 'function') {
+      const matchedInvoices = await this.invoiceRepo.findByIds(invoiceIds, tenantId);
+      for (const inv of matchedInvoices) {
+        invoiceNoMap.set(inv.id, inv.invoiceNo);
+      }
+    }
+
+    const enrichedEvents = sortedEvents.map(event => {
+      const invId = event.entityId || (event.payload as Record<string, unknown> | undefined)?.invoiceId as string | undefined;
+      const invNo = invId ? invoiceNoMap.get(invId) : undefined;
+      if (!invNo) return event;
+
+      const payload = (event.payload && typeof event.payload === 'object' ? event.payload : {}) as Record<string, unknown>;
+      return {
+        ...event,
+        payload: {
+          ...payload,
+          invoiceNo: payload.invoiceNo || invNo,
+          invoiceNumber: payload.invoiceNumber || invNo,
+        }
+      };
+    });
+
     return {
       ...run,
-      events: sortedEvents
+      events: enrichedEvents
     };
   }
 }

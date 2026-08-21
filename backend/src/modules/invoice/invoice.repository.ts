@@ -36,6 +36,14 @@ export class InvoiceRepository {
     return rows[0];
   }
 
+  async findByIds(ids: string[], tenantId: string): Promise<Invoice[]> {
+    if (!ids || ids.length === 0) return [];
+    return this.db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.tenantId, tenantId), inArray(invoices.id, ids)));
+  }
+
   async updateFollowupCount(invoiceId: string, count: number): Promise<void> {
     await this.db
       .update(invoices)
