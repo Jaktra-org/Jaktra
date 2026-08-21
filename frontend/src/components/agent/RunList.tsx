@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { agentService } from '../../services/agent';
-import type { AgentRun, AgentRunChunk, AgentRunChunksResponse } from '../../types/api';
+import type { AgentRun } from '../../types/api';
 import { ChevronDown, ChevronUp, Clock, AlertTriangle, Send, FileText, Loader2, Info, Bot } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { Link } from 'react-router-dom';
@@ -175,6 +175,7 @@ function getEventInfo(event: EventItem) {
   let description: string;
   let statusText: string;
   let statusCategory: 'sent' | 'halted' | 'skipped';
+  let haltedReasonCategory: 'legal' | 'invalid_email' | 'skipped_policy' | 'other_error' = 'other_error';
 
   if (eventType === 'email_sent' || eventType === 'email_generated' || eventType.includes('sent')) {
     statusText = 'Email Sent';
@@ -194,19 +195,25 @@ function getEventInfo(event: EventItem) {
     statusCategory = 'halted';
 
     if (reason === 'no_automated_channel' || rawDescription.includes('no_automated_channel') || rawDescription.includes('legal escalation')) {
+      haltedReasonCategory = 'legal';
       description = `Halted: Manual legal escalation required${recipientStr}.`;
     } else if (reason === 'mail_invalid' || rawDescription.includes('invalid') || rawDescription.includes('mail invalid')) {
+      haltedReasonCategory = 'invalid_email';
       description = `Halted: Invalid recipient email address${recipientStr}.`;
     } else if (reason === 'max_reminders_exceeded') {
+      haltedReasonCategory = 'skipped_policy';
       description = `Halted: Maximum automated reminder limit reached.`;
     } else if (reason) {
+      haltedReasonCategory = 'other_error';
       description = `Halted: ${reason.replace(/_/g, ' ')}${recipientStr}.`;
     } else {
+      haltedReasonCategory = 'other_error';
       description = `Halted: Automated safeguard rule triggered${recipientStr}.`;
     }
   } else if (eventType.includes('skip') || reason.includes('skip') || reason.includes('plan') || reason.includes('dispute')) {
     statusText = 'Skipped';
     statusCategory = 'skipped';
+    haltedReasonCategory = 'skipped_policy';
 
     if (reason === 'payment_plan_active') {
       description = `Skipped: Active payment plan in effect.`;
@@ -220,6 +227,7 @@ function getEventInfo(event: EventItem) {
   } else {
     statusText = eventType.replace(/_/g, ' ');
     statusCategory = 'skipped';
+    haltedReasonCategory = 'other_error';
     description = payload.subject || payload.message || `Processed event ${eventType}.`;
   }
 
@@ -230,16 +238,95 @@ function getEventInfo(event: EventItem) {
     description,
     statusText,
     statusCategory,
+    haltedReasonCategory,
     subject: payload.subject,
   };
 }
 
+function EventGroupSection({
+  title,
+  icon: Icon,
+  colorClass,
+  events,
+  initialLimit = 4,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  colorClass: string;
+  events: EventItem[];
+  initialLimit?: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  if (!events || events.length === 0) return null;
+
+  const visibleEvents = expanded ? events : events.slice(0, initialLimit);
+  const remainingCount = events.length - initialLimit;
+
+  return (
+    <div className="mb-4">
+      <div className={`flex items-center gap-2 mb-2 text-xs font-semibold ${colorClass}`}>
+        <Icon className="w-3.5 h-3.5" />
+        <span>{title} ({events.length})</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {visibleEvents.map((event, idx) => {
+          const { rawInvoiceId, invoiceNumber, isSystem, description } = getEventInfo(event);
+          const timeStr = event.createdAt && !isNaN(new Date(event.createdAt).getTime())
+            ? new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '';
+
+          return (
+            <div
+              key={idx}
+              className="flex items-center justify-between gap-3 px-3 py-2 border border-[#23252a] rounded-lg bg-[#0f1011] hover:border-[#34343a] transition-all text-xs"
+            >
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {!isSystem && rawInvoiceId ? (
+                  <Link
+                    to={`/invoices/${rawInvoiceId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-semibold text-[#5e6ad2] hover:text-[#828fff] hover:underline flex items-center gap-1.5 flex-shrink-0"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#5e6ad2]" />
+                    <span>{invoiceNumber}</span>
+                  </Link>
+                ) : (
+                  <span className="font-semibold text-[#8a8f98] flex items-center gap-1.5 flex-shrink-0">
+                    <Bot className="w-3.5 h-3.5 text-[#8a8f98]" />
+                    <span>System</span>
+                  </span>
+                )}
+                <span className="text-[#d0d6e0] truncate" title={description}>
+                  {description}
+                </span>
+              </div>
+              {timeStr && (
+                <span className="text-[10px] text-[#8a8f98] font-mono flex-shrink-0">
+                  {timeStr}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {remainingCount > 0 && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-1.5 text-[11px] font-medium text-[#5e6ad2] hover:text-[#828fff] hover:underline flex items-center gap-1"
+        >
+          {expanded ? 'Show less' : `+ Show ${remainingCount} more items`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function RunDetailsPanel({ run }: { run: AgentRun }) {
-  const [filter, setFilter] = useState<'all' | 'sent' | 'halted'>('all');
+  const [filter, setFilter] = useState<'all' | 'sent' | 'legal' | 'invalid_email' | 'skipped'>('all');
   const { data, isLoading, error } = useQuery({
     queryKey: ['agent-run-details', run.id],
     queryFn: () => agentService.getRunDetails(run.id),
-    staleTime: 60000, // Cache for 1 min
+    staleTime: 60000,
   });
 
   if (isLoading) {
@@ -269,83 +356,25 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
 
   if (invoiceEvents.length === 0) {
     return (
-      <div>
-        <ChunkBreakdown runId={run.id} />
-        <div className="text-[#8a8f98] text-xs py-4 flex items-center border-t border-[#23252a] mt-2">
-          <Info className="w-4 h-4 mr-2 text-[#5e6ad2]" />
-          No invoice actions were recorded during this run.
-        </div>
+      <div className="text-[#8a8f98] text-xs py-4 flex items-center border-t border-[#23252a] mt-2">
+        <Info className="w-4 h-4 mr-2 text-[#5e6ad2]" />
+        No invoice actions were recorded during this run.
       </div>
     );
   }
 
   const sentEvents = invoiceEvents.filter(e => getEventInfo(e).statusCategory === 'sent');
   const haltedEvents = invoiceEvents.filter(e => getEventInfo(e).statusCategory !== 'sent');
-
-  const renderCard = (event: EventItem, idx: number) => {
-    const { rawInvoiceId, invoiceNumber, isSystem, description, statusCategory, statusText, subject } = getEventInfo(event);
-
-    return (
-      <div key={idx} className="flex flex-col justify-between p-3.5 border border-[#23252a] rounded-xl bg-[#0f1011] hover:border-[#34343a] transition-all">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          {!isSystem && rawInvoiceId ? (
-            <Link
-              to={`/invoices/${rawInvoiceId}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs font-semibold text-[#5e6ad2] hover:text-[#828fff] hover:underline truncate flex items-center gap-1.5"
-            >
-              <FileText className="w-3.5 h-3.5 text-[#5e6ad2] flex-shrink-0" />
-              <span className="truncate">{invoiceNumber}</span>
-            </Link>
-          ) : (
-            <span className="text-xs font-semibold text-[#8a8f98] flex items-center gap-1.5">
-              <Bot className="w-3.5 h-3.5 text-[#8a8f98] flex-shrink-0" />
-              <span>System Event</span>
-            </span>
-          )}
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {statusCategory === 'sent' ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {statusText}
-              </span>
-            ) : statusCategory === 'halted' ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                {statusText}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                {statusText}
-              </span>
-            )}
-            <span className="text-[10px] text-[#8a8f98] font-mono">
-              {event.createdAt && !isNaN(new Date(event.createdAt).getTime()) ? new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-            </span>
-          </div>
-        </div>
-
-        <p className="text-xs text-[#d0d6e0] leading-relaxed">
-          {description}
-        </p>
-
-        {subject && (
-          <div className="mt-2 text-[11px] text-[#8a8f98] italic truncate border-t border-[#1e2025] pt-1.5">
-            Subject: "{subject}"
-          </div>
-        )}
-      </div>
-    );
-  };
+  
+  const legalHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'legal');
+  const invalidEmailHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'invalid_email');
+  const skippedPolicyHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'skipped_policy');
+  const otherErrorsHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'other_error');
 
   return (
     <div>
-      <ChunkBreakdown runId={run.id} />
-      
       {/* Header and Filter Tabs */}
-      <div className="flex items-center justify-between mt-5 mb-3 border-t border-[#23252a] pt-4">
+      <div className="flex items-center justify-between mb-3 border-t border-[#23252a] pt-3">
         <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider">Invoice Processing Breakdown</h4>
         <div className="flex items-center gap-1 bg-[#141516] p-0.5 rounded-lg border border-[#23252a]">
           <button
@@ -360,82 +389,78 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
           >
             Emails Sent ({sentEvents.length})
           </button>
-          <button
-            onClick={() => setFilter('halted')}
-            className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'halted' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
-          >
-            Halted & Skipped ({haltedEvents.length})
-          </button>
+          {legalHalted.length > 0 && (
+            <button
+              onClick={() => setFilter('legal')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'legal' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+            >
+              Legal Action ({legalHalted.length})
+            </button>
+          )}
+          {invalidEmailHalted.length > 0 && (
+            <button
+              onClick={() => setFilter('invalid_email')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'invalid_email' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+            >
+              Invalid Email ({invalidEmailHalted.length})
+            </button>
+          )}
+          {skippedPolicyHalted.length > 0 && (
+            <button
+              onClick={() => setFilter('skipped')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'skipped' ? 'bg-amber-500/20 text-amber-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+            >
+              Skipped ({skippedPolicyHalted.length})
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Grouped View */}
-      {(filter === 'all' || filter === 'sent') && sentEvents.length > 0 && (
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-2 text-xs font-medium text-emerald-400">
-            <Send className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Emails Sent ({sentEvents.length})</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {sentEvents.map((event, idx) => renderCard(event, idx))}
-          </div>
-        </div>
+      {/* Sub-Grouped Event Lists */}
+      {(filter === 'all' || filter === 'sent') && (
+        <EventGroupSection
+          title="Emails Sent"
+          icon={Send}
+          colorClass="text-emerald-400"
+          events={sentEvents}
+        />
       )}
 
-      {(filter === 'all' || filter === 'halted') && haltedEvents.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-2 text-xs font-medium text-rose-400">
-            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-            <span>Halted & Skipped Invoices ({haltedEvents.length})</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {haltedEvents.map((event, idx) => renderCard(event, idx))}
-          </div>
-        </div>
+      {(filter === 'all' || filter === 'legal') && (
+        <EventGroupSection
+          title="Manual Legal Escalation Required"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={legalHalted}
+        />
       )}
-    </div>
-  );
-}
 
-function ChunkBreakdown({ runId }: { runId: string }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['agent-run-chunks', runId],
-    queryFn: () => agentService.getRunChunks(runId),
-    refetchInterval: (query) => {
-      const data = query.state.data as AgentRunChunksResponse | undefined;
-      const chunks = data?.chunks || [];
-      const hasActive = chunks.some((c: AgentRunChunk) => c.status === 'running' || c.status === 'queued');
-      return hasActive ? 3000 : false;
-    },
-  });
+      {(filter === 'all' || filter === 'invalid_email') && (
+        <EventGroupSection
+          title="Invalid Recipient Email"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={invalidEmailHalted}
+        />
+      )}
 
-  if (isLoading) return <div className="text-xs text-[#8a8f98]">Loading chunk execution details...</div>;
-  if (!data?.chunks || data.chunks.length === 0) return null;
+      {(filter === 'all' || filter === 'skipped') && (
+        <EventGroupSection
+          title="Skipped by Policy Rules"
+          icon={Info}
+          colorClass="text-amber-400"
+          events={skippedPolicyHalted}
+        />
+      )}
 
-  return (
-    <div className="mb-3">
-      <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider mb-2">Chunk Processing Details</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
-        {data.chunks.map((chunk: AgentRunChunk) => (
-          <div key={chunk.id} className="flex items-center justify-between text-xs border border-[#23252a] bg-[#0f1011] p-2.5 rounded-xl hover:border-[#34343a] transition-all">
-            <div className="flex items-center gap-2">
-              <Badge variant={
-                chunk.status === 'completed' ? 'success' :
-                chunk.status === 'running' ? 'warning' :
-                chunk.status === 'failed' ? 'danger' : 'default'
-              }>
-                {chunk.status}
-              </Badge>
-              <span className="font-semibold text-[#f7f8f8]">Chunk #{chunk.chunkIndex + 1} of {chunk.totalChunks}</span>
-            </div>
-            <div className="text-[#8a8f98] flex items-center gap-2 text-[11px]">
-              <span>Processed: <strong className="text-[#f7f8f8]">{chunk.invoicesProcessed}</strong></span>
-              <span>Sent: <strong className="text-[#f7f8f8]">{chunk.emailsSent}</strong></span>
-              {chunk.errors > 0 && <span className="text-red-400 font-semibold">Errors: {chunk.errors}</span>}
-            </div>
-          </div>
-        ))}
-      </div>
+      {filter === 'all' && (
+        <EventGroupSection
+          title="Other Safeguard Errors"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={otherErrorsHalted}
+        />
+      )}
     </div>
   );
 }
