@@ -164,61 +164,62 @@ function getEventInfo(event: EventItem) {
   }
 
   const eventType = (event?.eventType || '').toLowerCase();
+  const recipient = (typeof payload.recipient === 'string' ? payload.recipient : '') || (typeof payload.recipientEmail === 'string' ? payload.recipientEmail : '') || (typeof payload.email === 'string' ? payload.email : '');
+  const recipientStr = recipient ? ` (${recipient})` : '';
 
-  // 2. Format human-readable summary & status tag
+  const safeStr = (val: unknown) => (typeof val === 'string' ? val.toLowerCase() : '');
+  const tone = safeStr(payload.tone || payload.toneSource);
+  const reason = safeStr(payload.reason);
+  const rawDescription = safeStr(payload.description || event?.eventType);
+
   let description: string;
   let statusText: string;
-  let badgeVariant: 'success' | 'warning' | 'danger' | 'default';
+  let statusCategory: 'sent' | 'halted' | 'skipped';
 
-  const recipient = payload.recipient || payload.recipientEmail || payload.email || '';
-  const recipientStr = recipient ? ` to ${recipient}` : '';
-  const tone = (payload.tone || payload.toneSource || '').toLowerCase();
-  const reason = (payload.reason || '').toLowerCase();
-  const tier = (payload.tier || '').toLowerCase();
-
-  if (eventType === 'email_sent' || eventType === 'email_generated') {
+  if (eventType === 'email_sent' || eventType === 'email_generated' || eventType.includes('sent')) {
     statusText = 'Email Sent';
-    badgeVariant = 'success';
-    
-    let toneDescription = 'follow-up email';
+    statusCategory = 'sent';
+
     if (tone.includes('stern') || tone.includes('stage_4') || tone.includes('stage_3') || tone.includes('urgent')) {
-      toneDescription = 'firm & stern reminder email';
+      description = `Sent firm notice regarding overdue payment${recipientStr}.`;
     } else if (tone.includes('warm') || tone.includes('friendly') || tone.includes('stage_1') || tone.includes('stage_2')) {
-      toneDescription = 'friendly reminder email';
+      description = `Sent friendly payment reminder${recipientStr}.`;
     } else if (tone.includes('legal') || tone.includes('escalation')) {
-      toneDescription = 'serious escalation notice';
-    }
-
-    description = `A ${toneDescription} was dispatched${recipientStr}.`;
-  } else if (eventType === 'halted' || eventType === 'failed' || eventType === 'error') {
-    statusText = eventType === 'halted' ? 'Halted' : 'Failed';
-    badgeVariant = 'danger';
-
-    let reasonText: string;
-    if (reason === 'no_automated_channel') {
-      reasonText = 'No automated communication channel configured';
-    } else if (reason === 'payment_plan_active') {
-      reasonText = 'Active payment plan currently in effect';
-    } else if (reason === 'dispute_open') {
-      reasonText = 'Open invoice dispute under review';
-    } else if (reason === 'max_reminders_exceeded') {
-      reasonText = 'Maximum reminder limit reached';
-    } else if (reason) {
-      reasonText = reason.replace(/_/g, ' ');
+      description = `Sent serious escalation notice${recipientStr}.`;
     } else {
-      reasonText = 'Processing halted by safety rules';
+      description = `Sent follow-up email${recipientStr}.`;
     }
+  } else if (eventType === 'halted' || eventType === 'failed' || eventType === 'error' || eventType.includes('halt') || eventType.includes('fail')) {
+    statusText = 'Halted';
+    statusCategory = 'halted';
 
-    const tierStr = tier ? ` (${tier.replace(/_/g, ' ')})` : '';
-    description = `${reasonText}${tierStr}${recipientStr}.`;
-  } else if (eventType.includes('run') || eventType.includes('trigger')) {
-    statusText = 'Triggered';
-    badgeVariant = 'default';
-    const source = payload.triggeredBy || payload.source || 'manual';
-    description = `Autopilot execution triggered (${source}).`;
+    if (reason === 'no_automated_channel' || rawDescription.includes('no_automated_channel') || rawDescription.includes('legal escalation')) {
+      description = `Halted: Manual legal escalation required${recipientStr}.`;
+    } else if (reason === 'mail_invalid' || rawDescription.includes('invalid') || rawDescription.includes('mail invalid')) {
+      description = `Halted: Invalid recipient email address${recipientStr}.`;
+    } else if (reason === 'max_reminders_exceeded') {
+      description = `Halted: Maximum automated reminder limit reached.`;
+    } else if (reason) {
+      description = `Halted: ${reason.replace(/_/g, ' ')}${recipientStr}.`;
+    } else {
+      description = `Halted: Automated safeguard rule triggered${recipientStr}.`;
+    }
+  } else if (eventType.includes('skip') || reason.includes('skip') || reason.includes('plan') || reason.includes('dispute')) {
+    statusText = 'Skipped';
+    statusCategory = 'skipped';
+
+    if (reason === 'payment_plan_active') {
+      description = `Skipped: Active payment plan in effect.`;
+    } else if (reason === 'dispute_open') {
+      description = `Skipped: Open dispute under review.`;
+    } else if (reason === 'idempotency_skip') {
+      description = `Skipped: Follow-up already sent recently.`;
+    } else {
+      description = `Skipped by safety policy rules.`;
+    }
   } else {
     statusText = eventType.replace(/_/g, ' ');
-    badgeVariant = 'default';
+    statusCategory = 'skipped';
     description = payload.subject || payload.message || `Processed event ${eventType}.`;
   }
 
@@ -228,12 +229,13 @@ function getEventInfo(event: EventItem) {
     isSystem,
     description,
     statusText,
-    badgeVariant,
+    statusCategory,
     subject: payload.subject,
   };
 }
 
 function RunDetailsPanel({ run }: { run: AgentRun }) {
+  const [filter, setFilter] = useState<'all' | 'sent' | 'halted'>('all');
   const { data, isLoading, error } = useQuery({
     queryKey: ['agent-run-details', run.id],
     queryFn: () => agentService.getRunDetails(run.id),
@@ -277,56 +279,120 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
     );
   }
 
+  const sentEvents = invoiceEvents.filter(e => getEventInfo(e).statusCategory === 'sent');
+  const haltedEvents = invoiceEvents.filter(e => getEventInfo(e).statusCategory !== 'sent');
+
+  const renderCard = (event: EventItem, idx: number) => {
+    const { rawInvoiceId, invoiceNumber, isSystem, description, statusCategory, statusText, subject } = getEventInfo(event);
+
+    return (
+      <div key={idx} className="flex flex-col justify-between p-3.5 border border-[#23252a] rounded-xl bg-[#0f1011] hover:border-[#34343a] transition-all">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          {!isSystem && rawInvoiceId ? (
+            <Link
+              to={`/invoices/${rawInvoiceId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs font-semibold text-[#5e6ad2] hover:text-[#828fff] hover:underline truncate flex items-center gap-1.5"
+            >
+              <FileText className="w-3.5 h-3.5 text-[#5e6ad2] flex-shrink-0" />
+              <span className="truncate">{invoiceNumber}</span>
+            </Link>
+          ) : (
+            <span className="text-xs font-semibold text-[#8a8f98] flex items-center gap-1.5">
+              <Bot className="w-3.5 h-3.5 text-[#8a8f98] flex-shrink-0" />
+              <span>System Event</span>
+            </span>
+          )}
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {statusCategory === 'sent' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {statusText}
+              </span>
+            ) : statusCategory === 'halted' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                {statusText}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                {statusText}
+              </span>
+            )}
+            <span className="text-[10px] text-[#8a8f98] font-mono">
+              {event.createdAt && !isNaN(new Date(event.createdAt).getTime()) ? new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+            </span>
+          </div>
+        </div>
+
+        <p className="text-xs text-[#d0d6e0] leading-relaxed">
+          {description}
+        </p>
+
+        {subject && (
+          <div className="mt-2 text-[11px] text-[#8a8f98] italic truncate border-t border-[#1e2025] pt-1.5">
+            Subject: "{subject}"
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div>
       <ChunkBreakdown runId={run.id} />
-      <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider mb-2.5 mt-4">Invoice Processing Breakdown</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {invoiceEvents.map((event, idx) => {
-          const { rawInvoiceId, invoiceNumber, isSystem, description, statusText, badgeVariant, subject } = getEventInfo(event);
-
-          return (
-            <div key={idx} className="flex flex-col justify-between p-3.5 border border-[#23252a] rounded-xl bg-[#0f1011] hover:border-[#34343a] transition-all">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                {!isSystem && rawInvoiceId ? (
-                  <Link
-                    to={`/invoices/${rawInvoiceId}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-xs font-semibold text-[#5e6ad2] hover:text-[#828fff] hover:underline truncate flex items-center gap-1.5"
-                  >
-                    <FileText className="w-3.5 h-3.5 text-[#5e6ad2] flex-shrink-0" />
-                    <span className="truncate">{invoiceNumber}</span>
-                  </Link>
-                ) : (
-                  <span className="text-xs font-semibold text-[#8a8f98] flex items-center gap-1.5">
-                    <Bot className="w-3.5 h-3.5 text-[#8a8f98] flex-shrink-0" />
-                    <span>System Event</span>
-                  </span>
-                )}
-
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Badge variant={badgeVariant}>
-                    {statusText}
-                  </Badge>
-                  <span className="text-[10px] text-[#8a8f98] font-mono">
-                    {event.createdAt && !isNaN(new Date(event.createdAt).getTime()) ? new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-xs text-[#d0d6e0] leading-relaxed">
-                {description}
-              </p>
-
-              {subject && (
-                <div className="mt-2 text-[11px] text-[#8a8f98] italic truncate border-t border-[#1e2025] pt-1.5">
-                  Subject: "{subject}"
-                </div>
-              )}
-            </div>
-          );
-        })}
+      
+      {/* Header and Filter Tabs */}
+      <div className="flex items-center justify-between mt-5 mb-3 border-t border-[#23252a] pt-4">
+        <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider">Invoice Processing Breakdown</h4>
+        <div className="flex items-center gap-1 bg-[#141516] p-0.5 rounded-lg border border-[#23252a]">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'all' ? 'bg-[#23252a] text-[#f7f8f8]' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+          >
+            All ({invoiceEvents.length})
+          </button>
+          <button
+            onClick={() => setFilter('sent')}
+            className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'sent' ? 'bg-emerald-500/20 text-emerald-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+          >
+            Emails Sent ({sentEvents.length})
+          </button>
+          <button
+            onClick={() => setFilter('halted')}
+            className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'halted' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+          >
+            Halted & Skipped ({haltedEvents.length})
+          </button>
+        </div>
       </div>
+
+      {/* Grouped View */}
+      {(filter === 'all' || filter === 'sent') && sentEvents.length > 0 && (
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-2 text-xs font-medium text-emerald-400">
+            <Send className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Emails Sent ({sentEvents.length})</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {sentEvents.map((event, idx) => renderCard(event, idx))}
+          </div>
+        </div>
+      )}
+
+      {(filter === 'all' || filter === 'halted') && haltedEvents.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2 text-xs font-medium text-rose-400">
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+            <span>Halted & Skipped Invoices ({haltedEvents.length})</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {haltedEvents.map((event, idx) => renderCard(event, idx))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
