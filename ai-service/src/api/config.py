@@ -14,18 +14,24 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = "json"
 
     LLM_PROVIDER: str = "groq"
-    LLM_MODEL: str = "llama-3.1-8b-instant"
+    LLM_MODEL: str = "openai/gpt-oss-20b"
     LLM_API_KEY: str = Field(default="", alias="LLM_API_KEY")
     LLM_TEMPERATURE: float = 0.4
     LLM_MAX_TOKENS: int = 400
     LLM_TIMEOUT_SECONDS: int = 30
     MAX_CONCURRENT_LLM_CALLS: int = 3
 
-    LLM_FALLBACK_PROVIDER: str | None = Field(default="gemini", alias="LLM_FALLBACK_PROVIDER")
-    LLM_FALLBACK_MODEL: str | None = Field(default="gemini-3.6-flash", alias="LLM_FALLBACK_MODEL")
+    LLM_FALLBACK_PROVIDER: str | None = Field(default="groq", alias="LLM_FALLBACK_PROVIDER")
+    LLM_FALLBACK_MODEL: str | None = Field(default="openai/gpt-oss-20b", alias="LLM_FALLBACK_MODEL")
     LLM_FALLBACK_API_KEY: str | None = Field(
         default=None,
-        validation_alias=AliasChoices("LLM_FALLBACK_API_KEY", "Gemini_API_Key", "GEMINI_API_KEY", "GEMINI_KEY")
+        validation_alias=AliasChoices(
+            "LLM_FALLBACK_API_KEY",
+            "GROQ_FALLBACK_API_KEY",
+            "GROQ_SECONDARY_API_KEY",
+            "GROQ_FALLBACK_KEY",
+            "LLM_SECONDARY_API_KEY"
+        )
     )
 
     RISK_MODEL_PATH: str = "src/models/risk_scorer.joblib"

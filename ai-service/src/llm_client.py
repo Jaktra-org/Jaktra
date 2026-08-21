@@ -45,14 +45,15 @@ class LLMClient:
         if self.fallback is None:
             fallback_key = (
                 settings.LLM_FALLBACK_API_KEY 
-                or os.environ.get("Gemini_API_Key") 
-                or os.environ.get("GEMINI_API_KEY") 
-                or os.environ.get("GEMINI_KEY") 
+                or os.environ.get("GROQ_FALLBACK_API_KEY") 
+                or os.environ.get("GROQ_SECONDARY_API_KEY") 
+                or os.environ.get("GROQ_FALLBACK_KEY") 
+                or os.environ.get("LLM_SECONDARY_API_KEY") 
                 or ""
             ).strip()
 
-            fallback_provider = settings.LLM_FALLBACK_PROVIDER or "gemini"
-            fallback_model_name = settings.LLM_FALLBACK_MODEL or "gemini-3.6-flash"
+            fallback_provider = settings.LLM_FALLBACK_PROVIDER or "groq"
+            fallback_model_name = settings.LLM_FALLBACK_MODEL or "openai/gpt-oss-20b"
             fallback_model = _format_model_string(fallback_provider, fallback_model_name)
 
             self.fallback = {

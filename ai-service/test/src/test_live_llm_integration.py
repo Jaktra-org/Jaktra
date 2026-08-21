@@ -50,21 +50,21 @@ async def test_live_groq_generation():
     print(f"\n[LIVE GROQ TEST PASSED] ({response.generation_ms:.1f}ms): {safe_content}")
 
 @pytest.mark.anyio
-async def test_live_gemini_fallback_generation():
+async def test_live_groq_fallback_generation():
     """
-    Strict Live Integration Test: Forces primary failure to verify real Gemini fallback API generation.
-    Catches Gemini daily quota limits (429 RESOURCE_EXHAUSTED) gracefully.
+    Strict Live Integration Test: Forces primary failure to verify secondary Groq account fallback.
     """
-    fallback_provider = os.environ.get("LLM_FALLBACK_PROVIDER", "gemini").strip()
-    fallback_model = os.environ.get("LLM_FALLBACK_MODEL", "gemini-3.6-flash").strip()
+    fallback_provider = os.environ.get("LLM_FALLBACK_PROVIDER", "groq").strip()
+    fallback_model = os.environ.get("LLM_FALLBACK_MODEL", "openai/gpt-oss-20b").strip()
     fallback_key = (
-        os.environ.get("LLM_FALLBACK_API_KEY") 
-        or os.environ.get("Gemini_API_Key") 
-        or os.environ.get("GEMINI_API_KEY") 
+        os.environ.get("GROQ_FALLBACK_API_KEY") 
+        or os.environ.get("LLM_FALLBACK_API_KEY") 
+        or os.environ.get("GROQ_SECONDARY_API_KEY") 
         or ""
     ).strip()
 
-    assert fallback_key != "", "Gemini_API_Key / LLM_FALLBACK_API_KEY must be set in .env or environment for fallback verification."
+    if not fallback_key or "your_secondary" in fallback_key or fallback_key.startswith("test-"):
+        pytest.skip("Set GROQ_FALLBACK_API_KEY in .env to run live secondary Groq account fallback test.")
 
     client = LLMClient()
     client.primary = {
@@ -77,21 +77,14 @@ async def test_live_gemini_fallback_generation():
     }
 
     messages = ["Write a 1-sentence firm payment notice for invoice INV-3001."]
-    try:
-        response = await client.generate(messages)
+    response = await client.generate(messages)
 
-        assert response is not None, "Fallback response must not be None"
-        assert isinstance(response.content, str), "Fallback response content must be a string"
-        assert len(response.content.strip()) > 5, "Fallback response content must not be empty"
-        assert response.provider == fallback_provider, f"Fallback provider must be '{fallback_provider}', got '{response.provider}'"
-        assert response.used_fallback is True, "Fallback flag must be True when primary fails"
-        assert response.generation_ms > 0, "Generation duration must be positive"
-        print(f"\n[LIVE GEMINI FALLBACK TEST PASSED] ({response.generation_ms:.1f}ms): {response.content}")
-    except Exception as exc:
-        err_str = str(exc)
-        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "Quota exceeded" in err_str:
-            print(f"\n[LIVE GEMINI FALLBACK RATE LIMITED] (Daily 20 RPD Free Tier Limit Reached): {err_str[:120]}...")
-            pytest.skip("Gemini API key reached daily free-tier quota (20 RPD limit). Upgrade API key to paid tier for unlimited requests.")
-        else:
-            raise exc
+    assert response is not None, "Fallback response must not be None"
+    assert isinstance(response.content, str), "Fallback response content must be a string"
+    assert len(response.content.strip()) > 5, "Fallback response content must not be empty"
+    assert response.provider == fallback_provider, f"Fallback provider must be '{fallback_provider}', got '{response.provider}'"
+    assert response.used_fallback is True, "Fallback flag must be True when primary fails"
+    assert response.generation_ms > 0, "Generation duration must be positive"
+    safe_content = response.content.encode("ascii", "ignore").decode("ascii")
+    print(f"\n[LIVE GROQ SECONDARY FALLBACK TEST PASSED] ({response.generation_ms:.1f}ms): {safe_content}")
 
