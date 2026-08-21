@@ -91,6 +91,7 @@ class LLMClient:
                     response = await litellm.acompletion(
                         messages=litellm_messages,
                         temperature=temperature,
+                        max_tokens=getattr(settings, "LLM_MAX_TOKENS", 400),
                         timeout=settings.LLM_TIMEOUT_SECONDS,
                         **provider_config
                     )

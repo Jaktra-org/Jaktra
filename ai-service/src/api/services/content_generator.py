@@ -186,6 +186,7 @@ class ContentGenerator:
 
         llm_response.content = content
 
+        res = None
         if request.channel == "email":
             subject, body = validate_email_output(llm_response.content, payment_link)
             if inst_num and total_inst and "installment" not in subject.lower():

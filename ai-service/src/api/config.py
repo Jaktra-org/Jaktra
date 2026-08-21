@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "llama-3.1-8b-instant"
     LLM_API_KEY: str = Field(default="", alias="LLM_API_KEY")
     LLM_TEMPERATURE: float = 0.4
-    LLM_MAX_TOKENS: int = 1024
+    LLM_MAX_TOKENS: int = 400
     LLM_TIMEOUT_SECONDS: int = 30
     MAX_CONCURRENT_LLM_CALLS: int = 3
 

@@ -1,18 +1,16 @@
 import os
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from pathlib import Path
+from dotenv import load_dotenv
 
-# 1. Force environment variables for testing before importing anything
+# Load .env file from ai-service root directory if available
+env_path = Path(__file__).resolve().parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, override=False)
+
+# Force test authentication key for API route unit tests
 os.environ["ENVIRONMENT"] = "development"
 os.environ["SERVICE_KEY"] = "test-service-key"
-os.environ["LLM_API_KEY"] = "test-llm-api-key"
-os.environ["LLM_PROVIDER"] = "groq"
-os.environ["LLM_MODEL"] = "llama-3.1-8b-instant"
-
-# Also fallback configs (optional but good to have)
-os.environ["LLM_FALLBACK_PROVIDER"] = "groq"
-os.environ["LLM_FALLBACK_MODEL"] = "llama-3.1-8b-instant-fallback"
-os.environ["LLM_FALLBACK_API_KEY"] = "test-fallback-key"
 
 from src.api.main import app
 from src.api.config import settings
@@ -24,13 +22,13 @@ def anyio_backend():
 @pytest.fixture
 def mock_litellm_completion():
     """
-    Fixture to mock litellm.acompletion call.
-    Returns a mock object that can be configured by individual tests.
+    Fixture to mock litellm.acompletion call for unit tests.
+    Returns a mock object that can be configured by individual unit tests.
     """
+    from unittest.mock import AsyncMock, MagicMock
     mock = AsyncMock()
     
-    # Default success response maker
-    def _create_response(content: str, model: str = "llama-3.1-8b-instant", prompt_tokens: int = 10, completion_tokens: int = 20):
+    def _create_response(content: str, model: str = "openai/gpt-oss-20b", prompt_tokens: int = 10, completion_tokens: int = 20):
         resp = MagicMock()
         resp.model = model
         
