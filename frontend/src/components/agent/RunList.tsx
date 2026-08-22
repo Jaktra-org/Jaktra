@@ -145,8 +145,11 @@ function getEventInfo(event: EventItem) {
   
   // 1. Identify invoice ID and display label
   const rawInvoiceId = event?.invoiceId || event?.entityId || payload.invoiceId || payload.entityId;
-  let invoiceNumber = payload.invoiceNumber || payload.number;
-  if (!invoiceNumber && rawInvoiceId) {
+  const isSystem = !rawInvoiceId || rawInvoiceId.toLowerCase() === 'system' || rawInvoiceId.toLowerCase() === 'n/a';
+  
+  const rawNum = payload.invoiceNo || payload.invoiceNumber || payload.number || (event as Record<string, unknown>).invoiceNo || (event as Record<string, unknown>).invoiceNumber;
+  let invoiceNumber: string | undefined = typeof rawNum === 'string' && rawNum ? rawNum : undefined;
+  if (!invoiceNumber && !isSystem && rawInvoiceId) {
     invoiceNumber = rawInvoiceId.length > 8 ? `INV-${rawInvoiceId.substring(0, 6).toUpperCase()}` : `INV-${rawInvoiceId}`;
   }
 
@@ -212,6 +215,7 @@ function getEventInfo(event: EventItem) {
   return {
     rawInvoiceId,
     invoiceNumber,
+    isSystem,
     description,
     statusText,
     badgeVariant,
@@ -261,12 +265,12 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
       <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider mb-2.5 mt-4">Invoice Processing Breakdown</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {events.map((event, idx) => {
-          const { rawInvoiceId, invoiceNumber, description, statusText, badgeVariant, subject } = getEventInfo(event);
+          const { rawInvoiceId, invoiceNumber, isSystem, description, statusText, badgeVariant, subject } = getEventInfo(event);
 
           return (
             <div key={idx} className="flex flex-col justify-between p-3.5 border border-[#23252a] rounded-xl bg-[#0f1011] hover:border-[#34343a] transition-all">
               <div className="flex items-center justify-between gap-2 mb-2">
-                {rawInvoiceId ? (
+                {!isSystem && rawInvoiceId ? (
                   <Link
                     to={`/invoices/${rawInvoiceId}`}
                     onClick={(e) => e.stopPropagation()}
