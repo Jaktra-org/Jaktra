@@ -94,6 +94,9 @@ export function mapErrorToDisplayMessage(error: unknown): string {
 
   // Zod / validation
   if (error instanceof ZodError || errMsg.includes('ZodError') || errMsg.includes('validation') || errMsg.includes('Validation')) {
+    if (errMsg && !errMsg.includes('ZodError') && errMsg.length > 5) {
+      return errMsg;
+    }
     return 'Invalid request data';
   }
 

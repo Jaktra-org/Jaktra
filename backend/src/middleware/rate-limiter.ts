@@ -48,11 +48,12 @@ class FallbackStore implements Store {
 
   constructor(prefix: string) {
     this.redisStore = new RedisStore({
-      sendCommand: (...args: string[]) => {
+      sendCommand: async (...args: (string | number | boolean | Buffer)[]) => {
         if (!redisClient || !redisClient.isOpen) {
           throw new Error('Redis not connected');
         }
-        return redisClient.sendCommand(args);
+        const sanitizedArgs = args.map((arg) => (arg !== undefined && arg !== null ? String(arg) : ''));
+        return (await redisClient.sendCommand(sanitizedArgs)) as unknown as string | number;
       },
       prefix,
     });
