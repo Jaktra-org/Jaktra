@@ -134,8 +134,8 @@ class LLMClient:
                         break
 
                     if attempt < max_attempts_per_provider:
-                        # Longer backoff for rate limits
-                        sleep_time = 2.0 if ("RateLimitError" in err_msg or "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg) else (0.2 * attempt)
+                        # Longer backoff for rate limits (Groq requests 3.3s retry delay on TPM limit)
+                        sleep_time = 4.0 if ("RateLimitError" in err_msg or "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "rate_limit" in err_msg.lower()) else (0.5 * attempt)
                         await asyncio.sleep(sleep_time)
 
         summary_error = "; ".join(errors)

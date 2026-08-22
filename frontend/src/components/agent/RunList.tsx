@@ -176,7 +176,7 @@ function getEventInfo(event: EventItem) {
   let description: string;
   let statusText: string;
   let statusCategory: 'sent' | 'halted' | 'skipped';
-  let haltedReasonCategory: 'legal' | 'invalid_email' | 'skipped_policy' | 'ai_error' | 'other_error' = 'other_error';
+  let haltedReasonCategory: 'legal' | 'invalid_email' | 'no_channel' | 'ai_error' | 'send_error' | 'skipped_policy' | 'other_error' = 'other_error';
 
   if (eventType === 'email_sent' || eventType === 'email_generated' || eventType.includes('sent')) {
     statusText = 'Email Sent';
@@ -195,17 +195,23 @@ function getEventInfo(event: EventItem) {
     statusText = 'Halted';
     statusCategory = 'halted';
 
-    if (reason === 'no_automated_channel' || rawDescription.includes('no_automated_channel') || rawDescription.includes('legal escalation')) {
+    if (reason === 'legal_escalation' || (rawDescription.includes('legal escalation') && !rawDescription.includes('no_automated_channel'))) {
       haltedReasonCategory = 'legal';
       description = `Halted: Manual legal escalation required${recipientStr}.`;
-    } else if (reason === 'mail_invalid' || rawDescription.includes('invalid') || rawDescription.includes('mail invalid')) {
+    } else if (reason === 'no_automated_channel' || rawDescription.includes('no_automated_channel') || rawDescription.includes('no active email channel') || rawDescription.includes('no channel configured')) {
+      haltedReasonCategory = 'no_channel';
+      description = `Halted: No email integration configured${recipientStr}.`;
+    } else if (reason === 'mail_invalid' || rawDescription.includes('invalid') || rawDescription.includes('mail_invalid') || errorStr.includes('recipient') || errorStr.includes('mx record') || errorStr.includes('domain')) {
       haltedReasonCategory = 'invalid_email';
       description = `Halted: Invalid recipient email address${recipientStr}.`;
-    } else if (errorStr.includes('llm') || errorStr.includes('ratelimit') || errorStr.includes('quota') || errorStr.includes('429') || errorStr.includes('authentication') || errorStr.includes('provider') || errorStr.includes('key')) {
+    } else if (reason === 'generation_error' || errorStr.includes('llm') || errorStr.includes('groq') || errorStr.includes('gemini') || errorStr.includes('ratelimit') || errorStr.includes('quota') || errorStr.includes('429') || rawDescription.includes('generation failed')) {
       haltedReasonCategory = 'ai_error';
       description = errorStr.includes('authentication') || errorStr.includes('key')
         ? `Halted: AI provider API key error (Groq/Gemini).`
-        : `Halted: AI service rate limit / provider quota exceeded.`;
+        : `Halted: AI generation error / LLM rate limit.`;
+    } else if (reason === 'send_error' || errorStr.includes('smtp') || errorStr.includes('resend') || errorStr.includes('sendgrid') || errorStr.includes('delivery failed') || rawDescription.includes('send failed')) {
+      haltedReasonCategory = 'send_error';
+      description = `Halted: Email transmission error (Resend/SMTP rejection).`;
     } else if (reason === 'max_reminders_exceeded') {
       haltedReasonCategory = 'skipped_policy';
       description = `Halted: Maximum automated reminder limit reached.`;
@@ -328,7 +334,7 @@ function EventGroupSection({
 }
 
 function RunDetailsPanel({ run }: { run: AgentRun }) {
-  const [filter, setFilter] = useState<'all' | 'sent' | 'legal' | 'invalid_email' | 'skipped' | 'ai_error'>('all');
+  const [filter, setFilter] = useState<'all' | 'sent' | 'invalid_email' | 'no_channel' | 'ai_error' | 'send_error' | 'legal' | 'skipped'>('all');
   const { data, isLoading, error } = useQuery({
     queryKey: ['agent-run-details', run.id],
     queryFn: () => agentService.getRunDetails(run.id),
@@ -372,10 +378,12 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
   const sentEvents = invoiceEvents.filter(e => getEventInfo(e).statusCategory === 'sent');
   const haltedEvents = invoiceEvents.filter(e => getEventInfo(e).statusCategory !== 'sent');
   
-  const legalHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'legal');
   const invalidEmailHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'invalid_email');
-  const skippedPolicyHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'skipped_policy');
+  const noChannelHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'no_channel');
   const aiHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'ai_error');
+  const sendErrorHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'send_error');
+  const legalHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'legal');
+  const skippedPolicyHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'skipped_policy');
   const otherErrorsHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'other_error');
 
   return (
@@ -383,7 +391,7 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
       {/* Header and Filter Tabs */}
       <div className="flex items-center justify-between mb-3 border-t border-[#23252a] pt-3">
         <h4 className="text-[11px] font-semibold text-[#8a8f98] uppercase tracking-wider">Invoice Processing Breakdown</h4>
-        <div className="flex items-center gap-1 bg-[#141516] p-0.5 rounded-lg border border-[#23252a]">
+        <div className="flex flex-wrap items-center gap-1 bg-[#141516] p-0.5 rounded-lg border border-[#23252a]">
           <button
             onClick={() => setFilter('all')}
             className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'all' ? 'bg-[#23252a] text-[#f7f8f8]' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
@@ -396,14 +404,6 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
           >
             Emails Sent ({sentEvents.length})
           </button>
-          {legalHalted.length > 0 && (
-            <button
-              onClick={() => setFilter('legal')}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'legal' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
-            >
-              Legal Action ({legalHalted.length})
-            </button>
-          )}
           {invalidEmailHalted.length > 0 && (
             <button
               onClick={() => setFilter('invalid_email')}
@@ -412,12 +412,36 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
               Invalid Email ({invalidEmailHalted.length})
             </button>
           )}
+          {noChannelHalted.length > 0 && (
+            <button
+              onClick={() => setFilter('no_channel')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'no_channel' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+            >
+              No Integration ({noChannelHalted.length})
+            </button>
+          )}
           {aiHalted.length > 0 && (
             <button
               onClick={() => setFilter('ai_error')}
               className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'ai_error' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
             >
               AI Errors ({aiHalted.length})
+            </button>
+          )}
+          {sendErrorHalted.length > 0 && (
+            <button
+              onClick={() => setFilter('send_error')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'send_error' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+            >
+              Transmission Errors ({sendErrorHalted.length})
+            </button>
+          )}
+          {legalHalted.length > 0 && (
+            <button
+              onClick={() => setFilter('legal')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'legal' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+            >
+              Legal Action ({legalHalted.length})
             </button>
           )}
           {skippedPolicyHalted.length > 0 && (
@@ -441,15 +465,6 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
         />
       )}
 
-      {(filter === 'all' || filter === 'legal') && (
-        <EventGroupSection
-          title="Manual Legal Escalation Required"
-          icon={AlertTriangle}
-          colorClass="text-rose-400"
-          events={legalHalted}
-        />
-      )}
-
       {(filter === 'all' || filter === 'invalid_email') && (
         <EventGroupSection
           title="Invalid Recipient Email"
@@ -459,12 +474,39 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
         />
       )}
 
+      {(filter === 'all' || filter === 'no_channel') && (
+        <EventGroupSection
+          title="No Email Integration Configured"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={noChannelHalted}
+        />
+      )}
+
       {(filter === 'all' || filter === 'ai_error') && (
         <EventGroupSection
-          title="AI Generation Service Errors"
+          title="AI Generation Error"
           icon={AlertTriangle}
           colorClass="text-rose-400"
           events={aiHalted}
+        />
+      )}
+
+      {(filter === 'all' || filter === 'send_error') && (
+        <EventGroupSection
+          title="Email Transmission Error"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={sendErrorHalted}
+        />
+      )}
+
+      {(filter === 'all' || filter === 'legal') && (
+        <EventGroupSection
+          title="Manual Legal Escalation Required"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={legalHalted}
         />
       )}
 

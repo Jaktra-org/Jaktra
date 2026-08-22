@@ -1,5 +1,5 @@
 import rateLimit, { MemoryStore, type Store, type Options, type IncrementResponse } from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
+import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import { createClient } from 'redis';
 import { config } from '../config/index.js';
 
@@ -53,7 +53,7 @@ class FallbackStore implements Store {
           throw new Error('Redis not connected');
         }
         const sanitizedArgs = args.map((arg) => (arg !== undefined && arg !== null ? String(arg) : ''));
-        return (await redisClient.sendCommand(sanitizedArgs)) as unknown as string | number;
+        return (await redisClient.sendCommand(sanitizedArgs)) as unknown as RedisReply;
       },
       prefix,
     });

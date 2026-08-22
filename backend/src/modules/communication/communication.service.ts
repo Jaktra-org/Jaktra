@@ -177,16 +177,21 @@ export class CommunicationService {
   }
 
   async validateRecipientEmail(email: string): Promise<void> {
-    const domain = email.split('@')[1];
-    if (!domain) {
-      throw new CommunicationError(`Invalid recipient email address format: ${email}`, 400);
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      throw new CommunicationError('Recipient email address is missing or empty.', 400);
     }
+    const trimmed = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      throw new CommunicationError(`Invalid recipient email address format: '${email}'`, 400);
+    }
+    const domain = trimmed.split('@')[1];
     try {
       const mx = await dns.resolveMx(domain);
       if (!mx || mx.length === 0) {
         throw new CommunicationError(`Recipient domain '${domain}' has no valid mail servers (MX records). Delivery will fail.`, 400);
       }
     } catch (err: unknown) {
+      if (err instanceof CommunicationError) throw err;
       throw new CommunicationError(`Recipient domain '${domain}' is unreachable or invalid: ${err instanceof Error ? err.message : String(err)}`, 400);
     }
   }
