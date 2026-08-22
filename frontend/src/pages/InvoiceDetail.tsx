@@ -714,9 +714,21 @@ export function InvoiceDetail() {
       );
     }
     if (type === 'followup.halted') {
+      const reason = event.payload?.reason;
+      let label = 'AI follow-up halted';
+      if (reason === 'no_automated_channel') {
+        label = 'AI follow-up halted (no active email channel configured)';
+      } else if (reason === 'mail_invalid') {
+        label = 'AI follow-up halted (recipient email is invalid)';
+      } else if (reason === 'generation_error' || event.payload?.error) {
+        const detail = event.payload?.error ? String(event.payload.error) : '';
+        label = detail ? `AI follow-up halted (${detail})` : 'AI follow-up halted (AI generation error)';
+      } else if (event.description) {
+        label = event.description;
+      }
       return (
         <span>
-          AI follow-up halted (no active email channel configured)
+          {label}
         </span>
       );
     }
