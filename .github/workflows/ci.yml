@@ -1,4 +1,4 @@
-﻿name: Jaktra CI
+name: Jaktra CI
 
 on:
   pull_request:
@@ -154,5 +154,10 @@ jobs:
         env:
           PYTHONPATH: .
           ENVIRONMENT: development
-          SERVICE_KEY: test-service-key
-          LLM_API_KEY: test-llm-api-key
+          SERVICE_KEY: ${{ secrets.SERVICE_KEY || 'test-service-key' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GROQ_FALLBACK_API_KEY: ${{ secrets.GROQ_FALLBACK_API_KEY }}
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'groq' }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'openai/gpt-oss-20b' }}
+          LLM_FALLBACK_PROVIDER: ${{ secrets.LLM_FALLBACK_PROVIDER || 'groq' }}
+          LLM_FALLBACK_MODEL: ${{ secrets.LLM_FALLBACK_MODEL || 'openai/gpt-oss-20b' }}
