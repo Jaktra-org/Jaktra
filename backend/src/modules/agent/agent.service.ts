@@ -223,6 +223,7 @@ export class AgentService {
             try {
               await this.communicationService.validateRecipientEmail(inv.contactEmail);
             } catch (validationErr: unknown) {
+              chunkErrors++;
               errorsCount++;
               const validationErrMsg = validationErr instanceof Error ? validationErr.message : String(validationErr);
               await this.communicationRepo.create({
@@ -252,7 +253,7 @@ export class AgentService {
           }
 
           const instContext = inv.activeInstallment;
-          followupRequests.push({
+          const req: FollowupRequest = {
             invoiceId: inv.id,
             invoiceNo: inv.invoiceNo,
             clientName: inv.clientName,
@@ -268,164 +269,28 @@ export class AgentService {
             installmentNumber: instContext ? instContext.installmentNumber : undefined,
             totalInstallments: instContext ? instContext.totalInstallments : undefined,
             invoiceSubject: ('subject' in inv ? (inv as unknown as Record<string, unknown>).subject as string : undefined) ?? undefined,
-          });
-        }
-      }
-
-      let chunkProcessed = 0;
-      let chunkEmailsSent = 0;
-      let chunkErrors = 0;
-
-      if (followupRequests.length > 0) {
-        try {
-          let batchResult: {
-            results: Array<{
-              invoiceId: string;
-              status: 'success' | 'error';
-              content?: { subject?: string; plain_body?: string; html_body?: string };
-              error?: string;
-            }>;
           };
 
+          const toneSource = toneOverride ? 'manual' : 'auto';
+
+          // 1. Generate email immediately for this single invoice
+          let res: FollowupResponse;
           try {
-            batchResult = await this.aimlService.triggerBatchFollowup({
-              invoices: followupRequests,
-              concurrency: 2,
+            res = await this.aimlService.triggerFollowup(req);
+          } catch (genErr: unknown) {
+            chunkErrors++;
+            errorsCount++;
+            const genErrMsg = genErr instanceof Error ? genErr.message : String(genErr);
+            await this.communicationRepo.create({
+              tenantId,
+              invoiceId: inv.id,
+              channel: channel as 'email' | 'sms' | 'whatsapp',
+              subject: null,
+              body: null,
+              status: 'failed',
+              sentAt: null,
+              error: genErrMsg,
             });
-          } catch (batchErr) {
-            logger.warn(`Batch AI-ML call failed for chunk ${idx}, falling back to single invoice processing: ${batchErr}`);
-            const individualResults = [];
-            for (const req of followupRequests) {
-              try {
-                const res = await this.aimlService.triggerFollowup(req);
-                individualResults.push({
-                  invoiceId: req.invoiceId,
-                  status: 'success' as const,
-                  content: {
-                    subject: res.subject || '',
-                    plain_body: res.body || res.bodyPreview || '',
-                    html_body: res.htmlBody || res.body || '',
-                  },
-                  error: undefined,
-                });
-              } catch (singleErr) {
-                individualResults.push({
-                  invoiceId: req.invoiceId,
-                  status: 'error' as const,
-                  content: undefined,
-                  error: singleErr instanceof Error ? singleErr.message : String(singleErr),
-                });
-              }
-            }
-            batchResult = { results: individualResults };
-          }
-
-          for (const res of batchResult.results) {
-            const inv = invoiceMap.get(res.invoiceId)!;
-            const channel = 'email'; // Simple default channel mapping since our requests map to this
-            const toneSource = toneOverride ? 'manual' : 'auto';
-            const effectiveTier = toneOverride ?? inv.computedTier;
-
-            if (res.status === 'error' || !res.content?.plain_body) {
-              chunkErrors++;
-              errorsCount++;
-              await this.communicationRepo.create({
-                tenantId,
-                invoiceId: inv.id,
-                channel: channel as 'email' | 'sms' | 'whatsapp',
-                subject: res.content?.subject ?? null,
-                body: res.content?.html_body ?? res.content?.plain_body ?? null,
-                status: 'failed',
-                sentAt: null,
-                error: res.error ?? 'Generation produced no content',
-              });
-              await this.eventService.emitEvent(
-                'invoice',
-                inv.id,
-                tenantId,
-                'followup.halted',
-                { source: 'agent' },
-                {
-                  description: `Follow-up email generation failed`,
-                  payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, subject: res.content?.subject, error: res.error, channel, toneSource, tone: effectiveTier, runId }
-                }
-              ).catch(err => logger.error('Failed to log followup.halted event', err));
-              await this.dlqService.recordFailure(inv.id, tenantId, res.error ?? 'Generation produced no content').catch(() => { });
-              continue;
-            }
-
-            let sendError: string | undefined;
-            try {
-              await this.communicationService.send({
-                tenantId,
-                to: inv.contactEmail,
-                subject: res.content.subject!,
-                html: res.content.html_body ?? res.content.plain_body ?? '',
-                channel: channel as 'email',
-                invoiceId: inv.id,
-                source: 'bulk_ai_agent',
-              });
-            } catch (sendErr: unknown) {
-              sendError = sendErr instanceof Error ? sendErr.message : String(sendErr);
-              logger.warn(`Email send failed for invoice ${inv.id}: ${sendError}`);
-            }
-
-            const now = new Date();
-            if (!sendError) {
-              await this.invoiceRepo.update(inv.id, tenantId, {
-                followupCount: inv.followupCount + 1,
-                lastFollowupDate: now,
-              });
-              chunkEmailsSent++;
-              emailsSent++;
-              await this.eventService.emitEvent(
-                'invoice',
-                inv.id,
-                tenantId,
-                'followup.sent',
-                { source: 'agent' },
-                {
-                  description: `Follow-up email sent via ${channel}`,
-                  payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, recipient: inv.contactEmail, contactEmail: inv.contactEmail, subject: res.content.subject, channel, toneSource, tone: effectiveTier, runId }
-                }
-              ).catch(err => logger.error('Failed to log followup.sent event', err));
-              await this.dlqService.clearFailure(inv.id, tenantId).catch(() => { });
-            } else {
-              chunkErrors++;
-              errorsCount++;
-              await this.communicationRepo.create({
-                tenantId,
-                invoiceId: inv.id,
-                channel: channel as 'email' | 'sms' | 'whatsapp',
-                subject: res.content.subject ?? null,
-                body: res.content.html_body ?? res.content.plain_body ?? null,
-                status: 'failed',
-                sentAt: null,
-                error: sendError,
-              });
-              await this.eventService.emitEvent(
-                'invoice',
-                inv.id,
-                tenantId,
-                'followup.halted',
-                { source: 'agent' },
-                {
-                  description: `Follow-up email send failed`,
-                  payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, recipient: inv.contactEmail, contactEmail: inv.contactEmail, subject: res.content.subject, error: sendError, channel, toneSource, tone: effectiveTier, runId }
-                }
-              ).catch(err => logger.error('Failed to log followup.halted event', err));
-              await this.dlqService.recordFailure(inv.id, tenantId, sendError).catch(() => { });
-            }
-          }
-        } catch (err: unknown) {
-          chunkErrors += group.length;
-          errorsCount += group.length;
-          const errMsg = err instanceof Error ? err.message : String(err);
-          const errStack = err instanceof Error ? err.stack : undefined;
-          const displayErr = mapErrorToDisplayMessage(err);
-          logger.error(`Failed to process batch for chunk ${idx}: ${errMsg}`);
-          
-          for (const inv of group) {
             await this.eventService.emitEvent(
               'invoice',
               inv.id,
@@ -433,11 +298,105 @@ export class AgentService {
               'followup.halted',
               { source: 'agent' },
               {
-                description: `Follow-up failed with error`,
-                payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, recipient: inv.contactEmail, contactEmail: inv.contactEmail, error: displayErr, runId }
+                description: `Follow-up email generation failed`,
+                payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, error: genErrMsg, channel, toneSource, tone: effectiveTier, runId }
               }
-            ).catch(eventErr => logger.error('Failed to log followup.halted event', eventErr));
-            await this.dlqService.recordFailure(inv.id, tenantId, errMsg, errStack).catch(() => { });
+            ).catch(err => logger.error('Failed to log followup.halted event', err));
+            await this.dlqService.recordFailure(inv.id, tenantId, genErrMsg).catch(() => { });
+            continue;
+          }
+
+          if (res.error || (!res.body && !res.htmlBody && !res.bodyPreview)) {
+            chunkErrors++;
+            errorsCount++;
+            await this.communicationRepo.create({
+              tenantId,
+              invoiceId: inv.id,
+              channel: channel as 'email' | 'sms' | 'whatsapp',
+              subject: res.subject ?? null,
+              body: res.htmlBody ?? res.body ?? null,
+              status: 'failed',
+              sentAt: null,
+              error: res.error ?? 'Generation produced no content',
+            });
+            await this.eventService.emitEvent(
+              'invoice',
+              inv.id,
+              tenantId,
+              'followup.halted',
+              { source: 'agent' },
+              {
+                description: `Follow-up email generation failed`,
+                payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, subject: res.subject, error: res.error ?? 'Generation produced no content', channel, toneSource, tone: effectiveTier, runId }
+              }
+            ).catch(err => logger.error('Failed to log followup.halted event', err));
+            await this.dlqService.recordFailure(inv.id, tenantId, res.error ?? 'Generation produced no content').catch(() => { });
+            continue;
+          }
+
+          // 2. Send email IMMEDIATELY after generation
+          let sendError: string | undefined;
+          try {
+            await this.communicationService.send({
+              tenantId,
+              to: inv.contactEmail,
+              subject: res.subject!,
+              html: res.htmlBody ?? res.body ?? '',
+              channel: channel as 'email',
+              invoiceId: inv.id,
+              source: 'bulk_ai_agent',
+            });
+          } catch (sendErr: unknown) {
+            sendError = sendErr instanceof Error ? sendErr.message : String(sendErr);
+            logger.warn(`Email send failed for invoice ${inv.id}: ${sendError}`);
+          }
+
+          // 3. Update database & metrics IMMEDIATELY
+          const now = new Date();
+          if (!sendError) {
+            await this.invoiceRepo.update(inv.id, tenantId, {
+              followupCount: inv.followupCount + 1,
+              lastFollowupDate: now,
+            });
+            chunkEmailsSent++;
+            emailsSent++;
+            await this.eventService.emitEvent(
+              'invoice',
+              inv.id,
+              tenantId,
+              'followup.sent',
+              { source: 'agent' },
+              {
+                description: `Follow-up email sent via ${channel}`,
+                payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, recipient: inv.contactEmail, contactEmail: inv.contactEmail, subject: res.subject, channel, toneSource, tone: effectiveTier, runId }
+              }
+            ).catch(err => logger.error('Failed to log followup.sent event', err));
+            await this.dlqService.clearFailure(inv.id, tenantId).catch(() => { });
+          } else {
+            chunkErrors++;
+            errorsCount++;
+            await this.communicationRepo.create({
+              tenantId,
+              invoiceId: inv.id,
+              channel: channel as 'email' | 'sms' | 'whatsapp',
+              subject: res.subject ?? null,
+              body: res.htmlBody ?? res.body ?? null,
+              status: 'failed',
+              sentAt: null,
+              error: sendError,
+            });
+            await this.eventService.emitEvent(
+              'invoice',
+              inv.id,
+              tenantId,
+              'followup.halted',
+              { source: 'agent' },
+              {
+                description: `Follow-up email send failed`,
+                payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, recipient: inv.contactEmail, contactEmail: inv.contactEmail, subject: res.subject, error: sendError, channel, toneSource, tone: effectiveTier, runId }
+              }
+            ).catch(err => logger.error('Failed to log followup.halted event', err));
+            await this.dlqService.recordFailure(inv.id, tenantId, sendError).catch(() => { });
           }
         }
       }
