@@ -1,6 +1,6 @@
 import { AgentRepository } from './agent.repository.js';
 import { AgentChunkRepository } from './agent-chunk.repository.js';
-import { AimlService } from './aiml.service.js';
+import { AimlService, type FollowupRequest, type FollowupResponse } from './aiml.service.js';
 import { InvoiceRepository } from '../invoice/invoice.repository.js';
 import { TriageService, type TriagedInvoice, type UrgencyTier, type ActiveInstallmentContext } from './triage.service.js';
 import { EventService, type ActorContext } from '../event/event.service.js';
@@ -173,7 +173,9 @@ export class AgentService {
         startTime: new Date(),
       });
 
-      const followupRequests = [];
+      let chunkProcessed = 0;
+      let chunkEmailsSent = 0;
+      let chunkErrors = 0;
       const invoiceMap = new Map<string, TriagedInvoice>();
 
       for (const inv of group) {
