@@ -148,11 +148,16 @@ class LLMClient:
                         break
 
                     if attempt < max_attempts:
-                        # Parse exact retry-after wait time requested by provider (e.g. Groq "Please try again in 5.295s")
-                        match = re.search(r"(?:try again in|retry after)\s+(\d+(?:\.\d+)?)s?", err_msg, re.IGNORECASE)
+                        # Parse exact retry-after wait time requested by provider (handling both ms and s units)
+                        match = re.search(r"(?:try again in|retry after)\s+(\d+(?:\.\d+)?)\s*(ms|s)?", err_msg, re.IGNORECASE)
                         if match:
-                            suggested_wait = float(match.group(1)) + 0.5
-                            sleep_time = max(suggested_wait, 2.0)
+                            val = float(match.group(1))
+                            unit = (match.group(2) or "s").lower()
+                            if unit == "ms":
+                                wait_sec = (val / 1000.0) + 0.3
+                            else:
+                                wait_sec = val + 0.5
+                            sleep_time = max(wait_sec, 0.5)
                         elif is_rate_limit:
                             sleep_time = 6.0
                         else:
