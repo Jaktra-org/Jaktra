@@ -26,7 +26,6 @@ const TIER_BRACKETS: readonly TierBracket[] = [
 ] as const;
 
 const NON_ACTIONABLE_STATUSES = new Set(['Paid', 'Written Off']);
-const NOT_YET_DUE_THRESHOLD_DAYS = 7;
 
 export interface ActiveInstallmentContext {
   id: string;
@@ -84,15 +83,8 @@ export class TriageService {
     }
 
     const daysOverdue = this.computeDaysOverdue(targetDueDate);
-    if (daysOverdue > 0) return true;
-
-    // Not yet overdue — only actionable if due within threshold
-    const due = new Date(targetDueDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    due.setHours(0, 0, 0, 0);
-    const daysUntilDue = Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilDue <= NOT_YET_DUE_THRESHOLD_DAYS;
+    // Autopilot runs ONLY for overdue invoices (daysOverdue > 0)
+    return daysOverdue > 0;
   }
 
   triageInvoices(
