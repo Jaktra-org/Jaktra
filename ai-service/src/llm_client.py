@@ -22,10 +22,10 @@ def _format_model_string(provider: str | None, model: str | None) -> str | None:
     if not model:
         return None
     model_clean = model.strip()
-    if "/" in model_clean:
-        return model_clean
-    provider_clean = (provider or "groq").strip().lower()
-    return f"{provider_clean}/{model_clean}"
+    p = (provider or "groq").strip().lower()
+    if not model_clean.startswith(f"{p}/"):
+        return f"{p}/{model_clean}"
+    return model_clean
 
 class LLMClient:
     def __init__(self):
