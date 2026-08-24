@@ -98,6 +98,21 @@ export function getErrorMessage(error: unknown): string {
   if (lowerMsg.includes('jwt') || lowerMsg.includes('token') || lowerMsg.includes('unauthorized')) {
     return 'Authentication failed';
   }
+  if (
+    lowerMsg.includes('ai-ml') ||
+    lowerMsg.includes('generation') ||
+    lowerMsg.includes('llm') ||
+    lowerMsg.includes('groq') ||
+    lowerMsg.includes('gemini')
+  ) {
+    if (lowerMsg.includes('rate_limit') || lowerMsg.includes('rate limit') || lowerMsg.includes('429')) {
+      return 'AI generation failed due to LLM provider rate limit';
+    }
+    if (lowerMsg.includes('validation')) {
+      return 'AI generation output format validation failed';
+    }
+    return sanitizedMessage;
+  }
   if (lowerMsg.includes('validation') || lowerMsg.includes('zod')) {
     return 'Invalid request data';
   }
