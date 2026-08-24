@@ -21,12 +21,11 @@ class LLMResponse:
 def _format_model_string(provider: str | None, model: str | None) -> str | None:
     if not model:
         return None
-    model_str = model.strip()
-    if provider:
-        p = provider.strip().lower()
-        if not model_str.startswith(f"{p}/"):
-            return f"{p}/{model_str}"
-    return model_str
+    model_clean = model.strip()
+    if "/" in model_clean:
+        return model_clean
+    provider_clean = (provider or "groq").strip().lower()
+    return f"{provider_clean}/{model_clean}"
 
 class LLMClient:
     def __init__(self):
@@ -35,32 +34,21 @@ class LLMClient:
         self.refresh_providers()
 
     def refresh_providers(self):
-        if self.primary is None:
-            primary_model = _format_model_string(settings.LLM_PROVIDER, settings.LLM_MODEL)
-            primary_key = (settings.LLM_API_KEY or "").strip()
-            self.primary = {
-                "model": primary_model,
-                "api_key": primary_key,
-            } if primary_model and primary_key else None
+        primary_model = _format_model_string(settings.LLM_PROVIDER, settings.LLM_MODEL)
+        primary_key = (settings.LLM_API_KEY or "").strip()
 
-        if self.fallback is None:
-            fallback_key = (
-                settings.LLM_FALLBACK_API_KEY 
-                or os.environ.get("GROQ_FALLBACK_API_KEY") 
-                or os.environ.get("GROQ_SECONDARY_API_KEY") 
-                or os.environ.get("GROQ_FALLBACK_KEY") 
-                or os.environ.get("LLM_SECONDARY_API_KEY") 
-                or ""
-            ).strip()
+        fallback_model = _format_model_string(settings.LLM_FALLBACK_PROVIDER, settings.LLM_FALLBACK_MODEL)
+        fallback_key = (settings.LLM_FALLBACK_API_KEY or "").strip()
 
-            fallback_provider = settings.LLM_FALLBACK_PROVIDER or "groq"
-            fallback_model_name = settings.LLM_FALLBACK_MODEL or "openai/gpt-oss-20b"
-            fallback_model = _format_model_string(fallback_provider, fallback_model_name)
+        self.primary = {
+            "model": primary_model,
+            "api_key": primary_key,
+        } if primary_model and primary_key else None
 
-            self.fallback = {
-                "model": fallback_model,
-                "api_key": fallback_key,
-            } if fallback_model and fallback_key else None
+        self.fallback = {
+            "model": fallback_model,
+            "api_key": fallback_key,
+        } if fallback_model and fallback_key else None
 
     async def generate(self, messages: list, temperature: float = 0.4) -> LLMResponse:
         self.refresh_providers()
@@ -87,7 +75,7 @@ class LLMClient:
 
         for provider_name, provider_config in providers_to_try:
             attempt = 1
-            max_attempts = 6  # Up to 6 retries for rate limits to ensure 0 failures on transient rate limits
+            max_attempts = 6  # Up to 6 retries for rate limits
 
             while attempt <= max_attempts:
                 try:
@@ -110,9 +98,11 @@ class LLMClient:
                         completion_tokens = getattr(response.usage, "completion_tokens", 0)
 
                     resp_model = getattr(response, "model", None) or provider_config["model"]
+                    msg_obj = response.choices[0].message
+                    content_text = getattr(msg_obj, "content", None) or getattr(msg_obj, "reasoning_content", None) or ""
 
                     return LLMResponse(
-                        content=response.choices[0].message.content,
+                        content=content_text,
                         model=resp_model,
                         provider=provider_used,
                         prompt_tokens=prompt_tokens,
