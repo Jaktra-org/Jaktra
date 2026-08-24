@@ -278,10 +278,47 @@ export class AgentService {
 
       if (followupRequests.length > 0) {
         try {
-          const batchResult = await this.aimlService.triggerBatchFollowup({
-            invoices: followupRequests,
-            concurrency: 2,
-          });
+          let batchResult: {
+            results: Array<{
+              invoiceId: string;
+              status: 'success' | 'error';
+              content?: { subject?: string; plain_body?: string; html_body?: string };
+              error?: string;
+            }>;
+          };
+
+          try {
+            batchResult = await this.aimlService.triggerBatchFollowup({
+              invoices: followupRequests,
+              concurrency: 2,
+            });
+          } catch (batchErr) {
+            logger.warn(`Batch AI-ML call failed for chunk ${idx}, falling back to single invoice processing: ${batchErr}`);
+            const individualResults = [];
+            for (const req of followupRequests) {
+              try {
+                const res = await this.aimlService.triggerFollowup(req);
+                individualResults.push({
+                  invoiceId: req.invoiceId,
+                  status: 'success' as const,
+                  content: {
+                    subject: res.subject || '',
+                    plain_body: res.body || res.bodyPreview || '',
+                    html_body: res.htmlBody || res.body || '',
+                  },
+                  error: undefined,
+                });
+              } catch (singleErr) {
+                individualResults.push({
+                  invoiceId: req.invoiceId,
+                  status: 'error' as const,
+                  content: undefined,
+                  error: singleErr instanceof Error ? singleErr.message : String(singleErr),
+                });
+              }
+            }
+            batchResult = { results: individualResults };
+          }
 
           for (const res of batchResult.results) {
             const inv = invoiceMap.get(res.invoiceId)!;
