@@ -108,7 +108,7 @@ export function mapErrorToDisplayMessage(error: unknown): string {
   }
 
   // Zod / validation
-  if (error instanceof ZodError || errMsg.includes('ZodError') || errMsg.includes('validation') || errMsg.includes('Validation')) {
+  if (error instanceof ZodError || errMsg.includes('ZodError') || errMsg.includes('validation') || errMsg.includes('Validation') || errMsg.includes('422')) {
     if (errMsg && !errMsg.includes('ZodError') && errMsg.length > 5) {
       return errMsg;
     }

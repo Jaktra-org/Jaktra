@@ -7,6 +7,10 @@ from src.api.middleware.auth import verify_service_key
 from src.api.middleware.logging import LoggingMiddleware
 from src.api.config import settings
 
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from src.api.logging import logger
+
 app = FastAPI(
     title="Jaktra AI-ML Service",
     description="Agent executor service for Jaktra",
@@ -15,6 +19,16 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    body_bytes = await request.body()
+    body_str = body_bytes.decode("utf-8", errors="ignore")
+    logger.error("request_validation_failed", path=request.url.path, errors=exc.errors(), body=body_str)
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": body_str}
+    )
 
 @app.middleware("http")
 async def gate_docs_middleware(request: Request, call_next):

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, Any
 from src.api.services.content_generator import ContentGenerator
 from src.prompt_registry import registry
 from src.llm_client import llm_client
@@ -12,24 +12,24 @@ router = APIRouter(prefix="/followup", tags=["Generation"])
 content_generator = ContentGenerator(prompt_registry=registry, llm_client=llm_client)
 
 class FollowupRequest(BaseModel):
-    invoice_id: str = Field(..., max_length=255)
-    invoice_no: str = Field("", max_length=255)
-    client_name: str = Field("Valued Customer", max_length=255)
-    contact_email: str = Field("", max_length=255)
-    invoice_amount: str = Field("0.00", max_length=100)
-    currency: str = Field("INR", max_length=20)
-    due_date: str = Field("", max_length=255)
-    days_overdue: int = Field(0, ge=-3650, le=3650)
-    urgency_tier: str = Field("stage_1_warm", max_length=100)
-    channel: Literal["email", "sms", "whatsapp"] = "email"
-    followup_count: int = Field(0)
-    payment_link: Optional[str] = Field(None, max_length=2048)
-    bank_details: Optional[str] = Field(None, max_length=2048)
-    sender_name: Optional[str] = Field(None, max_length=200)
-    company_name: Optional[str] = Field(None, max_length=200)
-    invoice_subject: Optional[str] = Field(None, max_length=255)
-    installment_number: Optional[int] = Field(None)
-    total_installments: Optional[int] = Field(None)
+    invoice_id: Optional[Any] = Field("")
+    invoice_no: Optional[Any] = Field("")
+    client_name: Optional[Any] = Field("Valued Customer")
+    contact_email: Optional[Any] = Field("")
+    invoice_amount: Optional[Any] = Field("0.00")
+    currency: Optional[Any] = Field("INR")
+    due_date: Optional[Any] = Field("")
+    days_overdue: Optional[Any] = Field(0)
+    urgency_tier: Optional[Any] = Field("stage_1_warm")
+    channel: Optional[Any] = Field("email")
+    followup_count: Optional[Any] = Field(0)
+    payment_link: Optional[Any] = Field(None)
+    bank_details: Optional[Any] = Field(None)
+    sender_name: Optional[Any] = Field(None)
+    company_name: Optional[Any] = Field(None)
+    invoice_subject: Optional[Any] = Field(None)
+    installment_number: Optional[Any] = Field(None)
+    total_installments: Optional[Any] = Field(None)
 
 class Content(BaseModel):
     subject: str = ""
