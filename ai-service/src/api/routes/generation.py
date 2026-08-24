@@ -21,7 +21,7 @@ class FollowupRequest(BaseModel):
     due_date: Optional[Any] = Field("")
     days_overdue: Optional[Any] = Field(0)
     urgency_tier: Optional[Any] = Field("stage_1_warm")
-    channel: Optional[Any] = Field("email")
+    channel: Literal["email", "sms", "whatsapp"] = "email"
     followup_count: Optional[Any] = Field(0)
     payment_link: Optional[Any] = Field(None)
     bank_details: Optional[Any] = Field(None)
