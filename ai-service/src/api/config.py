@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_LLM_CALLS: int = 3
 
     LLM_FALLBACK_PROVIDER: str | None = Field(default="groq", alias="LLM_FALLBACK_PROVIDER")
-    LLM_FALLBACK_MODEL: str | None = Field(default="llama-3.1-8b-instant", alias="LLM_FALLBACK_MODEL")
+    LLM_FALLBACK_MODEL: str | None = Field(default="llama-3.3-70b-versatile", alias="LLM_FALLBACK_MODEL")
     LLM_FALLBACK_API_KEY: str | None = Field(
         default=None,
         validation_alias=AliasChoices(
