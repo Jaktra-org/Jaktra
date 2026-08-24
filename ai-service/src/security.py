@@ -70,15 +70,21 @@ def _validate_untrusted_domains(raw_text: str, payment_link: str | None = None) 
             continue
 
 def validate_email_output(raw_text: str, payment_link: str | None = None) -> tuple[str, str]:
-    """Parse and validate LLM-generated email output."""
+    """Parse and validate LLM-generated email output with resilient fallbacks."""
     subject = ""
     body = ""
     
-    for line in raw_text.splitlines():
-        if line.lower().strip().startswith("subject:"):
-            subject = line[len("subject:"):].strip()
+    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    
+    # 1. Search for explicit "Subject:" header line (ignoring markdown wrappers like **, #)
+    for line in lines:
+        clean_line = re.sub(r"^[\#\*\_\-\s]+", "", line).strip()
+        clean_line_lower = clean_line.lower()
+        if clean_line_lower.startswith("subject:"):
+            subject = clean_line[len("subject:"):].strip()
+            subject = re.sub(r"[\*\_\#]+$", "", subject).strip()
             break
-            
+
     lower_text = raw_text.lower()
     marker = "body:"
     if marker in lower_text:
@@ -86,24 +92,45 @@ def validate_email_output(raw_text: str, payment_link: str | None = None) -> tup
         body = raw_text[marker_pos + len(marker):].strip()
     else:
         if subject and subject in raw_text:
-            body = raw_text[raw_text.find(subject) + len(subject):].strip()
+            pos = raw_text.find(subject) + len(subject)
+            body = raw_text[pos:].strip()
         else:
             body = raw_text
 
-    if not subject:
-        raise OutputValidationError("LLM output missing subject")
-        
-    if len(subject) < 10 or len(subject) > 200:
-        raise OutputValidationError(f"Subject length {len(subject)} is out of bounds (10-200 chars)")
+    if body.lower().startswith("body:"):
+        body = body[5:].strip()
 
-    if len(body) < 20 or len(body) > 5000:
-        raise OutputValidationError(f"Body length {len(body)} is out of bounds (20-5000 chars)")
-        
+    # 2. Fallback subject extraction if LLM omitted "Subject:" prefix
+    if not subject and lines:
+        first_line = re.sub(r"^[\#\*\_\-\s]+", "", lines[0]).strip()
+        first_line = re.sub(r"[\*\_\#]+$", "", first_line).strip()
+        if len(first_line) >= 5:
+            subject = first_line
+            if body.startswith(lines[0]):
+                body = body[len(lines[0]):].strip()
+
+    # 3. Final default subject fallback
+    if not subject:
+        subject = "Payment Reminder: Outstanding Invoice Follow-Up"
+
+    # Enforce safe subject bounds (10 to 200 chars)
+    if len(subject) < 10:
+        subject = f"Payment Reminder: {subject}"
+    if len(subject) > 200:
+        subject = subject[:197] + "..."
+
+    # Enforce body fallback if empty or too short
+    if len(body) < 10:
+        body = raw_text if len(raw_text) >= 10 else f"Payment Reminder: Please check your outstanding invoice. {raw_text}".strip()
+
+    if len(body) > 5000:
+        body = body[:4997] + "..."
+
     if "ignore previous" in body.lower() or "ignore previous instructions" in body.lower():
         raise PromptInjectionDetectedError("Potential prompt injection detected in output.")
-        
+
     _validate_untrusted_domains(raw_text, payment_link)
-        
+
     return subject, body
 
 def validate_sms_output(raw_text: str, payment_link: str | None = None) -> str:
