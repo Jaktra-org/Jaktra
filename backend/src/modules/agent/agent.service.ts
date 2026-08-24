@@ -181,6 +181,21 @@ export class AgentService {
       for (const inv of group) {
         invoiceMap.set(inv.id, inv);
 
+        if (inv.daysOverdue <= 0) {
+          await this.eventService.emitEvent(
+            'invoice',
+            inv.id,
+            tenantId,
+            'followup.skipped',
+            { source: 'agent' },
+            {
+              description: `Follow-up skipped: invoice is not overdue`,
+              payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, recipient: inv.contactEmail, contactEmail: inv.contactEmail, reason: 'not_overdue', daysOverdue: inv.daysOverdue, runId }
+            }
+          ).catch(err => logger.error('Failed to log followup.skipped event', err));
+          continue;
+        }
+
         const idempotencyCheck = await this.idempotencyService.checkInvoice(tenantId, inv.id);
         if (idempotencyCheck.skipped) {
           await this.eventService.emitEvent(

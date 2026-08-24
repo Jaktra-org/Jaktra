@@ -115,21 +115,21 @@ async def generate_followup(request: FollowupRequest):
     subject = getattr(result, "subject", "") or ""
     meta = getattr(result, "metadata", {}) or {}
 
-    return FollowupResponse(
-        invoice_id=str(request.invoice_id or ""),
-        channel=str(request.channel or "email"),
-        content=Content(
-            subject=str(subject or ""),
-            html_body=str(html_body or ""),
-            plain_body=str(plain_body or "")
-        ),
-        metadata=Metadata(
-            tier_used=str(meta.get("tier_used", "") or ""),
-            model=str(meta.get("model", "") or ""),
-            generation_ms=float(meta.get("generation_ms", 0.0) or 0.0),
-            token_count=int(meta.get("token_count", 0) or 0)
-        )
-    )
+    return {
+        "invoice_id": str(request.invoice_id or ""),
+        "channel": str(request.channel or "email"),
+        "content": {
+            "subject": str(subject or ""),
+            "html_body": str(html_body or ""),
+            "plain_body": str(plain_body or "")
+        },
+        "metadata": {
+            "tier_used": str(meta.get("tier_used", "") or ""),
+            "model": str(meta.get("model", "") or ""),
+            "generation_ms": float(meta.get("generation_ms", 0.0) or 0.0),
+            "token_count": int(meta.get("token_count", 0) or 0)
+        }
+    }
 
 async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Semaphore, delay: float = 0.0) -> dict:
     from src.exceptions import LLMGenerationError, OutputValidationError, PromptInjectionDetectedError
