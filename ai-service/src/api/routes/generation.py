@@ -32,21 +32,22 @@ class FollowupRequest(BaseModel):
     total_installments: Optional[int] = Field(None)
 
 class Content(BaseModel):
-    subject: str
-    html_body: str
-    plain_body: str
+    subject: str = ""
+    html_body: str = ""
+    plain_body: str = ""
 
 class Metadata(BaseModel):
-    tier_used: str
-    model: str
-    generation_ms: float
-    token_count: int
+    tier_used: str = ""
+    model: str = ""
+    generation_ms: float = 0.0
+    token_count: int = 0
 
 class FollowupResponse(BaseModel):
-    invoice_id: str
-    channel: str
-    content: Content
-    metadata: Metadata
+    invoice_id: str = ""
+    channel: str = "email"
+    content: Optional[Content] = None
+    metadata: Optional[Metadata] = None
+    error: Optional[str] = None
 
 class BatchFollowupRequest(BaseModel):
     invoices: list[FollowupRequest]
@@ -109,23 +110,24 @@ async def generate_followup(request: FollowupRequest):
     finally:
         stats["is_processing"] = False
         
-    plain_body = result.plain_body or ""
-    html_body = result.html_body or plain_body
-    subject = result.subject or ""
+    plain_body = getattr(result, "plain_body", "") or ""
+    html_body = getattr(result, "html_body", "") or plain_body
+    subject = getattr(result, "subject", "") or ""
+    meta = getattr(result, "metadata", {}) or {}
 
     return FollowupResponse(
-        invoice_id=request.invoice_id,
-        channel=request.channel,
+        invoice_id=str(request.invoice_id or ""),
+        channel=str(request.channel or "email"),
         content=Content(
-            subject=subject,
-            html_body=html_body,
-            plain_body=plain_body
+            subject=str(subject or ""),
+            html_body=str(html_body or ""),
+            plain_body=str(plain_body or "")
         ),
         metadata=Metadata(
-            tier_used=result.metadata["tier_used"],
-            model=result.metadata["model"],
-            generation_ms=result.metadata["generation_ms"],
-            token_count=result.metadata["token_count"]
+            tier_used=str(meta.get("tier_used", "") or ""),
+            model=str(meta.get("model", "") or ""),
+            generation_ms=float(meta.get("generation_ms", 0.0) or 0.0),
+            token_count=int(meta.get("token_count", 0) or 0)
         )
     )
 
@@ -202,23 +204,24 @@ async def _process_invoice_for_batch(invoice: FollowupRequest, sem: asyncio.Sema
         finally:
             stats["is_processing"] = False
 
-        plain_body = result.plain_body or ""
-        html_body = result.html_body or plain_body
-        subject = result.subject or ""
+        plain_body = getattr(result, "plain_body", "") or ""
+        html_body = getattr(result, "html_body", "") or plain_body
+        subject = getattr(result, "subject", "") or ""
+        meta = getattr(result, "metadata", {}) or {}
 
         return {
-            "invoice_id": invoice.invoice_id,
+            "invoice_id": str(invoice.invoice_id or ""),
             "status": "success",
             "content": Content(
-                subject=subject,
-                html_body=html_body,
-                plain_body=plain_body
+                subject=str(subject or ""),
+                html_body=str(html_body or ""),
+                plain_body=str(plain_body or "")
             ),
             "metadata": Metadata(
-                tier_used=result.metadata["tier_used"],
-                model=result.metadata["model"],
-                generation_ms=result.metadata["generation_ms"],
-                token_count=result.metadata["token_count"]
+                tier_used=str(meta.get("tier_used", "") or ""),
+                model=str(meta.get("model", "") or ""),
+                generation_ms=float(meta.get("generation_ms", 0.0) or 0.0),
+                token_count=int(meta.get("token_count", 0) or 0)
             )
         }
 
