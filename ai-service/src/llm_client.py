@@ -114,6 +114,7 @@ class LLMClient:
                     resp_model = getattr(response, "model", None) or provider_config["model"]
                     msg_obj = response.choices[0].message
                     content_text = getattr(msg_obj, "content", None) or getattr(msg_obj, "reasoning_content", None) or ""
+                    content_text = re.sub(r"<think>.*?</think>", "", content_text, flags=re.DOTALL).strip()
 
                     return LLMResponse(
                         content=content_text,

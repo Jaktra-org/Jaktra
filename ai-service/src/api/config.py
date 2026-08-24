@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = "json"
 
     LLM_PROVIDER: str = "groq"
-    LLM_MODEL: str = "openai/gpt-oss-20b"
+    LLM_MODEL: str = "llama-3.3-70b-versatile"
     LLM_API_KEY: str = Field(default="", alias="LLM_API_KEY")
     LLM_TEMPERATURE: float = 0.4
     LLM_MAX_TOKENS: int = 400
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_LLM_CALLS: int = 3
 
     LLM_FALLBACK_PROVIDER: str | None = Field(default="groq", alias="LLM_FALLBACK_PROVIDER")
-    LLM_FALLBACK_MODEL: str | None = Field(default="openai/gpt-oss-20b", alias="LLM_FALLBACK_MODEL")
+    LLM_FALLBACK_MODEL: str | None = Field(default="llama-3.1-8b-instant", alias="LLM_FALLBACK_MODEL")
     LLM_FALLBACK_API_KEY: str | None = Field(
         default=None,
         validation_alias=AliasChoices(
