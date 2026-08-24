@@ -121,11 +121,15 @@ export class AgentService {
     this.processRunInBackground(run.id, tenantId, triaged.invoices, toneOverride)
       .catch(async (err) => {
         logger.error(`Background run ${run.id} failed`, err);
-        await this.agentRepo.updateRun(run.id, tenantId, {
-          status: 'failed',
-          endTime: new Date(),
-          errorDetails: err instanceof Error ? err.stack || err.message : String(err),
-        }).catch((dbErr) => logger.error('Failed to update run status to failed in database', dbErr));
+        try {
+          await this.agentRepo.updateRun(run.id, tenantId, {
+            status: 'failed',
+            endTime: new Date(),
+            errorDetails: err instanceof Error ? err.stack || err.message : String(err),
+          });
+        } catch (dbErr) {
+          logger.error('Failed to update run status to failed in database', dbErr);
+        }
       })
       .finally(() => {
         this.activeRuns.delete(run.id);
