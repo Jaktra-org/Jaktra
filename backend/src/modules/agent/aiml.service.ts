@@ -88,7 +88,7 @@ export class AimlService {
   constructor(clientConfig: AimlServiceConfig) {
     this.baseUrl = clientConfig.baseUrl.replace(/\/+$/, '');
     this.serviceKey = clientConfig.serviceKey ?? '';
-    this.timeoutMs = clientConfig.timeoutMs ?? 30_000;
+    this.timeoutMs = clientConfig.timeoutMs ?? 120_000;
     this.maxRetries = clientConfig.maxRetries ?? 2;
     this.cbThreshold = clientConfig.circuitBreakerThreshold ?? 5;
     this.cbResetMs = clientConfig.circuitBreakerResetMs ?? 60_000;

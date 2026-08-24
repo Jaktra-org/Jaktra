@@ -234,8 +234,8 @@ async def generate_followup_batch(request: BatchFollowupRequest):
     sem = asyncio.Semaphore(effective_concurrency)
     start_time = time.perf_counter()
     
-    # Rate-pace outgoing LLM generation requests (3.5s spacing) to strictly fit under Groq's 8,000 Tokens-Per-Minute (TPM) limit
-    tasks = [_process_invoice_for_batch(inv, sem, delay=idx * 3.5) for idx, inv in enumerate(request.invoices)]
+    # Rate-pace outgoing LLM generation requests (150ms spacing) for fast response times
+    tasks = [_process_invoice_for_batch(inv, sem, delay=idx * 0.15) for idx, inv in enumerate(request.invoices)]
     results_raw = await asyncio.gather(*tasks)
     
     results = []
