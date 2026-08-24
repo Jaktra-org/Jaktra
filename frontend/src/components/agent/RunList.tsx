@@ -176,7 +176,13 @@ function getEventInfo(event: EventItem) {
   let description: string;
   let statusText: string;
   let statusCategory: 'sent' | 'halted' | 'skipped';
-  let haltedReasonCategory: 'legal' | 'invalid_email' | 'no_channel' | 'ai_error' | 'send_error' | 'skipped_policy' | 'other_error' = 'other_error';
+  let haltedReasonCategory:
+    | 'invalid_email'
+    | 'legal_escalation'
+    | 'recently_sent'
+    | 'generation_failed'
+    | 'configuration_error'
+    | 'other_error' = 'other_error';
 
   if (eventType === 'email_sent' || eventType === 'email_generated' || eventType.includes('sent')) {
     statusText = 'Email Sent';
@@ -195,37 +201,66 @@ function getEventInfo(event: EventItem) {
     statusText = 'Halted';
     statusCategory = 'halted';
 
+    // 1. Legal escalation
     if (reason === 'legal_escalation' || (rawDescription.includes('legal escalation') && !rawDescription.includes('no_automated_channel'))) {
-      haltedReasonCategory = 'legal';
-      description = `Halted: Manual legal escalation required${recipientStr}.`;
-    } else if (reason === 'no_automated_channel' || rawDescription.includes('no_automated_channel') || rawDescription.includes('no active email channel') || rawDescription.includes('no channel configured')) {
-      haltedReasonCategory = 'no_channel';
-      description = `Halted: No email integration configured${recipientStr}.`;
-    } else if (reason === 'mail_invalid' || rawDescription.includes('invalid') || rawDescription.includes('mail_invalid') || errorStr.includes('recipient') || errorStr.includes('mx record') || errorStr.includes('domain')) {
+      haltedReasonCategory = 'legal_escalation';
+      description = `Skipped: Manual legal escalation required${recipientStr}.`;
+    }
+    // 2. Invalid Email Address or No email address
+    else if (reason === 'mail_invalid' || rawDescription.includes('invalid') || rawDescription.includes('mail_invalid') || errorStr.includes('recipient') || errorStr.includes('mx record') || errorStr.includes('domain') || errorStr.includes('no email')) {
       haltedReasonCategory = 'invalid_email';
-      description = `Halted: Invalid recipient email address${recipientStr}.`;
-    } else if (reason === 'generation_error' || errorStr.includes('llm') || errorStr.includes('groq') || errorStr.includes('gemini') || errorStr.includes('ratelimit') || errorStr.includes('quota') || errorStr.includes('429') || rawDescription.includes('generation failed')) {
-      haltedReasonCategory = 'ai_error';
+      description = `Halted: Invalid email address or no email address provided${recipientStr}.`;
+    }
+    // 3. Email generation failed (LLM failures)
+    else if (
+      reason === 'generation_error' ||
+      errorStr.includes('llm') ||
+      errorStr.includes('groq') ||
+      errorStr.includes('gemini') ||
+      errorStr.includes('ratelimit') ||
+      errorStr.includes('quota') ||
+      errorStr.includes('429') ||
+      errorStr.includes('generation_validation_failed') ||
+      rawDescription.includes('generation failed')
+    ) {
+      haltedReasonCategory = 'generation_failed';
       description = errorStr.includes('authentication') || errorStr.includes('key')
-        ? `Halted: AI provider API key error (Groq/Gemini).`
-        : `Halted: AI generation error / LLM rate limit.`;
-    } else if (reason === 'send_error' || errorStr.includes('smtp') || errorStr.includes('resend') || errorStr.includes('sendgrid') || errorStr.includes('delivery failed') || rawDescription.includes('send failed')) {
-      haltedReasonCategory = 'send_error';
-      description = `Halted: Email transmission error (Resend/SMTP rejection).`;
-    } else if (reason === 'max_reminders_exceeded') {
-      haltedReasonCategory = 'skipped_policy';
-      description = `Halted: Maximum automated reminder limit reached.`;
-    } else if (reason) {
+        ? `Failed: AI provider API key error (Groq/Gemini).`
+        : `Failed: Email generation failed (LLM provider error or rate limit).`;
+    }
+    // 4. Email configuration Error (email sending error / missing integration)
+    else if (
+      reason === 'no_automated_channel' ||
+      reason === 'send_error' ||
+      rawDescription.includes('no_automated_channel') ||
+      rawDescription.includes('no active email channel') ||
+      rawDescription.includes('no channel configured') ||
+      errorStr.includes('smtp') ||
+      errorStr.includes('resend') ||
+      errorStr.includes('sendgrid') ||
+      errorStr.includes('delivery failed') ||
+      rawDescription.includes('send failed')
+    ) {
+      haltedReasonCategory = 'configuration_error';
+      description = `Failed: Email configuration or sending error (Resend/SMTP).`;
+    }
+    // 5. Skipped due to recently sent
+    else if (reason === 'max_reminders_exceeded' || reason === 'idempotency_skip' || reason === 'payment_plan_active' || reason === 'dispute_open') {
+      haltedReasonCategory = 'recently_sent';
+      description = `Skipped: Follow-up skipped (already contacted recently or policy limit).`;
+    }
+    // 6. Other error
+    else if (reason) {
       haltedReasonCategory = 'other_error';
-      description = `Halted: ${reason.replace(/_/g, ' ')}${recipientStr}.`;
+      description = `Failed: ${reason.replace(/_/g, ' ')}${recipientStr}.`;
     } else {
       haltedReasonCategory = 'other_error';
-      description = `Halted: Automated safeguard rule triggered${recipientStr}.`;
+      description = `Failed: Other error occurred${recipientStr}.`;
     }
   } else if (eventType.includes('skip') || reason.includes('skip') || reason.includes('plan') || reason.includes('dispute')) {
     statusText = 'Skipped';
     statusCategory = 'skipped';
-    haltedReasonCategory = 'skipped_policy';
+    haltedReasonCategory = 'recently_sent';
 
     if (reason === 'payment_plan_active') {
       description = `Skipped: Active payment plan in effect.`;
@@ -234,7 +269,7 @@ function getEventInfo(event: EventItem) {
     } else if (reason === 'idempotency_skip') {
       description = `Skipped: Follow-up already sent recently.`;
     } else {
-      description = `Skipped by safety policy rules.`;
+      description = `Skipped due to recently sent or active plan.`;
     }
   } else {
     statusText = eventType.replace(/_/g, ' ');
@@ -334,7 +369,7 @@ function EventGroupSection({
 }
 
 function RunDetailsPanel({ run }: { run: AgentRun }) {
-  const [filter, setFilter] = useState<'all' | 'sent' | 'invalid_email' | 'no_channel' | 'ai_error' | 'send_error' | 'legal' | 'skipped'>('all');
+  const [filter, setFilter] = useState<'all' | 'sent' | 'invalid_email' | 'legal_escalation' | 'recently_sent' | 'generation_failed' | 'configuration_error' | 'other_error'>('all');
   const { data, isLoading, error } = useQuery({
     queryKey: ['agent-run-details', run.id],
     queryFn: () => agentService.getRunDetails(run.id),
@@ -378,13 +413,12 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
   const sentEvents = invoiceEvents.filter(e => getEventInfo(e).statusCategory === 'sent');
   const haltedEvents = invoiceEvents.filter(e => getEventInfo(e).statusCategory !== 'sent');
   
-  const invalidEmailHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'invalid_email');
-  const noChannelHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'no_channel');
-  const aiHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'ai_error');
-  const sendErrorHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'send_error');
-  const legalHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'legal');
-  const skippedPolicyHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'skipped_policy');
-  const otherErrorsHalted = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'other_error');
+  const invalidEmailEvents = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'invalid_email');
+  const legalEscalationEvents = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'legal_escalation');
+  const recentlySentEvents = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'recently_sent');
+  const generationFailedEvents = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'generation_failed');
+  const configurationErrorEvents = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'configuration_error');
+  const otherErrorEvents = haltedEvents.filter(e => getEventInfo(e).haltedReasonCategory === 'other_error');
 
   return (
     <div>
@@ -404,52 +438,52 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
           >
             Emails Sent ({sentEvents.length})
           </button>
-          {invalidEmailHalted.length > 0 && (
+          {invalidEmailEvents.length > 0 && (
             <button
               onClick={() => setFilter('invalid_email')}
               className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'invalid_email' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
             >
-              Invalid Email ({invalidEmailHalted.length})
+              Invalid Email ({invalidEmailEvents.length})
             </button>
           )}
-          {noChannelHalted.length > 0 && (
+          {legalEscalationEvents.length > 0 && (
             <button
-              onClick={() => setFilter('no_channel')}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'no_channel' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+              onClick={() => setFilter('legal_escalation')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'legal_escalation' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
             >
-              No Integration ({noChannelHalted.length})
+              Legal Escalation ({legalEscalationEvents.length})
             </button>
           )}
-          {aiHalted.length > 0 && (
+          {recentlySentEvents.length > 0 && (
             <button
-              onClick={() => setFilter('ai_error')}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'ai_error' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+              onClick={() => setFilter('recently_sent')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'recently_sent' ? 'bg-amber-500/20 text-amber-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
             >
-              AI Errors ({aiHalted.length})
+              Recently Sent ({recentlySentEvents.length})
             </button>
           )}
-          {sendErrorHalted.length > 0 && (
+          {generationFailedEvents.length > 0 && (
             <button
-              onClick={() => setFilter('send_error')}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'send_error' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+              onClick={() => setFilter('generation_failed')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'generation_failed' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
             >
-              Transmission Errors ({sendErrorHalted.length})
+              Generation Failed ({generationFailedEvents.length})
             </button>
           )}
-          {legalHalted.length > 0 && (
+          {configurationErrorEvents.length > 0 && (
             <button
-              onClick={() => setFilter('legal')}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'legal' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+              onClick={() => setFilter('configuration_error')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'configuration_error' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
             >
-              Legal Action ({legalHalted.length})
+              Configuration Error ({configurationErrorEvents.length})
             </button>
           )}
-          {skippedPolicyHalted.length > 0 && (
+          {otherErrorEvents.length > 0 && (
             <button
-              onClick={() => setFilter('skipped')}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'skipped' ? 'bg-amber-500/20 text-amber-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
+              onClick={() => setFilter('other_error')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${filter === 'other_error' ? 'bg-rose-500/20 text-rose-400' : 'text-[#8a8f98] hover:text-[#d0d6e0]'}`}
             >
-              Skipped ({skippedPolicyHalted.length})
+              Other Error ({otherErrorEvents.length})
             </button>
           )}
         </div>
@@ -467,64 +501,55 @@ function RunDetailsPanel({ run }: { run: AgentRun }) {
 
       {(filter === 'all' || filter === 'invalid_email') && (
         <EventGroupSection
-          title="Invalid Recipient Email"
+          title="Invalid Email Address or No email address"
           icon={AlertTriangle}
           colorClass="text-rose-400"
-          events={invalidEmailHalted}
+          events={invalidEmailEvents}
         />
       )}
 
-      {(filter === 'all' || filter === 'no_channel') && (
+      {(filter === 'all' || filter === 'legal_escalation') && (
         <EventGroupSection
-          title="No Email Integration Configured"
+          title="Skipped due to legal escalation"
           icon={AlertTriangle}
           colorClass="text-rose-400"
-          events={noChannelHalted}
+          events={legalEscalationEvents}
         />
       )}
 
-      {(filter === 'all' || filter === 'ai_error') && (
+      {(filter === 'all' || filter === 'recently_sent') && (
         <EventGroupSection
-          title="AI Generation Error"
-          icon={AlertTriangle}
-          colorClass="text-rose-400"
-          events={aiHalted}
-        />
-      )}
-
-      {(filter === 'all' || filter === 'send_error') && (
-        <EventGroupSection
-          title="Email Transmission Error"
-          icon={AlertTriangle}
-          colorClass="text-rose-400"
-          events={sendErrorHalted}
-        />
-      )}
-
-      {(filter === 'all' || filter === 'legal') && (
-        <EventGroupSection
-          title="Manual Legal Escalation Required"
-          icon={AlertTriangle}
-          colorClass="text-rose-400"
-          events={legalHalted}
-        />
-      )}
-
-      {(filter === 'all' || filter === 'skipped') && (
-        <EventGroupSection
-          title="Skipped by Policy Rules"
+          title="Skipped due to recently sent"
           icon={Info}
           colorClass="text-amber-400"
-          events={skippedPolicyHalted}
+          events={recentlySentEvents}
         />
       )}
 
-      {filter === 'all' && (
+      {(filter === 'all' || filter === 'generation_failed') && (
         <EventGroupSection
-          title="Other Safeguard Errors"
+          title="Email generation failed"
           icon={AlertTriangle}
           colorClass="text-rose-400"
-          events={otherErrorsHalted}
+          events={generationFailedEvents}
+        />
+      )}
+
+      {(filter === 'all' || filter === 'configuration_error') && (
+        <EventGroupSection
+          title="Email configuration Error"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={configurationErrorEvents}
+        />
+      )}
+
+      {(filter === 'all' || filter === 'other_error') && (
+        <EventGroupSection
+          title="Other error"
+          icon={AlertTriangle}
+          colorClass="text-rose-400"
+          events={otherErrorEvents}
         />
       )}
     </div>

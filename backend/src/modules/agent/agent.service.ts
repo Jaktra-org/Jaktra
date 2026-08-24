@@ -196,6 +196,12 @@ export class AgentService {
 
         const channels = this.selectChannels(effectiveTier);
         if (channels.length === 0) {
+          const isLegal = effectiveTier === 'legal_escalation';
+          const reason = isLegal ? 'legal_escalation' : 'no_automated_channel';
+          const description = isLegal
+            ? 'Follow-up halted: manual legal escalation required'
+            : 'Follow-up halted: no automated email channel configured';
+
           await this.eventService.emitEvent(
             'invoice',
             inv.id,
@@ -203,8 +209,8 @@ export class AgentService {
             'followup.halted',
             { source: 'agent' },
             {
-              description: `Follow-up halted: no automated channel configured`,
-              payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, recipient: inv.contactEmail, contactEmail: inv.contactEmail, reason: 'no_automated_channel', tier: effectiveTier, toneSource, runId }
+              description,
+              payload: { invoiceNo: inv.invoiceNo, invoiceNumber: inv.invoiceNo, recipient: inv.contactEmail, contactEmail: inv.contactEmail, reason, tier: effectiveTier, toneSource, runId }
             }
           ).catch(err => logger.error('Failed to log followup.halted event', err));
           continue;

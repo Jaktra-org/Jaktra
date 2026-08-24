@@ -716,16 +716,21 @@ export function InvoiceDetail() {
     if (type === 'followup.halted') {
       const reason = event.payload?.reason;
       let label = 'AI follow-up halted';
-      if (reason === 'no_automated_channel') {
-        label = 'AI follow-up halted (no active email channel configured)';
+
+      if (reason === 'legal_escalation' || event.payload?.tier === 'legal_escalation') {
+        label = 'AI follow-up skipped (manual legal escalation required)';
       } else if (reason === 'mail_invalid') {
-        label = 'AI follow-up halted (recipient email is invalid)';
-      } else if (reason === 'generation_error' || event.payload?.error) {
-        const detail = event.payload?.error ? String(event.payload.error) : '';
-        label = detail ? `AI follow-up halted (${detail})` : 'AI follow-up halted (AI generation error)';
+        label = 'AI follow-up halted (invalid email address or no email address)';
+      } else if (reason === 'no_automated_channel') {
+        label = 'AI follow-up halted (no active email channel configured)';
+      } else if (reason === 'generation_error') {
+        label = 'AI follow-up failed (email generation failed)';
+      } else if (reason === 'send_error') {
+        label = 'AI follow-up failed (email configuration or sending error)';
       } else if (event.description) {
         label = event.description;
       }
+
       return (
         <span>
           {label}

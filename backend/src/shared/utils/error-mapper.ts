@@ -92,6 +92,21 @@ export function mapErrorToDisplayMessage(error: unknown): string {
     return 'Authentication failed';
   }
 
+  // AI generation / LLM failures
+  if (
+    errMsg.includes('GENERATION_VALIDATION_FAILED') ||
+    errMsg.includes('LLM') ||
+    errMsg.includes('Groq') ||
+    errMsg.includes('Gemini') ||
+    errMsg.includes('rate_limit') ||
+    errMsg.includes('Rate limit')
+  ) {
+    if (errMsg.includes('GENERATION_VALIDATION_FAILED')) {
+      return 'AI output format validation failed';
+    }
+    return 'AI generation service error or rate limit reached';
+  }
+
   // Zod / validation
   if (error instanceof ZodError || errMsg.includes('ZodError') || errMsg.includes('validation') || errMsg.includes('Validation')) {
     if (errMsg && !errMsg.includes('ZodError') && errMsg.length > 5) {
