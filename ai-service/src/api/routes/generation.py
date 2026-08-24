@@ -230,11 +230,12 @@ async def generate_followup_batch(request: BatchFollowupRequest):
     if request.concurrency < 1 or request.concurrency > 10:
         raise HTTPException(status_code=400, detail="Invalid concurrency. Must be between 1 and 10.")
         
-    effective_concurrency = min(request.concurrency, settings.MAX_CONCURRENT_LLM_CALLS)
+    effective_concurrency = min(request.concurrency, 2)
     sem = asyncio.Semaphore(effective_concurrency)
     start_time = time.perf_counter()
     
-    tasks = [_process_invoice_for_batch(inv, sem, delay=idx * 0.15) for idx, inv in enumerate(request.invoices)]
+    # Rate-pace outgoing LLM generation requests (3.5s spacing) to strictly fit under Groq's 8,000 Tokens-Per-Minute (TPM) limit
+    tasks = [_process_invoice_for_batch(inv, sem, delay=idx * 3.5) for idx, inv in enumerate(request.invoices)]
     results_raw = await asyncio.gather(*tasks)
     
     results = []

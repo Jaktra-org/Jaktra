@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import asyncio
 import litellm
@@ -83,10 +84,12 @@ class LLMClient:
             providers_to_try.append(("primary", {"model": default_model, "api_key": settings.LLM_API_KEY}))
 
         errors = []
-        max_attempts_per_provider = 2
 
         for provider_name, provider_config in providers_to_try:
-            for attempt in range(1, max_attempts_per_provider + 1):
+            attempt = 1
+            max_attempts = 6  # Up to 6 retries for rate limits to ensure 0 failures on transient rate limits
+
+            while attempt <= max_attempts:
                 try:
                     start_time = time.perf_counter()
                     response = await litellm.acompletion(
@@ -127,20 +130,42 @@ class LLMClient:
                         error=err_msg
                     )
                     errors.append(f"[{provider_name}:{provider_config['model']} attempt {attempt}] {err_msg}")
-                    
+
                     # If authentication/invalid key error, don't waste retries on this provider
                     err_msg_lower = err_msg.lower()
                     if any(k in err_msg_lower for k in ["authenticationerror", "incorrect api key", "invalid api key", "invalid_api_key"]):
                         break
 
-                    if attempt < max_attempts_per_provider:
-                        # Longer backoff for rate limits (Groq requests 3.3s retry delay on TPM limit)
-                        sleep_time = 4.0 if ("RateLimitError" in err_msg or "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "rate_limit" in err_msg.lower()) else (0.5 * attempt)
+                    is_rate_limit = any(k in err_msg for k in ["RateLimitError", "429", "RESOURCE_EXHAUSTED", "rate_limit", "rate_limit_exceeded"])
+
+                    # Non-rate-limit errors cap at 2 attempts
+                    if not is_rate_limit and attempt >= 2:
+                        break
+
+                    if attempt < max_attempts:
+                        # Parse exact retry-after wait time requested by provider (e.g. Groq "Please try again in 5.295s")
+                        match = re.search(r"(?:try again in|retry after)\s+(\d+(?:\.\d+)?)s?", err_msg, re.IGNORECASE)
+                        if match:
+                            suggested_wait = float(match.group(1)) + 0.5
+                            sleep_time = max(suggested_wait, 2.0)
+                        elif is_rate_limit:
+                            sleep_time = 6.0
+                        else:
+                            sleep_time = 0.5 * attempt
+
+                        logger.info(
+                            "rate_limit_backoff_sleep",
+                            provider=provider_name,
+                            sleep_seconds=sleep_time,
+                            attempt=attempt,
+                            message=f"Rate limit encountered. Sleeping {sleep_time:.2f}s before retrying generation..."
+                        )
                         await asyncio.sleep(sleep_time)
+
+                    attempt += 1
 
         summary_error = "; ".join(errors)
         logger.error("all_llm_providers_failed", summary=summary_error)
         raise LLMGenerationError(f"LLM provider error occurred: {summary_error}")
 
 llm_client = LLMClient()
-
