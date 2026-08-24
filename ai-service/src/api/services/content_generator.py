@@ -188,9 +188,16 @@ class ContentGenerator:
 
         res = None
         if request.channel == "email":
-            subject, body = validate_email_output(llm_response.content, payment_link)
+            try:
+                subject, body = validate_email_output(llm_response.content, payment_link)
+            except OutputValidationError as val_err:
+                logger.warning("email_validation_fallback_used", invoice_id=request.invoice_id, error=str(val_err))
+                inv_no = sanitize_input(str(getattr(request, 'invoice_no', '') or ''))
+                subject = f"Payment Reminder: Invoice #{inv_no}" if inv_no else "Payment Reminder: Outstanding Invoice Follow-Up"
+                body = llm_response.content if len(llm_response.content) >= 10 else f"Payment Reminder: Outstanding invoice #{inv_no} is overdue. Please process payment."
+
             if inst_num and total_inst and "installment" not in subject.lower():
-                subject = f"Payment Reminder: Installment #{inst_num} of {total_inst} (Invoice #{sanitize_input(getattr(request, 'invoice_no', ''))})"
+                subject = f"Payment Reminder: Installment #{inst_num} of {total_inst} (Invoice #{sanitize_input(str(getattr(request, 'invoice_no', '') or ''))})"
             html_body = _plain_to_html(body, sender_name)
             return GenerationResult(subject=subject, html_body=html_body, plain_body=body, metadata=metadata)
         elif request.channel == "sms":
