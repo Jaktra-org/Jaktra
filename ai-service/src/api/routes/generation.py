@@ -19,7 +19,7 @@ class FollowupRequest(BaseModel):
     invoice_amount: str = Field("0.00", max_length=100)
     currency: str = Field("INR", max_length=20)
     due_date: str = Field("", max_length=255)
-    days_overdue: int = Field(0)
+    days_overdue: int = Field(0, ge=-3650, le=3650)
     urgency_tier: str = Field("stage_1_warm", max_length=100)
     channel: Literal["email", "sms", "whatsapp"] = "email"
     followup_count: int = Field(0)

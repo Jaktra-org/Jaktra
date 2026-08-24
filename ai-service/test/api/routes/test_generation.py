@@ -141,7 +141,7 @@ async def test_generate_followup_pydantic_boundary_fields(async_client):
         "invoice_amount": "1500.00",
         "currency": "USD",
         "due_date": "2026-07-20",
-        "days_overdue": -1,
+        "days_overdue": -3651,
         "urgency_tier": "stage_1_warm",
         "channel": "email"
     }

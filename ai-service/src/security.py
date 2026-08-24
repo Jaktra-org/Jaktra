@@ -109,22 +109,14 @@ def validate_email_output(raw_text: str, payment_link: str | None = None) -> tup
             if body.startswith(lines[0]):
                 body = body[len(lines[0]):].strip()
 
-    # 3. Final default subject fallback
     if not subject:
-        subject = "Payment Reminder: Outstanding Invoice Follow-Up"
+        raise OutputValidationError("LLM output missing subject")
 
-    # Enforce safe subject bounds (10 to 200 chars)
-    if len(subject) < 10:
-        subject = f"Payment Reminder: {subject}"
-    if len(subject) > 200:
-        subject = subject[:197] + "..."
+    if len(subject) < 10 or len(subject) > 200:
+        raise OutputValidationError(f"Subject length {len(subject)} is out of bounds (10-200 chars)")
 
-    # Enforce body fallback if empty or too short
-    if len(body) < 10:
-        body = raw_text if len(raw_text) >= 10 else f"Payment Reminder: Please check your outstanding invoice. {raw_text}".strip()
-
-    if len(body) > 5000:
-        body = body[:4997] + "..."
+    if len(body) < 20 or len(body) > 5000:
+        raise OutputValidationError(f"Body length {len(body)} is out of bounds (20-5000 chars)")
 
     if "ignore previous" in body.lower() or "ignore previous instructions" in body.lower():
         raise PromptInjectionDetectedError("Potential prompt injection detected in output.")
