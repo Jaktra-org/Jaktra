@@ -4,6 +4,7 @@ from collections import defaultdict
 from urllib.parse import urlparse
 from src.exceptions import OutputValidationError, PromptInjectionDetectedError
 
+
 def sanitize_input(text: str) -> str:
     """
     Prevent Prompt Injection by scrubbing malicious patterns from user-provided data
@@ -33,6 +34,23 @@ def sanitize_input(text: str) -> str:
     
     # Strip any potential hidden formatting or control characters
     return "".join(ch for ch in text if ch.isprintable()).strip()
+
+
+def _strip_markdown_formatting(text: str) -> str:
+    """
+    Remove common markdown bold/italic markers that reasoning models inject
+    despite instructions not to use markdown.
+    e.g. **Subject:** -> Subject:  |  **INV-101** -> INV-101
+    """
+    # Remove bold (**text**) and italic (*text*) markers but keep the content
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    text = re.sub(r"\*([^*]+)\*", r"\1", text)
+    # Remove markdown headers (## Header -> Header)
+    text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
+    # Remove markdown bullet points that turn into noise
+    text = re.sub(r"^[-•]\s+", "", text, flags=re.MULTILINE)
+    return text
+
 
 def _validate_untrusted_domains(raw_text: str, payment_link: str | None = None) -> None:
     if not payment_link:
@@ -69,38 +87,77 @@ def _validate_untrusted_domains(raw_text: str, payment_link: str | None = None) 
         except Exception:
             continue
 
+
+def _detect_unfilled_placeholders(body: str) -> bool:
+    """
+    Detect if the model left template placeholders like [Client Name], {client_name}.
+    These indicate the model ignored the actual data provided.
+    """
+    patterns = [
+        r"\[Client Name\]",
+        r"\[client name\]",
+        r"\[Recipient\]",
+        r"\[Your Name\]",
+        r"\[Amount\]",
+        r"\[Invoice Number\]",
+        r"\[Date\]",
+        r"\[Payment Link\]",
+        r"\[payment link\]",
+        r"\[Bank Details\]",
+        r"\{client_name\}",
+        r"\{invoice_no\}",
+        r"\{invoice_amount\}",
+    ]
+    combined = "|".join(patterns)
+    return bool(re.search(combined, body, re.IGNORECASE))
+
+
 def validate_email_output(raw_text: str, payment_link: str | None = None) -> tuple[str, str]:
-    """Parse and validate LLM-generated email output with resilient fallbacks."""
+    """
+    Parse and validate LLM-generated email output.
+
+    Returns (subject, body) on success.
+    Raises OutputValidationError on hard failures:
+      - Missing or malformed subject
+      - Missing or empty body
+      - Body with unfilled placeholders
+      - Injection attempts
+    Raises PromptInjectionDetectedError on unsafe content.
+    """
+    # Step 0: Strip markdown formatting that reasoning models inject
+    normalized = _strip_markdown_formatting(raw_text)
+
     subject = ""
     body = ""
-    
-    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-    
-    # 1. Search for explicit "Subject:" header line (ignoring markdown wrappers like **, #)
-    for line in lines:
+
+    lines = [line.strip() for line in normalized.splitlines() if line.strip()]
+
+    # 1. Search for explicit "Subject:" header line
+    subject_line_idx = -1
+    for i, line in enumerate(lines):
         clean_line = re.sub(r"^[\#\*\_\-\s]+", "", line).strip()
-        clean_line_lower = clean_line.lower()
-        if clean_line_lower.startswith("subject:"):
+        if clean_line.lower().startswith("subject:"):
             subject = clean_line[len("subject:"):].strip()
             subject = re.sub(r"[\*\_\#]+$", "", subject).strip()
+            subject_line_idx = i
             break
 
-    lower_text = raw_text.lower()
+    # 2. Find body content
+    lower_text = normalized.lower()
     marker = "body:"
     if marker in lower_text:
         marker_pos = lower_text.find(marker)
-        body = raw_text[marker_pos + len(marker):].strip()
+        body = normalized[marker_pos + len(marker):].strip()
+    elif subject and subject in normalized:
+        pos = normalized.find(subject) + len(subject)
+        body = normalized[pos:].strip()
     else:
-        if subject and subject in raw_text:
-            pos = raw_text.find(subject) + len(subject)
-            body = raw_text[pos:].strip()
-        else:
-            body = raw_text
+        body = normalized
 
     if body.lower().startswith("body:"):
         body = body[5:].strip()
 
-    # 2. Fallback subject extraction if LLM omitted "Subject:" prefix
+    # 3. Fallback subject extraction if model omitted "Subject:" prefix
     if not subject and lines:
         first_line = re.sub(r"^[\#\*\_\-\s]+", "", lines[0]).strip()
         first_line = re.sub(r"[\*\_\#]+$", "", first_line).strip()
@@ -109,21 +166,44 @@ def validate_email_output(raw_text: str, payment_link: str | None = None) -> tup
             if body.startswith(lines[0]):
                 body = body[len(lines[0]):].strip()
 
-    if not subject:
-        raise OutputValidationError("LLM output missing subject")
+    # ── HARD FAILURE CHECKS ───────────────────────────────────────────────────
 
-    if len(subject) < 10 or len(subject) > 200:
-        raise OutputValidationError(f"Subject length {len(subject)} is out of bounds (10-200 chars)")
-
-    if len(body) < 20 or len(body) > 5000:
-        raise OutputValidationError(f"Body length {len(body)} is out of bounds (20-5000 chars)")
-
+    # 1. Security & Injection checks (evaluated first)
     if "ignore previous" in body.lower() or "ignore previous instructions" in body.lower():
         raise PromptInjectionDetectedError("Potential prompt injection detected in output.")
 
-    _validate_untrusted_domains(raw_text, payment_link)
+    # 2. Untrusted URL domain check
+    _validate_untrusted_domains(normalized, payment_link)
 
-    return subject, body
+    # 3. Subject validation
+    if not subject:
+        raise OutputValidationError("LLM output missing subject")
+
+    if len(subject) < 8:
+        raise OutputValidationError(f"Subject too short ({len(subject)} chars): {repr(subject)}")
+
+    if len(subject) > 220:
+        raise OutputValidationError(f"Subject too long ({len(subject)} chars)")
+
+    # 4. Body length validation
+    if not body or len(body.strip()) < 80:
+        raise OutputValidationError(f"Body too short or empty ({len(body.strip()) if body else 0} chars). A complete professional email requires proper greeting, context, and details.")
+
+    if len(body) > 6000:
+        raise OutputValidationError(f"Body too long ({len(body)} chars)")
+
+    # 5. Detect unfilled placeholders
+    if _detect_unfilled_placeholders(body):
+        raise OutputValidationError("Body contains unfilled template placeholders — model ignored provided data")
+
+    # 6. Mandatory portal link check: when a payment link is provided, it MUST be present in the body
+    if payment_link and str(payment_link).strip():
+        clean_link = str(payment_link).strip()
+        if clean_link not in body:
+            raise OutputValidationError(f"Generated email is missing the required payment link: {clean_link}")
+
+    return subject, body.strip()
+
 
 def validate_sms_output(raw_text: str, payment_link: str | None = None) -> str:
     """Validate SMS output is within 160 chars and contains CTA."""
@@ -131,6 +211,7 @@ def validate_sms_output(raw_text: str, payment_link: str | None = None) -> str:
         raise OutputValidationError("SMS exceeds 160 characters")
     _validate_untrusted_domains(raw_text, payment_link)
     return raw_text.strip()
+
 
 def validate_whatsapp_output(raw_text: str, payment_link: str | None = None) -> str:
     """Validate WhatsApp output is within 500 chars."""
