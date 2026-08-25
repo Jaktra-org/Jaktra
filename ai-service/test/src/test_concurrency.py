@@ -5,14 +5,22 @@ from src.api.routes.generation import content_generator
 
 @pytest.mark.anyio
 async def test_concurrent_followup_generations(async_client, mock_litellm_completion):
-    # Dynamic mock side_effect to generate output corresponding to the client name
     async def mock_acompletion(messages, **kwargs):
         # Extract client name from user message content
         user_msg = messages[-1]["content"]
-        match = re.search(r"- Client: ([^\n]+)", user_msg)
-        client_name = match.group(1).strip() if match else "Unknown"
+        match = re.search(r"- Recipient: ([^\n]+)", user_msg)
+        if not match:
+            match = re.search(r"- Client: ([^\n]+)", user_msg)
+        client_name = match.group(1).strip() if match else "Valued Customer"
         
-        content = f"Subject: Overdue Notice: {client_name}\nBody:\nHello {client_name}, this is your custom invoice reminder."
+        content = (
+            f"Subject: Overdue Notice: {client_name}\n\n"
+            f"Body:\n"
+            f"Dear {client_name},\n\n"
+            f"This is a payment reminder regarding your invoice in the amount of $100.00. "
+            f"Please arrange payment at your earliest convenience.\n\n"
+            f"Best regards,\nFinance Department"
+        )
         return mock_litellm_completion.create_response(content=content)
         
     mock_litellm_completion.side_effect = mock_acompletion
@@ -38,7 +46,7 @@ async def test_concurrent_followup_generations(async_client, mock_litellm_comple
         # Assert that the output returned corresponds to the correct client name, ensuring isolation
         assert data["invoice_id"] == f"inv_{i}"
         assert data["content"]["subject"] == f"Overdue Notice: Client_{i}"
-        assert f"Hello Client_{i}" in data["content"]["plain_body"]
+        assert f"Client_{i}" in data["content"]["plain_body"]
         
     # Fire 10 requests concurrently
     tasks = [fire_request(i) for i in range(10)]

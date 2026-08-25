@@ -7,7 +7,7 @@ from src.exceptions import LLMGenerationError, OutputValidationError, PromptInje
 @pytest.mark.anyio
 async def test_generate_followup_email_happy_path(async_client, mock_litellm_completion):
     # Mock LLM to return valid email content
-    llm_content = "Subject: Payment Reminder for Invoice 101\nBody:\nDear Client, this is a friendly reminder that payment for Invoice 101 is due. Please settle as soon as possible."
+    llm_content = "Subject: Payment Reminder for Invoice 101\nBody:\nDear Client, this is a friendly reminder that payment for Invoice 101 is due. Please pay online via our portal: https://trusted.jaktra.site/pay/123. Thank you."
     mock_litellm_completion.return_value = mock_litellm_completion.create_response(content=llm_content)
     
     headers = {"X-Service-Key": "test-service-key"}
@@ -130,7 +130,17 @@ async def test_generate_followup_validation_error_invalid_channel(async_client):
     assert response.status_code == 422
 
 @pytest.mark.anyio
-async def test_generate_followup_pydantic_boundary_fields(async_client):
+async def test_generate_followup_pydantic_boundary_fields(async_client, mock_litellm_completion):
+    mock_litellm_completion.return_value = mock_litellm_completion.create_response(
+        content=(
+            "Subject: Payment Reminder for Invoice #INV-101\n\n"
+            "Body:\n"
+            "Dear Acme Corp Accounts Payable Team,\n\n"
+            "This is a reminder regarding invoice #INV-101 in the amount of $1500.00. "
+            "Please arrange payment at your earliest convenience.\n\n"
+            "Best regards,\nFinance Department"
+        )
+    )
     headers = {"X-Service-Key": "test-service-key"}
     # days_overdue < 0
     payload = {
