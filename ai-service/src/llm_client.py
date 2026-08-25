@@ -2,11 +2,32 @@ import os
 import re
 import time
 import asyncio
+import unicodedata
 import litellm
 from dataclasses import dataclass
 from src.exceptions import LLMGenerationError
 from src.api.config import settings
 from src.api.logging import logger
+
+
+def _normalize_text(text: str) -> str:
+    """
+    Normalize model output:
+    - Replace typographic/non-breaking hyphens and dashes with regular hyphens
+    - Replace non-breaking spaces with regular spaces
+    - Apply NFKC normalization to collapse compatibility characters
+    - Strip markdown bold/italic markers (**text** -> text, *text* -> text)
+      that the reasoning model injects despite instructions
+    """
+    if not text:
+        return text
+    # NFKC normalization converts typographic variants to their ASCII equivalents
+    text = unicodedata.normalize("NFKC", text)
+    # Replace any remaining non-breaking hyphens / figure dashes / en-dashes with regular hyphen
+    text = text.replace("\u2011", "-").replace("\u2012", "-").replace("\u2013", "-")
+    # Replace non-breaking spaces with regular space
+    text = text.replace("\u00a0", " ").replace("\u202f", " ")
+    return text
 
 @dataclass
 class LLMResponse:
@@ -25,10 +46,16 @@ def _format_model_string(provider: str | None, model: str | None) -> str | None:
         return None
     model_clean = model.strip()
     p = (provider or "groq").strip().lower()
+    if p == "groq":
+        # When calling Groq models with litellm, if the model name itself contains a slash
+        # (e.g. groq/compound-mini, openai/gpt-oss-20b, meta-llama/llama-prompt-guard),
+        # litellm strips the first component as provider. Prepend 'groq/' so the intended
+        # model id is delivered to the Groq API.
+        if "/" in model_clean:
+            return f"groq/{model_clean}"
+        return f"groq/{model_clean}"
     if model_clean.startswith(f"{p}/"):
         return model_clean
-    if p == "groq" and model_clean.startswith("openai/"):
-        return f"groq/{model_clean}"
     first_part = model_clean.split("/")[0].lower()
     if "/" in model_clean and first_part in KNOWN_PROVIDERS:
         return model_clean
@@ -82,7 +109,7 @@ class LLMClient:
             providers_to_try.append(("fallback", self.fallback))
 
         if not providers_to_try:
-            default_model = _format_model_string(settings.LLM_PROVIDER, settings.LLM_MODEL) or "groq/llama-3.3-70b-versatile"
+            default_model = _format_model_string(settings.LLM_PROVIDER, settings.LLM_MODEL) or "groq/compound-mini"
             providers_to_try.append(("primary", {"model": default_model, "api_key": settings.LLM_API_KEY}))
 
         errors = []
@@ -113,10 +140,21 @@ class LLMClient:
 
                     resp_model = getattr(response, "model", None) or provider_config["model"]
                     msg_obj = response.choices[0].message
-                    raw_content = getattr(msg_obj, "content", None) or getattr(msg_obj, "reasoning_content", None) or ""
+                    # Primary: msg.content (the actual assistant response)
+                    # Fallback order: reasoning_content -> reasoning (gpt-oss uses msg.reasoning)
+                    raw_content = (
+                        getattr(msg_obj, "content", None)
+                        or getattr(msg_obj, "reasoning_content", None)
+                        or getattr(msg_obj, "reasoning", None)
+                        or ""
+                    )
                     if not isinstance(raw_content, str):
                         raw_content = str(raw_content or "")
 
+                    # Normalize Unicode characters before any processing
+                    raw_content = _normalize_text(raw_content)
+
+                    # Strip thinking/reasoning wrapper tags
                     cleaned = re.sub(r"<think>.*?</think>", "", raw_content, flags=re.DOTALL).strip()
                     if cleaned:
                         content_text = cleaned
