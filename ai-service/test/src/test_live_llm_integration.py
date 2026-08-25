@@ -23,7 +23,7 @@ async def test_live_groq_generation():
     MUST NOT SKIP under any condition. Must fail if model or API key is invalid.
     """
     provider = os.environ.get("LLM_PROVIDER", "groq").strip()
-    model = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile").strip()
+    model = os.environ.get("LLM_MODEL", "groq/compound-mini").strip()
     api_key = (
         os.environ.get("LLM_API_KEY") 
         or os.environ.get("GROQ_API_KEY") 
@@ -34,7 +34,7 @@ async def test_live_groq_generation():
 
     client = LLMClient()
     client.primary = {
-        "model": f"{provider}/{model}",
+        "model": f"{provider}/{model}" if not model.startswith(f"{provider}/") else model,
         "api_key": api_key,
     }
 
@@ -54,7 +54,7 @@ async def test_live_groq_fallback_generation():
     Strict Live Integration Test: Forces primary failure to verify secondary Groq account fallback.
     """
     fallback_provider = os.environ.get("LLM_FALLBACK_PROVIDER", "groq").strip()
-    fallback_model = os.environ.get("LLM_FALLBACK_MODEL", "openai/gpt-oss-20b").strip()
+    fallback_model = os.environ.get("LLM_FALLBACK_MODEL", "groq/compound-mini").strip()
     fallback_key = (
         os.environ.get("GROQ_FALLBACK_API_KEY") 
         or os.environ.get("LLM_FALLBACK_API_KEY") 
