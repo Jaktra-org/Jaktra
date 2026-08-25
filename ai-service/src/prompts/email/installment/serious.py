@@ -10,7 +10,7 @@ _SYSTEM = (
     "2. Context: State Invoice #{invoice_no} ({invoice_description}), Installment #{installment_number} of {total_installments}, amount ({currency}{formatted_amount}), due date ({human_due_date}), and overdue duration ({overdue_phrase}). Do not label this email by notice count (do not write 'Third Notice' or 'Second Notice') or assume prior communications.\n"
     "3. Action & Portal: Direct the recipient to access their portal link immediately, placed on its own separate line without trailing punctuation:\n"
     "   {payment_link}\n"
-    "4. Consequence: State that settlement is required by the stipulated deadline to prevent cancellation of the payment plan and immediate acceleration of the remaining balance. If they need to discuss arrangements, instruct them to contact the team immediately.\n"
+    "4. Consequence: State that settlement is needed immediately / at the earliest to prevent cancellation of the payment plan and immediate acceleration of the remaining balance. If they need to discuss arrangements, instruct them to contact the team right away. Do not invent future calendar dates, day counts, or time limits.\n"
     "5. Closing: Sign off directly as '{sender_name}'.\n"
     "6. Format: Plain text only, direct and authoritative.\n\n"
     "OUTPUT FORMAT:\n"

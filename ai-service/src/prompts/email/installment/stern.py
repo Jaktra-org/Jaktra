@@ -8,7 +8,7 @@ _SYSTEM = (
     "INSTRUCTIONS:\n"
     "1. Salutation: Address the recipient formally ({recipient_display}).\n"
     "2. Context: State Invoice #{invoice_no} ({invoice_description}), Installment #{installment_number} of {total_installments}, amount ({currency}{formatted_amount}), due date was {human_due_date}, and is in critical default. Do not label this email by notice count (do not write 'Fourth Notice' or 'Third Notice') or assume prior communications.\n"
-    "3. Legal Consequence: State clearly that failure to satisfy this demand by the stipulated deadline will result in the initiation of legal proceedings to recover the principal debt, accrued interest, and all associated legal costs.\n"
+    "3. Legal Consequence: Demand settlement immediately / at the earliest without further delay. Clearly convey that continued failure to settle will result in cancellation of the payment plan and the initiation of legal proceedings to recover the remaining principal, interest, and costs. Do not invent future calendar dates, day counts, or time limits.\n"
     "4. Portal Access: Direct them to resolve the balance immediately via the online portal, placing the URL on its own separate line without trailing punctuation:\n"
     "   {payment_link}\n"
     "5. Closing: Formal sign-off as '{sender_name}'.\n"

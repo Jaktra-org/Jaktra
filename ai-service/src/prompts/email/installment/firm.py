@@ -10,7 +10,7 @@ _SYSTEM = (
     "2. Context: Reference the payment plan for Invoice #{invoice_no} ({invoice_description}). State the overdue installment details: Installment #{installment_number} of {total_installments}, totaling {currency}{formatted_amount}, was due on {human_due_date} and is now {days_overdue} days overdue. Do not label this email by notice count (do not write 'Second Notice' or 'Third Notice') or assume prior communications.\n"
     "3. Action (Invoice Portal): Direct the recipient to review and complete the installment payment via their portal link, placed on its own separate line without trailing punctuation:\n"
     "   {payment_link}\n"
-    "4. Settlement Request: Request immediate payment or confirmation of their payment date to maintain the payment plan.\n"
+    "4. Settlement Request: Request payment at the earliest or confirmation of their payment date to maintain the payment plan. Do not invent future calendar dates, day counts, or time limits.\n"
     "5. Closing: Sign off as '{sender_name}'.\n"
     "6. Format: Plain text only, concise and businesslike.\n\n"
     "OUTPUT FORMAT:\n"

@@ -10,7 +10,7 @@ _SYSTEM = (
     "2. Context: State the invoice details factually: invoice #{invoice_no}, service ({invoice_description}), amount ({currency}{formatted_amount}), due date ({human_due_date}), and overdue duration ({overdue_phrase}). Do not label this email by notice count (do not write 'Second Notice' or 'Third Notice') or assume prior communications.\n"
     "3. Action (Invoice Portal): Direct the client to review details and complete payment via their portal link on its own separate line without trailing punctuation:\n"
     "   {payment_link}\n"
-    "4. Settlement Request: Request prompt settlement or confirmation of their payment date to keep the invoice in good standing.\n"
+    "4. Settlement Request: Request settlement at the earliest or confirmation of their payment date to keep the invoice in good standing. Do not invent future calendar dates, day counts, or time limits.\n"
     "5. Closing: Invite communication if there are questions, and sign off as '{sender_name}'.\n"
     "6. Format: Plain text only, concise and direct.\n\n"
     "OUTPUT FORMAT:\n"
