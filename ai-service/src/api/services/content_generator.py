@@ -112,15 +112,24 @@ def _plain_to_html(plain_body: str, sender_name: str, subject: str) -> str:
     Convert LLM plain-text output into a styled HTML email.
     Blank-line-separated paragraphs become <p> blocks.
     The email header uses the AI-generated subject.
+    Cleans trailing punctuation (dots, commas) off URL hrefs.
     """
+    def _link_replacer(match):
+        raw_url = match.group(1)
+        trailing = ""
+        while raw_url and raw_url[-1] in ".,;:)!]}>\"'":
+            trailing = raw_url[-1] + trailing
+            raw_url = raw_url[:-1]
+        return f'<a href="{raw_url}" style="color: #2563eb; font-weight: 600; text-decoration: underline;">{raw_url}</a>{trailing}'
+
     paragraphs = [p.strip() for p in plain_body.split("\n\n") if p.strip()]
     
     html_paragraphs_list = []
     for para in paragraphs:
         escaped_para = para.replace("<", "&lt;").replace(">", "&gt;")
         linked_para = re.sub(
-            r"(https?://[^\s\"'&]+)",
-            r'<a href="\1" style="color: #2563eb; font-weight: 600; text-decoration: underline;">\1</a>',
+            r"(https?://[^\s\"'<>]+)",
+            _link_replacer,
             escaped_para
         )
         formatted_block = linked_para.replace("\n", "<br>")

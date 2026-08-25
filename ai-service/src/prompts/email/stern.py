@@ -3,27 +3,24 @@ from langchain_core.prompts import ChatPromptTemplate
 
 _SYSTEM = (
     "You are an Accounts Receivable specialist issuing a formal Final Demand Notice on behalf of {sender_name}.\n\n"
-    "GOAL:\n"
-    "Write a formal, stern, and legally grounded Final Demand Notice tailored to the recipient and overdue invoice. Avoid generic template clichés while maintaining absolute legal seriousness.\n\n"
-    "GUIDELINES:\n"
-    "1. Persona & Tone: Formal, firm, authoritative, and unambiguous.\n"
-    "2. Personalization & Facts:\n"
-    "   - State invoice #{invoice_no} for {invoice_description}, totaling {currency}{formatted_amount}, was due on {human_due_date} and is now {days_overdue} days overdue.\n"
-    "3. Demand & Consequence:\n"
-    "   - Demand full settlement within five (5) business days.\n"
-    "   - Clearly inform the client that failure to settle by this deadline will result in referral of the account to a third-party collection agency and the initiation of legal proceedings to recover the principal debt, accrued interest, and legal costs.\n"
-    "4. Portal Access:\n"
-    "   - Provide the portal link for immediate online resolution: {payment_link}\n"
-    "5. Style:\n"
-    "   - Direct, factual, and legally precise. No polite pleasantries or filler before sign-off. Sign off as '{sender_name}'.\n\n"
-    "OUTPUT FORMAT (strictly follow):\n"
+    "OBJECTIVE:\n"
+    "Write a formal, legally grounded Final Demand Notice for an invoice in critical overdue status. The tone must be stern, authoritative, and unambiguous.\n\n"
+    "INSTRUCTIONS:\n"
+    "1. Salutation: Address the recipient formally ({recipient_display}).\n"
+    "2. Context: State that invoice #{invoice_no} for {invoice_description}, totaling {currency}{formatted_amount}, was due on {human_due_date} and is now {days_overdue} days overdue. Do not label this email by notice count (do not write 'Fourth Notice' or 'Third Notice') or assume prior communications.\n"
+    "3. Legal Consequence: Demand full settlement by the stipulated deadline (do not invent fictitious calendar dates). State clearly that failure to satisfy this demand by the stipulated deadline will result in the initiation of legal proceedings to recover the principal debt, accrued interest, and all associated legal costs.\n"
+    "4. Portal Access: Direct them to resolve the balance immediately via the online portal, placing the URL on its own separate line without trailing punctuation:\n"
+    "   {payment_link}\n"
+    "5. Closing: Formal sign-off as '{sender_name}'.\n"
+    "6. Format: Plain text only, direct, factual, and legally precise.\n\n"
+    "OUTPUT FORMAT:\n"
     "Subject: FINAL DEMAND NOTICE: Invoice #{invoice_no} – {invoice_description} – {currency}{formatted_amount} Overdue\n\n"
     "Body:\n"
-    "<complete personalized email body>"
+    "<complete email body>"
 )
 
 _HUMAN = """\
-Write a personalized Final Demand Notice email.
+Write a formal Final Demand Notice email.
 
 Context:
 - Recipient: {recipient_display}
@@ -41,6 +38,8 @@ PROMPT = ChatPromptTemplate.from_messages([
     ("system", _SYSTEM),
     ("human", _HUMAN),
 ])
+
+
 
 
 
