@@ -260,11 +260,13 @@ class ContentGenerator:
 
         # Invoice description (what payment is for)
         raw_invoice_subject = getattr(request, "invoice_subject", None)
-        invoice_description = (
-            sanitize_input(str(raw_invoice_subject).strip())
-            if raw_invoice_subject and str(raw_invoice_subject).strip()
-            else "Invoice settlement for professional goods/services"
-        )
+        if raw_invoice_subject and str(raw_invoice_subject).strip():
+            raw_desc = sanitize_input(str(raw_invoice_subject).strip())
+            # Clean up irregular spacing around punctuation (e.g. "Bat , Ball and Thigh Pad" -> "Bat, Ball and Thigh Pad")
+            raw_desc = re.sub(r'\s+([,.:;])', r'\1', raw_desc)
+            invoice_description = re.sub(r'\s+', ' ', raw_desc).strip()
+        else:
+            invoice_description = "Invoice settlement for professional goods/services"
 
         # Payment link and bank details
         payment_link = sanitize_input(getattr(request, "payment_link", None) or "")
