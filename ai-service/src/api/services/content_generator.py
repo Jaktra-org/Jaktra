@@ -31,6 +31,33 @@ def _currency_prefix(currency: str) -> str:
     return _CURRENCY_SYMBOLS.get(c, f"{c} ")
 
 
+from datetime import datetime
+
+
+def _format_human_date(due_date_str: str) -> str:
+    """Format ISO YYYY-MM-DD into human-friendly 'August 20, 2026'."""
+    clean_date = (due_date_str or "").strip()[:10]
+    if not clean_date:
+        return "the scheduled due date"
+    try:
+        dt = datetime.strptime(clean_date, "%Y-%m-%d")
+        return dt.strftime("%B %d, %Y").replace(" 0", " ")
+    except Exception:
+        return clean_date
+
+
+def _format_amount(amount_str: str) -> str:
+    """Format numeric string into clean comma-separated amount (e.g. 5700 -> 5,700)."""
+    clean = str(amount_str or "0").strip().replace(",", "")
+    try:
+        val = float(clean)
+        if val.is_integer():
+            return f"{int(val):,}"
+        return f"{val:,.2f}"
+    except Exception:
+        return str(amount_str or "0")
+
+
 # ─── Context builders ─────────────────────────────────────────────────────────
 
 def _format_recipient_display(client_name: str, company_name: str) -> str:
@@ -51,18 +78,14 @@ def _format_recipient_display(client_name: str, company_name: str) -> str:
 
 def _build_cta_block(payment_link: str, bank_details: str) -> str:
     """
-    Build the CTA section for the prompt from what is actually available.
-    Ensures payment link is explicitly presented as the primary online payment action.
+    Build the portal/payment CTA section for the prompt from what is actually available.
+    Directs the client to access their invoice portal to view details and settle online.
     """
-    parts = []
     if payment_link:
-        parts.append(f"Pay online via secure portal: {payment_link}")
+        return f"Portal Action:\nDirect the client to access their online invoice portal to review details and complete payment:\n{payment_link}"
     if bank_details:
-        parts.append(f"Direct bank transfer: {bank_details}")
-
-    if not parts:
-        return "- CTA: No online payment link or bank details provided. Request the recipient to reply to this email to arrange payment."
-    return "Call to Action Options:\n" + "\n".join(f"- {p}" for p in parts)
+        return f"Bank Transfer Action:\nDirect the client to remit payment via direct bank transfer:\n{bank_details}"
+    return "Action:\nRequest the recipient to reply to this email to arrange payment or confirm their schedule."
 
 
 def _build_subject_context_inline(
@@ -140,9 +163,9 @@ def _plain_to_html(plain_body: str, sender_name: str, subject: str) -> str:
           <!-- Footer -->
           <tr>
             <td style="background-color: #f3f4f6; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.5;">
-                This is an automated payment communication. If you have already settled this invoice, please disregard this notice.
-                For any questions or support, contact {sender_name} directly.
+              <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.5;">
+                This is an automated payment notification. If you have already made the payment, please disregard this notice.
+                For questions or assistance, please contact {sender_name}.
               </p>
             </td>
           </tr>
@@ -243,8 +266,15 @@ class ContentGenerator:
         # Currency prefix (e.g. "₹", "$")
         currency = _currency_prefix(getattr(request, "currency", None) or "INR")
 
+        # Formatted amount & dates
+        raw_amount = str(getattr(request, "invoice_amount", "") or "0.00")
+        formatted_amount = _format_amount(raw_amount)
+        raw_due_date = str(getattr(request, "due_date", "") or "")[:10]
+        human_due_date = _format_human_date(raw_due_date)
+
         # Overdue context
         days_overdue = int(getattr(request, "days_overdue", 0) or 0)
+        status_word = "Overdue" if days_overdue > 0 else "Due"
         if days_overdue > 0:
             overdue_phrase = f"{days_overdue} days overdue"
         elif days_overdue == 0:
@@ -269,10 +299,14 @@ class ContentGenerator:
             recipient_display=recipient_display,
             invoice_no=sanitize_input(getattr(request, "invoice_no", "") or ""),
             invoice_description=invoice_description,
-            invoice_amount=sanitize_input(str(getattr(request, "invoice_amount", "") or "")),
-            due_date=sanitize_input(str(getattr(request, "due_date", "") or "")[:10]),
+            invoice_amount=formatted_amount,
+            formatted_amount=formatted_amount,
+            due_date=human_due_date,
+            human_due_date=human_due_date,
+            raw_due_date=raw_due_date,
             days_overdue=days_overdue,
             overdue_phrase=overdue_phrase,
+            status_word=status_word,
             followup_count=getattr(request, "followup_count", 0),
             sender_name=sender_name,
             currency=currency,
@@ -480,14 +514,17 @@ class ContentGenerator:
         total_inst: Optional[int] = None,
     ) -> tuple[str, str]:
         """
-        Build a rich, professional, personalized fallback email using all available facts.
-        Never produces a minimal one-liner. Guarantees payment link and invoice specifics are included.
+        Build a clean, direct, professional fallback email using all available facts.
+        Completely free of filler/softening language.
         """
         is_installment = bool(inst_num and total_inst)
+        human_due_date = _format_human_date(due_date)
+        formatted_amount = _format_amount(inv_amount)
+
         if is_installment:
-            subject = f"Payment Reminder: Installment #{inst_num} of {total_inst} - Invoice #{inv_no}"
+            subject = f"Payment Reminder: Installment #{inst_num} of {total_inst} – Invoice #{inv_no} – {currency}{formatted_amount} Due"
         else:
-            subject = f"Payment Reminder: Invoice #{inv_no} - {invoice_description}"
+            subject = f"Payment Reminder: Invoice #{inv_no} – {invoice_description} – {currency}{formatted_amount} Overdue"
 
         # Salutation
         recip_clean = recipient_display.strip()
@@ -505,36 +542,29 @@ class ContentGenerator:
         # Body paragraphs
         if is_installment:
             p1 = (
-                f"This is a courteous reminder regarding your active payment plan for Invoice #{inv_no} "
-                f"({invoice_description}). Installment #{inst_num} of {total_inst} in the amount of "
-                f"{currency}{inv_amount} is scheduled for payment (due: {due_date})."
+                f"This is a reminder regarding your payment plan for Invoice #{inv_no} "
+                f"({invoice_description}). Installment #{inst_num} of {total_inst}, totaling "
+                f"{currency}{formatted_amount}, was due on {human_due_date}."
             )
         else:
             p1 = (
-                f"This is a payment reminder regarding Invoice #{inv_no} for {invoice_description}. "
-                f"The total amount of {currency}{inv_amount} was due on {due_date}."
+                f"Invoice #{inv_no} for {invoice_description}, totaling {currency}{formatted_amount}, "
+                f"was due on {human_due_date}."
             )
 
         if payment_link:
-            p2 = (
-                f"To facilitate prompt settlement, you can view the invoice details and complete your payment online "
-                f"via our secure payment portal:\n{payment_link}"
-            )
+            p2 = f"Please make the payment through our online payment portal:\n{payment_link}"
         elif bank_details:
-            p2 = (
-                f"Payment may be remitted via direct bank transfer using the following details:\n{bank_details}"
-            )
+            p2 = f"Please remit payment via direct bank transfer:\n{bank_details}"
         else:
-            p2 = (
-                "Please arrange for payment at your earliest convenience or reply to this email to confirm your payment schedule."
-            )
+            p2 = "Please reply directly to this email to arrange payment or confirm your payment schedule."
 
         p3 = (
-            "If payment has already been remitted, please accept our thanks and disregard this notice. "
-            "Should you have any questions or require assistance, do not hesitate to contact us."
+            "If you have already made the payment, please disregard this reminder.\n\n"
+            "If you have any questions or need assistance, please contact us."
         )
 
-        signoff = f"Best regards,\n{sender_name}"
+        signoff = f"Regards,\n{sender_name}"
 
         body = f"{greeting}\n\n{p1}\n\n{p2}\n\n{p3}\n\n{signoff}"
         return subject, body

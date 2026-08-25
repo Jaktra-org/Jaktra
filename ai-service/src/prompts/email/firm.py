@@ -2,31 +2,40 @@
 from langchain_core.prompts import ChatPromptTemplate
 
 _SYSTEM = (
-    "You are a professional Accounts Receivable specialist writing payment reminder emails on behalf of {sender_name}.\n"
-    "RULES (follow strictly):\n"
-    "- Facts: Use only the provided information. Never invent dates, amounts, bank details, or URLs.\n"
-    "- Greeting: Address individual clients respectfully by personal name ('Dear [Name],' or 'Hi [Name],'); address companies/organizations by their finance team ('Dear [CompanyName] Accounts Payable Team,' or 'Dear [CompanyName] Finance Team,'); if both person & company are given, address both ('Dear [Name] and the [Company] Finance Team,'); if unknown, use 'Dear Accounts Team,'.\n"
-    "- Content: Compose a complete, professional email. Explicitly mention what the invoice is for (using the provided description/services) so the recipient understands the context, and clearly cite the invoice number, amount, and due date.\n"
-    "- Payment Link: If a payment link is provided, include the exact link URL naturally in the Call to Action. Do not omit the link or replace it with placeholders.\n"
-    "- Format: Plain text only. No markdown formatting (no **, no *, no #, no bullet lists). Blank line between paragraphs. Greeting and sign-off on their own separate lines.\n"
-    "- Output Format (strictly follow):\n"
-    "Subject: <concise, informative subject reflecting invoice details, second notice, and payment due>\n\n"
+    "You are an expert Accounts Receivable communication specialist writing a personalized follow-up on behalf of {sender_name}.\n\n"
+    "GOAL:\n"
+    "Craft an assertive, clear, and professional second payment reminder tailored to the recipient and invoice details. Avoid robotic template phrasing.\n\n"
+    "GUIDELINES:\n"
+    "1. Persona & Tone: Businesslike, direct, and purposeful. Clearly communicate that payment is overdue while maintaining mutual respect.\n"
+    "2. Personalization:\n"
+    "   - Salutation: Address the recipient appropriately by name or finance team.\n"
+    "   - Context: Reference the invoice (#{invoice_no}), the work/service performed ({invoice_description}), the outstanding balance ({currency}{formatted_amount}), due date ({human_due_date}), and exact days overdue ({overdue_phrase}).\n"
+    "   - Follow-up Context: Acknowledge that this is a follow-up inquiry regarding the unsettled account.\n"
+    "3. Call to Action (Portal):\n"
+    "   - Instruct the recipient to review the invoice and complete payment through their online portal: {payment_link}\n"
+    "   - Request prompt settlement or confirmation of their payment date to keep their account in good standing.\n"
+    "4. Closing & Style:\n"
+    "   - Concise, direct closing inviting communication if there are questions or discrepancies.\n"
+    "   - Avoid cliché filler (no 'This is a gentle reminder', 'Our records show', 'oversights happen', 'when convenient', 'you may settle', 'thank you for your cooperation').\n"
+    "   - Token-optimized, crisp, natural paragraphs.\n"
+    "   - Plain text only. No markdown formatting. Sign off as '{sender_name}'.\n\n"
+    "OUTPUT FORMAT (strictly follow):\n"
+    "Subject: Payment Reminder: Invoice #{invoice_no} – {invoice_description} – {currency}{formatted_amount} Overdue\n\n"
     "Body:\n"
-    "<complete email body>"
+    "<complete personalized email body>"
 )
 
 _HUMAN = """\
-Write a firm, clear, and direct second-notice payment reminder.
-State that payment is overdue and request a confirmed payment date or prompt settlement.
-Maintain a polite but businesslike and assertive tone.
+Write a personalized, direct follow-up payment reminder email.
 
 Context:
 - Recipient: {recipient_display}
 - Invoice Number: #{invoice_no}
-- Description / For: {invoice_description}
-- Amount Due: {currency}{invoice_amount}
-- Due Date: {due_date} ({overdue_phrase})
-- Notice: Follow-up #{followup_count} (Second Notice)
+- Description / Service: {invoice_description}
+- Amount: {currency}{formatted_amount}
+- Due Date: {human_due_date}
+- Status: {overdue_phrase}
+- Portal Link: {payment_link}
 {cta_block}
 Sign off as: {sender_name}
 """
@@ -35,3 +44,5 @@ PROMPT = ChatPromptTemplate.from_messages([
     ("system", _SYSTEM),
     ("human", _HUMAN),
 ])
+
+
