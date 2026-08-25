@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+import re
 from src.prompt_registry import PromptRegistry, TierNotAutomatableError, UnknownPromptError
 from src.llm_client import LLMClient
 from src.security import sanitize_input, validate_email_output, validate_sms_output, validate_whatsapp_output
@@ -15,80 +16,137 @@ class GenerationResult(BaseModel):
     metadata: dict
 
 
-def _build_cta_instruction(payment_link: str, bank_details: str) -> str:
+# ─── Currency formatting ───────────────────────────────────────────────────────
+
+_CURRENCY_SYMBOLS = {
+    "INR": "₹", "USD": "$", "EUR": "€", "GBP": "£",
+    "AUD": "A$", "CAD": "C$", "SGD": "S$", "AED": "AED ",
+    "JPY": "¥", "CNY": "¥",
+}
+
+
+def _currency_prefix(currency: str) -> str:
+    """Return a clean currency prefix (symbol or 3-letter code + space)."""
+    c = (currency or "INR").strip().upper()
+    return _CURRENCY_SYMBOLS.get(c, f"{c} ")
+
+
+# ─── Context builders ─────────────────────────────────────────────────────────
+
+def _format_recipient_display(client_name: str, company_name: str) -> str:
     """
-    Build the CTA portion of the prompt only from what is actually available.
-    If neither is provided, return an empty string so the LLM does not
-    invent payment methods or account details.
+    Format recipient display string taking into account individual vs company context.
+    """
+    c_name = (client_name or "").strip()
+    co_name = (company_name or "").strip()
+
+    if c_name and co_name and c_name.lower() != co_name.lower() and c_name.lower() != "valued customer":
+        return f"{c_name} ({co_name})"
+    if c_name and c_name.lower() != "valued customer":
+        return c_name
+    if co_name:
+        return co_name
+    return c_name or "Valued Customer"
+
+
+def _build_cta_block(payment_link: str, bank_details: str) -> str:
+    """
+    Build the CTA section for the prompt from what is actually available.
+    Ensures payment link is explicitly presented as the primary online payment action.
     """
     parts = []
     if payment_link:
-        parts.append(f"They can pay online at: {payment_link}")
+        parts.append(f"Pay online via secure portal: {payment_link}")
     if bank_details:
-        parts.append(f"Bank transfer details: {bank_details}")
+        parts.append(f"Direct bank transfer: {bank_details}")
 
     if not parts:
-        # No payment info at all — tell the LLM explicitly
-        return (
-            "Note: No online payment link or bank details are available at this time. "
-            "Ask them to contact us by reply email to arrange payment."
-        )
-    return "CTA: Provide the following payment options:\n" + "\n".join(f"- {p}" for p in parts)
+        return "- CTA: No online payment link or bank details provided. Request the recipient to reply to this email to arrange payment."
+    return "Call to Action Options:\n" + "\n".join(f"- {p}" for p in parts)
 
 
-def _plain_to_html(plain_body: str, sender_name: str) -> str:
+def _build_subject_context_inline(
+    invoice_subject: Optional[str],
+    inst_num: Optional[int],
+    total_inst: Optional[int],
+) -> str:
     """
-    Convert the LLM plain-text output into a well-structured, styled HTML email.
-    Each blank-line-separated paragraph becomes its own <p> block.
+    Build inline subject context for SMS/WhatsApp or legacy references.
     """
-    # Split into paragraphs on blank lines
+    parts = []
+    if invoice_subject and str(invoice_subject).strip():
+        desc = sanitize_input(str(invoice_subject).strip())
+        parts.append(f" - {desc}")
+    if inst_num and total_inst:
+        parts.append(f" [Installment #{inst_num} of {total_inst}]")
+    return "".join(parts)
+
+
+# ─── HTML conversion ──────────────────────────────────────────────────────────
+
+def _plain_to_html(plain_body: str, sender_name: str, subject: str) -> str:
+    """
+    Convert LLM plain-text output into a styled HTML email.
+    Blank-line-separated paragraphs become <p> blocks.
+    The email header uses the AI-generated subject.
+    """
     paragraphs = [p.strip() for p in plain_body.split("\n\n") if p.strip()]
+    
+    html_paragraphs_list = []
+    for para in paragraphs:
+        escaped_para = para.replace("<", "&lt;").replace(">", "&gt;")
+        linked_para = re.sub(
+            r"(https?://[^\s\"'&]+)",
+            r'<a href="\1" style="color: #2563eb; font-weight: 600; text-decoration: underline;">\1</a>',
+            escaped_para
+        )
+        formatted_block = linked_para.replace("\n", "<br>")
+        html_paragraphs_list.append(
+            f'    <p style="margin: 0 0 16px 0; color: #374151; line-height: 1.6; font-size: 15px;">{formatted_block}</p>'
+        )
 
-    # Build styled HTML
-    html_paragraphs = "\n".join(
-        f'    <p style="margin: 0 0 16px 0; color: #374151; line-height: 1.6;">{para.replace(chr(10), "<br>")}</p>'
-        for para in paragraphs
-    )
+    html_paragraphs = "\n".join(html_paragraphs_list)
+    display_title = subject[:90] + ("..." if len(subject) > 90 else "")
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Reminder</title>
+  <title>{display_title}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 32px 0;">
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
- 
+
           <!-- Header -->
           <tr>
             <td style="background-color: #1e3a5f; padding: 28px 40px;">
               <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600; letter-spacing: -0.3px;">
-                Payment Reminder
+                {display_title}
               </p>
             </td>
           </tr>
- 
+
           <!-- Body -->
           <tr>
             <td style="padding: 36px 40px 24px 40px;">
 {html_paragraphs}
             </td>
           </tr>
- 
+
           <!-- Footer -->
           <tr>
             <td style="background-color: #f3f4f6; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.5;">
-                This is an automated payment reminder. Please do not reply to this email if you have already settled this invoice.
-                If you have any questions, contact {sender_name} directly.
+                This is an automated payment communication. If you have already settled this invoice, please disregard this notice.
+                For any questions or support, contact {sender_name} directly.
               </p>
             </td>
           </tr>
- 
+
         </table>
       </td>
     </tr>
@@ -96,6 +154,48 @@ def _plain_to_html(plain_body: str, sender_name: str) -> str:
 </body>
 </html>"""
 
+
+# ─── Retry prompt ─────────────────────────────────────────────────────────────
+
+def _build_retry_messages(
+    original_content: str,
+    failure_reason: str,
+    payment_link: str,
+    sender_name: str,
+) -> list:
+    """
+    Build a surgical correction prompt for a single retry.
+    Tells the model precisely what failed and must be fixed while preserving context and tone.
+    """
+
+    class _Msg:
+        def __init__(self, type_str: str, content_str: str):
+            self.type = type_str
+            self.content = content_str
+
+    system = (
+        "You are an Accounts Receivable specialist correcting a payment reminder email that failed output validation.\n"
+        "Fix ONLY the stated problem. Preserve the professional tone, greeting, and structure.\n"
+        "Output ONLY the corrected email in this exact format:\n"
+        "Subject: <subject line>\n\n"
+        "Body:\n"
+        "<complete email body>"
+    )
+
+    portal_instruction = ""
+    if payment_link:
+        portal_instruction = f"\nCRITICAL REQUIREMENT: The email MUST include this payment link URL naturally in the Call to Action:\n{payment_link}"
+
+    user = (
+        f"The previous draft failed validation. Reason: {failure_reason}{portal_instruction}\n\n"
+        f"Original draft:\n---\n{original_content}\n---\n\n"
+        f"Produce the complete, corrected email now. Sign off as: {sender_name}"
+    )
+
+    return [_Msg("system", system), _Msg("user", user)]
+
+
+# ─── Main generator ───────────────────────────────────────────────────────────
 
 class ContentGenerator:
     def __init__(self, prompt_registry: PromptRegistry, llm_client: LLMClient):
@@ -117,35 +217,67 @@ class ContentGenerator:
         except UnknownPromptError as e:
             raise ValueError(str(e))
 
-        sender_name = getattr(settings, "SMTP_SENDER_NAME", "Finance Department")
+        # Sender name: prefer per-request value over global setting
+        raw_sender = getattr(request, "sender_name", None)
+        sender_name = sanitize_input(str(raw_sender).strip()) if raw_sender and str(raw_sender).strip() else getattr(settings, "SMTP_SENDER_NAME", "Finance Department")
+
+        # Client and Company names
+        raw_client = sanitize_input(getattr(request, "client_name", "") or "")
+        raw_company = sanitize_input(getattr(request, "company_name", "") or "")
+        recipient_display = _format_recipient_display(raw_client, raw_company)
+
+        # Invoice description (what payment is for)
+        raw_invoice_subject = getattr(request, "invoice_subject", None)
+        invoice_description = (
+            sanitize_input(str(raw_invoice_subject).strip())
+            if raw_invoice_subject and str(raw_invoice_subject).strip()
+            else "Invoice settlement for professional goods/services"
+        )
+
+        # Payment link and bank details
         payment_link = sanitize_input(getattr(request, "payment_link", None) or "")
-        bank_details = sanitize_input(getattr(request, "bank_details", None) or getattr(settings, "BANK_DETAILS", "") or "")
+        bank_details = sanitize_input(
+            getattr(request, "bank_details", None) or getattr(settings, "BANK_DETAILS", "") or ""
+        )
 
-        # Build a conditional CTA — never pass empty strings to the prompt
-        cta_instruction = _build_cta_instruction(payment_link, bank_details)
+        # Currency prefix (e.g. "₹", "$")
+        currency = _currency_prefix(getattr(request, "currency", None) or "INR")
 
-        # Build subject context — include description and installment details if present
-        raw_subject = getattr(request, "invoice_subject", None)
+        # Overdue context
+        days_overdue = int(getattr(request, "days_overdue", 0) or 0)
+        if days_overdue > 0:
+            overdue_phrase = f"{days_overdue} days overdue"
+        elif days_overdue == 0:
+            overdue_phrase = "due today"
+        else:
+            overdue_phrase = f"due in {abs(days_overdue)} days"
 
-        subject_parts = []
-        if raw_subject and str(raw_subject).strip():
-            subject_parts.append(f"- Invoice Description: {sanitize_input(str(raw_subject).strip())}")
-        if inst_num and total_inst:
-            subject_parts.append(f"- Active Payment Plan: Remind debtor specifically for Installment #{inst_num} of {total_inst}")
-            subject_parts.append(f"- MANDATORY INSTALLMENT INSTRUCTION: This invoice is under an active payment plan. You MUST frame this email for Installment #{inst_num} of {total_inst} (Amount: {sanitize_input(str(getattr(request, 'invoice_amount', '')))}, Due Date: {sanitize_input(str(getattr(request, 'due_date', ''))[:10])}) while maintaining the required {request.urgency_tier} tone. Explicitly reference Installment #{inst_num} of {total_inst} in the subject line.")
+        # CTA block — built from what is actually available
+        cta_block = _build_cta_block(payment_link, bank_details)
 
-        subject_context = "\n".join(subject_parts)
+        # Inline subject context (for SMS/WhatsApp)
+        subject_context_inline = _build_subject_context_inline(
+            raw_invoice_subject,
+            inst_num if is_installment else None,
+            total_inst if is_installment else None,
+        )
 
+        # Build formatted messages
         messages = prompt.format_messages(
-            client_name=sanitize_input(getattr(request, "client_name", "")),
-            invoice_no=sanitize_input(getattr(request, "invoice_no", "")),
-            invoice_amount=sanitize_input(str(getattr(request, "invoice_amount", ""))),
-            due_date=sanitize_input(str(getattr(request, "due_date", ""))[:10]),
-            days_overdue=getattr(request, "days_overdue", 0),
+            client_name=raw_client or "Valued Customer",
+            company_name=raw_company or "",
+            recipient_display=recipient_display,
+            invoice_no=sanitize_input(getattr(request, "invoice_no", "") or ""),
+            invoice_description=invoice_description,
+            invoice_amount=sanitize_input(str(getattr(request, "invoice_amount", "") or "")),
+            due_date=sanitize_input(str(getattr(request, "due_date", "") or "")[:10]),
+            days_overdue=days_overdue,
+            overdue_phrase=overdue_phrase,
             followup_count=getattr(request, "followup_count", 0),
             sender_name=sender_name,
-            cta_instruction=cta_instruction,
-            subject_context=subject_context,
+            currency=currency,
+            cta_block=cta_block,
+            subject_context_inline=subject_context_inline,
             payment_link=payment_link,
             installment_number=inst_num or 1,
             total_installments=total_inst or 1,
@@ -157,7 +289,7 @@ class ContentGenerator:
             "tier_used": request.urgency_tier,
             "model": llm_response.model,
             "generation_ms": round(llm_response.generation_ms, 2),
-            "token_count": llm_response.completion_tokens + llm_response.prompt_tokens
+            "token_count": llm_response.completion_tokens + llm_response.prompt_tokens,
         }
 
         logger.info(
@@ -169,40 +301,241 @@ class ContentGenerator:
             provider=llm_response.provider,
             generation_ms=round(llm_response.generation_ms, 2),
             token_count=llm_response.completion_tokens + llm_response.prompt_tokens,
-            used_fallback=llm_response.used_fallback
+            used_fallback=llm_response.used_fallback,
         )
 
-        # Clean markdown formatting backticks from the LLM content
+        # Strip markdown code fences if model wraps output
         content = llm_response.content.strip()
         if content.startswith("```"):
             first_newline = content.find("\n")
-            if first_newline != -1:
-                content = content[first_newline + 1:]
-            else:
-                content = content[3:]
+            content = content[first_newline + 1:] if first_newline != -1 else content[3:]
         if content.endswith("```"):
             content = content[:-3]
         content = content.strip()
 
+        # Clean subject boundary if present
+        subject_match = re.search(r"(?m)^(?:\*{0,2})Subject:", content)
+        if subject_match and subject_match.start() > 10:
+            content = content[subject_match.start():]
+
         llm_response.content = content
 
-        res = None
+        # ── Channel dispatch ──────────────────────────────────────────────────
         if request.channel == "email":
-            try:
-                subject, body = validate_email_output(llm_response.content, payment_link)
-            except OutputValidationError as val_err:
-                logger.warning("email_validation_fallback_used", invoice_id=request.invoice_id, error=str(val_err))
-                inv_no = sanitize_input(str(getattr(request, 'invoice_no', '') or ''))
-                subject = f"Payment Reminder: Invoice #{inv_no}" if inv_no else "Payment Reminder: Outstanding Invoice Follow-Up"
-                body = llm_response.content if len(llm_response.content) >= 10 else f"Payment Reminder: Outstanding invoice #{inv_no} is overdue. Please process payment."
+            return await self._finalize_email(
+                request=request,
+                llm_response=llm_response,
+                payment_link=payment_link,
+                sender_name=sender_name,
+                recipient_display=recipient_display,
+                invoice_description=invoice_description,
+                currency=currency,
+                bank_details=bank_details,
+                metadata=metadata,
+                inst_num=inst_num,
+                total_inst=total_inst,
+            )
 
-            if inst_num and total_inst and "installment" not in subject.lower():
-                subject = f"Payment Reminder: Installment #{inst_num} of {total_inst} (Invoice #{sanitize_input(str(getattr(request, 'invoice_no', '') or ''))})"
-            html_body = _plain_to_html(body, sender_name)
-            return GenerationResult(subject=subject, html_body=html_body, plain_body=body, metadata=metadata)
-        elif request.channel == "sms":
+        if request.channel == "sms":
             body = validate_sms_output(llm_response.content, payment_link)
             return GenerationResult(subject=None, plain_body=body, metadata=metadata)
-        elif request.channel == "whatsapp":
+
+        if request.channel == "whatsapp":
             body = validate_whatsapp_output(llm_response.content, payment_link)
             return GenerationResult(subject=None, plain_body=body, metadata=metadata)
+
+    async def _finalize_email(
+        self,
+        request,
+        llm_response,
+        payment_link: str,
+        sender_name: str,
+        recipient_display: str,
+        invoice_description: str,
+        currency: str,
+        bank_details: str,
+        metadata: dict,
+        inst_num: Optional[int],
+        total_inst: Optional[int],
+    ):
+        """
+        Validate and finalize the email.
+        Performs one targeted retry if the first output fails validation.
+        Falls back to a structured contextual template only as a last resort.
+        """
+        inv_no = sanitize_input(str(getattr(request, "invoice_no", "") or ""))
+        inv_amount = sanitize_input(str(getattr(request, "invoice_amount", "") or "0.00"))
+        due_date = sanitize_input(str(getattr(request, "due_date", "") or "")[:10])
+        content = llm_response.content
+
+        subject, body = await self._validate_with_retry(
+            content=content,
+            payment_link=payment_link,
+            sender_name=sender_name,
+            invoice_id=str(getattr(request, "invoice_id", "") or ""),
+            inv_no=inv_no,
+            inv_amount=inv_amount,
+            currency=currency,
+            due_date=due_date,
+            recipient_display=recipient_display,
+            invoice_description=invoice_description,
+            bank_details=bank_details,
+            inst_num=inst_num,
+            total_inst=total_inst,
+        )
+
+        html_body = _plain_to_html(body, sender_name, subject)
+        return GenerationResult(subject=subject, html_body=html_body, plain_body=body, metadata=metadata)
+
+    async def _validate_with_retry(
+        self,
+        content: str,
+        payment_link: str,
+        sender_name: str,
+        invoice_id: str,
+        inv_no: str,
+        inv_amount: str,
+        currency: str,
+        due_date: str,
+        recipient_display: str,
+        invoice_description: str,
+        bank_details: str,
+        inst_num: Optional[int],
+        total_inst: Optional[int],
+    ) -> tuple[str, str]:
+        """
+        Validate email content.
+        On validation failure: attempt ONE surgical retry with targeted correction prompt.
+        If retry also fails: use rich contextual fallback.
+        """
+        # First attempt
+        first_failure_reason = ""
+        try:
+            return validate_email_output(content, payment_link)
+        except OutputValidationError as first_err:
+            first_failure_reason = str(first_err)
+            logger.warning(
+                "email_validation_first_attempt_failed",
+                invoice_id=invoice_id,
+                error=first_failure_reason,
+                content_length=len(content),
+            )
+
+        # Single targeted retry — only if we have content to correct
+        if content and len(content) >= 20:
+            try:
+                retry_messages = _build_retry_messages(
+                    original_content=content,
+                    failure_reason=first_failure_reason,
+                    payment_link=payment_link,
+                    sender_name=sender_name,
+                )
+                retry_response = await self.llm.generate(retry_messages, temperature=0.2)
+                retry_content = retry_response.content.strip()
+                if retry_content.startswith("```"):
+                    nl = retry_content.find("\n")
+                    retry_content = retry_content[nl + 1:] if nl != -1 else retry_content[3:]
+                if retry_content.endswith("```"):
+                    retry_content = retry_content[:-3]
+                retry_content = retry_content.strip()
+
+                subject, body = validate_email_output(retry_content, payment_link)
+                logger.info("email_validation_retry_succeeded", invoice_id=invoice_id)
+                return subject, body
+            except (OutputValidationError, Exception) as retry_err:
+                logger.warning(
+                    "email_validation_retry_failed",
+                    invoice_id=invoice_id,
+                    error=str(retry_err),
+                )
+
+        # Last resort: rich structured fallback
+        logger.warning("email_validation_using_structured_fallback", invoice_id=invoice_id)
+        return self._structured_fallback(
+            inv_no=inv_no,
+            inv_amount=inv_amount,
+            currency=currency,
+            due_date=due_date,
+            recipient_display=recipient_display,
+            invoice_description=invoice_description,
+            payment_link=payment_link,
+            bank_details=bank_details,
+            sender_name=sender_name,
+            inst_num=inst_num,
+            total_inst=total_inst,
+        )
+
+    def _structured_fallback(
+        self,
+        inv_no: str,
+        inv_amount: str,
+        currency: str,
+        due_date: str,
+        recipient_display: str,
+        invoice_description: str,
+        payment_link: str,
+        bank_details: str,
+        sender_name: str,
+        inst_num: Optional[int] = None,
+        total_inst: Optional[int] = None,
+    ) -> tuple[str, str]:
+        """
+        Build a rich, professional, personalized fallback email using all available facts.
+        Never produces a minimal one-liner. Guarantees payment link and invoice specifics are included.
+        """
+        is_installment = bool(inst_num and total_inst)
+        if is_installment:
+            subject = f"Payment Reminder: Installment #{inst_num} of {total_inst} - Invoice #{inv_no}"
+        else:
+            subject = f"Payment Reminder: Invoice #{inv_no} - {invoice_description}"
+
+        # Salutation
+        recip_clean = recipient_display.strip()
+        lower_recip = recip_clean.lower()
+        company_words = ["corp", "inc", "ltd", "llc", "pvt", "limited", "technologies", "services", "solutions", "group"]
+        is_company = any(w in lower_recip for w in company_words)
+
+        if is_company:
+            greeting = f"Dear {recip_clean} Finance Team,"
+        elif recip_clean and lower_recip != "valued customer":
+            greeting = f"Dear {recip_clean},"
+        else:
+            greeting = "Dear Accounts Team,"
+
+        # Body paragraphs
+        if is_installment:
+            p1 = (
+                f"This is a courteous reminder regarding your active payment plan for Invoice #{inv_no} "
+                f"({invoice_description}). Installment #{inst_num} of {total_inst} in the amount of "
+                f"{currency}{inv_amount} is scheduled for payment (due: {due_date})."
+            )
+        else:
+            p1 = (
+                f"This is a payment reminder regarding Invoice #{inv_no} for {invoice_description}. "
+                f"The total amount of {currency}{inv_amount} was due on {due_date}."
+            )
+
+        if payment_link:
+            p2 = (
+                f"To facilitate prompt settlement, you can view the invoice details and complete your payment online "
+                f"via our secure payment portal:\n{payment_link}"
+            )
+        elif bank_details:
+            p2 = (
+                f"Payment may be remitted via direct bank transfer using the following details:\n{bank_details}"
+            )
+        else:
+            p2 = (
+                "Please arrange for payment at your earliest convenience or reply to this email to confirm your payment schedule."
+            )
+
+        p3 = (
+            "If payment has already been remitted, please accept our thanks and disregard this notice. "
+            "Should you have any questions or require assistance, do not hesitate to contact us."
+        )
+
+        signoff = f"Best regards,\n{sender_name}"
+
+        body = f"{greeting}\n\n{p1}\n\n{p2}\n\n{p3}\n\n{signoff}"
+        return subject, body
+
