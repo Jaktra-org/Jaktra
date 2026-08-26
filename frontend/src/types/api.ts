@@ -251,6 +251,7 @@ export interface TenantSettings {
   autoPurgeEnabled: boolean;
   autoPurgeDays: number;
   autoPurgeArchivedDisputesDays?: number;
+  supportEmail?: string | null;
 }
 
 export interface BaseIntegrationStatus {

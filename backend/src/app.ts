@@ -3,6 +3,7 @@ import { config as envConfig } from './config/index.js';
 import cors from 'cors';
 import cron from 'node-cron';
 import { InvoicePurgeService } from './modules/invoice/invoice-purge.service.js';
+import { InvoiceNotificationService } from './modules/invoice/invoice-notification.service.js';
 import { DisputePurgeService } from './modules/dispute/dispute-purge.service.js';
 import { ReplyTokenCleanupService } from './modules/communication/reply-token-cleanup.service.js';
 import { createHealthRouter } from './modules/health/health.routes.js';
@@ -295,9 +296,10 @@ export function createApp(config: AppConfig): Application {
       const teamService = new TeamService(teamRepo, userRepo, platformMailer);
       app.use('/api/team', createTeamRouter(new TeamController(teamService, teamRepo, eventService), authMiddleware));
 
-      const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo);
+      const invoiceNotificationService = new InvoiceNotificationService(communicationService, portalService, settingsRepo);
+      const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo, invoiceNotificationService);
       const triageService = new TriageService();
-      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService, dlqService, communicationRepo, portalService, paymentPlanRepo), paymentPlanController, authMiddleware, tenantScoped));
+      app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService, dlqService, communicationRepo, portalService, paymentPlanRepo, invoiceNotificationService), paymentPlanController, authMiddleware, tenantScoped));
       app.use('/api/invoices', createTriageRouter(new TriageController(triageService, invoiceRepo, dlqService, communicationRepo, paymentPlanRepo), authMiddleware, tenantScoped));
 
       const analyticsRepo = new AnalyticsRepository(config.db);

@@ -310,6 +310,7 @@ export const tenantSettings = pgTable('tenant_settings', {
   mfaRequired: boolean('mfa_required').notNull().default(false),
   inboundBlockedByAdmin: boolean('inbound_blocked_by_admin').notNull().default(false),
   autoPurgeArchivedDisputesDays: integer('auto_purge_archived_disputes_days').notNull().default(30),
+  supportEmail: varchar('support_email', { length: 255 }),
 });
 
 export const emailIntegrations = pgTable('email_integrations', {

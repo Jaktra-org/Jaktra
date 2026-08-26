@@ -21,6 +21,7 @@ import type { AuthenticatedRequest } from '../../shared/types/auth.js';
 import { DlqService } from '../dlq/dlq.service.js';
 import { CommunicationRepository } from '../communication/communication.repository.js';
 import { config } from '../../config/index.js';
+import type { InvoiceNotificationService } from './invoice-notification.service.js';
 
 export class InvoiceController {
   constructor(
@@ -31,7 +32,8 @@ export class InvoiceController {
     private dlqService: DlqService,
     private communicationRepo: CommunicationRepository,
     private portalService: PortalService,
-    private paymentPlanRepo?: PaymentPlanRepository
+    private paymentPlanRepo?: PaymentPlanRepository,
+    private notificationService?: InvoiceNotificationService
   ) {}
 
   private getActorContext(req: Request): ActorContext {
@@ -166,6 +168,11 @@ export class InvoiceController {
       if (result.wasUpdated) {
         res.status(200).json(result.invoice);
       } else {
+        if (this.notificationService) {
+          this.notificationService.sendInitialInvoiceEmail(tenantId, result.invoice).catch((err) => {
+            logger.warn(`Failed to send initial invoice email for invoice #${result.invoice.invoiceNo}:`, err);
+          });
+        }
         res.status(201).json(result.invoice);
       }
     } catch (error: unknown) {
@@ -204,6 +211,12 @@ export class InvoiceController {
         }
         return results;
       });
+
+      if (this.notificationService && created.length > 0) {
+        this.notificationService.sendInitialInvoiceEmailsBatch(tenantId, created).catch((err) => {
+          logger.warn('Failed to send initial invoice emails batch for bulk creation:', err);
+        });
+      }
 
       res.status(201).json({ created: created.length, invoices: created });
     } catch (error: unknown) {

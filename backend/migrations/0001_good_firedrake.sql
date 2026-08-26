@@ -1,0 +1,1 @@
+ALTER TABLE "tenant_settings" ADD COLUMN "support_email" varchar(255);

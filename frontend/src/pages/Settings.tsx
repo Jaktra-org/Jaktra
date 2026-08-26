@@ -312,6 +312,24 @@ function GeneralSettings() {
         </div>
       </div>
 
+      {/* Support Email Field */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-[#8a8f98] flex items-center">
+          <HelpCircle className="w-3.5 h-3.5 mr-1.5 text-[#8a8f98]" />
+          Support Email <span className="text-[#62666d] font-normal ml-1">(Optional)</span>
+        </label>
+        <input
+          type="email"
+          value={formData.supportEmail || ''}
+          onChange={(e) => handleTenantChange('supportEmail', e.target.value)}
+          className="w-full p-2.5 border border-[#23252a] bg-[#010102] rounded-xl text-xs text-[#f7f8f8] placeholder-[#62666d] focus:border-[#40434d] focus:ring-1 focus:ring-[#555761] focus:outline-none"
+          placeholder="support@yourcompany.com"
+        />
+        <p className="text-[11px] text-[#62666d]">
+          If configured, invoice notification emails and portal will invite recipients to reach out directly to your support team.
+        </p>
+      </div>
+
       {profileError && <p className="text-xs text-red-400 font-medium">{profileError}</p>}
 
       {/* Combined Save Option for All 4 Fields */}

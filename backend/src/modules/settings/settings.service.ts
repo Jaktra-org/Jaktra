@@ -19,6 +19,7 @@ export const updateSettingsSchema = z.object({
   autoPurgeDays: z.number().min(7, { message: "Auto-purge retention period must be at least 7 days" }).optional(),
   autoPurgeArchivedDisputesDays: z.number().min(1, { message: "Dispute purge retention period must be at least 1 day" }).optional(),
   dlqThreshold: z.number().min(1).optional(),
+  supportEmail: z.string().email().or(z.literal('')).optional().nullable(),
 }).strip();
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

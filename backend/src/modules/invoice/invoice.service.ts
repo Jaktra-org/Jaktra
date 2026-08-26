@@ -6,6 +6,9 @@ import type { EventRepository } from '../event/event.repository.js';
 import type { NewEvent } from '../../db/index.js';
 import { logger } from '../../shared/logger.js';
 
+import type { InvoiceNotificationService } from './invoice-notification.service.js';
+import type { Invoice } from '../../db/schema.js';
+
 export type DuplicateStrategy = 'skip' | 'update';
 
 export interface ImportResult {
@@ -18,7 +21,8 @@ export interface ImportResult {
 export class InvoiceImportService {
   constructor(
     private invoiceRepo: InvoiceRepository,
-    private eventRepo?: EventRepository
+    private eventRepo?: EventRepository,
+    private notificationService?: InvoiceNotificationService
   ) {}
 
   async importFromFile(
@@ -42,6 +46,11 @@ export class InvoiceImportService {
 
         if (result.outcome === 'created') {
           imported++;
+          if (this.notificationService && result.invoice) {
+            this.notificationService.sendInitialInvoiceEmail(tenantId, result.invoice).catch((err) => {
+              logger.warn(`Failed to send initial invoice email on CSV import for invoice #${row.invoiceNo}:`, err);
+            });
+          }
         } else if (result.outcome === 'updated') {
           updated++;
         } else {
@@ -99,7 +108,7 @@ export class InvoiceImportService {
     row: ParsedRow,
     tenantId: string,
     duplicateStrategy: DuplicateStrategy,
-  ): Promise<{ id: string; outcome: 'created' | 'updated' } | { outcome: 'skipped' }> {
+  ): Promise<{ id: string; invoice?: Invoice; outcome: 'created' | 'updated' } | { outcome: 'skipped' }> {
     const existing = await this.invoiceRepo.findByInvoiceNo(row.invoiceNo, tenantId);
 
     if (existing && duplicateStrategy === 'skip') {
@@ -119,7 +128,7 @@ export class InvoiceImportService {
         paymentStatus: row.paymentStatus,
         lastFollowupDate: row.lastFollowupDate ?? null,
       });
-      return { id: updated.invoice.id, outcome: 'updated' };
+      return { id: updated.invoice.id, invoice: updated.invoice, outcome: 'updated' };
     }
 
     const created = await this.invoiceRepo.create({
@@ -134,6 +143,6 @@ export class InvoiceImportService {
       paymentStatus: row.paymentStatus,
       lastFollowupDate: row.lastFollowupDate ?? null,
     });
-    return { id: created.id, outcome: 'created' };
+    return { id: created.id, invoice: created, outcome: 'created' };
   }
 }
