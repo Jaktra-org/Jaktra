@@ -90,6 +90,11 @@ export class CommunicationRepository {
     return row!;
   }
 
+  async findById(id: string): Promise<Communication | undefined> {
+    const [row] = await this.db.select().from(communications).where(eq(communications.id, id)).limit(1);
+    return row;
+  }
+
   async markFailed(id: string, error: string): Promise<void> {
     await this.db
       .update(communications)

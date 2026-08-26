@@ -715,24 +715,31 @@ export function InvoiceDetail() {
     }
     if (type === 'followup.halted') {
       const reason = event.payload?.reason;
+      const phase = event.payload?.phase;
+      const isInitialInvoice = phase === 'initial_notification' ||
+        event.description?.toLowerCase().includes('initial invoice');
+
+      const errorDetail = event.payload?.error ? ` (${event.payload.error})` : '';
       let label = 'AI follow-up halted';
 
-      if (reason === 'legal_escalation' || event.payload?.tier === 'legal_escalation') {
+      if (isInitialInvoice) {
+        label = event.description || `Invoice email could not be sent: invalid email address or unreachable domain${errorDetail}`;
+      } else if (reason === 'legal_escalation' || event.payload?.tier === 'legal_escalation') {
         label = 'AI follow-up skipped (manual legal escalation required)';
       } else if (reason === 'mail_invalid') {
-        label = 'AI follow-up halted (invalid email address or no email address)';
+        label = `Follow-up email halted: invalid recipient email address or unreachable domain${errorDetail}`;
       } else if (reason === 'no_automated_channel') {
-        label = 'AI follow-up halted (no active email channel configured)';
+        label = 'Follow-up email halted (no active email channel configured)';
       } else if (reason === 'generation_error') {
-        label = 'AI follow-up failed (email generation failed)';
+        label = 'Follow-up email failed (email generation failed)';
       } else if (reason === 'send_error') {
-        label = 'AI follow-up failed (email configuration or sending error)';
+        label = 'Follow-up email failed (email configuration or sending error)';
       } else if (event.description) {
         label = event.description;
       }
 
       return (
-        <span>
+        <span className="text-amber-400">
           {label}
         </span>
       );
@@ -753,9 +760,25 @@ export function InvoiceDetail() {
     }
     if (type === 'followup.bounced') {
       const recipient = getRecipientEmail(event);
+      const isInitialInvoice = event.payload?.emailType === 'initial_notification' ||
+        event.payload?.phase === 'initial_notification' ||
+        event.description?.toLowerCase().includes('invoice email');
+
+      const errorDetail = event.payload?.error && event.payload.error !== 'Email bounced or dropped'
+        ? ` (${event.payload.error})`
+        : '';
+
+      if (isInitialInvoice) {
+        return (
+          <span className="text-red-400">
+            Invoice email to {recipient || 'recipient'} could not be delivered{errorDetail}
+          </span>
+        );
+      }
+
       return (
-        <span className="text-red-700">
-          Email to {recipient} bounced
+        <span className="text-red-400">
+          Follow-up email to {recipient || 'recipient'} bounced{errorDetail}
         </span>
       );
     }

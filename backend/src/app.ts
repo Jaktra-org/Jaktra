@@ -296,7 +296,7 @@ export function createApp(config: AppConfig): Application {
       const teamService = new TeamService(teamRepo, userRepo, platformMailer);
       app.use('/api/team', createTeamRouter(new TeamController(teamService, teamRepo, eventService), authMiddleware));
 
-      const invoiceNotificationService = new InvoiceNotificationService(communicationService, portalService, settingsRepo);
+      const invoiceNotificationService = new InvoiceNotificationService(communicationService, portalService, settingsRepo, eventService, communicationRepo, dlqRepo);
       const invoiceImportService = new InvoiceImportService(invoiceRepo, eventRepo, invoiceNotificationService);
       const triageService = new TriageService();
       app.use('/api/invoices', createInvoiceRouter(new InvoiceController(invoiceImportService, invoiceRepo, paymentService, eventService, dlqService, communicationRepo, portalService, paymentPlanRepo, invoiceNotificationService), paymentPlanController, authMiddleware, tenantScoped));

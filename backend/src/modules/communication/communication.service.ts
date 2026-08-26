@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import * as dns from 'dns/promises';
 import { z } from 'zod';
 import type { CommunicationRepository } from './communication.repository.js';
 import type { InvoiceRepository } from '../invoice/invoice.repository.js';
@@ -13,6 +12,7 @@ import type { EventService } from '../event/event.service.js';
 import type { ActionType } from '../event/event.action-types.js';
 import { TenantMailer } from './tenant-mailer.js';
 import type { EmailMessage } from '../../shared/email/index.js';
+import { validateRecipientEmail as validateRecipientEmailStandalone } from '../../shared/email/index.js';
 import type { IntegrationService } from '../settings/integration.service.js';
 import type { AimlService } from '../agent/aiml.service.js';
 
@@ -115,20 +115,35 @@ export class CommunicationService {
     rawEvent: Record<string, unknown>,
     runId?: string
   ): Promise<void> {
+    let isInitialInvoiceEmail = false;
+    try {
+      if (typeof this.communicationRepo.findById === 'function') {
+        const comm = await this.communicationRepo.findById(communicationId);
+        if (comm) {
+          isInitialInvoiceEmail = comm.source === 'system' || (Boolean(comm.subject?.toLowerCase().includes('invoice #')) && !runId);
+        }
+      }
+    } catch {
+      // Ignore lookup failure, fallback to default
+    }
+
     if (eventType === 'bounced' || eventType === 'dropped') {
       const reason = (rawEvent.reason as string | undefined) || 'Email bounced or dropped';
       await this.communicationRepo.markFailed(communicationId, reason);
 
-      try {
-        const invoice = await this.invoiceRepo.findById(invoiceId);
-        if (invoice) {
-          const newCount = Math.max(0, invoice.followupCount - 1);
-          await this.invoiceRepo.update(invoiceId, tenantId, {
-            followupCount: newCount,
-          });
+      // Only decrement followupCount if this was actually a followup email (not the initial creation email)
+      if (!isInitialInvoiceEmail) {
+        try {
+          const invoice = await this.invoiceRepo.findById(invoiceId);
+          if (invoice) {
+            const newCount = Math.max(0, invoice.followupCount - 1);
+            await this.invoiceRepo.update(invoiceId, tenantId, {
+              followupCount: newCount,
+            });
+          }
+        } catch (err) {
+          logger.error(`Failed to update followupCount on bounce for invoice ${invoiceId}`, err);
         }
-      } catch (err) {
-        logger.error(`Failed to update followupCount on bounce for invoice ${invoiceId}`, err);
       }
 
       if (this.dlqRepo) {
@@ -136,7 +151,7 @@ export class CommunicationService {
           await this.dlqRepo.recordFailure(
             invoiceId,
             tenantId,
-            `Delivery failed: ${reason}`,
+            `${isInitialInvoiceEmail ? 'Invoice email' : 'Follow-up email'} delivery failed: ${reason}`,
             JSON.stringify(rawEvent)
           );
         } catch (err) {
@@ -149,12 +164,15 @@ export class CommunicationService {
       const resolvedRunId = runId || rawEvent?.run_id || rawEvent?.runId;
       
       const actionType: ActionType = 'followup.bounced';
-      const description = `Follow-up email delivery failed (${eventType})`;
+      const emailTypeName = isInitialInvoiceEmail ? 'Invoice email' : 'Follow-up email';
+      const reason = (rawEvent.reason as string | undefined) || 'Email bounced or dropped';
+      const description = `${emailTypeName} delivery failed (${eventType}): ${reason}`;
 
       const recipientEmail = (rawEvent.email || rawEvent.recipient || rawEvent.to) as string | undefined;
       const payload = {
+        emailType: isInitialInvoiceEmail ? 'initial_notification' : 'followup',
         reason: eventType === 'dropped' ? 'mail_dropped' : 'mail_bounced',
-        error: rawEvent.reason || 'Email bounced or dropped',
+        error: reason,
         recipient: recipientEmail,
         contactEmail: recipientEmail,
         runId: resolvedRunId,
@@ -177,23 +195,7 @@ export class CommunicationService {
   }
 
   async validateRecipientEmail(email: string): Promise<void> {
-    if (!email || typeof email !== 'string' || !email.trim()) {
-      throw new CommunicationError('Recipient email address is missing or empty.', 400);
-    }
-    const trimmed = email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      throw new CommunicationError(`Invalid recipient email address format: '${email}'`, 400);
-    }
-    const domain = trimmed.split('@')[1];
-    try {
-      const mx = await dns.resolveMx(domain);
-      if (!mx || mx.length === 0) {
-        throw new CommunicationError(`Recipient domain '${domain}' has no valid mail servers (MX records). Delivery will fail.`, 400);
-      }
-    } catch (err: unknown) {
-      if (err instanceof CommunicationError) throw err;
-      throw new CommunicationError(`Recipient domain '${domain}' is unreachable or invalid: ${err instanceof Error ? err.message : String(err)}`, 400);
-    }
+    return validateRecipientEmailStandalone(email);
   }
 
   async send(options: SendCommunicationOptions): Promise<boolean> {

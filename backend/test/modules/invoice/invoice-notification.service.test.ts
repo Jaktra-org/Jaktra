@@ -10,7 +10,31 @@ import type { PortalService } from '../../../src/modules/portal/portal.service.j
 import type { SettingsRepository } from '../../../src/modules/settings/settings.repository.js';
 import type { Invoice } from '../../../src/db/schema.js';
 
+const { mockResolveMx } = vi.hoisted(() => ({
+  mockResolveMx: vi.fn(),
+}));
+
+vi.mock('dns/promises', () => {
+  class MockResolver {
+    setServers = vi.fn();
+    resolveMx = mockResolveMx;
+  }
+  return {
+    default: {
+      resolveMx: mockResolveMx,
+      Resolver: MockResolver,
+    },
+    resolveMx: mockResolveMx,
+    Resolver: MockResolver,
+  };
+});
+
 describe('InvoiceNotificationService & Email Template', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockResolveMx.mockResolvedValue([{ exchange: 'mail.example.com', priority: 10 }]);
+  });
+
   describe('formatCurrencyAmount', () => {
     it('formats USD amount correctly', () => {
       expect(formatCurrencyAmount('1500.50', 'USD')).toBe('$1,500.50');
@@ -137,6 +161,9 @@ describe('InvoiceNotificationService & Email Template', () => {
     let commService: CommunicationService;
     let portalService: PortalService;
     let settingsRepo: SettingsRepository;
+    let eventService: any;
+    let commRepo: any;
+    let dlqRepo: any;
     let notificationService: InvoiceNotificationService;
 
     const mockInvoice: Invoice = {
@@ -178,10 +205,29 @@ describe('InvoiceNotificationService & Email Template', () => {
         createDefaultSettings: vi.fn(),
       } as unknown as SettingsRepository;
 
-      notificationService = new InvoiceNotificationService(commService, portalService, settingsRepo);
+      eventService = {
+        emitEvent: vi.fn().mockResolvedValue({}),
+      };
+
+      commRepo = {
+        create: vi.fn().mockResolvedValue({ id: 'comm-1' }),
+      };
+
+      dlqRepo = {
+        recordFailure: vi.fn().mockResolvedValue({}),
+      };
+
+      notificationService = new InvoiceNotificationService(
+        commService,
+        portalService,
+        settingsRepo,
+        eventService,
+        commRepo,
+        dlqRepo
+      );
     });
 
-    it('generates portal link and sends email via CommunicationService', async () => {
+    it('generates portal link and sends email via CommunicationService when email is valid', async () => {
       const result = await notificationService.sendInitialInvoiceEmail('tenant-123', mockInvoice);
 
       expect(result).toBe(true);
@@ -200,12 +246,55 @@ describe('InvoiceNotificationService & Email Template', () => {
       expect(sendCallArgs.html).toContain('help@charlie.com');
     });
 
-    it('skips email when contactEmail is empty', async () => {
+    it('halts and records failure in communication and events when recipient email is empty', async () => {
       const invoiceNoEmail = { ...mockInvoice, contactEmail: '' };
       const result = await notificationService.sendInitialInvoiceEmail('tenant-123', invoiceNoEmail);
 
       expect(result).toBe(false);
       expect(commService.send).not.toHaveBeenCalled();
+      expect(commRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'failed',
+          subject: 'Initial invoice email skipped',
+        })
+      );
+      expect(eventService.emitEvent).toHaveBeenCalledWith(
+        'invoice',
+        mockInvoice.id,
+        'tenant-123',
+        'followup.halted',
+        { source: 'system' },
+        expect.objectContaining({
+          description: expect.stringContaining('Initial invoice email not sent'),
+        })
+      );
+    });
+
+    it('halts and logs timeline event when recipient email domain MX lookup fails', async () => {
+      mockResolveMx.mockRejectedValueOnce(new Error('queryMx ENOTFOUND invalid-non-existent.xyz'));
+
+      const invoiceInvalidEmail = { ...mockInvoice, contactEmail: 'test@invalid-non-existent.xyz' };
+      const result = await notificationService.sendInitialInvoiceEmail('tenant-123', invoiceInvalidEmail);
+
+      expect(result).toBe(false);
+      expect(commService.send).not.toHaveBeenCalled();
+      expect(commRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'failed',
+          subject: 'Initial invoice email skipped',
+        })
+      );
+      expect(eventService.emitEvent).toHaveBeenCalledWith(
+        'invoice',
+        mockInvoice.id,
+        'tenant-123',
+        'followup.halted',
+        { source: 'system' },
+        expect.objectContaining({
+          description: expect.stringContaining('Initial invoice email not sent'),
+        })
+      );
+      expect(dlqRepo.recordFailure).toHaveBeenCalled();
     });
 
     it('gracefully handles error if CommunicationService.send throws', async () => {

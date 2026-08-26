@@ -11,6 +11,7 @@ describe('CommunicationService', () => {
   beforeEach(() => {
     mockCommRepo = {
       markFailed: vi.fn(),
+      findById: vi.fn().mockResolvedValue({ id: 'comm-1', source: 'agent', subject: 'Payment Reminder' }),
     };
     mockInvoiceRepo = {
       findById: vi.fn(),
@@ -40,11 +41,12 @@ describe('CommunicationService', () => {
     );
   });
 
-  it('should map bounced email events to type halted and reason mail_bounced', async () => {
+  it('should map bounced followup email events to followup bounce description and decrement count', async () => {
     const timestamp = new Date('2026-06-22T01:00:00Z');
     const rawEvent = { reason: 'Mailbox not found', run_id: 'run-123' };
 
     mockInvoiceRepo.findById.mockResolvedValue({ id: 'invoice-1', followupCount: 2 });
+    mockCommRepo.findById.mockResolvedValue({ id: 'comm-1', source: 'agent', subject: 'Payment Reminder' });
 
     await communicationService.handleEmailEvent(
       'tenant-1',
@@ -52,13 +54,14 @@ describe('CommunicationService', () => {
       'invoice-1',
       'bounced',
       timestamp,
-      rawEvent
+      rawEvent,
+      'run-123'
     );
 
     // Should mark the communication as failed
     expect(mockCommRepo.markFailed).toHaveBeenCalledWith('comm-1', 'Mailbox not found');
 
-    // Should decrement followupCount
+    // Should decrement followupCount for followup emails
     expect(mockInvoiceRepo.findById).toHaveBeenCalledWith('invoice-1');
     expect(mockInvoiceRepo.update).toHaveBeenCalledWith('invoice-1', 'tenant-1', {
       followupCount: 1,
@@ -68,7 +71,7 @@ describe('CommunicationService', () => {
     expect(mockDlqRepo.recordFailure).toHaveBeenCalledWith(
       'invoice-1',
       'tenant-1',
-      'Delivery failed: Mailbox not found',
+      'Follow-up email delivery failed: Mailbox not found',
       JSON.stringify(rawEvent)
     );
 
@@ -80,8 +83,9 @@ describe('CommunicationService', () => {
       'followup.bounced',
       { source: 'webhook' },
       {
-        description: 'Follow-up email delivery failed (bounced)',
+        description: 'Follow-up email delivery failed (bounced): Mailbox not found',
         payload: {
+          emailType: 'followup',
           reason: 'mail_bounced',
           error: 'Mailbox not found',
           runId: 'run-123',
@@ -90,11 +94,62 @@ describe('CommunicationService', () => {
     );
   });
 
-  it('should map dropped email events to type halted and reason mail_dropped', async () => {
+  it('should distinguish initial invoice email bounce (source: system) without decrementing followup count', async () => {
+    const timestamp = new Date('2026-06-22T01:00:00Z');
+    const rawEvent = { reason: 'Recipient address rejected', email: 'client@example.com' };
+
+    mockCommRepo.findById.mockResolvedValue({ id: 'comm-init-1', source: 'system', subject: 'Invoice #INV-414 from Acme' });
+
+    await communicationService.handleEmailEvent(
+      'tenant-1',
+      'comm-init-1',
+      'invoice-1',
+      'bounced',
+      timestamp,
+      rawEvent
+    );
+
+    // Should mark the communication as failed
+    expect(mockCommRepo.markFailed).toHaveBeenCalledWith('comm-init-1', 'Recipient address rejected');
+
+    // Should NOT decrement followupCount for initial invoice emails
+    expect(mockInvoiceRepo.update).not.toHaveBeenCalled();
+
+    // Should record failure in DLQ
+    expect(mockDlqRepo.recordFailure).toHaveBeenCalledWith(
+      'invoice-1',
+      'tenant-1',
+      'Invoice email delivery failed: Recipient address rejected',
+      JSON.stringify(rawEvent)
+    );
+
+    // Should emit event with emailType: 'initial_notification' and accurate description
+    expect(mockEventService.emitEvent).toHaveBeenCalledWith(
+      'invoice',
+      'invoice-1',
+      'tenant-1',
+      'followup.bounced',
+      { source: 'webhook' },
+      {
+        description: 'Invoice email delivery failed (bounced): Recipient address rejected',
+        payload: {
+          emailType: 'initial_notification',
+          reason: 'mail_bounced',
+          error: 'Recipient address rejected',
+          recipient: 'client@example.com',
+          contactEmail: 'client@example.com',
+          runId: undefined,
+        },
+      }
+    );
+  });
+
+  it('should map dropped email events to type dropped and reason mail_dropped', async () => {
     const timestamp = new Date('2026-06-22T01:00:00Z');
     const rawEvent = { reason: 'Unsubscribed recipient', run_id: 'run-123' };
 
     mockInvoiceRepo.findById.mockResolvedValue({ id: 'invoice-1', followupCount: 1 });
+    mockCommRepo.findById.mockResolvedValue({ id: 'comm-1', source: 'agent', subject: 'Followup #1' });
 
     await communicationService.handleEmailEvent(
       'tenant-1',
@@ -102,7 +157,8 @@ describe('CommunicationService', () => {
       'invoice-1',
       'dropped',
       timestamp,
-      rawEvent
+      rawEvent,
+      'run-123'
     );
 
     // Should mark the communication as failed
@@ -118,7 +174,7 @@ describe('CommunicationService', () => {
     expect(mockDlqRepo.recordFailure).toHaveBeenCalledWith(
       'invoice-1',
       'tenant-1',
-      'Delivery failed: Unsubscribed recipient',
+      'Follow-up email delivery failed: Unsubscribed recipient',
       JSON.stringify(rawEvent)
     );
 
@@ -130,8 +186,9 @@ describe('CommunicationService', () => {
       'followup.bounced',
       { source: 'webhook' },
       {
-        description: 'Follow-up email delivery failed (dropped)',
+        description: 'Follow-up email delivery failed (dropped): Unsubscribed recipient',
         payload: {
+          emailType: 'followup',
           reason: 'mail_dropped',
           error: 'Unsubscribed recipient',
           runId: 'run-123',

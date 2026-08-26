@@ -2,6 +2,10 @@ import type { Invoice } from '../../db/schema.js';
 import type { CommunicationService } from '../communication/communication.service.js';
 import type { PortalService } from '../portal/portal.service.js';
 import type { SettingsRepository } from '../settings/settings.repository.js';
+import type { EventService } from '../event/event.service.js';
+import type { CommunicationRepository } from '../communication/communication.repository.js';
+import type { DlqRepository } from '../dlq/dlq.repository.js';
+import { validateRecipientEmail } from '../../shared/email/index.js';
 import { logger } from '../../shared/logger.js';
 import { config } from '../../config/index.js';
 
@@ -214,21 +218,113 @@ export class InvoiceNotificationService {
   constructor(
     private communicationService: CommunicationService,
     private portalService: PortalService,
-    private settingsRepo: SettingsRepository
+    private settingsRepo: SettingsRepository,
+    private eventService?: EventService,
+    private communicationRepo?: CommunicationRepository,
+    private dlqRepo?: DlqRepository
   ) {}
 
   async sendInitialInvoiceEmail(tenantId: string, invoice: Invoice): Promise<boolean> {
     try {
+      // 1. Missing or empty email check
       if (!invoice.contactEmail || !invoice.contactEmail.trim()) {
-        logger.warn(`Skipping initial invoice email for invoice ${invoice.id}: contact email is empty.`);
+        const validationErrMsg = 'Recipient email address is missing or empty.';
+        logger.warn(`Skipping initial invoice email for invoice #${invoice.invoiceNo} (${invoice.id}): ${validationErrMsg}`);
+
+        if (this.communicationRepo) {
+          await this.communicationRepo.create({
+            tenantId,
+            invoiceId: invoice.id,
+            channel: 'email',
+            subject: 'Initial invoice email skipped',
+            body: 'Recipient email address is missing or empty.',
+            status: 'failed',
+            sentAt: null,
+            error: validationErrMsg,
+          }).catch((e) => logger.warn('Failed to record failed communication', e));
+        }
+
+        if (this.eventService) {
+          await this.eventService.emitEvent(
+            'invoice',
+            invoice.id,
+            tenantId,
+            'followup.halted',
+            { source: 'system' },
+            {
+              description: 'Initial invoice email not sent: recipient email address is missing',
+              payload: {
+                invoiceNo: invoice.invoiceNo,
+                recipient: '',
+                contactEmail: '',
+                reason: 'mail_invalid',
+                error: validationErrMsg,
+                phase: 'initial_notification',
+              }
+            }
+          ).catch((e) => logger.warn('Failed to emit followup.halted event', e));
+        }
+
         return false;
       }
 
-      // 1. Get or create portal link token
+      // 2. Validate recipient email format and domain MX records via independent validator
+      try {
+        await validateRecipientEmail(invoice.contactEmail);
+      } catch (validationErr: unknown) {
+        const validationErrMsg = validationErr instanceof Error ? validationErr.message : String(validationErr);
+        logger.warn(`Recipient email validation failed for initial invoice email on #${invoice.invoiceNo} (${invoice.contactEmail}): ${validationErrMsg}`);
+
+        if (this.communicationRepo) {
+          await this.communicationRepo.create({
+            tenantId,
+            invoiceId: invoice.id,
+            channel: 'email',
+            subject: 'Initial invoice email skipped',
+            body: 'Recipient email domain is invalid or does not exist.',
+            status: 'failed',
+            sentAt: null,
+            error: validationErrMsg,
+          }).catch((e) => logger.warn('Failed to record failed communication', e));
+        }
+
+        if (this.eventService) {
+          await this.eventService.emitEvent(
+            'invoice',
+            invoice.id,
+            tenantId,
+            'followup.halted',
+            { source: 'system' },
+            {
+              description: 'Initial invoice email not sent: recipient email is invalid',
+              payload: {
+                invoiceNo: invoice.invoiceNo,
+                recipient: invoice.contactEmail,
+                contactEmail: invoice.contactEmail,
+                reason: 'mail_invalid',
+                error: validationErrMsg,
+                phase: 'initial_notification',
+              }
+            }
+          ).catch((e) => logger.warn('Failed to emit followup.halted event', e));
+        }
+
+        if (this.dlqRepo) {
+          await this.dlqRepo.recordFailure(
+            invoice.id,
+            tenantId,
+            `Initial notification halted: ${validationErrMsg}`
+          ).catch(() => {});
+        }
+
+        return false;
+      }
+
+      // 3. Get or create portal link token
       const token = await this.portalService.getOrCreatePortalLink(tenantId, invoice.id);
       const portalUrl = `${config.FRONTEND_URL}/i/${token}`;
 
-      // 2. Fetch tenant settings for companyName and supportEmail
+      // 4. Fetch tenant settings for companyName and supportEmail
       let settings = await this.settingsRepo.getSettings(tenantId);
       if (!settings) {
         settings = await this.settingsRepo.createDefaultSettings(tenantId);
@@ -237,7 +333,7 @@ export class InvoiceNotificationService {
       const companyName = settings.companyName || 'Company';
       const supportEmail = settings.supportEmail || null;
 
-      // 3. Render HTML email
+      // 5. Render HTML email
       const html = renderInitialInvoiceEmailHtml({
         companyName,
         clientName: invoice.clientName,
@@ -253,7 +349,7 @@ export class InvoiceNotificationService {
 
       const subject = `Invoice #${invoice.invoiceNo} from ${companyName}`;
 
-      // 4. Dispatch via CommunicationService
+      // 6. Dispatch via CommunicationService
       await this.communicationService.send({
         tenantId,
         to: invoice.contactEmail,
