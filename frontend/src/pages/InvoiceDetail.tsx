@@ -717,14 +717,22 @@ export function InvoiceDetail() {
       const reason = event.payload?.reason;
       const phase = event.payload?.phase;
       const isInitialInvoice = phase === 'initial_notification' ||
-        event.description?.toLowerCase().includes('initial invoice');
+        event.payload?.emailType === 'initial_notification' ||
+        event.description?.toLowerCase().includes('initial invoice') ||
+        event.description?.toLowerCase().includes('invoice email');
+
+      if (isInitialInvoice) {
+        return (
+          <span className="text-amber-400 font-medium">
+            Initial invoice email not sent: recipient email is invalid
+          </span>
+        );
+      }
 
       const errorDetail = event.payload?.error ? ` (${event.payload.error})` : '';
       let label = 'AI follow-up halted';
 
-      if (isInitialInvoice) {
-        label = event.description || `Invoice email could not be sent: invalid email address or unreachable domain${errorDetail}`;
-      } else if (reason === 'legal_escalation' || event.payload?.tier === 'legal_escalation') {
+      if (reason === 'legal_escalation' || event.payload?.tier === 'legal_escalation') {
         label = 'AI follow-up skipped (manual legal escalation required)';
       } else if (reason === 'mail_invalid') {
         label = `Follow-up email halted: invalid recipient email address or unreachable domain${errorDetail}`;
@@ -864,6 +872,15 @@ export function InvoiceDetail() {
     const payload = event.payload;
     const type = (event.actionType || event.eventType || '').toLowerCase();
     
+    const isInitialInvoice = payload?.phase === 'initial_notification' ||
+      payload?.emailType === 'initial_notification' ||
+      event.description?.toLowerCase().includes('initial invoice') ||
+      event.description?.toLowerCase().includes('invoice email');
+
+    if (isInitialInvoice) {
+      return null;
+    }
+
     if (type.includes('halted') || type.includes('bounced')) {
       if (payload?.error) {
         return (

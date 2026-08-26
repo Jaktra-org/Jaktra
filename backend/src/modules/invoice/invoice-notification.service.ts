@@ -304,6 +304,7 @@ export class InvoiceNotificationService {
                 reason: 'mail_invalid',
                 error: validationErrMsg,
                 phase: 'initial_notification',
+                emailType: 'initial_notification',
               }
             }
           ).catch((e) => logger.warn('Failed to emit followup.halted event', e));
