@@ -54,6 +54,36 @@ export class CommunicationRepository {
     }));
   }
 
+  async findRecentByRecipient(tenantId: string, recipientEmail: string): Promise<Communication | undefined> {
+    const [row] = await this.db
+      .select({
+        id: communications.id,
+        invoiceId: communications.invoiceId,
+        tenantId: communications.tenantId,
+        channel: communications.channel,
+        subject: communications.subject,
+        body: communications.body,
+        status: communications.status,
+        source: communications.source,
+        sentAt: communications.sentAt,
+        error: communications.error,
+        aiSummary: communications.aiSummary,
+        createdAt: communications.createdAt,
+      })
+      .from(communications)
+      .innerJoin(invoices, eq(communications.invoiceId, invoices.id))
+      .where(
+        and(
+          eq(communications.tenantId, tenantId),
+          eq(invoices.contactEmail, recipientEmail)
+        )
+      )
+      .orderBy(desc(communications.createdAt))
+      .limit(1);
+
+    return row;
+  }
+
   async findLastSuccessfulByInvoiceId(invoiceId: string): Promise<Communication | undefined> {
     const [lastSent] = await this.db
       .select()

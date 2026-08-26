@@ -251,7 +251,8 @@ export function createApp(config: AppConfig): Application {
       disputeService,
       lockoutRedis as unknown as RedisClientType | null,
       communicationService,
-      integrationService
+      integrationService,
+      communicationRepo
     );
     const paymentWebhookController = new PaymentWebhookController(
       gatewayFactory,

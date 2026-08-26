@@ -33,6 +33,13 @@ export class ResendEmailProvider implements EmailProvider {
       ? `${message.from.name} <${message.from.email}>`
       : message.from.email;
 
+    let resendTags: Array<{ name: string; value: string }> | undefined;
+    if (Array.isArray(message.tags)) {
+      resendTags = message.tags;
+    } else if (message.tags && typeof message.tags === 'object') {
+      resendTags = Object.entries(message.tags).map(([name, value]) => ({ name, value: String(value) }));
+    }
+
     try {
       const { data, error } = await this.resend.emails.send({
         from: fromAddress,
@@ -41,6 +48,8 @@ export class ResendEmailProvider implements EmailProvider {
         html: message.html,
         text: message.text,
         replyTo: message.replyTo || undefined,
+        tags: resendTags,
+        headers: message.headers,
       });
 
       if (error) {

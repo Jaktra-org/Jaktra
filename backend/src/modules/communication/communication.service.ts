@@ -308,14 +308,6 @@ export class CommunicationService {
       }
     }
 
-    const message: EmailMessage = {
-      to,
-      from: { name: senderName, email: senderEmail },
-      replyTo: customReplyTo,
-      subject,
-      html,
-    };
-
     const plainTextBody = options.bodyText || extractPlainTextFromHtml(html);
 
     let aiSummary: string | null = null;
@@ -346,6 +338,24 @@ export class CommunicationService {
       sentAt: null,
       error: null,
     });
+
+    const message: EmailMessage = {
+      to,
+      from: { name: senderName, email: senderEmail },
+      replyTo: customReplyTo,
+      subject,
+      html,
+      tags: [
+        { name: 'communication_id', value: createdComm.id },
+        { name: 'invoice_id', value: invoiceId || '' },
+        { name: 'tenant_id', value: tenantId },
+      ],
+      headers: {
+        'X-Communication-ID': createdComm.id,
+        'X-Invoice-ID': invoiceId || '',
+        'X-Tenant-ID': tenantId,
+      },
+    };
 
     const result = await this.tenantMailer.sendCollectionEmail(tenantId, message, { invoiceId });
     if (!result.success) {

@@ -5,6 +5,8 @@ export interface EmailMessage {
   subject: string;
   html: string;
   text?: string;
+  tags?: Array<{ name: string; value: string }> | Record<string, string>;
+  headers?: Record<string, string>;
   trackingSettings?: { openTracking?: boolean; clickTracking?: boolean };
 }
 

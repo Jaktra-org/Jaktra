@@ -9,6 +9,8 @@ import { Resend } from 'resend';
 
 import type { IntegrationService } from '../settings/integration.service.js';
 
+import type { CommunicationRepository } from '../communication/communication.repository.js';
+
 const WEBHOOK_RATE_LIMIT_THRESHOLD = 15;
 const WEBHOOK_RATE_LIMIT_WINDOW_SECONDS = 15 * 60; // 15 minutes
 
@@ -18,7 +20,8 @@ export class ResendWebhookController {
     private disputeService?: DisputeService,
     private redisClient?: RedisClientType | null,
     private communicationService?: CommunicationService,
-    private integrationService?: IntegrationService
+    private integrationService?: IntegrationService,
+    private communicationRepo?: CommunicationRepository
   ) {}
 
   handleResendInbound = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
@@ -61,10 +64,46 @@ export class ResendWebhookController {
     if (eventType && eventType !== 'email.received') {
       if (this.communicationService && (eventType === 'email.bounced' || eventType === 'email.complained')) {
         const data = payload.data || {};
-        const communicationId = data.tags?.communication_id || data.communication_id;
-        const invoiceId = data.tags?.invoice_id || data.invoice_id;
+
+        // 1. Extract from tags (supports both array and object map formats)
+        const tagsMap: Record<string, string> = {};
+        if (Array.isArray(data.tags)) {
+          for (const t of data.tags) {
+            if (t && typeof t === 'object' && 'name' in t && 'value' in t) {
+              tagsMap[t.name] = String(t.value);
+            }
+          }
+        } else if (data.tags && typeof data.tags === 'object') {
+          for (const [k, v] of Object.entries(data.tags)) {
+            tagsMap[k] = String(v);
+          }
+        }
+
+        // 2. Extract from custom headers if present
+        const headersMap: Record<string, string> = {};
+        if (data.headers && typeof data.headers === 'object') {
+          for (const [k, v] of Object.entries(data.headers)) {
+            headersMap[k.toLowerCase()] = String(v);
+          }
+        }
+
+        let communicationId = tagsMap.communication_id || headersMap['x-communication-id'] || data.communication_id;
+        let invoiceId = tagsMap.invoice_id || headersMap['x-invoice-id'] || data.invoice_id;
         const tenantId = tenantSettingsObj.tenantId;
-        const runId = data.tags?.run_id || data.run_id;
+        const runId = tagsMap.run_id || headersMap['x-run-id'] || data.run_id;
+
+        // 3. Fallback: Search recent sent communication by recipient email if tags/headers were missing
+        if (!communicationId || !invoiceId) {
+          const recipientEmail = Array.isArray(data.to) ? data.to[0] : (data.to || data.recipient || data.email);
+          if (recipientEmail && this.communicationRepo) {
+            const comm = await this.communicationRepo.findRecentByRecipient(tenantId, String(recipientEmail).trim());
+            if (comm) {
+              communicationId = comm.id;
+              invoiceId = comm.invoiceId;
+            }
+          }
+        }
+
         if (communicationId && invoiceId) {
           await this.communicationService.handleEmailEvent(
             tenantId,

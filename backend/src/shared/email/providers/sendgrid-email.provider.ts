@@ -28,6 +28,16 @@ export class SendGridEmailProvider implements EmailProvider {
     if (message.replyTo) this.checkHeaderInjection(message.replyTo);
     this.checkHeaderInjection(message.subject);
 
+    let customArgs: Record<string, string> | undefined;
+    if (Array.isArray(message.tags)) {
+      customArgs = {};
+      for (const t of message.tags) {
+        customArgs[t.name] = t.value;
+      }
+    } else if (message.tags && typeof message.tags === 'object') {
+      customArgs = message.tags as Record<string, string>;
+    }
+
     const msg = {
       to: message.to,
       from: message.from,
@@ -35,6 +45,8 @@ export class SendGridEmailProvider implements EmailProvider {
       subject: message.subject,
       html: message.html,
       text: message.text,
+      customArgs,
+      headers: message.headers,
       trackingSettings: message.trackingSettings ? {
         clickTracking: {
           enable: message.trackingSettings.clickTracking ?? false,

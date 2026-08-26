@@ -178,6 +178,93 @@ describe('ResendWebhookController', () => {
       global.fetch = originalFetch;
     });
 
+    it('handles email.bounced with array tags in handleResendInbound', async () => {
+      const mockCommService = {
+        handleEmailEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const controllerWithComm = new ResendWebhookController(
+        mockSettingsRepo as any,
+        mockDisputeService as any,
+        redis,
+        mockCommService as any
+      );
+
+      const req = makeReq(VALID_SECRET, '1.2.3.4', {
+        type: 'email.bounced',
+        data: {
+          email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr',
+          to: ['xstudfdfaud@gmail.com'],
+          subject: 'Invoice #3933 from Test Company',
+          tags: [
+            { name: 'communication_id', value: 'comm-100' },
+            { name: 'invoice_id', value: 'inv-3933' },
+          ],
+        },
+      });
+      const res = mockRes();
+
+      await controllerWithComm.handleResendInbound(req, res, vi.fn());
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ status: 'success', event: 'email.bounced' });
+      expect(mockCommService.handleEmailEvent).toHaveBeenCalledWith(
+        'tenant-resend-1',
+        'comm-100',
+        'inv-3933',
+        'bounced',
+        expect.any(Date),
+        expect.objectContaining({ email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr' }),
+        undefined
+      );
+    });
+
+    it('handles email.bounced fallback to recipient lookup when tags are missing', async () => {
+      const mockCommService = {
+        handleEmailEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const mockCommRepo = {
+        findRecentByRecipient: vi.fn().mockResolvedValue({
+          id: 'comm-fallback-200',
+          invoiceId: 'inv-fallback-3933',
+        }),
+      };
+      const controllerWithFallback = new ResendWebhookController(
+        mockSettingsRepo as any,
+        mockDisputeService as any,
+        redis,
+        mockCommService as any,
+        undefined,
+        mockCommRepo as any
+      );
+
+      const req = makeReq(VALID_SECRET, '1.2.3.4', {
+        type: 'email.bounced',
+        data: {
+          email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr',
+          to: ['xstudfdfaud@gmail.com'],
+          subject: 'Invoice #3933 from Test Company',
+        },
+      });
+      const res = mockRes();
+
+      await controllerWithFallback.handleResendInbound(req, res, vi.fn());
+
+      expect(mockCommRepo.findRecentByRecipient).toHaveBeenCalledWith(
+        'tenant-resend-1',
+        'xstudfdfaud@gmail.com'
+      );
+      expect(mockCommService.handleEmailEvent).toHaveBeenCalledWith(
+        'tenant-resend-1',
+        'comm-fallback-200',
+        'inv-fallback-3933',
+        'bounced',
+        expect.any(Date),
+        expect.objectContaining({ email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr' }),
+        undefined
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
     it('rate limits after 15 invalid token attempts', async () => {
       redis = makeRedis({
         get: vi.fn(async () => '15'),
