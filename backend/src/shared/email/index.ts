@@ -24,3 +24,7 @@ export type ResolvedEmailConfig =
   | { kind: 'sendgrid'; apiKey: string }
   | { kind: 'resend'; apiKey: string };
 
+export * from './recipient-email-validator.js';
+export * from './mx-verifier.js';
+export * from './email-provider.factory.js';
+
