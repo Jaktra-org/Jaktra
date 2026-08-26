@@ -43,7 +43,7 @@ describe('InvoiceNotificationService & Email Template', () => {
   });
 
   describe('renderInitialInvoiceEmailHtml', () => {
-    it('renders complete email template with required fields and "Payment Portal" button', () => {
+    it('renders complete email template matching layout with dynamic description and no company logo', () => {
       const html = renderInitialInvoiceEmailHtml({
         companyName: 'Acme Invoicing',
         clientName: 'Alice Smith',
@@ -60,27 +60,31 @@ describe('InvoiceNotificationService & Email Template', () => {
       // Recipient name
       expect(html).toContain('Hi Alice Smith,');
 
-      // Company name
+      // Company name (as text, no logo icon)
       expect(html).toContain('Acme Invoicing');
-      expect(html).toContain('Thanks for using Acme Invoicing. This is an invoice for your recent purchase.');
+      expect(html).not.toContain('transform: rotate(45deg)'); // No logo icon
 
-      // Amount due and Due date box
-      expect(html).toContain('Amount Due:');
+      // Generic greeting wording (no "purchase")
+      expect(html).toContain('Thanks for using Acme Invoicing. Please find the details of your invoice below.');
+      expect(html).not.toContain('purchase');
+
+      // Invoice ID & date
+      expect(html).toContain('INV-2026-001');
+      expect(html).toContain('Aug 26, 2026');
+
+      // Amount & Due date
+      expect(html).toContain('Amount');
       expect(html).toContain('$1,250.00');
       expect(html).toContain('Due By:');
+      expect(html).toContain('Sep 15, 2026');
 
-      // Payment portal button (must show "Payment Portal", not "Pay Now")
+      // Dynamic Description
+      expect(html).toContain('Description');
+      expect(html).toContain('Web development consulting services');
+
+      // Payment portal button
       expect(html).toContain('Payment Portal');
       expect(html).toContain('href="https://app.jaktra.site/i/secure-token-123"');
-
-      // Invoice ID and Creation Date
-      expect(html).toContain('INV-2026-001');
-
-      // Description & single Amount
-      expect(html).toContain('Web development consulting services');
-      expect(html).toContain('Description');
-      expect(html).toContain('Amount');
-      expect(html).not.toContain('Total</td>'); // No total amount breakdown row per requirements
 
       // Support email link
       expect(html).toContain('href="mailto:support@acme.com"');
@@ -92,6 +96,24 @@ describe('InvoiceNotificationService & Email Template', () => {
       // Fallback action url
       expect(html).toContain("If you're having trouble with the button above");
       expect(html).toContain('https://app.jaktra.site/i/secure-token-123');
+    });
+
+    it('does NOT render description row when description is absent or empty', () => {
+      const html = renderInitialInvoiceEmailHtml({
+        companyName: 'Beta Corp',
+        clientName: 'Bob Jones',
+        invoiceNo: 'INV-100',
+        amount: '500.00',
+        dueDate: '2026-09-01',
+        createdAt: '2026-08-26',
+        description: '',
+        portalUrl: 'https://app.jaktra.site/i/tok-abc',
+        supportEmail: null,
+      });
+
+      expect(html).not.toContain('Description');
+      expect(html).toContain('Amount');
+      expect(html).toContain('Due By:');
     });
 
     it('renders fallback support text when supportEmail is not configured', () => {

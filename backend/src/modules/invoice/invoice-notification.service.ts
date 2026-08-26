@@ -79,14 +79,11 @@ export function renderInitialInvoiceEmailHtml(params: InitialInvoiceEmailParams)
     : `If you have any questions about this invoice, simply reply to this email for help.`;
 
   const descriptionRow = (description && description.trim())
-    ? `<tr>
-        <td style="padding: 12px 0; font-size: 14px; color: #172b4d; vertical-align: top; word-break: break-word;">${description.trim()}</td>
-        <td style="padding: 12px 0; font-size: 14px; color: #172b4d; text-align: right; vertical-align: top; font-weight: 600; white-space: nowrap;">${formattedAmount}</td>
+    ? `<tr style="border-top: 1px solid #f4f5f7;">
+        <td style="padding: 10px 0; font-size: 14px; color: #172b4d; vertical-align: top;">Description</td>
+        <td style="padding: 10px 0; font-size: 14px; color: #172b4d; text-align: right; vertical-align: top; word-break: break-word;">${description.trim()}</td>
       </tr>`
-    : `<tr>
-        <td style="padding: 12px 0; font-size: 14px; color: #172b4d; vertical-align: top;">Invoice #${invoiceNo}</td>
-        <td style="padding: 12px 0; font-size: 14px; color: #172b4d; text-align: right; vertical-align: top; font-weight: 600; white-space: nowrap;">${formattedAmount}</td>
-      </tr>`;
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -102,56 +99,67 @@ export function renderInitialInvoiceEmailHtml(params: InitialInvoiceEmailParams)
         <!-- Main Card Container -->
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 520px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0; overflow: hidden;">
           
-          <!-- Header / Company Logo -->
+          <!-- Header / Company Name (No icon) -->
           <tr>
-            <td style="padding: 32px 32px 24px 32px; text-align: center;">
-              <table align="center" border="0" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td style="vertical-align: middle; padding-right: 8px;">
-                    <span style="display: inline-block; width: 14px; height: 14px; background: #0052cc; transform: rotate(45deg); border-radius: 2px;"></span>
-                  </td>
-                  <td style="vertical-align: middle; font-size: 18px; font-weight: 700; color: #091e42; letter-spacing: -0.2px;">
-                    ${companyName}
-                  </td>
-                </tr>
-              </table>
+            <td style="padding: 32px 32px 20px 32px; text-align: center;">
+              <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #091e42; letter-spacing: -0.2px; text-align: center;">
+                ${companyName}
+              </h2>
             </td>
           </tr>
 
           <!-- Salutation & Intro -->
           <tr>
-            <td style="padding: 0 32px 20px 32px;">
+            <td style="padding: 0 32px 24px 32px;">
               <h1 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #091e42; line-height: 1.3;">
                 Hi ${clientName},
               </h1>
               <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #42526e;">
-                Thanks for using ${companyName}. This is an invoice for your recent purchase.
+                Thanks for using ${companyName}. Please find the details of your invoice below.
               </p>
             </td>
           </tr>
 
-          <!-- Highlighted Amount & Due Date Box -->
+          <!-- Invoice Details Table -->
           <tr>
-            <td style="padding: 0 32px 24px 32px;">
-              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f7fb; border-radius: 6px; padding: 16px 20px;">
+            <td style="padding: 0 32px 28px 32px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <!-- Header row: Invoice ID & Date -->
                 <tr>
-                  <td style="font-size: 14px; line-height: 1.6; color: #172b4d;">
-                    <div style="margin-bottom: 4px;">
-                      <strong style="color: #091e42;">Amount Due:</strong> ${formattedAmount}
-                    </div>
-                    <div>
-                      <strong style="color: #091e42;">Due By:</strong> ${formattedDueDate}
-                    </div>
+                  <td style="font-size: 16px; font-weight: 700; color: #091e42; padding-bottom: 14px;">
+                    ${invoiceNo}
+                  </td>
+                  <td style="font-size: 14px; font-weight: 600; color: #091e42; text-align: right; padding-bottom: 14px;">
+                    ${formattedCreatedDate}
                   </td>
                 </tr>
+                <!-- Amount Row -->
+                <tr style="border-top: 1px solid #ebecf0;">
+                  <td style="padding: 10px 0; font-size: 14px; color: #172b4d;">
+                    Amount
+                  </td>
+                  <td style="padding: 10px 0; font-size: 14px; font-weight: 700; color: #091e42; text-align: right;">
+                    ${formattedAmount}
+                  </td>
+                </tr>
+                <!-- Due By Row -->
+                <tr style="border-top: 1px solid #f4f5f7;">
+                  <td style="padding: 10px 0; font-size: 14px; color: #172b4d;">
+                    Due By:
+                  </td>
+                  <td style="padding: 10px 0; font-size: 14px; color: #172b4d; text-align: right;">
+                    ${formattedDueDate}
+                  </td>
+                </tr>
+                ${descriptionRow}
               </table>
             </td>
           </tr>
 
-          <!-- Primary CTA Button -->
+          <!-- Primary CTA Button (Centered) -->
           <tr>
-            <td align="center" style="padding: 0 32px 32px 32px;">
-              <table border="0" cellspacing="0" cellpadding="0">
+            <td align="center" style="padding: 0 32px 28px 32px;">
+              <table border="0" cellspacing="0" cellpadding="0" align="center">
                 <tr>
                   <td align="center" style="border-radius: 6px; background-color: #0052cc;">
                     <a href="${portalUrl}" target="_blank" style="display: inline-block; padding: 12px 36px; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 6px; -webkit-text-size-adjust: none;">
@@ -163,43 +171,14 @@ export function renderInitialInvoiceEmailHtml(params: InitialInvoiceEmailParams)
             </td>
           </tr>
 
-          <!-- Invoice Details Table -->
-          <tr>
-            <td style="padding: 0 32px 24px 32px;">
-              <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                <!-- Header row: Invoice ID & Date -->
-                <tr>
-                  <td style="font-size: 15px; font-weight: 700; color: #091e42; padding-bottom: 12px;">
-                    ${invoiceNo}
-                  </td>
-                  <td style="font-size: 15px; font-weight: 700; color: #091e42; text-align: right; padding-bottom: 12px;">
-                    ${formattedCreatedDate}
-                  </td>
-                </tr>
-                <!-- Subheader row -->
-                <tr style="border-top: 1px solid #ebecf0; border-bottom: 1px solid #ebecf0;">
-                  <td style="padding: 8px 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b778c;">
-                    Description
-                  </td>
-                  <td style="padding: 8px 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b778c; text-align: right;">
-                    Amount
-                  </td>
-                </tr>
-                <!-- Line item row -->
-                ${descriptionRow}
-              </table>
-            </td>
-          </tr>
-
           <!-- Support & Help text -->
           <tr>
             <td style="padding: 0 32px 24px 32px;">
               <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #42526e;">
                 ${supportText}
               </p>
-              <p style="margin: 16px 0 0 0; font-size: 13px; line-height: 1.5; color: #42526e;">
-                Cheers,<br>
-                <strong>The ${companyName} Team</strong>
+              <p style="margin: 16px 0 0 0; font-size: 14px; font-weight: 700; line-height: 1.5; color: #091e42;">
+                The ${companyName} Team
               </p>
             </td>
           </tr>
