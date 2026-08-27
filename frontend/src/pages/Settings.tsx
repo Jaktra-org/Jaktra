@@ -206,7 +206,12 @@ function GeneralSettings() {
     if (displayName.trim() !== user?.name) {
       profileMutation.mutate(displayName.trim());
     }
-    tenantMutation.mutate(formData);
+    tenantMutation.mutate({
+      companyName: formData.companyName,
+      timezone: formData.timezone,
+      currency: formData.currency,
+      supportEmail: formData.supportEmail,
+    });
   };
 
   if (isLoading) {

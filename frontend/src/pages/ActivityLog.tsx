@@ -102,6 +102,14 @@ const settingsKeyNames: Record<string, string> = {
   skipPaymentWarning: 'skip payment warning',
   autoPurgeEnabled: 'auto-purge status',
   autoPurgeDays: 'auto-purge window',
+  supportEmail: 'support email',
+  currency: 'currency',
+};
+
+const formatVal = (v: unknown): string => {
+  if (v === null || v === undefined) return "None";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
 };
 
 export function ActivityLog() {
@@ -293,12 +301,6 @@ export function ActivityLog() {
   };
 
   const renderEventDetails = (event: InvoiceEvent) => {
-    const formatVal = (v: unknown) => {
-      if (v === null || v === undefined) return "None";
-      if (typeof v === "object") return JSON.stringify(v);
-      return String(v);
-    };
-
     const hasChanges = (event.oldValues && Object.keys(event.oldValues).length > 0) ||
       (event.newValues && Object.keys(event.newValues).length > 0);
 
@@ -335,7 +337,9 @@ export function ActivityLog() {
     if (event.actionType === 'settings.updated' && hasChanges) {
       const oldVals = event.oldValues || {};
       const newVals = event.newValues || {};
-      const keys = Object.keys({ ...oldVals, ...newVals }).filter(key => key !== 'updatedAt' && key !== 'tenantId');
+      const keys = Object.keys({ ...oldVals, ...newVals })
+        .filter(key => key !== 'updatedAt' && key !== 'tenantId')
+        .filter(key => formatVal(oldVals[key]) !== formatVal(newVals[key]));
 
       // Hide the details box for single-field settings updates as the sentence already conveys everything
       if (keys.length <= 1) {
@@ -562,13 +566,24 @@ export function ActivityLog() {
     if (action === 'settings.updated') {
       const oldVals = evt.oldValues || {};
       const newVals = evt.newValues || {};
-      const keys = Object.keys({ ...oldVals, ...newVals }).filter(key => key !== 'updatedAt' && key !== 'tenantId');
+      const keys = Object.keys({ ...oldVals, ...newVals })
+        .filter(key => key !== 'updatedAt' && key !== 'tenantId')
+        .filter(key => formatVal(oldVals[key]) !== formatVal(newVals[key]));
 
       if (keys.length === 1) {
         const key = keys[0];
         const oldVal = oldVals[key];
         const newVal = newVals[key];
 
+        if (key === 'supportEmail') {
+          if (!newVal) {
+            return <span className="text-[#d0d6e0]">{actor} removed the support email</span>;
+          }
+          return <span className="text-[#d0d6e0]">{actor} changed the support email to <span className="font-semibold text-[#f7f8f8]">{String(newVal)}</span></span>;
+        }
+        if (key === 'currency') {
+          return <span className="text-[#d0d6e0]">{actor} changed default currency to <span className="font-bold text-[#f7f8f8]">{String(newVal).toUpperCase()}</span></span>;
+        }
         if (key === 'autoPurgeEnabled') {
           const enabled = newVal === true || newVal === 'true';
           return <span className="text-[#d0d6e0]">{actor} {enabled ? 'enabled' : 'disabled'} auto-purge</span>;

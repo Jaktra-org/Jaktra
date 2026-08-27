@@ -68,11 +68,19 @@ export class SettingsController {
         const oldValues: Record<string, unknown> = {};
         const newValues: Record<string, unknown> = {};
         for (const key of Object.keys(parseResult.data)) {
+          const inputVal = (parseResult.data as Record<string, unknown>)[key];
+          if (inputVal === undefined) continue;
+
           const oldVal = (oldSettings as Record<string, unknown>)[key];
-          const newVal = (updated as Record<string, unknown>)[key];
-          if (oldVal !== newVal) {
-            oldValues[key] = oldVal;
-            newValues[key] = newVal;
+          const updatedVal = (updated as Record<string, unknown>)[key];
+          const newVal = updatedVal !== undefined ? updatedVal : inputVal;
+
+          const normOld = oldVal === undefined || oldVal === null || oldVal === '' ? null : oldVal;
+          const normNew = newVal === undefined || newVal === null || newVal === '' ? null : newVal;
+
+          if (normOld !== normNew) {
+            oldValues[key] = normOld;
+            newValues[key] = normNew;
           }
         }
         if (Object.keys(newValues).length > 0) {
