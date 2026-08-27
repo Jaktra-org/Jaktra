@@ -14,6 +14,29 @@ import type { CommunicationRepository } from '../communication/communication.rep
 const WEBHOOK_RATE_LIMIT_THRESHOLD = 15;
 const WEBHOOK_RATE_LIMIT_WINDOW_SECONDS = 15 * 60; // 15 minutes
 
+interface ResendEventPayloadData {
+  email_id?: string;
+  created_at?: string;
+  from?: string | { email?: string };
+  to?: string[] | string;
+  recipient?: string;
+  email?: string;
+  subject?: string;
+  text?: string;
+  html?: string;
+  tags?: Array<{ name: string; value: string }> | Record<string, string>;
+  headers?: Record<string, string>;
+  communication_id?: string;
+  invoice_id?: string;
+  tenant_id?: string;
+  run_id?: string;
+  reason?: string;
+  bounce?: { message?: string; subType?: string; type?: string };
+  suppressed?: { message?: string; type?: string };
+  failed?: { reason?: string };
+  [key: string]: unknown;
+}
+
 export class ResendWebhookController {
   constructor(
     private settingsRepo: SettingsRepository,
@@ -60,10 +83,11 @@ export class ResendWebhookController {
     const eventType = payload.type;
     const emailData = payload.data || payload;
 
-    // Handle delivery/bounce events gracefully if webhook is subscribed to multiple event types
+    // Handle delivery/bounce/suppressed/failed events gracefully if webhook is subscribed to multiple event types
     if (eventType && eventType !== 'email.received') {
-      if (this.communicationService && (eventType === 'email.bounced' || eventType === 'email.complained')) {
-        const data = payload.data || {};
+      const isFailureEvent = eventType === 'email.bounced' || eventType === 'email.suppressed' || eventType === 'email.failed' || eventType === 'email.complained';
+      if (this.communicationService && isFailureEvent) {
+        const data = (payload.data || {}) as ResendEventPayloadData;
 
         // 1. Extract from tags (supports both array and object map formats)
         const tagsMap: Record<string, string> = {};
@@ -105,6 +129,16 @@ export class ResendWebhookController {
           }
         }
 
+        const failureReason =
+          data.bounce?.message ||
+          data.suppressed?.message ||
+          data.failed?.reason ||
+          data.reason ||
+          (eventType === 'email.suppressed' ? 'Recipient email address is suppressed' : undefined);
+        if (failureReason && !data.reason) {
+          data.reason = failureReason;
+        }
+
         if (communicationId && invoiceId) {
           await this.communicationService.handleEmailEvent(
             tenantId,
@@ -115,11 +149,11 @@ export class ResendWebhookController {
             data,
             runId
           ).catch((err) => {
-            logger.error('Failed to handle Resend bounce event:', err);
+            logger.error('Failed to handle Resend delivery failure event:', err);
           });
         }
 
-        // Automatically remove the bounced email address from Resend's suppression list so future sends can be attempted
+        // Automatically remove the email address from Resend's suppression list so future sends can be attempted
         if (recipientEmail) {
           await this.removeSuppressionSafely(tenantId, String(recipientEmail).trim());
         }
@@ -199,13 +233,37 @@ export class ResendWebhookController {
     const eventType = payload.type;
     logger.info({ eventType, emailId: payload.data?.email_id }, 'Resend event webhook received');
 
-    if (this.communicationService && (eventType === 'email.bounced' || eventType === 'email.complained')) {
-      const data = payload.data || {};
-      const communicationId = data.tags?.communication_id || data.communication_id;
-      const invoiceId = data.tags?.invoice_id || data.invoice_id;
-      const tenantId = data.tags?.tenant_id || data.tenant_id || '';
-      const runId = data.tags?.run_id || data.run_id;
+    const isFailureEvent = eventType === 'email.bounced' || eventType === 'email.suppressed' || eventType === 'email.failed' || eventType === 'email.complained';
+    if (this.communicationService && isFailureEvent) {
+      const data = (payload.data || {}) as ResendEventPayloadData;
+      const tagsMap: Record<string, string> = {};
+      if (Array.isArray(data.tags)) {
+        for (const t of data.tags) {
+          if (t && typeof t === 'object' && 'name' in t && 'value' in t) {
+            tagsMap[t.name] = String(t.value);
+          }
+        }
+      } else if (data.tags && typeof data.tags === 'object') {
+        for (const [k, v] of Object.entries(data.tags)) {
+          tagsMap[k] = String(v);
+        }
+      }
+
+      const communicationId = tagsMap.communication_id || data.communication_id;
+      const invoiceId = tagsMap.invoice_id || data.invoice_id;
+      const tenantId = tagsMap.tenant_id || data.tenant_id || '';
+      const runId = tagsMap.run_id || data.run_id;
       const recipientEmail = Array.isArray(data.to) ? data.to[0] : (data.to || data.recipient || data.email);
+
+      const failureReason =
+        data.bounce?.message ||
+        data.suppressed?.message ||
+        data.failed?.reason ||
+        data.reason ||
+        (eventType === 'email.suppressed' ? 'Recipient email address is suppressed' : undefined);
+      if (failureReason && !data.reason) {
+        data.reason = failureReason;
+      }
 
       if (communicationId && invoiceId) {
         await this.communicationService.handleEmailEvent(
@@ -217,7 +275,7 @@ export class ResendWebhookController {
           data,
           runId
         ).catch((err) => {
-          logger.error('Failed to handle Resend bounce event:', err);
+          logger.error('Failed to handle Resend delivery failure event:', err);
         });
       }
 
