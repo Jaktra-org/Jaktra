@@ -7,10 +7,12 @@ import sgClient from '@sendgrid/client';
 const mockResendDomainsList = vi.fn();
 const mockResendDomainsGet = vi.fn();
 const mockResendEmailsSend = vi.fn();
+const mockResendSuppressionsRemove = vi.fn();
 vi.mock('resend', () => {
   class MockResend {
     domains = { list: mockResendDomainsList, get: mockResendDomainsGet };
     emails = { send: mockResendEmailsSend };
+    suppressions = { remove: mockResendSuppressionsRemove };
   }
   return {
     Resend: MockResend,
@@ -681,6 +683,62 @@ describe('IntegrationService', () => {
       } finally {
         globalThis.fetch = originalFetch;
       }
+    });
+  });
+
+  describe('removeResendSuppression', () => {
+    it('successfully calls resend.suppressions.remove with recipient email', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockResendSuppressionsRemove.mockResolvedValueOnce({
+        data: { object: 'suppression', id: 'sup_123', deleted: true },
+        error: null,
+      });
+
+      const result = await service.removeResendSuppression('tenant_1', 'client@bounced.com');
+      expect(result).toBe(true);
+      expect(mockResendSuppressionsRemove).toHaveBeenCalledWith('client@bounced.com');
+    });
+
+    it('treats 404 / not found suppression removal as successful idempotent no-op', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockResendSuppressionsRemove.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Suppression not found', statusCode: 404 },
+      });
+
+      const result = await service.removeResendSuppression('tenant_1', 'client@bounced.com');
+      expect(result).toBe(true);
+    });
+
+    it('returns false and logs error safely when Resend API returns an error', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockResendSuppressionsRemove.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Unauthorized API key', statusCode: 401 },
+      });
+
+      const result = await service.removeResendSuppression('tenant_1', 'client@bounced.com');
+      expect(result).toBe(false);
+    });
+
+    it('returns false safely without throwing if network exception occurs', async () => {
+      mockRepo.getResendIntegration = vi.fn().mockResolvedValue({
+        base: { provider: 'resend' },
+        detail: { ciphertext: 'encrypted_secret', iv: 'mock_iv', authTag: 'mock_authTag', keyVersion: 1 },
+      });
+      mockResendSuppressionsRemove.mockRejectedValueOnce(new Error('Network connection timeout'));
+
+      const result = await service.removeResendSuppression('tenant_1', 'client@bounced.com');
+      expect(result).toBe(false);
     });
   });
 });

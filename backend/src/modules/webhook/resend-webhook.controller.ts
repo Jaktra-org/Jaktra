@@ -92,9 +92,10 @@ export class ResendWebhookController {
         const tenantId = tenantSettingsObj.tenantId;
         const runId = tagsMap.run_id || headersMap['x-run-id'] || data.run_id;
 
+        const recipientEmail = Array.isArray(data.to) ? data.to[0] : (data.to || data.recipient || data.email);
+
         // 3. Fallback: Search recent sent communication by recipient email if tags/headers were missing
         if (!communicationId || !invoiceId) {
-          const recipientEmail = Array.isArray(data.to) ? data.to[0] : (data.to || data.recipient || data.email);
           if (recipientEmail && this.communicationRepo) {
             const comm = await this.communicationRepo.findRecentByRecipient(tenantId, String(recipientEmail).trim());
             if (comm) {
@@ -116,6 +117,11 @@ export class ResendWebhookController {
           ).catch((err) => {
             logger.error('Failed to handle Resend bounce event:', err);
           });
+        }
+
+        // Automatically remove the bounced email address from Resend's suppression list so future sends can be attempted
+        if (recipientEmail) {
+          await this.removeSuppressionSafely(tenantId, String(recipientEmail).trim());
         }
       }
       res.status(200).json({ status: 'success', event: eventType });
@@ -142,18 +148,14 @@ export class ResendWebhookController {
       if (apiKey) {
         try {
           const resend = new Resend(apiKey);
-          const resendEmails = resend.emails as unknown as {
-            receiving?: { get?: (id: string) => Promise<{ data?: { text?: string; html?: string; body?: string } }> };
-          };
-          if (resendEmails.receiving?.get) {
-            const received = await resendEmails.receiving.get(emailData.email_id);
-            if (received?.data) {
-              text = received.data.text || received.data.body || text;
-              html = received.data.html || html;
-            }
+          const { data, error } = await resend.emails.receiving.get(emailData.email_id);
+          if (!error && data) {
+            const receivedData = data as unknown as Record<string, unknown>;
+            text = typeof receivedData.text === 'string' ? receivedData.text : (typeof receivedData.body === 'string' ? receivedData.body : '');
+            html = typeof receivedData.html === 'string' ? receivedData.html : '';
           }
         } catch {
-          // Fall through to direct REST fetch
+          // Fall through to direct fetch
         }
 
         if (!text && !html) {
@@ -179,21 +181,15 @@ export class ResendWebhookController {
       }
     }
 
-    if (!this.disputeService) {
-      logger.error('DisputeService not configured on ResendWebhookController');
-      res.status(200).json({ status: 'ignored', reason: 'service_not_configured' });
-      return;
+    if (this.disputeService) {
+      await this.disputeService.processInboundEmail({
+        from,
+        to,
+        subject,
+        text,
+        html,
+      });
     }
-
-    this.disputeService.processInboundEmail({
-      from: from || '',
-      to: to || '',
-      subject: subject || '',
-      text: text || undefined,
-      html: html || undefined,
-    }).catch((err) => {
-      logger.error('Failed to process Resend inbound email in background:', err);
-    });
 
     res.status(200).json({ status: 'success' });
   };
@@ -209,6 +205,8 @@ export class ResendWebhookController {
       const invoiceId = data.tags?.invoice_id || data.invoice_id;
       const tenantId = data.tags?.tenant_id || data.tenant_id || '';
       const runId = data.tags?.run_id || data.run_id;
+      const recipientEmail = Array.isArray(data.to) ? data.to[0] : (data.to || data.recipient || data.email);
+
       if (communicationId && invoiceId) {
         await this.communicationService.handleEmailEvent(
           tenantId,
@@ -222,10 +220,32 @@ export class ResendWebhookController {
           logger.error('Failed to handle Resend bounce event:', err);
         });
       }
+
+      if (tenantId && recipientEmail) {
+        await this.removeSuppressionSafely(tenantId, String(recipientEmail).trim());
+      }
     }
 
     res.status(200).json({ status: 'success' });
   };
+
+  private async removeSuppressionSafely(tenantId: string, email: string): Promise<void> {
+    if (!email || !tenantId) return;
+
+    try {
+      if (this.integrationService && typeof this.integrationService.removeResendSuppression === 'function') {
+        await this.integrationService.removeResendSuppression(tenantId, email);
+      } else {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (apiKey) {
+          const resend = new Resend(apiKey);
+          await resend.suppressions.remove(email);
+        }
+      }
+    } catch (err: unknown) {
+      logger.warn({ tenantId, email, err }, 'Failed to remove Resend suppression');
+    }
+  }
 
   private async checkWebhookRateLimit(ip: string): Promise<boolean> {
     if (!this.redisClient || !this.redisClient.isOpen) {

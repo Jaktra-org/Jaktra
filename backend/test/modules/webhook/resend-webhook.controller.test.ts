@@ -178,15 +178,19 @@ describe('ResendWebhookController', () => {
       global.fetch = originalFetch;
     });
 
-    it('handles email.bounced with array tags in handleResendInbound', async () => {
+    it('handles email.bounced with array tags and automatically triggers suppression removal', async () => {
       const mockCommService = {
         handleEmailEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const mockIntegrationService = {
+        removeResendSuppression: vi.fn().mockResolvedValue(true),
       };
       const controllerWithComm = new ResendWebhookController(
         mockSettingsRepo as any,
         mockDisputeService as any,
         redis,
-        mockCommService as any
+        mockCommService as any,
+        mockIntegrationService as any
       );
 
       const req = makeReq(VALID_SECRET, '1.2.3.4', {
@@ -207,6 +211,7 @@ describe('ResendWebhookController', () => {
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ status: 'success', event: 'email.bounced' });
+      // Application bounce processing preserved
       expect(mockCommService.handleEmailEvent).toHaveBeenCalledWith(
         'tenant-resend-1',
         'comm-100',
@@ -215,6 +220,11 @@ describe('ResendWebhookController', () => {
         expect.any(Date),
         expect.objectContaining({ email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr' }),
         undefined
+      );
+      // Suppression removal triggered automatically
+      expect(mockIntegrationService.removeResendSuppression).toHaveBeenCalledWith(
+        'tenant-resend-1',
+        'xstudfdfaud@gmail.com'
       );
     });
 
@@ -228,12 +238,15 @@ describe('ResendWebhookController', () => {
           invoiceId: 'inv-fallback-3933',
         }),
       };
+      const mockIntegrationService = {
+        removeResendSuppression: vi.fn().mockResolvedValue(true),
+      };
       const controllerWithFallback = new ResendWebhookController(
         mockSettingsRepo as any,
         mockDisputeService as any,
         redis,
         mockCommService as any,
-        undefined,
+        mockIntegrationService as any,
         mockCommRepo as any
       );
 
@@ -262,7 +275,89 @@ describe('ResendWebhookController', () => {
         expect.objectContaining({ email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr' }),
         undefined
       );
+      expect(mockIntegrationService.removeResendSuppression).toHaveBeenCalledWith(
+        'tenant-resend-1',
+        'xstudfdfaud@gmail.com'
+      );
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('does not fail webhook processing (returns 200) when suppression removal API throws an error', async () => {
+      const mockCommService = {
+        handleEmailEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const mockIntegrationService = {
+        removeResendSuppression: vi.fn().mockRejectedValue(new Error('Resend suppression API rate limit')),
+      };
+      const controllerWithFailingSuppression = new ResendWebhookController(
+        mockSettingsRepo as any,
+        mockDisputeService as any,
+        redis,
+        mockCommService as any,
+        mockIntegrationService as any
+      );
+
+      const req = makeReq(VALID_SECRET, '1.2.3.4', {
+        type: 'email.bounced',
+        data: {
+          email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr',
+          to: ['xstudfdfaud@gmail.com'],
+          tags: [{ name: 'communication_id', value: 'comm-100' }, { name: 'invoice_id', value: 'inv-3933' }],
+        },
+      });
+      const res = mockRes();
+
+      await controllerWithFailingSuppression.handleResendInbound(req, res, vi.fn());
+
+      // Webhook should still respond with HTTP 200 success
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ status: 'success', event: 'email.bounced' });
+      expect(mockCommService.handleEmailEvent).toHaveBeenCalled();
+    });
+
+    it('handles duplicate bounce webhook deliveries idempotently without failing', async () => {
+      const mockCommService = {
+        handleEmailEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const mockIntegrationService = {
+        removeResendSuppression: vi.fn().mockResolvedValue(true),
+      };
+      const controllerIdempotent = new ResendWebhookController(
+        mockSettingsRepo as any,
+        mockDisputeService as any,
+        redis,
+        mockCommService as any,
+        mockIntegrationService as any
+      );
+
+      const req1 = makeReq(VALID_SECRET, '1.2.3.4', {
+        type: 'email.bounced',
+        data: {
+          email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr',
+          to: ['xstudfdfaud@gmail.com'],
+          tags: [{ name: 'communication_id', value: 'comm-100' }, { name: 'invoice_id', value: 'inv-3933' }],
+        },
+      });
+      const res1 = mockRes();
+
+      await controllerIdempotent.handleResendInbound(req1, res1, vi.fn());
+      expect(res1.status).toHaveBeenCalledWith(200);
+
+      // Second delivery of same webhook event
+      const req2 = makeReq(VALID_SECRET, '1.2.3.4', {
+        type: 'email.bounced',
+        data: {
+          email_id: 'msg_3ITJXkZiholG1IZAB7AY5FpOzTr',
+          to: ['xstudfdfaud@gmail.com'],
+          tags: [{ name: 'communication_id', value: 'comm-100' }, { name: 'invoice_id', value: 'inv-3933' }],
+        },
+      });
+      const res2 = mockRes();
+
+      await controllerIdempotent.handleResendInbound(req2, res2, vi.fn());
+      expect(res2.status).toHaveBeenCalledWith(200);
+      expect(mockCommService.handleEmailEvent).toHaveBeenCalledTimes(2);
+      expect(mockIntegrationService.removeResendSuppression).toHaveBeenCalledTimes(2);
     });
 
     it('rate limits after 15 invalid token attempts', async () => {
@@ -300,15 +395,19 @@ describe('ResendWebhookController', () => {
       expect(res.json).toHaveBeenCalledWith({ status: 'success' });
     });
 
-    it('dispatches bounce event to communicationService when email.bounced received', async () => {
+    it('dispatches bounce event to communicationService and removes suppression when email.bounced received', async () => {
       const mockCommService = {
         handleEmailEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const mockIntegrationService = {
+        removeResendSuppression: vi.fn().mockResolvedValue(true),
       };
       const controllerWithComm = new ResendWebhookController(
         mockSettingsRepo as any,
         mockDisputeService as any,
         redis,
-        mockCommService as any
+        mockCommService as any,
+        mockIntegrationService as any
       );
 
       const req = makeReq('', '1.2.3.4', {
@@ -319,6 +418,7 @@ describe('ResendWebhookController', () => {
           communication_id: 'comm-123',
           invoice_id: 'inv-456',
           tenant_id: 'tenant-resend-1',
+          to: ['recipient@bounced.com'],
           run_id: 'run-789',
         },
       });
@@ -336,6 +436,10 @@ describe('ResendWebhookController', () => {
         expect.any(Date),
         expect.objectContaining({ email_id: 're_msg_bounced' }),
         'run-789'
+      );
+      expect(mockIntegrationService.removeResendSuppression).toHaveBeenCalledWith(
+        'tenant-resend-1',
+        'recipient@bounced.com'
       );
     });
   });

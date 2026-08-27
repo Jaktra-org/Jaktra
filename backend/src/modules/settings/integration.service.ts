@@ -1311,6 +1311,44 @@ export class IntegrationService {
     logger.warn(`Delivery error encountered for tenant ${tenantId} on provider ${provider}:`, error);
   }
 
+  async removeResendSuppression(tenantId: string, email: string): Promise<boolean> {
+    if (!email || !email.trim() || !tenantId) return false;
+    const trimmedEmail = email.trim();
+
+    try {
+      let apiKey = '';
+      try {
+        apiKey = await this.getDecryptedResendKey(tenantId);
+      } catch {
+        apiKey = process.env.RESEND_API_KEY || '';
+      }
+
+      if (!apiKey) {
+        logger.debug(`No Resend API key available for tenant ${tenantId} to remove suppression for ${trimmedEmail}`);
+        return false;
+      }
+
+      const resend = new Resend(apiKey);
+      const { error } = await resend.suppressions.remove(trimmedEmail);
+      if (error) {
+        const errMsg = error.message || '';
+        const isNotFound = errMsg.toLowerCase().includes('not found') || (error as { statusCode?: number }).statusCode === 404;
+        if (isNotFound) {
+          logger.info(`[Resend Suppression] Email ${trimmedEmail} was not found on Resend suppression list or was already removed for tenant ${tenantId}.`);
+          return true;
+        }
+        logger.warn(`[Resend Suppression] Failed to remove email ${trimmedEmail} from Resend suppression list for tenant ${tenantId}: ${error.message || JSON.stringify(error)}`);
+        return false;
+      }
+
+      logger.info(`[Resend Suppression] Successfully removed email ${trimmedEmail} from Resend suppression list for tenant ${tenantId}.`);
+      return true;
+    } catch (err: unknown) {
+      logger.warn(`[Resend Suppression] Unexpected error removing email ${trimmedEmail} from Resend suppression list for tenant ${tenantId}:`, err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  }
+
 
   async validateAndSaveRazorpayKey(tenantId: string, payload: { keyId: string, keySecret: string, webhookSecret: string }): Promise<void> {
     if (!payload.keyId || !payload.keySecret || !payload.webhookSecret) {
