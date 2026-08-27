@@ -684,9 +684,24 @@ export function InvoiceDetail() {
       );
     }
     if (type === 'payment.link_generated') {
+      const provider = String(event.newValues?.provider || event.payload?.provider || 'Razorpay');
+      const url = String(event.newValues?.url || event.payload?.url || event.payload?.paymentUrl || '');
+      const formattedProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
+
       return (
         <span>
-          Payment link generated for <span className="font-semibold text-[#f7f8f8]">{invoice?.clientName}</span>
+          <span className="font-semibold text-[#f7f8f8]">{formattedProvider}</span> payment link{' '}
+          {url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#828fff] hover:underline font-mono text-[11px]"
+            >
+              {url}
+            </a>
+          ) : null}{' '}
+          was generated
         </span>
       );
     }
@@ -1185,7 +1200,7 @@ export function InvoiceDetail() {
                       };
                       return displayTimeline.map((event) => {
                         const type = (event.actionType || event.eventType || '').toLowerCase();
-                        const keys = (type === 'invoice.trashed' || type === 'invoice.restored')
+                        const keys = (type === 'invoice.trashed' || type === 'invoice.restored' || type === 'payment.link_generated')
                           ? []
                           : Object.keys({ ...event.oldValues, ...event.newValues }).filter(k => event.oldValues?.[k] !== event.newValues?.[k]);
                         const isExpanded = !!expandedGroups[event.id];
