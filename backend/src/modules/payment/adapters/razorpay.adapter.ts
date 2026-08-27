@@ -36,21 +36,39 @@ export class RazorpayAdapter implements IPaymentGateway {
   parseWebhookEvent(rawBody: Buffer): WebhookEventPayload | null {
     try {
       const parsedBody = JSON.parse(rawBody.toString('utf8'));
+      const eventName = parsedBody.event;
 
-      if (parsedBody.event === 'payment.captured' || parsedBody.event === 'payment.failed') {
-        const entity = parsedBody.payload?.payment?.entity;
+      const isSuccessEvent =
+        eventName === 'payment.captured' ||
+        eventName === 'payment_link.paid' ||
+        eventName === 'order.paid';
+      const isFailedEvent = eventName === 'payment.failed';
+
+      if (isSuccessEvent || isFailedEvent) {
+        const paymentEntity = parsedBody.payload?.payment?.entity;
         const paymentLinkEntity = parsedBody.payload?.payment_link?.entity;
+        const orderEntity = parsedBody.payload?.order?.entity;
+
+        const entity = paymentEntity || paymentLinkEntity || orderEntity;
         if (!entity) return null;
 
-        const invoiceId = entity.notes?.invoice_id || paymentLinkEntity?.notes?.invoice_id;
+        const invoiceId =
+          paymentEntity?.notes?.invoice_id ||
+          paymentLinkEntity?.notes?.invoice_id ||
+          orderEntity?.notes?.invoice_id ||
+          entity.notes?.invoice_id;
+
+        const amount = entity.amount ?? paymentEntity?.amount ?? paymentLinkEntity?.amount;
+        const currency = entity.currency ?? paymentEntity?.currency ?? paymentLinkEntity?.currency ?? 'INR';
+        const externalRefId = paymentEntity?.id ?? entity.id;
 
         return {
           provider: 'razorpay',
           invoiceId: invoiceId,
-          amount: entity.amount, // in paise
-          currency: entity.currency,
-          status: parsedBody.event === 'payment.captured' ? 'captured' : 'failed',
-          externalRefId: entity.id,
+          amount: amount, // in paise
+          currency: currency,
+          status: isSuccessEvent ? 'captured' : 'failed',
+          externalRefId: externalRefId,
           rawEvent: parsedBody
         };
       }
