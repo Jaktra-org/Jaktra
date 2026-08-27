@@ -1152,7 +1152,14 @@ export class IntegrationService {
             body: JSON.stringify({
               endpoint: expectedWebhookUrl,
               url: expectedWebhookUrl,
-              events: ['email.received', 'email.delivered', 'email.bounced', 'email.complained'],
+              events: [
+                'email.received',
+                'email.delivered',
+                'email.bounced',
+                'email.suppressed',
+                'email.failed',
+                'email.complained',
+              ],
             }),
             signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(5000) : undefined,
           });
