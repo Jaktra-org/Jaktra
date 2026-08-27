@@ -30,7 +30,11 @@ export class PaymentWebhookController {
     }
     const tenantId = settings.tenantId;
 
-    const rawBody = req.body;
+    const rawBody: Buffer | null =
+      (req as unknown as { rawBody?: Buffer }).rawBody ||
+      (Buffer.isBuffer(req.body) ? req.body : null) ||
+      (req.body ? Buffer.from(typeof req.body === 'string' ? req.body : JSON.stringify(req.body), 'utf8') : null);
+
     if (!rawBody || !Buffer.isBuffer(rawBody)) {
       logger.error(`Raw body is missing or not a buffer for provider ${provider}. Is express.raw() configured?`);
       next(new ValidationError('Invalid request body'));

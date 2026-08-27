@@ -53,7 +53,8 @@ class FallbackStore implements Store {
           throw new Error('Redis not connected');
         }
         const sanitizedArgs = args.map((arg) => (arg !== undefined && arg !== null ? String(arg) : ''));
-        return (await redisClient.sendCommand(sanitizedArgs)) as unknown as RedisReply;
+        const reply = await redisClient.sendCommand(sanitizedArgs);
+        return (reply !== null && reply !== undefined ? reply : 0) as unknown as RedisReply;
       },
       prefix,
     });
