@@ -131,7 +131,7 @@ export function renderInitialInvoiceEmailHtml(params: InitialInvoiceEmailParams)
                 <!-- Header row: Invoice ID & Date -->
                 <tr>
                   <td style="font-size: 16px; font-weight: 700; color: #091e42; padding-bottom: 14px;">
-                    ${invoiceNo}
+                    INV id : ${invoiceNo}
                   </td>
                   <td style="font-size: 14px; font-weight: 600; color: #091e42; text-align: right; padding-bottom: 14px;">
                     ${formattedCreatedDate}

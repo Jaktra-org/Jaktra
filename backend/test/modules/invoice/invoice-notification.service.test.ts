@@ -93,7 +93,7 @@ describe('InvoiceNotificationService & Email Template', () => {
       expect(html).not.toContain('purchase');
 
       // Invoice ID & date
-      expect(html).toContain('INV-2026-001');
+      expect(html).toContain('INV id : INV-2026-001');
       expect(html).toContain('Aug 26, 2026');
 
       // Amount & Due date
