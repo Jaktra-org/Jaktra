@@ -772,22 +772,33 @@ export function InvoiceDetail() {
         event.payload?.phase === 'initial_notification' ||
         event.description?.toLowerCase().includes('invoice email');
 
-      const errorDetail = event.payload?.error && event.payload.error !== 'Email bounced or dropped'
-        ? ` (${event.payload.error})`
-        : '';
-
-      if (isInitialInvoice) {
-        return (
-          <span className="text-red-400">
-            Invoice email to {recipient || 'recipient'} could not be delivered{errorDetail}
-          </span>
-        );
+      const rawError = (event.payload?.error as string | undefined) || (event.payload?.reason as string | undefined);
+      let errorDetail: string | null = null;
+      if (rawError && rawError !== 'Email bounced or dropped') {
+        let cleaned = rawError.trim();
+        if (cleaned.startsWith('(') && cleaned.endsWith(')')) {
+          cleaned = cleaned.slice(1, -1).trim();
+        }
+        if (cleaned.includes("didn't specify the reason for the hard bounce") || cleaned.includes("sent a hard bounce message")) {
+          errorDetail = "Recipient's email provider rejected the message (hard bounce).";
+        } else if (cleaned.includes("on the suppression list because it has a recent history") || cleaned.includes("on the suppression list")) {
+          errorDetail = "Recipient email address is currently on the suppression list (recent hard bounce).";
+        } else {
+          errorDetail = cleaned;
+        }
       }
 
+      const title = isInitialInvoice
+        ? `Invoice email to ${recipient || 'recipient'} could not be delivered`
+        : `Follow-up email to ${recipient || 'recipient'} bounced`;
+
       return (
-        <span className="text-red-400">
-          Follow-up email to {recipient || 'recipient'} bounced{errorDetail}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-red-400 font-medium">{title}</span>
+          {errorDetail && (
+            <span className="text-yellow-400 text-xs leading-relaxed">{errorDetail}</span>
+          )}
+        </div>
       );
     }
     if (type.startsWith('dlq.')) {
