@@ -24,6 +24,12 @@
   --color-primary-700: #d0d6e0;
   --color-primary-hover: #e1e4e8;
 
+  /* Jaktra Lavender Accent (DESIGN.md §primary) */
+  --color-lavender: #5e6ad2;
+  --color-lavender-hover: #828fff;
+  --color-lavender-focus: #5e69d1;
+  --color-lavender-muted: #7a7fad;
+
   /* Linear Ink / Typography */
   --color-ink: #f7f8f8;
   --color-ink-muted: #d0d6e0;
@@ -57,6 +63,10 @@
     --hairline: #23252a;
     --primary: #f7f8f8;
     --primary-hover: #e1e4e8;
+    /* Landing page lavender accent */
+    --lavender: #5e6ad2;
+    --lavender-hover: #828fff;
+    --lavender-focus: #5e69d1;
   }
 
   * {
