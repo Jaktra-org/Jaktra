@@ -3,12 +3,12 @@ import { Landing } from '../../src/pages/Landing';
 import App from '../../src/App';
 
 describe('Landing page & Root routing', () => {
-  it('renders Welcome to Jaktra and Login / Sign Up buttons', () => {
+  it('renders Jaktra branding and Sign in / Get started links', () => {
     renderWithProviders(<Landing />);
 
-    expect(screen.getByText(/welcome to jaktra/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/jaktra/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /sign in/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /get started/i })[0]).toBeInTheDocument();
   });
 
   it('renders Landing page on "/" when user is not authenticated', () => {
@@ -17,33 +17,33 @@ describe('Landing page & Root routing', () => {
       authState: { user: null, isLoading: false, isAuthenticated: false },
     });
 
-    expect(screen.getByText(/welcome to jaktra/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/jaktra/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /sign in/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /get started/i })[0]).toBeInTheDocument();
   });
 
-  it('navigates to /login when Login button is clicked', () => {
+  it('navigates to /login when Sign in link is clicked', () => {
     renderWithProviders(<App />, {
       route: '/',
       authState: { user: null, isLoading: false, isAuthenticated: false },
     });
 
-    const loginButton = screen.getByRole('button', { name: /login/i });
-    fireEvent.click(loginButton);
+    const signInLink = screen.getAllByRole('link', { name: /sign in/i })[0];
+    fireEvent.click(signInLink);
 
-    expect(screen.getByText(/sign in to your jaktra account/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
   });
 
-  it('navigates to /register when Sign Up button is clicked', () => {
+  it('navigates to /register when Get started link is clicked', () => {
     renderWithProviders(<App />, {
       route: '/',
       authState: { user: null, isLoading: false, isAuthenticated: false },
     });
 
-    const signUpButton = screen.getByRole('button', { name: /sign up/i });
-    fireEvent.click(signUpButton);
+    const getStartedLink = screen.getAllByRole('link', { name: /get started/i })[0];
+    fireEvent.click(getStartedLink);
 
-    expect(screen.getByText(/create an account/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /create an account/i })).toBeInTheDocument();
   });
 
   it('renders Dashboard with AppLayout on "/" when user is authenticated', () => {
@@ -56,7 +56,8 @@ describe('Landing page & Root routing', () => {
       },
     });
 
-    expect(screen.queryByText(/welcome to jaktra/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Autonomous AR Collection/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Total Portfolio/i)).toBeInTheDocument();
   });
 });
+
