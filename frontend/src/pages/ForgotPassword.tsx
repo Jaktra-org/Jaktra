@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
-import jaktraLogo from "../assets/jaktra_svg.svg";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, ArrowLeft, Lock, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { motion } from "framer-motion";
 import { authService } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import { getErrorMessage } from "../utils/error-utils";
+import { AuthLayout } from "../layouts/AuthLayout";
+import { useIsInsideAuthLayout } from "../contexts/AuthLayoutContext";
 
 type ResetStep = "email" | "verify" | "reset";
 
@@ -17,6 +16,8 @@ export function ForgotPassword() {
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetToken, setResetToken] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{
@@ -31,6 +32,11 @@ export function ForgotPassword() {
 
   const navigate = useNavigate();
   const { login } = useAuth();
+  const isInsideAuthLayout = useIsInsideAuthLayout();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -118,213 +124,286 @@ export function ForgotPassword() {
     }
   };
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#010102] text-[#f7f8f8] p-4">
-      <Card className="w-full max-w-md border border-[#23252a] bg-[#0f1011] rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden">
-        {step === "email" && (
-          <>
-            <CardHeader className="space-y-4 text-center pb-6 border-b border-[#23252a]">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#010102] border border-[#23252a] shadow-xl">
-                <img src={jaktraLogo} alt="Jaktra Logo" className="h-7 w-7 object-contain" />
+  const content = (
+    <>
+      {/* Step 1: Request Email */}
+      {step === "email" && (
+        <>
+          <div>
+            <h1 className="text-3xl font-medium tracking-tight sm:text-4xl text-white">
+              Forgot password?
+            </h1>
+            <p className="text-xs text-white/50 mt-1.5">
+              Enter your email address to request a password reset code
+            </p>
+          </div>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 p-3 bg-red-950/40 border border-red-900/50 rounded-xl flex items-start gap-2"
+            >
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-400 font-medium">{error}</p>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleEmailSubmit} className="mt-7 space-y-4">
+            {/* Email address */}
+            <div className="space-y-1.5 text-left w-full">
+              <label className="text-xs font-semibold text-white/70">
+                Work email <span className="text-red-400">*</span>
+              </label>
+              <div
+                className={`relative flex h-11 items-center rounded-lg border bg-white/5 px-3.5 transition-colors focus-within:border-[#b7d2f8] ${
+                  fieldErrors.email ? "border-red-500/70" : "border-white/10"
+                }`}
+              >
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: false }));
+                  }}
+                  placeholder="you@company.com"
+                  disabled={isLoading}
+                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+                />
               </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="mt-6 flex h-11 w-full items-center justify-center rounded-lg border border-white/20 bg-white text-sm font-semibold text-black transition-all hover:bg-[#b7d2f8] hover:border-[#b7d2f8] hover:shadow-[0_0_24px_rgba(183,210,248,0.4)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isLoading ? "Sending code..." : "Send Reset Code"}
+            </button>
+
+            <p className="text-center text-xs text-white/50 pt-2">
+              Remember your password?{" "}
+              <Link to="/login" className="font-semibold text-white hover:underline transition-colors">
+                Back to login
+              </Link>
+            </p>
+          </form>
+        </>
+      )}
+
+      {/* Step 2: Verification Code */}
+      {step === "verify" && (
+        <div>
+          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#b7d2f8] mb-5">
+            <Mail className="w-6 h-6" />
+          </div>
+          <h1 className="text-2xl font-medium tracking-tight sm:text-3xl text-white">
+            Verify reset code
+          </h1>
+          <p className="text-xs text-white/50 mt-1.5">
+            If an account exists with <span className="text-white font-semibold">{email}</span>, a 6-digit code has been sent.
+          </p>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 p-3 bg-red-950/40 border border-red-900/50 rounded-xl flex items-start gap-2"
+            >
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-400 font-medium">{error}</p>
+            </motion.div>
+          )}
+
+          {resendSuccess && (
+            <div className="mt-4 p-3 bg-emerald-950/40 border border-emerald-900/50 rounded-xl text-xs text-emerald-400 font-medium">
+              {resendSuccess}
+            </div>
+          )}
+
+          <form onSubmit={handleVerifySubmit} className="mt-6 space-y-4">
+            <div className="space-y-1.5 text-left w-full">
+              <label className="text-xs font-semibold text-white/70">
+                6-Digit Code
+              </label>
+              <div className="relative flex h-12 items-center rounded-lg border border-white/10 bg-white/5 px-3.5 transition-colors focus-within:border-[#b7d2f8]">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                  value={code}
+                  onChange={(e) => {
+                    setCode(e.target.value.replace(/\D/g, ""));
+                    if (fieldErrors.code) setFieldErrors((prev) => ({ ...prev, code: false }));
+                  }}
+                  placeholder="000000"
+                  disabled={isLoading}
+                  autoFocus
+                  className="w-full bg-transparent text-center text-xl tracking-widest font-mono text-white outline-none placeholder:text-white/20"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading || code.length !== 6}
+              className="flex h-11 w-full items-center justify-center rounded-lg border border-white/20 bg-white text-sm font-semibold text-black transition-all hover:bg-[#b7d2f8] hover:border-[#b7d2f8] hover:shadow-[0_0_24px_rgba(183,210,248,0.4)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isLoading ? "Verifying..." : "Verify Code"}
+            </button>
+
+            <div className="flex flex-col space-y-3 text-center text-xs pt-3">
               <div>
-                <CardTitle className="text-xl font-bold tracking-tight text-[#f7f8f8]">Forgot password?</CardTitle>
-                <p className="text-xs text-[#8a8f98] mt-1.5">
-                  Enter your email address to request a password reset code
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleEmailSubmit} className="space-y-5">
-                {error && (
-                  <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl flex items-start">
-                    <AlertCircle className="w-4 h-4 text-red-400 mr-2 shrink-0 mt-0.5" />
-                    <p className="text-xs text-red-400 font-medium">{error}</p>
-                  </div>
-                )}
-                <div className="space-y-4">
-                  <Input
-                    label="Email address"
-                    type="email"
-                    required
-                    error={fieldErrors.email}
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: false }));
-                    }}
-                    placeholder="you@company.com"
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button type="submit" className="w-full font-bold rounded-xl py-2.5" size="lg" isLoading={isLoading}>
-                  Send Reset Code
-                </Button>
-                <div className="text-center">
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center justify-center text-xs font-semibold text-[#8a8f98] hover:text-[#f7f8f8] transition-colors"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                    Back to login
-                  </Link>
-                </div>
-              </form>
-            </CardContent>
-          </>
-        )}
-
-        {step === "verify" && (
-          <>
-            <CardHeader className="space-y-4 text-center pb-6 border-b border-[#23252a]">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#010102] border border-[#23252a] shadow-xl">
-                <Mail className="h-6 w-6 text-[#f7f8f8]" />
-              </div>
-              <div>
-                <CardTitle className="text-xl font-bold tracking-tight text-[#f7f8f8]">Verify reset code</CardTitle>
-                <p className="text-xs text-[#8a8f98] mt-1.5 px-4">
-                  If an account exists with <span className="font-semibold text-[#f7f8f8]">{email}</span>, a 6-digit code has been sent.
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleVerifySubmit} className="space-y-5">
-                {error && (
-                  <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl flex items-start">
-                    <AlertCircle className="w-4 h-4 text-red-400 mr-2 shrink-0 mt-0.5" />
-                    <p className="text-xs text-red-400 font-medium">{error}</p>
-                  </div>
-                )}
-                {resendSuccess && (
-                  <div className="p-3 bg-[#27a644]/10 border border-[#27a644]/30 rounded-xl text-xs text-[#27a644] font-medium">
-                    {resendSuccess}
-                  </div>
-                )}
-                <div className="space-y-4">
-                  <Input
-                    label="Verification Code"
-                    type="text"
-                    required
-                    maxLength={6}
-                    error={fieldErrors.code}
-                    value={code}
-                    onChange={(e) => {
-                      setCode(e.target.value.replace(/\D/g, ''));
-                      if (fieldErrors.code) setFieldErrors(prev => ({ ...prev, code: false }));
-                    }}
-                    placeholder="000000"
-                    disabled={isLoading}
-                    className="text-center text-xl tracking-widest font-mono"
-                  />
-                </div>
-                <Button type="submit" className="w-full font-bold rounded-xl py-2.5" size="lg" isLoading={isLoading} disabled={code.length !== 6}>
-                  Verify Code
-                </Button>
-
-                <div className="flex flex-col space-y-3 text-center text-xs">
-                  <div>
-                    {resendCooldown > 0 ? (
-                      <span className="text-[#8a8f98]">
-                        Resend code in {resendCooldown}s
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleResend}
-                        disabled={isLoading}
-                        className="font-semibold text-[#f7f8f8] hover:underline disabled:opacity-40 transition-colors cursor-pointer"
-                      >
-                        Resend code
-                      </button>
-                    )}
-                  </div>
-
+                {resendCooldown > 0 ? (
+                  <span className="text-white/40">Resend code in {resendCooldown}s</span>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => {
-                      setStep("email");
-                      setError("");
-                      setResendSuccess("");
-                      setCode("");
-                      setFieldErrors({});
-                    }}
-                    className="inline-flex items-center justify-center font-medium text-[#8a8f98] hover:text-[#f7f8f8] mt-2 transition-colors cursor-pointer"
+                    onClick={handleResend}
+                    disabled={isLoading}
+                    className="font-semibold text-[#b7d2f8] hover:underline cursor-pointer transition-colors"
                   >
-                    <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                    Use a different email address
+                    Resend code
                   </button>
-                </div>
-              </form>
-            </CardContent>
-          </>
-        )}
-
-        {step === "reset" && (
-          <>
-            <CardHeader className="space-y-4 text-center pb-6 border-b border-[#23252a]">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#010102] border border-[#23252a] shadow-xl">
-                <Lock className="h-6 w-6 text-[#f7f8f8]" />
-              </div>
-              <div>
-                <CardTitle className="text-xl font-bold tracking-tight text-[#f7f8f8]">Reset password</CardTitle>
-                <p className="text-xs text-[#8a8f98] mt-1.5">
-                  Please choose a secure new password for your account
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleResetSubmit} className="space-y-5">
-                {error && (
-                  <div className="p-3 bg-red-950/40 border border-red-900/50 rounded-xl flex items-start">
-                    <AlertCircle className="w-4 h-4 text-red-400 mr-2 shrink-0 mt-0.5" />
-                    <p className="text-xs text-red-400 font-medium">{error}</p>
-                  </div>
                 )}
-                <div className="space-y-4">
-                  <Input
-                    label="New Password"
-                    type="password"
-                    required
-                    error={fieldErrors.newPassword}
-                    value={newPassword}
-                    onChange={(e) => {
-                      setNewPassword(e.target.value);
-                      if (fieldErrors.newPassword) setFieldErrors(prev => ({ ...prev, newPassword: false }));
-                    }}
-                    placeholder="••••••••"
-                    disabled={isLoading}
-                  />
-                  <Input
-                    label="Confirm New Password"
-                    type="password"
-                    required
-                    error={fieldErrors.confirmPassword}
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (fieldErrors.confirmPassword) setFieldErrors(prev => ({ ...prev, confirmPassword: false }));
-                    }}
-                    placeholder="••••••••"
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button type="submit" className="w-full font-bold rounded-xl py-2.5" size="lg" isLoading={isLoading}>
-                  Reset Password
-                </Button>
-                <div className="text-center">
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center justify-center text-xs font-semibold text-[#8a8f98] hover:text-[#f7f8f8] transition-colors"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                    Back to login
-                  </Link>
-                </div>
-              </form>
-            </CardContent>
-          </>
-        )}
-      </Card>
-    </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("email");
+                  setError("");
+                  setResendSuccess("");
+                  setCode("");
+                  setFieldErrors({});
+                }}
+                className="inline-flex items-center justify-center font-medium text-white/50 hover:text-white transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+                Use a different email address
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Step 3: Set New Password */}
+      {step === "reset" && (
+        <div>
+          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#b7d2f8] mb-5">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h1 className="text-2xl font-medium tracking-tight sm:text-3xl text-white">
+            Reset password
+          </h1>
+          <p className="text-xs text-white/50 mt-1.5">
+            Please choose a secure new password for your account
+          </p>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 p-3 bg-red-950/40 border border-red-900/50 rounded-xl flex items-start gap-2"
+            >
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-400 font-medium">{error}</p>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleResetSubmit} className="mt-6 space-y-4">
+            {/* New Password */}
+            <div className="space-y-1.5 text-left w-full">
+              <label className="text-xs font-semibold text-white/70">
+                New password <span className="text-red-400">*</span>
+              </label>
+              <div
+                className={`relative flex h-11 items-center rounded-lg border bg-white/5 px-3.5 transition-colors focus-within:border-[#b7d2f8] ${
+                  fieldErrors.newPassword ? "border-red-500/70" : "border-white/10"
+                }`}
+              >
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  required
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (fieldErrors.newPassword) setFieldErrors((prev) => ({ ...prev, newPassword: false }));
+                  }}
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30 pr-7"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 text-white/40 hover:text-white cursor-pointer"
+                >
+                  {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm New Password */}
+            <div className="space-y-1.5 text-left w-full">
+              <label className="text-xs font-semibold text-white/70">
+                Confirm new password <span className="text-red-400">*</span>
+              </label>
+              <div
+                className={`relative flex h-11 items-center rounded-lg border bg-white/5 px-3.5 transition-colors focus-within:border-[#b7d2f8] ${
+                  fieldErrors.confirmPassword ? "border-red-500/70" : "border-white/10"
+                }`}
+              >
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: false }));
+                  }}
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30 pr-7"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 text-white/40 hover:text-white cursor-pointer"
+                >
+                  {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="mt-6 flex h-11 w-full items-center justify-center rounded-lg border border-white/20 bg-white text-sm font-semibold text-black transition-all hover:bg-[#b7d2f8] hover:border-[#b7d2f8] hover:shadow-[0_0_24px_rgba(183,210,248,0.4)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isLoading ? "Resetting..." : "Reset Password"}
+            </button>
+
+            <p className="text-center text-xs text-white/50 pt-2">
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-1.5 font-semibold text-white/70 hover:text-white hover:underline transition-colors"
+              >
+                <ArrowLeft className="w-3 h-3" /> Back to login
+              </Link>
+            </p>
+          </form>
+        </div>
+      )}
+    </>
   );
+
+  if (!isInsideAuthLayout) {
+    return <AuthLayout>{content}</AuthLayout>;
+  }
+
+  return content;
 }

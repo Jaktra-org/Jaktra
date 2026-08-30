@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppLayout } from "./layouts/AppLayout";
+import { AuthLayout } from "./layouts/AuthLayout";
 import { Dashboard } from "./pages/Dashboard";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
@@ -62,9 +63,14 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
+        
+        {/* Auth routes sharing persistent right-side art */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+        </Route>
+
         <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/invite" element={<AcceptInvitation />} />
         <Route path="/i/:token" element={<DebtorPortal />} />
         <Route path="/privacy" element={<Privacy />} />
