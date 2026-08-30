@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppLayout } from "./layouts/AppLayout";
 import { Dashboard } from "./pages/Dashboard";
 import { Landing } from "./pages/Landing";
@@ -15,9 +16,22 @@ import { Disputes } from "./pages/Disputes";
 import { PaymentPlans } from "./pages/PaymentPlans";
 import { AcceptInvitation } from "./pages/AcceptInvitation";
 import { DebtorPortal } from "./pages/DebtorPortal";
+import { Privacy } from "./pages/Privacy";
+import { Terms } from "./pages/Terms";
+import { DocsMock } from "./pages/DocsMock";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuth } from "./contexts/AuthContext";
 import { Spinner } from "./components/ui/Spinner";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -43,35 +57,41 @@ function HomePage() {
 
 function App() {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/invite" element={<AcceptInvitation />} />
-      <Route path="/i/:token" element={<DebtorPortal />} />
+    <>
+      <ScrollToTop />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/invite" element={<AcceptInvitation />} />
+        <Route path="/i/:token" element={<DebtorPortal />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/docs" element={<DocsMock />} />
 
 
-      {/* Protected Routes */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoices/:id/trashed" element={<InvoiceDetail />} />
-          <Route path="/invoices/:id" element={<InvoiceDetail />} />
-          <Route path="/agent" element={<Agent />} />
-          <Route path="/analytics" element={<Analytics />} />
-          
-          <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
-            <Route path="/dlq" element={<Navigate to="/agent?tab=dlq" replace />} />
-            <Route path="/disputes" element={<Disputes />} />
-            <Route path="/payment-plans" element={<PaymentPlans />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/activity-log" element={<ActivityLog />} />
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
+            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/invoices/:id/trashed" element={<InvoiceDetail />} />
+            <Route path="/invoices/:id" element={<InvoiceDetail />} />
+            <Route path="/agent" element={<Agent />} />
+            <Route path="/analytics" element={<Analytics />} />
+            
+            <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
+              <Route path="/dlq" element={<Navigate to="/agent?tab=dlq" replace />} />
+              <Route path="/disputes" element={<Disputes />} />
+              <Route path="/payment-plans" element={<PaymentPlans />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/activity-log" element={<ActivityLog />} />
+            </Route>
           </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
