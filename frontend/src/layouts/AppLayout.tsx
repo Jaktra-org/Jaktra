@@ -14,7 +14,7 @@ interface NavGroup {
   }[];
 }
 
-export function AppLayout() {
+export function AppLayout({ children }: { children?: React.ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
@@ -135,7 +135,7 @@ export function AppLayout() {
         isHomePage ? "bg-[#010102]" : "bg-[#010102]"
       }`}>
         <div className="flex-1 min-h-0 h-full p-4 md:p-6 overflow-auto flex flex-col bg-transparent">
-          <Outlet />
+          {children || <Outlet />}
         </div>
       </main>
     </div>
