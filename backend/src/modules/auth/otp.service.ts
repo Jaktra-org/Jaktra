@@ -60,9 +60,17 @@ export class OtpService {
       ...extraFields,
     };
 
+    let storedInRedis = false;
     if (this.isRedisReady) {
-      await this.redis!.set(key, JSON.stringify(otpData), { EX: expirySeconds });
-    } else {
+      try {
+        await this.redis!.set(key, JSON.stringify(otpData), { EX: expirySeconds });
+        storedInRedis = true;
+      } catch (err) {
+        logger.warn(`[OtpService] Redis set failed for ${key}, falling back to memory: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    if (!storedInRedis) {
       logger.info(`[OtpService] Storing OTP in-memory fallback for ${email}`);
       OtpService.memoryOtpStore.set(key, {
         data: JSON.stringify(otpData),
@@ -83,8 +91,14 @@ export class OtpService {
     let inMemoryEntry: { data: string; expiresAt: number } | undefined;
 
     if (this.isRedisReady) {
-      otpDataRaw = await this.redis!.get(key);
-    } else {
+      try {
+        otpDataRaw = await this.redis!.get(key);
+      } catch (err) {
+        logger.warn(`[OtpService] Redis get failed for ${key}, checking in-memory fallback: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    if (!otpDataRaw) {
       inMemoryEntry = OtpService.memoryOtpStore.get(key);
       if (inMemoryEntry && inMemoryEntry.expiresAt > Date.now()) {
         otpDataRaw = inMemoryEntry.data;
@@ -111,29 +125,45 @@ export class OtpService {
       otpData.attempts += 1;
       if (otpData.attempts >= maxAttempts) {
         if (this.isRedisReady) {
-          await this.redis!.del(key);
-        } else {
-          OtpService.memoryOtpStore.delete(key);
+          try {
+            await this.redis!.del(key);
+          } catch {
+            // ignore
+          }
         }
+        OtpService.memoryOtpStore.delete(key);
         logger.warn(`OTP brute force blocked. Deleted OTP key for prefix: ${prefix}`);
       } else {
         if (this.isRedisReady) {
-          const ttl = await this.redis!.ttl(key);
-          if (ttl > 0) {
-            await this.redis!.set(key, JSON.stringify(otpData), { EX: ttl });
+          try {
+            const ttl = await this.redis!.ttl(key);
+            if (ttl > 0) {
+              await this.redis!.set(key, JSON.stringify(otpData), { EX: ttl });
+            }
+          } catch {
+            // ignore
           }
-        } else if (inMemoryEntry) {
+        }
+        if (inMemoryEntry) {
           inMemoryEntry.data = JSON.stringify(otpData);
+        } else {
+          OtpService.memoryOtpStore.set(key, {
+            data: JSON.stringify(otpData),
+            expiresAt: Date.now() + 600 * 1000,
+          });
         }
       }
       throw new AuthError('Invalid or expired code, request a new one', 400);
     }
 
     if (this.isRedisReady) {
-      await this.redis!.del(key);
-    } else {
-      OtpService.memoryOtpStore.delete(key);
+      try {
+        await this.redis!.del(key);
+      } catch {
+        // ignore
+      }
     }
+    OtpService.memoryOtpStore.delete(key);
     return otpData;
   }
 
@@ -148,14 +178,22 @@ export class OtpService {
 
     let cooldownExists = false;
     let count = 0;
+    let checkedRedis = false;
 
     if (this.isRedisReady) {
-      const cooldownVal = await this.redis!.get(cooldownKey);
-      cooldownExists = !!cooldownVal;
+      try {
+        const cooldownVal = await this.redis!.get(cooldownKey);
+        cooldownExists = !!cooldownVal;
 
-      const countRaw = await this.redis!.get(countKey);
-      count = countRaw ? parseInt(countRaw, 10) : 0;
-    } else {
+        const countRaw = await this.redis!.get(countKey);
+        count = countRaw ? parseInt(countRaw, 10) : 0;
+        checkedRedis = true;
+      } catch (err) {
+        logger.warn(`[OtpService] Redis check rate limit failed for ${email}, checking in-memory fallback: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    if (!checkedRedis) {
       const cooldownExpiresAt = OtpService.memoryCooldownStore.get(cooldownKey);
       cooldownExists = !!(cooldownExpiresAt && cooldownExpiresAt > Date.now());
 
@@ -183,24 +221,32 @@ export class OtpService {
     const cooldownKey = this.getCooldownKey(email, prefix);
     const countKey = this.getCountKey(email, prefix);
 
+    let redisUpdated = false;
     if (this.isRedisReady) {
-      await this.redis!.set(cooldownKey, '1', { EX: cooldownSeconds });
+      try {
+        await this.redis!.set(cooldownKey, '1', { EX: cooldownSeconds });
 
-      const countRaw = await this.redis!.get(countKey);
-      const count = countRaw ? parseInt(countRaw, 10) : 0;
-      const newCount = count + 1;
+        const countRaw = await this.redis!.get(countKey);
+        const count = countRaw ? parseInt(countRaw, 10) : 0;
+        const newCount = count + 1;
 
-      if (count === 0) {
-        await this.redis!.set(countKey, newCount.toString(), { EX: countExpirySeconds });
-      } else {
-        const ttl = await this.redis!.ttl(countKey);
-        if (ttl > 0) {
-          await this.redis!.set(countKey, newCount.toString(), { EX: ttl });
-        } else {
+        if (count === 0) {
           await this.redis!.set(countKey, newCount.toString(), { EX: countExpirySeconds });
+        } else {
+          const ttl = await this.redis!.ttl(countKey);
+          if (ttl > 0) {
+            await this.redis!.set(countKey, newCount.toString(), { EX: ttl });
+          } else {
+            await this.redis!.set(countKey, newCount.toString(), { EX: countExpirySeconds });
+          }
         }
+        redisUpdated = true;
+      } catch (err) {
+        logger.warn(`[OtpService] Redis increment rate limit failed for ${email}, falling back to memory: ${err instanceof Error ? err.message : String(err)}`);
       }
-    } else {
+    }
+
+    if (!redisUpdated) {
       OtpService.memoryCooldownStore.set(cooldownKey, Date.now() + cooldownSeconds * 1000);
 
       const countEntry = OtpService.memoryCountStore.get(countKey);

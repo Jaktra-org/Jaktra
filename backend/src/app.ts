@@ -154,9 +154,18 @@ export function createApp(config: AppConfig): Application {
 
   if (config.db) {
     const lockoutRedis = envConfig.REDIS_URL && process.env['NODE_ENV'] !== 'test'
-      ? createRedisClient({ url: envConfig.REDIS_URL })
+      ? createRedisClient({
+          url: envConfig.REDIS_URL,
+          socket: {
+            reconnectStrategy: (retries) => Math.min(retries * 50, 1000),
+            connectTimeout: 5000,
+          },
+        })
       : null;
     if (lockoutRedis) {
+      lockoutRedis.on('error', (err: Error) => {
+        logger.warn(`[Redis] Lockout client error: ${err.message}`);
+      });
       lockoutRedis.connect().catch((err: Error) => {
         logger.error(err, '[LockoutService] Redis connect failed — lockout tracking will be skipped (fail-open)');
       });

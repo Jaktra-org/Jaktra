@@ -57,6 +57,8 @@ export interface MfaSetupConfirmResult {
 }
 
 export class AuthService {
+  private static readonly memoryUsedResetTokens = new Set<string>();
+
   constructor(
     private userRepo: UserRepository,
     private jwtSecret: string,

@@ -41,9 +41,17 @@ export class EmailVerificationService {
 
     const code = await this.otpService.storeOtp(normalizedEmail, 'email_otp', {}, 600);
 
+    let storedInRedis = false;
     if (this.isRedisReady) {
-      await this.redis!.set(pendingKey, JSON.stringify(pendingData), { EX: 900 }); // 15 mins
-    } else {
+      try {
+        await this.redis!.set(pendingKey, JSON.stringify(pendingData), { EX: 900 }); // 15 mins
+        storedInRedis = true;
+      } catch (err) {
+        logger.warn(`[EmailVerificationService] Redis set failed for ${pendingKey}, falling back to memory: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    if (!storedInRedis) {
       logger.info(`[EmailVerificationService] Storing pending registration in-memory fallback for ${normalizedEmail}`);
       EmailVerificationService.memoryPendingStore.set(pendingKey, {
         data: JSON.stringify(pendingData),
@@ -62,8 +70,14 @@ export class EmailVerificationService {
 
     let pendingRaw: string | null = null;
     if (this.isRedisReady) {
-      pendingRaw = await this.redis!.get(pendingKey);
-    } else {
+      try {
+        pendingRaw = await this.redis!.get(pendingKey);
+      } catch (err) {
+        logger.warn(`[EmailVerificationService] Redis get failed for ${pendingKey}, checking in-memory fallback: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    if (!pendingRaw) {
       const entry = EmailVerificationService.memoryPendingStore.get(pendingKey);
       if (entry && entry.expiresAt > Date.now()) {
         pendingRaw = entry.data;
@@ -77,10 +91,13 @@ export class EmailVerificationService {
     const pending = JSON.parse(pendingRaw) as PendingRegistration;
 
     if (this.isRedisReady) {
-      await this.redis!.del(pendingKey);
-    } else {
-      EmailVerificationService.memoryPendingStore.delete(pendingKey);
+      try {
+        await this.redis!.del(pendingKey);
+      } catch {
+        // ignore
+      }
     }
+    EmailVerificationService.memoryPendingStore.delete(pendingKey);
 
     return pending;
   }
@@ -91,8 +108,14 @@ export class EmailVerificationService {
 
     let pendingRaw: string | null = null;
     if (this.isRedisReady) {
-      pendingRaw = await this.redis!.get(pendingKey);
-    } else {
+      try {
+        pendingRaw = await this.redis!.get(pendingKey);
+      } catch (err) {
+        logger.warn(`[EmailVerificationService] Redis get failed for ${pendingKey}, checking in-memory fallback: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    if (!pendingRaw) {
       const entry = EmailVerificationService.memoryPendingStore.get(pendingKey);
       if (entry && entry.expiresAt > Date.now()) {
         pendingRaw = entry.data;

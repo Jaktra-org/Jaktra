@@ -4,7 +4,13 @@ import { createClient } from 'redis';
 import { config } from '../config/index.js';
 
 const redisClient = config.REDIS_URL && process.env['NODE_ENV'] !== 'test'
-  ? createClient({ url: config.REDIS_URL })
+  ? createClient({
+      url: config.REDIS_URL,
+      socket: {
+        reconnectStrategy: (retries) => Math.min(retries * 50, 1000),
+        connectTimeout: 5000,
+      },
+    })
   : null;
 
 let isRedisConnected = false;
@@ -62,10 +68,8 @@ class FallbackStore implements Store {
   }
 
   async init(options: Options): Promise<void> {
-    if (!this.redisStore.init) {
-      this.memoryStore.init(options);
-      return;
-    }
+    this.redisStore.windowMs = options.windowMs;
+    this.memoryStore.init(options);
 
     if (redisClient) {
       // Wait for initial connection attempt to complete (up to 2000ms) before initializing Redis store
@@ -98,8 +102,6 @@ class FallbackStore implements Store {
         console.warn('Redis rate limit store initialization deferred: Redis is not connected. Rate limiting will fall back to memory until Redis is available.');
       }
     }
-
-    this.memoryStore.init(options);
   }
 
   async increment(key: string): Promise<IncrementResponse> {
