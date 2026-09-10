@@ -1,7 +1,7 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
-import { HelmetProvider } from "react-helmet-async";
+import { HelmetProvider, type HelmetServerState } from "react-helmet-async";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -100,7 +100,7 @@ export const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
 
 export interface RenderResult {
   html: string;
-  helmet: unknown;
+  helmet?: HelmetServerState | null;
 }
 
 export function render(url: string): RenderResult {
@@ -118,7 +118,7 @@ export function render(url: string): RenderResult {
     },
   });
 
-  const helmetContext: { helmet?: unknown } = {};
+  const helmetContext: { helmet?: HelmetServerState | null } = {};
 
   const appHtml = renderToString(
     <HelmetProvider context={helmetContext}>
