@@ -1,34 +1,41 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, ArrowRight, ChevronDown, Sparkles, ShieldCheck, Zap, Bot, CreditCard } from "lucide-react";
+import { Check, ArrowRight, Sparkles, ShieldCheck, Zap, CreditCard } from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { SEOHead } from "../components/common/SEOHead";
 import { chaserCompareSchema, breadcrumbSchema } from "../components/common/seo-schemas";
+import { LandingFooter } from "../components/landing/LandingFooter";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 function HeaderNav() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#010102]/85 backdrop-blur-md border-b border-white/10">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
       <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
           <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
           <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
             Pricing
           </Link>
-          <Link to="/features/5-stage-escalation" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
             Features
           </Link>
-          <Link to="/docs" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Docs
+          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Use Cases
+          </Link>
+          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Compare
+          </Link>
+          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Resources
           </Link>
           <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
             Sign in
           </Link>
           <Link
             to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-md hover:bg-zinc-200 transition-colors shadow-sm"
+            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
           >
             Get started free
           </Link>
@@ -38,9 +45,9 @@ function HeaderNav() {
   );
 }
 
-export function ChaserCompare() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+
+export function ChaserCompare() {
   const faqs = [
     {
       q: "Why do companies evaluate alternatives to Chaser?",
@@ -48,7 +55,7 @@ export function ChaserCompare() {
     },
     {
       q: "How does Jaktra replace manual telephone call logging?",
-      a: "Chaser features a telephone tracker where human staff manually type notes after calling debtors. Jaktra is built on autonomous agent architecture: instead of relying on human phone collectors, our Groq LLaMA 3.1 agent dynamically modulates written tone across 5 escalation tiers, answers debtor inquiries via AI, and provides zero-login digital payment links that make phone calls unnecessary for 85%+ of invoices.",
+      a: "Chaser features a telephone tracker where human staff manually type notes after calling debtors. Jaktra is built on autonomous agent architecture: instead of relying on human phone collectors, our Groq LLaMA 3.1 agent dynamically modulates written tone across 5 escalation tiers, answers debtor inquiries via AI, and provides zero-login digital payment links that minimize the need for manual phone chasing.",
     },
     {
       q: "How does dispute handling differ between Chaser and Jaktra?",
@@ -65,7 +72,7 @@ export function ChaserCompare() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#010102] text-zinc-100 font-sans selection:bg-blue-500/30 selection:text-white">
+    <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
         title="Chaser Alternative — Autonomous Generative AI AR Agent vs Static Dunning"
         description="Compare Chaser vs Jaktra. Learn why finance leaders upgrade from Chaser's static email templates and manual phone call tracking to Jaktra's autonomous AI agent, tokenized debtor portals, and Razorpay settlement."
@@ -81,9 +88,10 @@ export function ChaserCompare() {
 
       <HeaderNav />
 
-      <main className="pt-24 pb-20 px-6 max-w-5xl mx-auto">
+      <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 max-w-5xl mx-auto relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(183,210,248,0.06),transparent)] pointer-events-none" />
         {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="mb-6 text-xs text-zinc-500">
+        <nav aria-label="Breadcrumb" className="mb-6 text-xs text-zinc-500 relative z-10">
           <ol className="flex items-center gap-2">
             <li>
               <Link to="/" className="hover:text-zinc-300 transition-colors">
@@ -92,7 +100,9 @@ export function ChaserCompare() {
             </li>
             <li>/</li>
             <li>
-              <span className="text-zinc-400">Compare</span>
+              <Link to="/compare" className="text-zinc-400 hover:text-zinc-300 transition-colors">
+                Compare
+              </Link>
             </li>
             <li>/</li>
             <li className="text-zinc-300 font-medium" aria-current="page">
@@ -103,10 +113,9 @@ export function ChaserCompare() {
 
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-300 text-xs font-medium mb-4">
-            <Bot className="w-3.5 h-3.5" />
-            <span>Autonomous AI Agent vs. Traditional Scheduled Dunning</span>
-          </div>
+          <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-3">
+            Autonomous AI Agent vs. Traditional Scheduled Dunning
+          </span>
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-5 leading-tight">
             The Modern Chaser Alternative with Autonomous AI Tone Modulation
           </h1>
@@ -116,32 +125,44 @@ export function ChaserCompare() {
           </p>
         </div>
 
-        {/* Comparison Overview Card */}
-        <section className="mb-16 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 sm:p-10">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">
-            The Architectural Difference: Automated Schedules vs. Autonomous Execution
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm sm:text-base text-zinc-400 leading-relaxed">
-            <div className="border-t border-zinc-800 pt-4">
-              <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+        {/* Comparison Overview Section */}
+        <section className="mb-16">
+          <div className="max-w-3xl mb-8">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+              Operational Paradigm
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              The Architectural Difference: Automated Schedules vs. Autonomous Execution
+            </h2>
+            <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
+              Why leading finance teams transition from manual telephone logs and rigid templates to closed-loop autonomous collections.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08] shadow-lg">
+              <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-zinc-400 mb-3">
                 <span className="w-2 h-2 rounded-full bg-zinc-500" />
-                The Chaser Approach: Static Rules & Manual Tasks
+                The Chaser Approach: Static Rules &amp; Manual Tasks
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">
+                Static Email Drips &amp; Manual Call Trackers
               </h3>
-              <p>
-                Chaser automates the dispatch of static email templates at fixed intervals (e.g. 7 days, 14 days) and
-                provides a task log for human collectors to log manual phone calls. When disputes arise, staff must
-                manually monitor inboxes and pause campaigns by hand.
+              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                Chaser automates the dispatch of static email templates at fixed intervals (e.g. 7 days, 14 days) and provides a task log for human collectors to log manual phone calls. When disputes arise, staff must manually monitor inboxes and pause campaigns by hand.
               </p>
             </div>
-            <div className="border-t border-blue-500/30 pt-4">
-              <h3 className="text-blue-400 font-semibold mb-2 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-400" />
+
+            <div className="p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08] shadow-lg">
+              <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-[#b7d2f8] mb-3">
+                <span className="w-2 h-2 rounded-full bg-[#b7d2f8]" />
                 The Jaktra Approach: Closed-Loop Autonomous AI
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">
+                Predictive Risk &amp; 5-Stage Generative Modulation
               </h3>
-              <p>
-                Jaktra combines predictive ML delinquency scoring with Groq LLaMA 3.1 generative tone escalation. It
-                handles customer communication across 5 stages, automatically halts outreach when disputes are detected,
-                and collects payments through zero-login tokenized debtor portals.
+              <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                Jaktra combines predictive ML delinquency scoring with Groq LLaMA 3.1 generative tone escalation. It handles customer communication across 5 stages, automatically halts outreach when disputes are detected, and collects payments through zero-login tokenized debtor portals.
               </p>
             </div>
           </div>
@@ -154,69 +175,83 @@ export function ChaserCompare() {
             Compare operational models, AI capabilities, and debtor experiences side by side.
           </p>
 
-          <div className="overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900/40">
-            <table className="w-full text-left border-collapse text-sm">
+          <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#111113] shadow-sm">
+            <table className="w-full text-left border-collapse text-sm min-w-[680px]">
               <thead>
-                <tr className="border-b border-zinc-800 bg-zinc-900/80">
-                  <th className="py-4 px-6 text-zinc-400 font-semibold">Capability</th>
-                  <th className="py-4 px-6 text-blue-400 font-bold bg-blue-950/20">Jaktra</th>
+                <tr className="border-b border-white/[0.08] bg-white/[0.03] text-xs font-mono uppercase tracking-wider text-zinc-300">
+                  <th className="py-4 px-6 font-semibold">Capability</th>
+                  <th className="py-4 px-6 text-[#b7d2f8] font-bold bg-[#b7d2f8]/10 border-l border-[#b7d2f8]/20">Jaktra (Autonomous AI)</th>
                   <th className="py-4 px-6 text-zinc-400 font-semibold">Chaser</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60">
-                <tr>
-                  <td className="py-4 px-6 text-zinc-300 font-medium">Outreach Tone Engine</td>
-                  <td className="py-4 px-6 text-emerald-400 font-medium bg-blue-950/10 flex items-center gap-2">
-                    <Check className="w-4 h-4 shrink-0" />
-                    <span>Autonomous Groq LLaMA 3.1 5-Stage Tone Modulation</span>
+              <tbody className="divide-y divide-white/[0.04]">
+                <tr className="hover:bg-white/[0.015] transition-colors">
+                  <td className="py-4 px-6 text-white font-medium">Outreach Tone Engine</td>
+                  <td className="py-4 px-6 text-zinc-100 font-medium bg-[#b7d2f8]/[0.03] border-l border-[#b7d2f8]/20">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-[#b7d2f8]" />
+                      <span>Autonomous Groq LLaMA 3.1 5-Stage Tone Modulation</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-zinc-400">Static rule-based text templates</td>
                 </tr>
-                <tr>
-                  <td className="py-4 px-6 text-zinc-300 font-medium">Dispute Sentiment Triage</td>
-                  <td className="py-4 px-6 text-emerald-400 font-medium bg-blue-950/10 flex items-center gap-2">
-                    <Check className="w-4 h-4 shrink-0" />
-                    <span>NLP classifier; auto-pauses cadences; drafts response</span>
+                <tr className="hover:bg-white/[0.015] transition-colors">
+                  <td className="py-4 px-6 text-white font-medium">Dispute Sentiment Triage</td>
+                  <td className="py-4 px-6 text-zinc-100 font-medium bg-[#b7d2f8]/[0.03] border-l border-[#b7d2f8]/20">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-[#b7d2f8]" />
+                      <span>NLP classifier; auto-pauses cadences; drafts response</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-zinc-400">Manual inbox triage and manual sequence pausing</td>
                 </tr>
-                <tr>
-                  <td className="py-4 px-6 text-zinc-300 font-medium">Debtor Payment Flow</td>
-                  <td className="py-4 px-6 text-emerald-400 font-medium bg-blue-950/10 flex items-center gap-2">
-                    <Check className="w-4 h-4 shrink-0" />
-                    <span>Tokenized link (`/i/:token`) with Razorpay & installment plans</span>
+                <tr className="hover:bg-white/[0.015] transition-colors">
+                  <td className="py-4 px-6 text-white font-medium">Debtor Payment Flow</td>
+                  <td className="py-4 px-6 text-zinc-100 font-medium bg-[#b7d2f8]/[0.03] border-l border-[#b7d2f8]/20">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-[#b7d2f8]" />
+                      <span>Tokenized link (<code className="text-xs font-mono text-[#b7d2f8] bg-white/[0.05] px-1.5 py-0.5 rounded">/i/:token</code>) with Razorpay &amp; installment plans</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-zinc-400">Redirects to generic payment link or bank transfer</td>
                 </tr>
-                <tr>
-                  <td className="py-4 px-6 text-zinc-300 font-medium">Phone Collection Model</td>
-                  <td className="py-4 px-6 text-emerald-400 font-medium bg-blue-950/10 flex items-center gap-2">
-                    <Check className="w-4 h-4 shrink-0" />
-                    <span>Autonomous digital outreach eliminates 85%+ of phone calls</span>
+                <tr className="hover:bg-white/[0.015] transition-colors">
+                  <td className="py-4 px-6 text-white font-medium">Phone Collection Model</td>
+                  <td className="py-4 px-6 text-zinc-100 font-medium bg-[#b7d2f8]/[0.03] border-l border-[#b7d2f8]/20">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-[#b7d2f8]" />
+                      <span>Autonomous digital outreach minimizes manual phone chasing</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-zinc-400">Task logger for human collectors to make manual calls</td>
                 </tr>
-                <tr>
-                  <td className="py-4 px-6 text-zinc-300 font-medium">Overdue Escalation Limit</td>
-                  <td className="py-4 px-6 text-emerald-400 font-medium bg-blue-950/10 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
-                    <span>Stage 5 Legal Stop (Automation cutoff at 31+ days)</span>
+                <tr className="hover:bg-white/[0.015] transition-colors">
+                  <td className="py-4 px-6 text-white font-medium">Overdue Escalation Limit</td>
+                  <td className="py-4 px-6 text-zinc-100 font-medium bg-[#b7d2f8]/[0.03] border-l border-[#b7d2f8]/20">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 shrink-0 text-[#b7d2f8]" />
+                      <span>Stage 5 Legal Stop (Automation cutoff at 31+ days)</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-zinc-400">Loops email templates until manually cancelled</td>
                 </tr>
-                <tr>
-                  <td className="py-4 px-6 text-zinc-300 font-medium">Spam Prevention</td>
-                  <td className="py-4 px-6 text-emerald-400 font-medium bg-blue-950/10 flex items-center gap-2">
-                    <Check className="w-4 h-4 shrink-0" />
-                    <span>20-Hour Rolling Idempotency Guard</span>
+                <tr className="hover:bg-white/[0.015] transition-colors">
+                  <td className="py-4 px-6 text-white font-medium">Spam Prevention</td>
+                  <td className="py-4 px-6 text-zinc-100 font-medium bg-[#b7d2f8]/[0.03] border-l border-[#b7d2f8]/20">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-[#b7d2f8]" />
+                      <span>20-Hour Rolling Idempotency Guard</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-zinc-400">Triggered on fixed day schedules</td>
                 </tr>
-                <tr>
-                  <td className="py-4 px-6 text-zinc-300 font-medium">Transparent Free-to-Start Pricing</td>
-                  <td className="py-4 px-6 text-emerald-400 font-medium bg-blue-950/10 flex items-center gap-2">
-                    <Check className="w-4 h-4 shrink-0" />
-                    <span>100% Free during Early Access (No credit card required)</span>
+                <tr className="hover:bg-white/[0.015] transition-colors">
+                  <td className="py-4 px-6 text-white font-medium">Transparent Free-to-Start Pricing</td>
+                  <td className="py-4 px-6 text-zinc-100 font-medium bg-[#b7d2f8]/[0.03] border-l border-[#b7d2f8]/20">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-[#b7d2f8]" />
+                      <span>100% Free during Early Access (No credit card required)</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-zinc-400">Paid tiers only; no free forever tier</td>
                 </tr>
@@ -225,86 +260,141 @@ export function ChaserCompare() {
           </div>
         </section>
 
-        {/* 4 Architectural Moats */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
-              <Sparkles className="w-5 h-5 text-blue-400" />
-            </div>
-            <h3 className="text-base font-semibold text-white mb-2">Generative Tone Modulation vs Static Templates</h3>
-            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-              Jaktra’s Groq LLaMA 3.1 agent tailors every message to client aging and prior payment history. Instead of
-              canned text, debtors receive thoughtful, human-sounding communications that preserve goodwill.
+        {/* 4 Architectural Moats (Open Scannable Grid) */}
+        <section className="mb-20">
+          <div className="text-center mb-10">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+              Autonomous Moats
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              4 Structural Advantages of Modern Autonomous Collections
+            </h2>
+            <p className="text-sm text-zinc-400 max-w-xl mx-auto mt-2">
+              The architectural pillars that distinguish Jaktra&apos;s closed-loop AI execution from Chaser&apos;s static templates.
             </p>
           </div>
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
-              <Zap className="w-5 h-5 text-emerald-400" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 sm:p-7 rounded-2xl bg-[#111113] border border-white/[0.08] shadow-lg flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-white/[0.04] border border-white/[0.08] text-[#b7d2f8]">
+                    AI Communications
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">
+                  Generative Tone Modulation vs. Static Templates
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-4">
+                  Traditional tools like Chaser force you to compose rigid, static email templates that get sent out on pre-fixed day counts. Jaktra&apos;s Groq LLaMA 3.1 agent dynamically tailors every single communication to the buyer&apos;s payment history, invoice size, and delinquency risk score across 5 psychological tiers.
+                </p>
+              </div>
+              <div className="text-xs text-zinc-300 flex items-center gap-1.5 pt-3 border-t border-white/[0.05]">
+                <Check className="w-3.5 h-3.5 text-[#b7d2f8]" />
+                <span>Shortens payment lag by 15–25 days without sounding robotic</span>
+              </div>
             </div>
-            <h3 className="text-base font-semibold text-white mb-2">Automated Dispute Sentiment Triage</h3>
-            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-              When a debtor replies with a billing question, Jaktra automatically flags the dispute, freezes the
-              cadence immediately, and drafts a resolution response for finance approval—preventing embarrassing follow-ups.
-            </p>
-          </div>
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-4">
-              <CreditCard className="w-5 h-5 text-purple-400" />
+            <div className="p-6 sm:p-7 rounded-2xl bg-[#111113] border border-white/[0.08] shadow-lg flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-white/[0.04] border border-white/[0.08] text-[#b7d2f8]">
+                    Dispute Safeguard
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">
+                  Autonomous Dispute Triage &amp; Immediate Cadence Freeze
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-4">
+                  When a debtor replies with a billing question, wrong PO note, or partial delivery dispute, traditional mailers keep blindly blasting reminders until a human spots the email. Jaktra&apos;s DisputeAgent parses incoming replies instantly, categorizes sentiment, immediately freezes active dunning schedules, and drafts an AI suggested resolution.
+                </p>
+              </div>
+              <div className="text-xs text-zinc-300 flex items-center gap-1.5 pt-3 border-t border-white/[0.05]">
+                <Check className="w-3.5 h-3.5 text-[#b7d2f8]" />
+                <span>Prevents relationship-damaging notices to customers with active queries</span>
+              </div>
             </div>
-            <h3 className="text-base font-semibold text-white mb-2">Friction-Free Debtor Portals (`/i/:token`)</h3>
-            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-              Debtors access open statements and settle balances via secure tokenized links without passwords. Supports
-              instant digital payments via Razorpay (UPI, NetBanking, Cards) and structured installment plans.
-            </p>
-          </div>
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-            <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
-              <ShieldCheck className="w-5 h-5 text-rose-400" />
+            <div className="p-6 sm:p-7 rounded-2xl bg-[#111113] border border-white/[0.08] shadow-lg flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-white/[0.04] border border-white/[0.08] text-[#b7d2f8]">
+                    Debtor UX
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">
+                  Tokenized Zero-Login Debtor Portals (<code className="text-xs font-mono">/i/:token</code>)
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-4">
+                  Forget attachments lost in spam or clunky portals requiring accounts and forgotten passwords. Jaktra issues cryptographic debtor links. Accounts Payable contacts open a single-view statement of account, choose instant settlement via Razorpay (UPI, NetBanking, Cards), or request self-service installment plans in 30 seconds.
+                </p>
+              </div>
+              <div className="text-xs text-zinc-300 flex items-center gap-1.5 pt-3 border-t border-white/[0.05]">
+                <Check className="w-3.5 h-3.5 text-[#b7d2f8]" />
+                <span>Automated webhook reconciliation updates your books instantly upon settlement</span>
+              </div>
             </div>
-            <h3 className="text-base font-semibold text-white mb-2">Compliance Safeguards (Stage 5 Legal Stop)</h3>
-            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-              Strict automation stop after 30 days overdue prevents harassment violations. Paired with our 20-hour
-              idempotency guard, Jaktra guarantees professional, compliant financial communications.
-            </p>
+
+            <div className="p-6 sm:p-7 rounded-2xl bg-[#111113] border border-white/[0.08] shadow-lg flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-white/[0.04] border border-white/[0.08] text-[#b7d2f8]">
+                    Enterprise Governance
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">
+                  Hardcoded Stage 5 Legal Stop &amp; 20-Hour Idempotency Guard
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed mb-4">
+                  Unlike loop-based auto-reminders that can trigger harassment violations, Jaktra imposes a strict Stage 5 Legal Stop at 31+ days overdue. Collection outreach halts automatically, handing the account over to human management for debt recovery or legal review, backed by a 20-hour rolling idempotency guard.
+                </p>
+              </div>
+              <div className="text-xs text-zinc-300 flex items-center gap-1.5 pt-3 border-t border-white/[0.05]">
+                <Check className="w-3.5 h-3.5 text-[#b7d2f8]" />
+                <span>Enterprise-grade regulatory governance built directly into the engine</span>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* FAQ Section */}
+        {/* FAQ Section with outline Accordion */}
         <section className="mb-20">
-          <h2 className="text-2xl font-bold text-white text-center mb-8">Frequently Asked Questions</h2>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden transition-colors hover:border-zinc-700"
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-5 text-left text-sm sm:text-base font-medium text-white focus:outline-none"
-                  aria-expanded={openFaq === i}
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${
-                      openFaq === i ? "rotate-180 text-white" : ""
-                    }`}
-                  />
-                </button>
-                {openFaq === i && (
-                  <div className="px-5 pb-5 text-sm text-zinc-400 leading-relaxed border-t border-zinc-800/60 pt-3">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-white mb-2">Frequently Asked Questions</h2>
+            <p className="text-sm text-zinc-400">
+              Technical and commercial comparisons for finance leaders evaluating Chaser vs Jaktra.
+            </p>
+          </div>
+          <div className="max-w-3xl mx-auto">
+            <Accordion type="single" variant="outline" defaultValue="faq-0" collapsible className="w-full">
+              {faqs.map((faq, i) => (
+                <AccordionItem key={i} value={`faq-${i}`}>
+                  <AccordionTrigger className="text-left font-medium text-white text-base">
+                    {faq.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-zinc-400 text-sm leading-relaxed">
                     {faq.a}
-                  </div>
-                )}
-              </div>
-            ))}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-r from-blue-950/40 to-indigo-950/30 p-10 text-center">
+        <section className="rounded-2xl border border-white/[0.08] bg-gradient-to-r from-blue-950/30 via-[#111113] to-indigo-950/30 p-10 text-center shadow-xl">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
             Switch to Modern AI Accounts Receivable
           </h2>
@@ -321,24 +411,8 @@ export function ChaserCompare() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-900 py-12 px-6 text-xs text-zinc-500 max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>© 2026 Jaktra. All rights reserved.</div>
-        <div className="flex items-center gap-6">
-          <Link to="/pricing" className="hover:text-zinc-300 transition-colors">
-            Pricing
-          </Link>
-          <Link to="/compare/upflow-alternative" className="hover:text-zinc-300 transition-colors">
-            Upflow Alternative
-          </Link>
-          <Link to="/privacy" className="hover:text-zinc-300 transition-colors">
-            Privacy Policy
-          </Link>
-          <Link to="/terms" className="hover:text-zinc-300 transition-colors">
-            Terms of Service
-          </Link>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }
+export default ChaserCompare;

@@ -133,12 +133,12 @@ export const highRadiusCompareSchema = {
 export const saasUseCaseSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "AI Accounts Receivable Automation for B2B SaaS — Protect NRR & Cut Involuntary Churn",
-  description: "Eliminate manual collections for B2B SaaS. Recover overdue ARR, resolve billing disputes autonomously, and protect Net Revenue Retention with Jaktra.",
+  headline: "B2B SaaS Accounts Receivable: How to Recover Overdue ARR & Protect Net Retention — Jaktra",
+  description: "Learn how to collect overdue B2B SaaS invoices without damaging customer relationships or churning accounts. Automate seat/usage dispute triage, polite tone escalation, and protect Net Retention.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/use-cases/saas`,
 };
 
@@ -169,12 +169,12 @@ export const fiveStageEscalationSchema = {
 export const disputeTriageSchema = {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  headline: "AI Invoice Dispute Management & Sentiment Triage — Jaktra",
-  description: "Discover how Jaktra's NLP DisputeAgent classifies inbound billing inquiries, automatically freezes collection cadences, and drafts suggested resolutions for finance approval.",
+  headline: "Automatic Email Reply Catch & Dispute Triage for Accounts Receivable — Jaktra",
+  description: "Stop collection emails from irritating clients who already replied. Discover how automatic inbound email reply catch and NLP dispute triage pause dunning and resolve invoice disputes fast.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/features/dispute-triage`,
 };
 
@@ -193,24 +193,24 @@ export const chaserCompareSchema = {
 export const agencyUseCaseSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "AI Accounts Receivable Automation for Digital Agencies — Jaktra",
-  description: "Eliminate awkward client retainer chasing for creative and digital agencies. Protect client relationships, resolve scope disputes autonomously, and accelerate cash flow with Jaktra.",
+  headline: "The Agency Cash Flow Playbook: How to Eliminate Retainer Chasing & Protect Out-of-Pocket Ad Spend — Jaktra",
+  description: "Stop awkward retainer chasing and protect out-of-pocket ad spend. Discover how creative and digital agencies get clients to pay retainers and project milestones on time.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/use-cases/agencies`,
 };
 
 export const installmentPlansSchema = {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  headline: "B2B Payment Plans & Structured AR Installments — Jaktra",
-  description: "Learn how Jaktra recovers at-risk overdue invoices by converting large balances into structured installment schedules via tokenized debtor portals with automated webhook tracking.",
+  headline: "How to Offer Payment Plans to Overdue B2B Clients (Templates & Recovery Strategy) — Jaktra",
+  description: "Learn what to do when a B2B client can't pay their invoice. Discover how to offer structured installment plans, agreement terms, and automated milestone tracking to recover cash.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/features/installment-plans`,
 };
 
@@ -218,7 +218,7 @@ export const dsoGuideSchema = {
   "@context": "https://schema.org",
   "@type": "HowTo",
   name: "How to Reduce Days Sales Outstanding (DSO): Countback Math & 5 Operational Levers",
-  description: "A comprehensive financial guide for CFOs and Controllers on calculating DSO using the Countback method, benchmarking across B2B industries, and cutting DSO by 15–25 days with autonomous AI collections.",
+  description: "A comprehensive financial guide for CFOs and Controllers on calculating DSO using the Countback method, understanding B2B industry payment patterns, and accelerating collections with autonomous AI workflows.",
   totalTime: "P18D",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
@@ -321,12 +321,12 @@ export const manufacturingUseCaseSchema = {
 export const toneEscalationPlaybookSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "The 5-Stage AR Tone Escalation Playbook: Psychology, Prompt Design & Compliance Stops",
-  description: "A comprehensive guide on designing 5-stage accounts receivable escalation cadences that recover 85%+ of overdue invoices without destroying commercial customer relationships.",
+  headline: "Overdue Invoice Escalation: How to Shift Tone from Polite Reminder to Final Demand — Jaktra",
+  description: "Learn how to escalate overdue invoice email tone professionally across 5 aging stages. Understand when to be polite, when to be firm, and when to enforce a formal legal cutoff.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/resources/5-stage-ar-tone-escalation`,
 };
 
@@ -334,36 +334,36 @@ export const toneEscalationPlaybookSchema = {
 export const zeroLoginPortalSchema = {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  headline: "Tokenized Zero-Login Debtor Payment Portal Architecture — Jaktra",
-  description: "Explore Jaktra's cryptographic zero-login debtor portal (/i/:token). Eliminate 70%+ customer portal drop-off with one-click statements, instant settlement, and self-service installment plans.",
+  headline: "1-Click B2B Invoice Payment Links: Eliminate Passwords & Get Paid 2x Faster — Jaktra",
+  description: "Discover why traditional customer billing portals fail with 70%+ abandonment. See how 1-click zero-login payment links and self-service installments get B2B invoices paid 2x faster.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/features/zero-login-portal`,
 };
 
 export const emailDeliverabilitySchema = {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  headline: "Dunning Email Deliverability & Dead Letter Queue (DLQ) Resilience — Jaktra",
-  description: "Protect your primary email domain reputation with Jaktra's Dead Letter Queue (DLQ), multi-provider failover (SendGrid, Resend, SMTP), and automated 3-drop circuit breakers.",
+  headline: "Why Your Invoice Emails Go to Spam (And 7 Ways to Ensure Clients Actually Receive Them) — Jaktra",
+  description: "Discover why invoice emails go to spam, how to fix SPF/DKIM/DMARC deliverability, and how automated Dead Letter Queues (DLQ) and circuit breakers protect corporate sender reputation.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/features/email-deliverability`,
 };
 
 export const riskScoringSchema = {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  headline: "Predictive ML Accounts Receivable Delinquency Scoring — Jaktra",
-  description: "Stratify overdue debtors with multi-feature ML risk scoring. Evaluate aging, dollar concentration, follow-up history, and payment velocity to prioritize high-risk collections.",
+  headline: "How to Predict Late Payments: B2B Accounts Receivable Risk Scoring Guide — Jaktra",
+  description: "Learn how to identify at-risk debtors before invoices default. A practical guide to AR delinquency scoring, aging velocity, balance exposure, and collection prioritization.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/features/risk-scoring`,
 };
 
@@ -394,12 +394,12 @@ export const professionalServicesSchema = {
 export const dunningTemplatesSchema = {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  headline: "B2B Dunning Email Templates & AI Tone Escalation Playbook — Jaktra",
-  description: "10+ battle-tested B2B accounts receivable collection email templates across 5 escalation stages. Explore static templates alongside Groq LLaMA 3.1 generative prompt directives and compliance rules.",
+  headline: "10 Overdue Invoice Payment Reminder Email Templates (From Polite to Final Demand) — Jaktra",
+  description: "10 word-for-word payment reminder email templates for overdue invoices. Learn how to follow up politely at Day 1, firmly at Day 14, and formally at Day 30 without damaging client relationships.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/resources/b2b-dunning-email-templates`,
 };
 
@@ -446,12 +446,12 @@ export const staffingUseCaseSchema = {
 export const wholesaleUseCaseSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "AI Accounts Receivable Automation for Wholesale & Distribution — Jaktra",
-  description: "Protect thin distributor margins. Automate retail and food service collection cadences, triage short-shipment and damaged pallet claims via AI, and accelerate working capital with Jaktra.",
+  headline: "Stop Short-Shipment Deductions & 60-Day Terms from Crushing Wholesale Margins — Jaktra",
+  description: "How wholesale distributors resolve delivery deductions, isolate disputed line items, and protect margins on Net 60 commercial credit terms.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  dateModified: "2026-09-10",
   mainEntityOfPage: `${SITE_URL}/use-cases/wholesale-distribution`,
 };
 
@@ -545,6 +545,18 @@ export const featuresHubSchema = {
   },
 };
 
+export const bestFinanceAutomationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "The Best B2B Finance Automation Tools in 2026: From Invoice Follow-Ups to Cash Flow — Jaktra",
+  description: "An objective guide comparing the best B2B finance automation tools in 2026 across Accounts Payable, ERP reconciliation, and autonomous Accounts Receivable collection follow-ups.",
+  author: { "@id": `${SITE_URL}/#org` },
+  publisher: { "@id": `${SITE_URL}/#org` },
+  datePublished: "2026-09-10",
+  dateModified: "2026-09-10",
+  mainEntityOfPage: `${SITE_URL}/resources/best-b2b-finance-automation-tools`,
+};
+
 export const resourcesHubSchema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
@@ -556,10 +568,76 @@ export const resourcesHubSchema = {
   mainEntity: {
     "@type": "ItemList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "How to Reduce DSO Guide", url: `${SITE_URL}/resources/how-to-reduce-dso` },
-      { "@type": "ListItem", position: 2, name: "5-Stage AR Tone Escalation Playbook", url: `${SITE_URL}/resources/5-stage-ar-tone-escalation` },
-      { "@type": "ListItem", position: 3, name: "B2B Dunning Email Templates", url: `${SITE_URL}/resources/b2b-dunning-email-templates` },
-      { "@type": "ListItem", position: 4, name: "AR Automation ROI Calculator", url: `${SITE_URL}/resources/ar-automation-roi-calculator` },
+      { "@type": "ListItem", position: 1, name: "The Best B2B Finance Automation Tools in 2026", url: `${SITE_URL}/resources/best-b2b-finance-automation-tools` },
+      { "@type": "ListItem", position: 2, name: "How to Reduce DSO Guide", url: `${SITE_URL}/resources/how-to-reduce-dso` },
+      { "@type": "ListItem", position: 3, name: "How to Escalate Collection Email Tone", url: `${SITE_URL}/resources/5-stage-ar-tone-escalation` },
+      { "@type": "ListItem", position: 4, name: "10 Overdue Invoice Reminder Email Templates", url: `${SITE_URL}/resources/b2b-dunning-email-templates` },
+      { "@type": "ListItem", position: 5, name: "AR Automation ROI & DSO Calculator", url: `${SITE_URL}/resources/ar-automation-roi-calculator` },
+      { "@type": "ListItem", position: 6, name: "Invoice Dispute Response Templates", url: `${SITE_URL}/resources/invoice-dispute-response-templates` },
+      { "@type": "ListItem", position: 7, name: "AR Query Management Guide", url: `${SITE_URL}/resources/accounts-receivable-query-management` },
+      { "@type": "ListItem", position: 8, name: "Client Questioning Billable Hours Guide", url: `${SITE_URL}/resources/client-questioning-billable-hours` },
+      { "@type": "ListItem", position: 9, name: "Client Disputed Invoice What to Do", url: `${SITE_URL}/resources/client-disputed-invoice-what-to-do` },
+      { "@type": "ListItem", position: 10, name: "How to Manage AR Emails", url: `${SITE_URL}/resources/how-to-manage-accounts-receivable-emails` },
     ],
   },
+};
+
+export const invoiceDisputeTemplatesSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "How to Respond to a Disputed Invoice: Free Response Email Templates & Resolution Guide — Jaktra",
+  description: "Learn how to respond when a client disputes an invoice. Free word-for-word email templates for billable hours pushback, PO mismatches, scope creep, and how AI dispute triage pauses automated dunning to protect client relationships.",
+  author: { "@id": `${SITE_URL}/#org` },
+  publisher: { "@id": `${SITE_URL}/#org` },
+  datePublished: "2026-09-10",
+  dateModified: "2026-09-10",
+  mainEntityOfPage: `${SITE_URL}/resources/invoice-dispute-response-templates`,
+};
+
+export const arQueryManagementSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "How to Manage Inbound Accounts Receivable Queries & Billing Emails — Jaktra",
+  description: "A practical guide for finance teams on handling customer billing inquiries, managing shared accounts receivable mailboxes, responding to W-9 and invoice copy requests, and eliminating collection delays with zero-login debtor portals.",
+  author: { "@id": `${SITE_URL}/#org` },
+  publisher: { "@id": `${SITE_URL}/#org` },
+  datePublished: "2026-09-10",
+  dateModified: "2026-09-10",
+  mainEntityOfPage: `${SITE_URL}/resources/accounts-receivable-query-management`,
+};
+
+export const clientQuestioningHoursSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "Client Questioning Your Billable Hours? How to Respond Without Losing the Client — Jaktra",
+  description: "A step-by-step guide for agencies, consultants, and contractors on how to respond when a client questions invoice hours. Includes word-for-word email templates, non-defensive communication tips, and prevention tactics.",
+  author: { "@id": `${SITE_URL}/#org` },
+  publisher: { "@id": `${SITE_URL}/#org` },
+  datePublished: "2026-09-10",
+  dateModified: "2026-09-10",
+  mainEntityOfPage: `${SITE_URL}/resources/client-questioning-billable-hours`,
+};
+
+export const clientDisputedInvoiceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "Client Disputed an Invoice? What to Do Immediately (Step-by-Step Guide) — Jaktra",
+  description: "What to do when a customer disputes an invoice or refuses to pay. How to pause collection reminders immediately, diagnose the dispute type, negotiate partial payments, and use tested response scripts.",
+  author: { "@id": `${SITE_URL}/#org` },
+  publisher: { "@id": `${SITE_URL}/#org` },
+  datePublished: "2026-09-10",
+  dateModified: "2026-09-10",
+  mainEntityOfPage: `${SITE_URL}/resources/client-disputed-invoice-what-to-do`,
+};
+
+export const manageArEmailsSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "How to Manage Inbound Accounts Receivable Emails (Without the Inbox Chaos) — Jaktra",
+  description: "How high-efficiency finance teams handle customer billing inquiries, manage shared AR mailboxes, respond to W-9 and invoice copy requests in minutes, and cut Days Sales Outstanding.",
+  author: { "@id": `${SITE_URL}/#org` },
+  publisher: { "@id": `${SITE_URL}/#org` },
+  datePublished: "2026-09-10",
+  dateModified: "2026-09-10",
+  mainEntityOfPage: `${SITE_URL}/resources/how-to-manage-accounts-receivable-emails`,
 };

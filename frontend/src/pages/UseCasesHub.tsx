@@ -12,8 +12,6 @@ import {
   Megaphone,
   CheckCircle2,
   TrendingDown,
-  Calculator,
-  ChevronDown,
   ShieldCheck,
   Zap,
   CreditCard,
@@ -23,11 +21,12 @@ import jaktraLogo from "../assets/jaktra_svg.svg";
 import { SEOHead } from "../components/common/SEOHead";
 import { useCasesHubSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 function HeaderNav() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
+      <div className="w-full h-full px-4 sm:px-8 lg:px-12 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
           <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
           <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
@@ -70,8 +69,8 @@ interface IndustrySolution {
   category: "saas" | "agencies" | "consulting" | "manufacturing" | "freight" | "wholesale" | "staffing" | "construction";
   categoryLabel: string;
   icon: typeof Laptop;
-  typicalDso: number;
-  jaktraDso: number;
+  paymentTerms: string;
+  primaryFriction: string;
   collectionChallenge: string;
   howJaktraSolves: string[];
   highlight: string;
@@ -86,8 +85,8 @@ const INDUSTRIES: IndustrySolution[] = [
     category: "saas",
     categoryLabel: "SaaS & Software",
     icon: Laptop,
-    typicalDso: 52,
-    jaktraDso: 34,
+    paymentTerms: "Net 30 / Annual Contracts",
+    primaryFriction: "Expired corporate cards, seat true-up lag & renewal hesitation",
     collectionChallenge:
       "Finance teams hesitate to chase overdue renewals or seat true-ups because aggressive dunning creates friction right before contract renewal conversations.",
     howJaktraSolves: [
@@ -95,7 +94,7 @@ const INDUSTRIES: IndustrySolution[] = [
       "Embedded tokenized payment links allow buyers to update expired cards or pay via ACH in one click.",
       "Automatically freezes collection cadences the instant a buyer replies with a billing question.",
     ],
-    highlight: "Protects recurring renewals while cutting DSO by 18 days",
+    highlight: "Automates subscription dunning while preserving customer renewal relationships",
     isFeatured: true,
   },
   {
@@ -105,8 +104,8 @@ const INDUSTRIES: IndustrySolution[] = [
     category: "agencies",
     categoryLabel: "Agencies & Creative",
     icon: Megaphone,
-    typicalDso: 62,
-    jaktraDso: 38,
+    paymentTerms: "Net 30 / Monthly Retainers",
+    primaryFriction: "Account manager collection hesitation & unapproved scope expansion",
     collectionChallenge:
       "Account managers and creative directors hate having awkward payment conversations with clients, so overdue invoices linger while the agency fronts payroll and ad spend.",
     howJaktraSolves: [
@@ -114,7 +113,7 @@ const INDUSTRIES: IndustrySolution[] = [
       "Automates scheduled milestone and retainer follow-ups before the 1st of the month.",
       "Provides structured installment options for large project milestones so clients don't ghost when cash is tight.",
     ],
-    highlight: "Takes the awkward collection burden completely off account managers",
+    highlight: "Takes the awkward collection burden completely off creative account managers",
     isFeatured: true,
   },
   {
@@ -124,8 +123,8 @@ const INDUSTRIES: IndustrySolution[] = [
     category: "manufacturing",
     categoryLabel: "Manufacturing & Industrial",
     icon: Factory,
-    typicalDso: 68,
-    jaktraDso: 42,
+    paymentTerms: "Net 60–90 / Work-in-Progress",
+    primaryFriction: "Missing PO numbers, receiving dock discrepancies & batch AP runs",
     collectionChallenge:
       "Enterprise buyers routinely push Net-30 terms out to 60–90 days because invoices sit unread in accounts payable queues until someone systematically follows up.",
     howJaktraSolves: [
@@ -133,7 +132,7 @@ const INDUSTRIES: IndustrySolution[] = [
       "DisputeAgent classifies clerical hold-ups (missing PO, price variance) and pauses emails to resolve issues quickly.",
       "Enables high-value corporate bank transfers and installment plans for capital orders.",
     ],
-    highlight: "Compresses Net-60/90 payment cycles by 26 days without manual calls",
+    highlight: "Proactively verifies PO matching and itemized receiving before due dates",
     isFeatured: true,
   },
   {
@@ -143,8 +142,8 @@ const INDUSTRIES: IndustrySolution[] = [
     category: "consulting",
     categoryLabel: "Professional Services",
     icon: Briefcase,
-    typicalDso: 59,
-    jaktraDso: 36,
+    paymentTerms: "Net 30 / Hourly Engagements",
+    primaryFriction: "Engagement partner collection reluctance & billed hours inquiries",
     collectionChallenge:
       "Partner billing hours and project retainers get delayed in multi-layer corporate approval chains, while partners avoid pressing clients for payment.",
     howJaktraSolves: [
@@ -152,7 +151,7 @@ const INDUSTRIES: IndustrySolution[] = [
       "Instantly pauses messaging and notifies the engagement partner when a client questions billed hours.",
       "Sends zero-login payment links so clients can approve and settle invoices without friction.",
     ],
-    highlight: "Saves senior partners hours of manual billing administrative overhead",
+    highlight: "Insulates relationship partners from uncomfortable debt collection discussions",
   },
   {
     id: "logistics-freight",
@@ -161,8 +160,8 @@ const INDUSTRIES: IndustrySolution[] = [
     category: "freight",
     categoryLabel: "Logistics & Freight",
     icon: Truck,
-    typicalDso: 56,
-    jaktraDso: 35,
+    paymentTerms: "Net 30–60 / Load Delivery",
+    primaryFriction: "Missing proof-of-delivery (POD) & accessorial detention disputes",
     collectionChallenge:
       "High volumes of freight bills get buried in shipper inboxes, and minor accessorial questions cause payments to stall for months.",
     howJaktraSolves: [
@@ -170,7 +169,7 @@ const INDUSTRIES: IndustrySolution[] = [
       "Detects rate and detention disputes immediately, alerting dispatchers before debts age.",
       "Offers fast digital settlement options via credit card, ACH, or net banking.",
     ],
-    highlight: "Recovers overdue freight receivables without expanding collections headcount",
+    highlight: "Systematizes freight billing follow-ups and catches accessorial disputes early",
   },
   {
     id: "wholesale-distribution",
@@ -179,8 +178,8 @@ const INDUSTRIES: IndustrySolution[] = [
     category: "wholesale",
     categoryLabel: "Wholesale Trade",
     icon: Boxes,
-    typicalDso: 58,
-    jaktraDso: 37,
+    paymentTerms: "Net 30–60 / Trade Credit",
+    primaryFriction: "Short-shipment damage claims & buyer credit limit extensions",
     collectionChallenge:
       "Wholesale buyers stretch trade credit and pay only when pressed, while distributors worry that aggressive collections will push buyers to competing vendors.",
     howJaktraSolves: [
@@ -188,7 +187,7 @@ const INDUSTRIES: IndustrySolution[] = [
       "Enables structured 2x, 3x, or 4x installment schedules when wholesale buyers face temporary cash flow crunches.",
       "Enforces payment deadlines consistently across your entire customer ledger.",
     ],
-    highlight: "Prevents trade receivables from aging into bad debt write-offs",
+    highlight: "Protects thin wholesale trade margins with structured payment schedules",
   },
   {
     id: "staffing-recruiting",
@@ -197,16 +196,16 @@ const INDUSTRIES: IndustrySolution[] = [
     category: "staffing",
     categoryLabel: "Staffing & Payroll",
     icon: Users,
-    typicalDso: 54,
-    jaktraDso: 33,
+    paymentTerms: "Net 45–60 / Weekly Payroll",
+    primaryFriction: "Client timesheet approval lag vs immediate contractor payroll funding",
     collectionChallenge:
       "Staffing agencies must fund contractor payroll every single week, while corporate clients take 45–60 days to pay, forcing agencies into expensive invoice factoring loans.",
     howJaktraSolves: [
       "Dispatches automated, timely reminders aligned with weekly payroll intervals.",
       "Flags timesheet and approval delays early so client hiring managers sign off promptly.",
-      "Accelerates cash recovery by 21 days, helping agencies avoid high factoring interest fees.",
+      "Accelerates invoice settlement to protect weekly payroll cash flow without debt factoring.",
     ],
-    highlight: "Protects weekly contractor payroll cash flow and eliminates factoring costs",
+    highlight: "Protects weekly contractor payroll cash flow with automated client cadences",
   },
   {
     id: "construction",
@@ -215,8 +214,8 @@ const INDUSTRIES: IndustrySolution[] = [
     category: "construction",
     categoryLabel: "Commercial Contractors",
     icon: HardHat,
-    typicalDso: 83,
-    jaktraDso: 49,
+    paymentTerms: "Net 60–90 / Progress Billings",
+    primaryFriction: "Pay-when-paid clauses, unapproved change orders & retainage holdbacks",
     collectionChallenge:
       "Trade contractors and subcontractors face slow-paying general contractors who hold back progress payments until chased repeatedly.",
     howJaktraSolves: [
@@ -224,7 +223,7 @@ const INDUSTRIES: IndustrySolution[] = [
       "Provides direct, zero-login payment links so general contractors can pay immediately via bank transfer or card.",
       "Escalates systematically from friendly courtesy notices to firm executive reminders over 45 days.",
     ],
-    highlight: "Recovers progress billings 34 days faster with zero phone chasing",
+    highlight: "Tracks progress billing milestones and retainage releases systematically",
   },
 ];
 
@@ -258,7 +257,6 @@ export default function UseCasesHub() {
   const [annualRevenue, setAnnualRevenue] = useState<number>(10000000); // $10M
   const [currentDso, setCurrentDso] = useState<number>(58);
   const [targetDso, setTargetDso] = useState<number>(36);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const filteredIndustries = useMemo(() => {
     return INDUSTRIES.filter((ind) => {
@@ -277,10 +275,6 @@ export default function UseCasesHub() {
       return true;
     });
   }, [selectedCategory, searchQuery]);
-
-  const featuredIndustries = useMemo(() => {
-    return INDUSTRIES.filter((i) => i.isFeatured);
-  }, []);
 
   // Working Capital Calculations
   const dsoReduction = Math.max(0, currentDso - targetDso);
@@ -305,9 +299,12 @@ export default function UseCasesHub() {
 
       <HeaderNav />
 
-      <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
+      <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative">
+        {/* Subtle Ambient Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(183,210,248,0.08),transparent)] pointer-events-none" />
+
         {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="mb-6">
+        <nav aria-label="Breadcrumb" className="mb-6 relative z-10">
           <ol className="flex items-center gap-2 text-xs text-zinc-400">
             <li>
               <Link to="/" className="hover:text-zinc-200 transition-colors">
@@ -321,309 +318,257 @@ export default function UseCasesHub() {
           </ol>
         </nav>
 
-        {/* Hero Section */}
+        {/* Hero Section: Full-Width Open Layout */}
         <section className="mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#b7d2f8]/10 text-[#b7d2f8] border border-[#b7d2f8]/20 mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#b7d2f8] animate-pulse" />
-            <span>Autonomous B2B Accounts Receivable Automation</span>
-          </div>
+          <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-3">
+            Industry Solutions Directory
+          </span>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-5 max-w-3xl leading-tight">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-6 max-w-5xl leading-[1.1]">
             Accounts Receivable Built for Real-World B2B Cash Flow
           </h1>
 
-          <p className="text-base sm:text-lg text-zinc-400 max-w-3xl leading-relaxed mb-8">
+          <p className="text-lg sm:text-xl text-zinc-300 max-w-4xl leading-relaxed mb-10">
             Every business model faces overdue invoices for different reasons—from fear of hurting client relationships, to complex corporate approval chains, to cash-strapped buyers. Jaktra replaces painful manual follow-ups with intelligent, respectful collection cadences that recover cash faster without annoying your clients.
           </p>
 
-          {/* 4 Core Pillars of Jaktra */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-5 rounded-2xl bg-[#111113] border border-white/[0.08]">
-            <div className="p-3">
-              <div className="flex items-center gap-2 mb-1 text-[#b7d2f8]">
-                <ShieldCheck className="w-4 h-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Tone Escalation</span>
+          {/* 4 Core Pillars: Full-Width Open Ribbon (Zero Boxes) */}
+          <div className="border-y border-white/[0.08] py-8 my-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5 text-white font-semibold text-base">
+                <ShieldCheck className="w-5 h-5 text-[#b7d2f8] shrink-0" />
+                <span>5-Stage Tone Escalation</span>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-sm text-zinc-400 leading-relaxed">
                 5 progressive stages from gentle reminders to firm notices that preserve customer trust.
               </p>
             </div>
 
-            <div className="p-3">
-              <div className="flex items-center gap-2 mb-1 text-[#b7d2f8]">
-                <Zap className="w-4 h-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Dispute Triage</span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5 text-white font-semibold text-base">
+                <Zap className="w-5 h-5 text-[#b7d2f8] shrink-0" />
+                <span>Autonomous Dispute Triage</span>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-sm text-zinc-400 leading-relaxed">
                 AI detects disputes and freezes cadences instantly so you never harass a questioning client.
               </p>
             </div>
 
-            <div className="p-3">
-              <div className="flex items-center gap-2 mb-1 text-[#b7d2f8]">
-                <CreditCard className="w-4 h-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Zero-Login Pay</span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5 text-white font-semibold text-base">
+                <CreditCard className="w-5 h-5 text-[#b7d2f8] shrink-0" />
+                <span>Zero-Login Debtor Pay</span>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-sm text-zinc-400 leading-relaxed">
                 One-click debtor link to pay via Razorpay, UPI, cards, or bank transfer without passwords.
               </p>
             </div>
 
-            <div className="p-3">
-              <div className="flex items-center gap-2 mb-1 text-[#b7d2f8]">
-                <TrendingDown className="w-4 h-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Installment Plans</span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5 text-white font-semibold text-base">
+                <TrendingDown className="w-5 h-5 text-[#b7d2f8] shrink-0" />
+                <span>Structured Installments</span>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-sm text-zinc-400 leading-relaxed">
                 Self-serve 2x, 3x, or 4x installments turn default risks into predictable incoming cash.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Featured Top 3 Solutions Shelf */}
-        <section className="mb-16">
-          <div className="flex items-center justify-between mb-5">
+        {/* Directory Section: Open Full-Width Architectural Stream (No Box Design) */}
+        <section className="mb-24">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-white/[0.08] mb-8">
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-300">
-                Core Industry Playbooks
+              <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-2">
+                Industry Collection Blueprints
               </h2>
-            </div>
-            <span className="text-xs text-zinc-500">Most requested by finance teams</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {featuredIndustries.map((ind) => {
-              const Icon = ind.icon;
-              return (
-                <div
-                  key={`featured-${ind.id}`}
-                  className="flex flex-col justify-between p-6 rounded-2xl bg-[#111113] border border-white/[0.08] hover:border-white/[0.18] hover:bg-[#161619] transition-all duration-200 group"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/[0.04] text-zinc-300 border border-white/[0.08]">
-                        {ind.categoryLabel}
-                      </span>
-                      <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
-                        <Icon className="w-4 h-4" />
-                      </div>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-[#b7d2f8] transition-colors leading-snug">
-                      {ind.name}
-                    </h3>
-
-                    <p className="text-xs text-zinc-400 leading-relaxed mb-5">
-                      {ind.collectionChallenge}
-                    </p>
-
-                    <div className="space-y-2 mb-5">
-                      {ind.howJaktraSolves.slice(0, 2).map((pt, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs text-zinc-300">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#b7d2f8] shrink-0 mt-0.5" />
-                          <span className="leading-snug">{pt}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between mt-auto">
-                    <div className="text-xs font-mono text-zinc-300">
-                      <span>{ind.typicalDso}d → {ind.jaktraDso}d</span>
-                      <span className="text-zinc-500 ml-1">(-{ind.typicalDso - ind.jaktraDso}d DSO)</span>
-                    </div>
-                    <Link
-                      to={ind.url}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-white group-hover:text-[#b7d2f8] transition-colors"
-                    >
-                      Read Playbook <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Directory Section: Clean Category Filters & Balanced Cards Grid */}
-        <section className="mb-20">
-          <div className="mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-2">
-              All Industry Solutions Directory
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Select your business model to see how Jaktra tailors automated follow-up cadences to your customer relationships.
-            </p>
-          </div>
-
-          {/* Clean Controls Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                onClick={() => setSelectedCategory("all")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "all"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                All Businesses ({INDUSTRIES.length})
-              </button>
-              <button
-                onClick={() => setSelectedCategory("saas")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "saas"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                SaaS & Software
-              </button>
-              <button
-                onClick={() => setSelectedCategory("agencies")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "agencies"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                Agencies & Creative
-              </button>
-              <button
-                onClick={() => setSelectedCategory("consulting")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "consulting"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                Consulting
-              </button>
-              <button
-                onClick={() => setSelectedCategory("manufacturing")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "manufacturing"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                Manufacturing
-              </button>
-              <button
-                onClick={() => setSelectedCategory("freight")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "freight"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                Freight & 3PL
-              </button>
-              <button
-                onClick={() => setSelectedCategory("wholesale")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "wholesale"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                Wholesale
-              </button>
-              <button
-                onClick={() => setSelectedCategory("staffing")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "staffing"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                Staffing
-              </button>
-              <button
-                onClick={() => setSelectedCategory("construction")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  selectedCategory === "construction"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "bg-[#111113] text-zinc-400 hover:text-white border border-white/[0.08]"
-                }`}
-              >
-                Contractors
-              </button>
+              <p className="text-base text-zinc-400">
+                Select your business model to see tailored dunning cadences, dispute handling, and working capital acceleration.
+              </p>
             </div>
 
             {/* Keyword Search Input */}
-            <div className="relative min-w-[220px]">
-              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <div className="relative min-w-[280px]">
+              <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search solutions..."
-                className="w-full bg-[#111113] border border-white/[0.08] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/20 transition-colors"
+                className="w-full bg-white/[0.03] border border-white/[0.1] rounded-lg pl-9 pr-3.5 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
               />
             </div>
           </div>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2 mb-10">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "all"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              All Businesses ({INDUSTRIES.length})
+            </button>
+            <button
+              onClick={() => setSelectedCategory("saas")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "saas"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              SaaS &amp; Software
+            </button>
+            <button
+              onClick={() => setSelectedCategory("agencies")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "agencies"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              Agencies &amp; Creative
+            </button>
+            <button
+              onClick={() => setSelectedCategory("consulting")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "consulting"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              Consulting
+            </button>
+            <button
+              onClick={() => setSelectedCategory("manufacturing")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "manufacturing"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              Manufacturing
+            </button>
+            <button
+              onClick={() => setSelectedCategory("freight")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "freight"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              Freight &amp; 3PL
+            </button>
+            <button
+              onClick={() => setSelectedCategory("wholesale")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "wholesale"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              Wholesale
+            </button>
+            <button
+              onClick={() => setSelectedCategory("staffing")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "staffing"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              Staffing
+            </button>
+            <button
+              onClick={() => setSelectedCategory("construction")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === "construction"
+                  ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.08]"
+              }`}
+            >
+              Contractors
+            </button>
+          </div>
+
+          {/* Open Full-Width Architectural Stream (No Enclosed Boxes) */}
+          <div className="divide-y divide-white/[0.08]">
             {filteredIndustries.map((ind) => {
               const Icon = ind.icon;
               return (
                 <div
                   key={ind.id}
-                  className="flex flex-col justify-between p-6 rounded-2xl bg-[#111113] border border-white/[0.08] hover:border-white/[0.18] hover:bg-[#161619] transition-all duration-200 group"
+                  className="py-10 lg:py-12 transition-colors hover:bg-white/[0.015] group"
                 >
-                  <div>
-                    {/* Header: Category Badge & Icon */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/[0.04] text-zinc-300 border border-white/[0.08]">
-                        {ind.categoryLabel}
-                      </span>
-                      <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
-                        <Icon className="w-4 h-4" />
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+                    {/* Col 1: Identity & Operational Workflow Focus (lg:col-span-4) */}
+                    <div className="lg:col-span-4 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+                          {ind.categoryLabel}
+                        </span>
+                        <span className="text-zinc-600">·</span>
+                        <span className="text-xs font-mono text-zinc-400">
+                          {ind.paymentTerms}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8] shrink-0">
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-white group-hover:text-[#b7d2f8] transition-colors">
+                          {ind.name}
+                        </h3>
+                      </div>
+
+                      <p className="text-sm text-zinc-300 leading-relaxed">
+                        {ind.highlight}
+                      </p>
+
+                      <div className="pt-2">
+                        <Link
+                          to={ind.url}
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-[#b7d2f8] transition-colors group-hover:translate-x-1"
+                        >
+                          <span>Explore {ind.name.split("&")[0].trim()} Playbook</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
                       </div>
                     </div>
 
-                    {/* Title */}
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-2 group-hover:text-[#b7d2f8] transition-colors">
-                      {ind.name}
-                    </h3>
-
-                    {/* The Collection Challenge */}
-                    <div className="mb-4">
-                      <p className="text-xs text-zinc-400 leading-relaxed">
-                        <strong className="text-zinc-300 font-medium">The Challenge: </strong>
+                    {/* Col 2: Challenge Editorial (lg:col-span-4 lg:border-x lg:border-white/[0.08] lg:px-8) */}
+                    <div className="lg:col-span-4 space-y-3">
+                      <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block font-semibold">
+                        The Core Collection Challenge:
+                      </span>
+                      <p className="text-base text-zinc-300 leading-relaxed">
                         {ind.collectionChallenge}
                       </p>
+                      <div className="pt-2 text-xs font-medium text-[#b7d2f8] italic">
+                        "{ind.highlight}"
+                      </div>
                     </div>
 
-                    {/* How Jaktra Solves It */}
-                    <div className="space-y-2 mb-6 pt-3 border-t border-white/[0.04]">
-                      <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
-                        How Jaktra Solves It:
-                      </p>
-                      {ind.howJaktraSolves.map((pt, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs text-zinc-300">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#b7d2f8] shrink-0 mt-0.5" />
-                          <span className="leading-snug">{pt}</span>
-                        </div>
-                      ))}
+                    {/* Col 3: Solution Sequence (lg:col-span-4 lg:pl-4) */}
+                    <div className="lg:col-span-4 space-y-3">
+                      <span className="text-xs font-mono uppercase tracking-wider text-[#b7d2f8] block font-semibold flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-[#b7d2f8]" />
+                        <span>Autonomous Jaktra Workflow:</span>
+                      </span>
+                      <ul className="space-y-3">
+                        {ind.howJaktraSolves.map((pt, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm sm:text-base text-zinc-200 leading-relaxed">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#b7d2f8] shrink-0 mt-2.5" />
+                            <span>{pt}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-
-                  {/* Bottom: DSO Benchmark & Dedicated Link */}
-                  <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between mt-auto">
-                    <div className="text-xs font-mono text-zinc-300">
-                      <span>{ind.typicalDso}d → {ind.jaktraDso}d</span>
-                      <span className="text-zinc-500 ml-1">(-{ind.typicalDso - ind.jaktraDso}d DSO)</span>
-                    </div>
-                    <Link
-                      to={ind.url}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-white group-hover:text-[#b7d2f8] transition-colors"
-                    >
-                      Read Playbook <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </Link>
                   </div>
                 </div>
               );
@@ -631,14 +576,14 @@ export default function UseCasesHub() {
           </div>
 
           {filteredIndustries.length === 0 && (
-            <div className="p-12 text-center rounded-2xl bg-[#111113] border border-white/[0.08]">
-              <p className="text-zinc-400 text-sm mb-3">No industry playbooks match your search query.</p>
+            <div className="py-16 text-center border-b border-white/[0.08]">
+              <p className="text-zinc-400 text-base mb-3">No industry playbooks match your search query.</p>
               <button
                 onClick={() => {
                   setSelectedCategory("all");
                   setSearchQuery("");
                 }}
-                className="px-4 py-2 rounded-lg bg-white text-zinc-950 text-xs font-semibold hover:bg-zinc-200 transition-colors"
+                className="px-5 py-2.5 rounded-lg bg-white text-zinc-950 text-sm font-semibold hover:bg-zinc-200 transition-colors"
               >
                 Reset Filters
               </button>
@@ -647,29 +592,30 @@ export default function UseCasesHub() {
         </section>
 
         {/* Interactive Working Capital & DSO Unlock Calculator */}
-        <section className="mb-20 p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08]">
-          <div className="max-w-3xl mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#b7d2f8]/10 text-[#b7d2f8] border border-[#b7d2f8]/20 mb-3">
-              <Calculator className="w-3.5 h-3.5" />
-              <span>Working Capital Model</span>
+        <section className="border-t border-white/[0.08] pt-16 pb-20">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+                Working Capital Model
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                Calculate Cash Released by Compressing Your DSO
+              </h2>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              Calculate Cash Released by Compressing Your DSO
-            </h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Every day invoices sit unpaid in accounts receivable represents cash trapped on your balance sheet. See how much working capital an automated collections agent releases:
+            <p className="text-sm text-zinc-400 max-w-xl leading-relaxed">
+              Every day invoices sit unpaid represents cash trapped on your balance sheet. Adjust revenue and DSO targets to inspect immediate liquidity release.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Controls */}
-            <div className="lg:col-span-7 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            {/* Controls (7 cols) */}
+            <div className="lg:col-span-7 space-y-8">
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-xs font-mono uppercase tracking-wider text-zinc-300 font-semibold">
                     Annual Gross Credit Sales
                   </label>
-                  <span className="text-sm font-mono font-bold text-white">
+                  <span className="text-base font-mono font-bold text-white">
                     ${(annualRevenue / 1000000).toFixed(1)}M USD
                   </span>
                 </div>
@@ -680,22 +626,22 @@ export default function UseCasesHub() {
                   step={500000}
                   value={annualRevenue}
                   onChange={(e) => setAnnualRevenue(Number(e.target.value))}
-                  className="w-full accent-[#b7d2f8] cursor-pointer"
+                  className="w-full accent-[#b7d2f8] cursor-pointer h-2 bg-white/[0.08] rounded-lg appearance-none"
                 />
-                <div className="flex justify-between text-[11px] text-zinc-500 mt-1 font-mono">
-                  <span>$1M</span>
-                  <span>$25M</span>
-                  <span>$50M</span>
+                <div className="flex justify-between text-xs text-zinc-500 mt-2 font-mono">
+                  <span>$1,000,000</span>
+                  <span>$25,000,000</span>
+                  <span>$50,000,000</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4 border-t border-white/[0.06]">
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-xs font-mono uppercase tracking-wider text-zinc-300 font-semibold">
                       Current Baseline DSO
                     </label>
-                    <span className="text-sm font-mono font-bold text-zinc-300">
+                    <span className="text-base font-mono font-bold text-zinc-200">
                       {currentDso} days
                     </span>
                   </div>
@@ -710,17 +656,17 @@ export default function UseCasesHub() {
                       setCurrentDso(val);
                       if (val <= targetDso) setTargetDso(Math.max(20, val - 10));
                     }}
-                    className="w-full accent-zinc-400 cursor-pointer"
+                    className="w-full accent-zinc-400 cursor-pointer h-2 bg-white/[0.08] rounded-lg appearance-none"
                   />
-                  <span className="text-[11px] text-zinc-500 mt-1 block">Your current collection velocity</span>
+                  <span className="text-xs text-zinc-500 mt-2 block">Your current average collection cycle time</span>
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                      Target Jaktra DSO
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-xs font-mono uppercase tracking-wider text-[#b7d2f8] font-semibold">
+                      Simulated Target DSO Goal
                     </label>
-                    <span className="text-sm font-mono font-bold text-[#b7d2f8]">
+                    <span className="text-base font-mono font-bold text-[#b7d2f8]">
                       {targetDso} days
                     </span>
                   </div>
@@ -731,100 +677,111 @@ export default function UseCasesHub() {
                     step={1}
                     value={targetDso}
                     onChange={(e) => setTargetDso(Number(e.target.value))}
-                    className="w-full accent-[#b7d2f8] cursor-pointer"
+                    className="w-full accent-[#b7d2f8] cursor-pointer h-2 bg-white/[0.08] rounded-lg appearance-none"
                   />
-                  <span className="text-[11px] text-zinc-500 mt-1 block">With autonomous AI cadences</span>
+                  <span className="text-xs text-zinc-400 mt-2 block">Adjust to model potential working capital accelerated</span>
                 </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center gap-3 text-xs text-zinc-400 font-mono">
+                <span>Standard treasury formula: <code>(Δ DSO / 365) × Annual Revenue</code>.</span>
               </div>
             </div>
 
-            {/* Results Display */}
-            <div className="lg:col-span-5 bg-[#0a0a0b] rounded-xl p-6 border border-white/[0.08] space-y-4">
+            {/* Results Display (5 cols, architectural border divider, no enclosed box) */}
+            <div className="lg:col-span-5 lg:border-l lg:border-white/[0.08] lg:pl-10 space-y-6">
               <div>
-                <div className="text-xs text-zinc-400 font-semibold uppercase tracking-wider mb-1">
-                  Immediate Working Capital Released
+                <div className="text-xs text-zinc-400 font-mono uppercase tracking-wider font-semibold mb-2">
+                  Modeled Working Capital Accelerated
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight">
+                <div className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white font-mono tracking-tight">
                   ${cashUnlocked.toLocaleString()}
                 </div>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Cash pulled forward from overdue receivables back into your operational accounts.
+                <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
+                  Liquidity accelerated from overdue accounts receivable directly into liquid operational cash balances.
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-white/[0.06] grid grid-cols-2 gap-4">
+              <div className="pt-6 border-t border-white/[0.08] grid grid-cols-2 gap-6">
                 <div>
-                  <div className="text-[11px] text-zinc-400 uppercase font-semibold">
-                    Financing Saved
+                  <div className="text-xs font-mono text-zinc-400 uppercase font-semibold">
+                    Financing Cost Saved
                   </div>
-                  <div className="text-base font-bold text-white mt-0.5 font-mono">
-                    ${annualFinancingSaved.toLocaleString()}/yr
+                  <div className="text-xl sm:text-2xl font-bold text-white mt-1 font-mono">
+                    ${annualFinancingSaved.toLocaleString()}<span className="text-xs text-zinc-500 font-normal">/yr</span>
                   </div>
-                  <span className="text-[10px] text-zinc-500">At 8% cost of capital</span>
+                  <span className="text-xs text-zinc-500 mt-1 block">Assuming 8% cost of capital</span>
                 </div>
                 <div>
-                  <div className="text-[11px] text-zinc-400 uppercase font-semibold">
-                    Hours Reclaimed
+                  <div className="text-xs font-mono text-zinc-400 uppercase font-semibold">
+                    Cadence Automation
                   </div>
-                  <div className="text-base font-bold text-white mt-0.5 font-mono">
-                    ~38 hrs/mo
+                  <div className="text-xl sm:text-2xl font-bold text-white mt-1 font-mono">
+                    5 Stages
                   </div>
-                  <span className="text-[10px] text-zinc-500">Saved on manual follow-ups</span>
+                  <span className="text-xs text-zinc-500 mt-1 block">Full-loop reminder to resolution</span>
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-4">
                 <Link
                   to="/register"
-                  className="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+                  className="w-full py-3.5 px-6 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm"
                 >
-                  Unlock This Working Capital Free <ArrowRight className="w-3.5 h-3.5" />
+                  Unlock This Working Capital Free <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Cross-Industry DSO Benchmark Table */}
-        <section className="mb-20">
-          <div className="mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
-              B2B Industry DSO Benchmarks & Collection Realities
-            </h2>
-            <p className="text-sm text-zinc-400 max-w-3xl">
-              Compare your team's collection cycle times against industry baselines and evaluate the impact of automated, dispute-aware AI cadences:
+        {/* Cross-Industry Workflow & Operational Blueprint Table */}
+        <section className="border-t border-white/[0.08] pt-16 pb-20">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+                Operational Architecture Matrix
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                Industry Collection Realities &amp; Execution Workflows
+              </h2>
+            </div>
+            <p className="text-sm text-zinc-400 max-w-xl leading-relaxed">
+              Explore how automated, dispute-aware cadences align with standard commercial terms and eliminate friction across business models.
             </p>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#111113]">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#111113] shadow-sm">
+            <table className="w-full text-left text-sm border-collapse min-w-[760px]">
               <thead>
-                <tr className="border-b border-white/[0.08] bg-white/[0.02]">
-                  <th className="p-4 text-zinc-300 font-semibold">Industry Business Model</th>
-                  <th className="p-4 text-zinc-300 font-semibold">Baseline DSO</th>
-                  <th className="p-4 text-zinc-300 font-semibold">Jaktra Target DSO</th>
-                  <th className="p-4 text-zinc-300 font-semibold">Primary Collection Challenge</th>
-                  <th className="p-4 text-zinc-300 font-semibold">Dedicated Guide</th>
+                <tr className="border-b border-white/[0.08] bg-white/[0.03]">
+                  <th className="py-4 px-6 text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">Industry Model</th>
+                  <th className="py-4 px-6 text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">Standard Terms</th>
+                  <th className="py-4 px-6 text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">Primary Collection Bottleneck</th>
+                  <th className="py-4 px-6 text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">Autonomous Workflow</th>
+                  <th className="py-4 px-6 text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold text-right">Dedicated Guide</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
                 {INDUSTRIES.map((ind) => (
-                  <tr key={`benchmark-${ind.id}`} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="p-4 font-medium text-white flex items-center gap-2">
-                      <ind.icon className="w-4 h-4 text-[#b7d2f8] shrink-0" />
-                      {ind.name}
+                  <tr key={`benchmark-${ind.id}`} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="py-4 px-6 font-medium text-white">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8] shrink-0">
+                          <ind.icon className="w-4 h-4" />
+                        </div>
+                        <span className="font-semibold text-sm sm:text-base">{ind.name}</span>
+                      </div>
                     </td>
-                    <td className="p-4 text-zinc-400 font-mono font-medium">{ind.typicalDso} days</td>
-                    <td className="p-4 text-white font-mono font-medium">
-                      {ind.jaktraDso} days <span className="text-zinc-500">(-{ind.typicalDso - ind.jaktraDso}d)</span>
-                    </td>
-                    <td className="p-4 text-zinc-400 max-w-xs leading-relaxed">{ind.collectionChallenge}</td>
-                    <td className="p-4">
+                    <td className="py-4 px-6 text-zinc-300 font-mono text-xs">{ind.paymentTerms}</td>
+                    <td className="py-4 px-6 text-zinc-300 text-sm max-w-xs leading-relaxed">{ind.primaryFriction}</td>
+                    <td className="py-4 px-6 text-zinc-300 text-sm max-w-xs leading-relaxed font-medium">{ind.highlight}</td>
+                    <td className="py-4 px-6 text-right">
                       <Link
                         to={ind.url}
-                        className="text-[#b7d2f8] hover:text-white font-medium inline-flex items-center gap-1 transition-colors"
+                        className="text-[#b7d2f8] group-hover:text-white font-semibold inline-flex items-center gap-1.5 text-xs sm:text-sm transition-colors"
                       >
-                        Read playbook <ArrowRight className="w-3 h-3" />
+                        Read playbook <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                       </Link>
                     </td>
                   </tr>
@@ -834,68 +791,72 @@ export default function UseCasesHub() {
           </div>
         </section>
 
-        {/* FAQs Section */}
-        <section className="mb-20">
-          <div className="mb-8">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Clear answers on how Jaktra automates collections while protecting buyer relationships:
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {FAQS.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div
-                  key={faq.q}
-                  className="rounded-2xl border border-white/[0.08] bg-[#111113] overflow-hidden transition-colors"
+        {/* FAQs Section: Open Split Layout */}
+        <section className="border-t border-white/[0.08] pt-16 pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <div className="lg:col-span-4 space-y-4">
+              <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+                Frequently Asked Questions
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                Clear Answers on Autonomous Collections
+              </h2>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                How Jaktra safeguards client relationships, detects disputed invoices, and connects with your existing accounting stack.
+              </p>
+              <div className="pt-4">
+                <Link
+                  to="/features/ai-agent"
+                  className="inline-flex items-center gap-2 text-xs font-semibold text-[#b7d2f8] hover:text-white transition-colors"
                 >
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full p-5 text-left flex items-center justify-between gap-4 text-sm font-semibold text-white hover:text-[#b7d2f8] transition-colors"
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-zinc-400 transition-transform duration-200 shrink-0 ${
-                        isOpen ? "rotate-180 text-white" : ""
-                      }`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="px-5 pb-5 text-xs sm:text-sm text-zinc-400 leading-relaxed border-t border-white/[0.04] pt-3">
+                  Learn more about Jaktra's AI Agent <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="lg:col-span-8 lg:border-l lg:border-white/[0.08] lg:pl-10">
+              <Accordion type="single" variant="outline" defaultValue="faq-0" collapsible className="w-full">
+                {FAQS.map((faq, idx) => (
+                  <AccordionItem key={idx} value={`faq-${idx}`} className="border-b border-white/[0.08] py-2">
+                    <AccordionTrigger className="text-left font-semibold text-white text-base sm:text-lg hover:no-underline hover:text-[#b7d2f8] transition-colors py-4">
+                      {faq.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-zinc-300 text-sm sm:text-base leading-relaxed pb-6">
                       {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
           </div>
         </section>
 
-        {/* Bottom CTA Banner */}
-        <section className="p-8 sm:p-12 rounded-2xl bg-[#111113] border border-white/[0.08] text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-            Ready to Accelerate Your Accounts Receivable?
-          </h2>
-          <p className="text-sm text-zinc-400 max-w-xl mx-auto mb-6 leading-relaxed">
-            Connect QuickBooks, Xero, or Stripe in under 15 minutes. 100% free during Early Access with zero credit card required.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to="/register"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-sm"
-            >
-              Get started free
-            </Link>
-            <Link
-              to="/compare"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white font-medium text-sm hover:bg-white/[0.08] transition-colors"
-            >
-              Explore Software Comparison Guide
-            </Link>
+        {/* Bottom CTA: Full-Width Open Horizon Banner */}
+        <section className="border-t border-white/[0.08] py-20 text-center relative">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+              Zero Risk · 100% Free During Early Access
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+              Ready to Accelerate Your Accounts Receivable?
+            </h2>
+            <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+              Connect QuickBooks, Xero, or Stripe in under 15 minutes. Stop losing days to manual collections and release working capital immediately.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Link
+                to="/register"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-lg bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-sm"
+              >
+                Start Free Trial
+              </Link>
+              <Link
+                to="/compare"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white font-medium text-sm hover:bg-white/[0.08] transition-colors"
+              >
+                Explore Software Comparison Guide
+              </Link>
+            </div>
           </div>
         </section>
       </main>

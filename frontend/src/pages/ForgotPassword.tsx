@@ -225,7 +225,7 @@ export function ForgotPassword() {
           )}
 
           {resendSuccess && (
-            <div className="mt-4 p-3 bg-emerald-950/40 border border-emerald-900/50 rounded-xl text-xs text-emerald-400 font-medium">
+            <div className="mt-4 p-3 bg-[#b7d2f8]/10 border border-[#b7d2f8]/20 rounded-xl text-xs text-[#b7d2f8] font-medium">
               {resendSuccess}
             </div>
           )}

@@ -39,6 +39,12 @@ const CompareHub = lazy(() => import("./pages/CompareHub"));
 const UseCasesHub = lazy(() => import("./pages/UseCasesHub"));
 const FeaturesHub = lazy(() => import("./pages/FeaturesHub"));
 const ResourcesHub = lazy(() => import("./pages/ResourcesHub"));
+const BestFinanceAutomationGuide = lazy(() => import("./pages/BestFinanceAutomationGuide"));
+const InvoiceDisputeTemplatesResource = lazy(() => import("./pages/InvoiceDisputeTemplatesResource"));
+const ArQueryManagementResource = lazy(() => import("./pages/ArQueryManagementResource"));
+const ClientQuestioningBillableHoursArticle = lazy(() => import("./pages/ClientQuestioningBillableHoursArticle"));
+const ClientDisputedInvoiceArticle = lazy(() => import("./pages/ClientDisputedInvoiceArticle"));
+const ManageArEmailsArticle = lazy(() => import("./pages/ManageArEmailsArticle"));
 
 // Lazy-loaded heavy dashboard, analytics, settings, and secondary routes
 const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
@@ -138,10 +144,16 @@ function App() {
           <Route path="/use-cases/staffing-recruiting" element={<StaffingRecruitingUseCase />} />
           <Route path="/use-cases/wholesale-distribution" element={<WholesaleDistributionUseCase />} />
           <Route path="/resources/ar-automation-roi-calculator" element={<ArRoiCalculatorResource />} />
+          <Route path="/resources/best-b2b-finance-automation-tools" element={<BestFinanceAutomationGuide />} />
           <Route path="/compare/kolleno-alternative" element={<KollenoCompare />} />
           <Route path="/compare" element={<CompareHub />} />
           <Route path="/use-cases" element={<UseCasesHub />} />
           <Route path="/features" element={<FeaturesHub />} />
+          <Route path="/resources/invoice-dispute-response-templates" element={<InvoiceDisputeTemplatesResource />} />
+          <Route path="/resources/accounts-receivable-query-management" element={<ArQueryManagementResource />} />
+          <Route path="/resources/client-questioning-billable-hours" element={<ClientQuestioningBillableHoursArticle />} />
+          <Route path="/resources/client-disputed-invoice-what-to-do" element={<ClientDisputedInvoiceArticle />} />
+          <Route path="/resources/how-to-manage-accounts-receivable-emails" element={<ManageArEmailsArticle />} />
           <Route path="/resources" element={<ResourcesHub />} />
 
 

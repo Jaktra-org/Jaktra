@@ -1,40 +1,52 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, Users, ShieldCheck, Clock, FileCheck, Calculator, AlertCircle } from "lucide-react";
+import {
+  ArrowRight,
+  Users,
+  ShieldCheck,
+  Clock,
+  FileCheck,
+  Calculator,
+  AlertCircle,
+  Shield,
+  Calendar,
+} from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { SEOHead } from "../components/common/SEOHead";
 import { staffingUseCaseSchema, breadcrumbSchema } from "../components/common/seo-schemas";
+import { LandingFooter } from "../components/landing/LandingFooter";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 function HeaderNav() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#010102]/85 backdrop-blur-md border-b border-white/10">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
       <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
           <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
           <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
             Pricing
           </Link>
-          <Link to="/features/5-stage-escalation" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Tone Escalation
+          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Features
           </Link>
-          <Link to="/features/installment-plans" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Installments
+          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Use Cases
           </Link>
-          <Link to="/resources/how-to-reduce-dso" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            DSO Guide
+          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Compare
           </Link>
-          <Link to="/docs" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Docs
+          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Resources
           </Link>
           <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
             Sign in
           </Link>
           <Link
             to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-md hover:bg-zinc-200 transition-colors shadow-sm"
+            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
           >
             Get started free
           </Link>
@@ -44,13 +56,88 @@ function HeaderNav() {
   );
 }
 
-export default function StaffingRecruitingUseCase() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+interface StaffingStageItem {
+  id: string;
+  number: string;
+  title: string;
+  subtitle: string;
+  timing: string;
+  tone: string;
+  badge: string;
+  description: string;
+  safeguardTitle: string;
+  safeguardDesc: string;
+}
 
+const STAFFING_STAGES: StaffingStageItem[] = [
+  {
+    id: "stage-1",
+    number: "01",
+    title: "VMS Timesheet Confirmation & Pre-Due Audit",
+    subtitle: "Verifies contractor hours, bill rates, and hiring manager signoffs in VMS platforms",
+    timing: "Day -3 to Due Date",
+    tone: "Courteous, Administrative",
+    badge: "Day -3 Pre-Due",
+    description: "Verifies that contractor hours, bill rates, and client hiring manager signoffs are logged and approved in Fieldglass, Beeline, or Coupa before the client's bi-weekly AP check run locks.",
+    safeguardTitle: "Clerical Prevention",
+    safeguardDesc: "Eliminates delayed payments caused by unapproved timesheets sitting in manager inboxes.",
+  },
+  {
+    id: "stage-2",
+    number: "02",
+    title: "AP Disbursement Check-in & Voucher Status",
+    subtitle: "Polite inquiry confirming voucher numbers, check batches, and ACH remittance details",
+    timing: "Days 1–7 Overdue",
+    tone: "Friendly, Inquiring, Respectful",
+    badge: "Days 1–7 Overdue",
+    description: "Polite administrative inquiry asking if the staffing invoice is scheduled for the upcoming weekly payment batch. Confirms voucher numbers and ACH remittance details.",
+    safeguardTitle: "Zero-Login Link",
+    safeguardDesc: "Embeds an instant payment link (/i/:token) so corporate AP teams can settle invoices via Razorpay virtual accounts or corporate cards.",
+  },
+  {
+    id: "stage-3",
+    number: "03",
+    title: "Direct Controller Notice & Installment Splits",
+    subtitle: "Direct outreach offering milestone installment schedules to preserve payroll cash flow",
+    timing: "Days 8–14 Overdue",
+    tone: "Commercial, Collaborative, Firm",
+    badge: "Days 8–14 Overdue",
+    description: "Direct outreach to the client's corporate controller. If budget cycles are delayed, Jaktra enables structured 2x or 3x milestone installment schedules so contractor payroll cash flow is preserved.",
+    safeguardTitle: "Dispute Agent",
+    safeguardDesc: "If overtime rates are queried, Jaktra freezes dunning and alerts your staffing account manager with an AI-drafted resolution.",
+  },
+  {
+    id: "stage-4",
+    number: "04",
+    title: "Contractor Deployment Pause Warning",
+    subtitle: "Authoritative notice that ongoing placement renewals and shifts will be placed on credit hold",
+    timing: "Days 15–30 Overdue",
+    tone: "Formal, Direct, High-Stakes",
+    badge: "Days 15–30 Critical",
+    description: "Authoritative notice stating that ongoing contractor placement renewals, active shift staffing, or upcoming interview slates will be placed on credit hold until past-due balances are cleared.",
+    safeguardTitle: "Executive Visibility",
+    safeguardDesc: "CCs designated enterprise recruitment directors to safeguard the commercial account relationship.",
+  },
+  {
+    id: "stage-5",
+    number: "05",
+    title: "Stage 5 Legal Stop & Agency Leadership Review",
+    subtitle: "Autonomous messaging halts; compiles certified timesheets and SOWs for leadership review",
+    timing: "Day 31+ Overdue",
+    tone: "Final Demand / Human Escalation Halt",
+    badge: "Day 31+ (Legal Halt)",
+    description: "Autonomous messaging strictly halts. Compiles certified timesheets, signed Master Services Agreements (MSAs), Statements of Work (SOWs), and communications history for agency leadership or legal counsel.",
+    safeguardTitle: "Compliance Guardrail",
+    safeguardDesc: "100% human-in-the-loop review required before any legal demand or collections handoff.",
+  },
+];
+
+export default function StaffingRecruitingUseCase() {
   // Staffing Payroll Calculator State
   const [monthlyPayroll, setMonthlyPayroll] = useState<number>(500000);
   const [factoringRate, setFactoringRate] = useState<number>(2.5); // 2.5% typical staffing payroll factoring
   const [clientDso, setClientDso] = useState<number>(55);
+  const [targetDsoReduction, setTargetDsoReduction] = useState<number>(15);
 
   // Calculations
   const monthlyFactoringCost = monthlyPayroll * (factoringRate / 100);
@@ -58,17 +145,16 @@ export default function StaffingRecruitingUseCase() {
   const jaktraAnnualCost = 249 * 12; // Scale tier: $2,988/yr
   const annualProfitReclaimed = annualFactoringDrain - jaktraAnnualCost;
   const trappedPayrollCapital = (monthlyPayroll * 12 / 365) * clientDso;
-  const dsoReduction = Math.min(20, Math.max(10, Math.round(clientDso * 0.3)));
-  const freedCashFlow = (monthlyPayroll * 12 / 365) * dsoReduction;
+  const freedCashFlow = (monthlyPayroll * 12 / 365) * targetDsoReduction;
 
   const faqs = [
     {
       q: "How does Jaktra help staffing firms eliminate expensive payroll factoring?",
-      a: "Staffing agencies must disburse payroll to placed contractors every Friday, but corporate clients often take 50 to 75 days to pay invoices. This forces agencies into payroll factoring facilities that charge 2.0% to 4.0% of gross invoice volume. Jaktra closes this cash conversion gap by cutting client DSO by 15–20 days using automated 5-stage tone escalation, pre-due VMS verification, and zero-login digital payment links, allowing firms to fund payroll from operating cash flow and cancel factoring lines.",
+      a: "Staffing agencies must disburse payroll to placed contractors every Friday, but corporate clients often take 50 to 75 days to pay invoices. This forces agencies into payroll factoring facilities that charge 2.0% to 4.0% of gross invoice volume. Jaktra closes this cash conversion gap by accelerating client collections using automated 5-stage tone escalation, pre-due VMS verification, and zero-login digital payment links, allowing firms to fund payroll from operating cash flow and cancel factoring lines.",
     },
     {
       q: "What happens when a client disputes a timesheet or overtime calculation?",
-      a: "A missing timesheet approval or disputed overtime rate is the #1 reason client AP departments delay paying staffing bills. When a client replies stating 'timesheet not approved by manager' or 'overtime rate discrepancy', Jaktra's DisputeAgent (ai-service/src/agents/dispute_agent.py) parses the email, tags the dispute type, freezes all automated follow-ups immediately, and alerts your staffing account manager with an AI-generated briefing.",
+      a: "A missing timesheet approval or disputed overtime rate is the #1 reason client AP departments delay paying staffing bills. When a client replies stating 'timesheet not approved by manager' or 'overtime rate discrepancy', Jaktra's DisputeAgent parses the email, tags the dispute type, freezes all automated follow-ups immediately, and alerts your staffing account manager with an AI-generated briefing.",
     },
     {
       q: "How does Jaktra handle Vendor Management Systems (VMS) like Fieldglass, Beeline, and Coupa?",
@@ -80,12 +166,12 @@ export default function StaffingRecruitingUseCase() {
     },
     {
       q: "How does Jaktra preserve client relationships during collection escalation?",
-      a: "Enterprise clients are high-value commercial accounts that provide recurring staffing placements. Jaktra's Groq LLaMA 3.1 tone modulation maintains a collaborative, administrative tone in early stages, framing outreach as helpful verification of hours worked rather than aggressive debt collection, while strictly adhering to a 20-hour contact barrier.",
+      a: "Enterprise clients are high-value commercial accounts that provide recurring staffing placements. Jaktra's tone modulation maintains a collaborative, administrative tone in early stages, framing outreach as helpful verification of hours worked rather than aggressive debt collection, while strictly adhering to a 20-hour contact barrier.",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#010102] text-zinc-100 font-sans selection:bg-purple-500/30 selection:text-white">
+    <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
         title="AI Accounts Receivable Automation for Staffing & Recruitment Agencies | Jaktra"
         description="Bridge the weekly contractor payroll gap for staffing and recruitment agencies. Automate client collection cadences, triage timesheet disputes via AI, eliminate payroll factoring fees, and accelerate cash flow."
@@ -94,7 +180,7 @@ export default function StaffingRecruitingUseCase() {
           staffingUseCaseSchema,
           breadcrumbSchema([
             { name: "Home", path: "/" },
-            { name: "Use Cases", path: "/use-cases/saas" },
+            { name: "Use Cases", path: "/use-cases" },
             { name: "Staffing & Recruiting AR", path: "/use-cases/staffing-recruiting" },
           ]),
         ]}
@@ -102,40 +188,67 @@ export default function StaffingRecruitingUseCase() {
 
       <HeaderNav />
 
-      <main className="pt-24 pb-20 px-6 max-w-6xl mx-auto">
+      <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 max-w-5xl mx-auto relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(183,210,248,0.06),transparent)] pointer-events-none" />
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center gap-2 text-xs text-zinc-500 mb-8" aria-label="Breadcrumb">
-          <Link to="/" className="hover:text-zinc-300 transition-colors">Home</Link>
-          <span>/</span>
-          <Link to="/use-cases/saas" className="hover:text-zinc-300 transition-colors">Use Cases</Link>
-          <span>/</span>
-          <span className="text-zinc-300">Staffing & Recruiting</span>
+        <nav aria-label="Breadcrumb" className="mb-6 text-xs text-zinc-500 relative z-10">
+          <ol className="flex items-center gap-2">
+            <li>
+              <Link to="/" className="hover:text-zinc-300 transition-colors">
+                Home
+              </Link>
+            </li>
+            <li>/</li>
+            <li>
+              <Link to="/use-cases" className="hover:text-zinc-300 transition-colors">
+                Use Cases
+              </Link>
+            </li>
+            <li>/</li>
+            <li className="text-zinc-300 font-medium" aria-current="page">
+              Staffing &amp; Recruiting
+            </li>
+          </ol>
         </nav>
 
         {/* Hero Section */}
-        <header className="mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-medium mb-4">
-            <Users className="w-3.5 h-3.5" />
-            <span>Staffing Agencies, IT Contracting & Recruitment Firms</span>
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-6">
-            Bridge the Weekly Payroll Gap: Cut 55+ Day Client DSO and Reclaim Factoring Profits
+        <section className="text-center max-w-4xl mx-auto mb-16">
+          <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-4">
+            Staffing &amp; IT Recruitment AR Automation
+          </span>
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-6 leading-tight">
+            Bridge the Weekly Contractor Payroll Gap: Cut 55+ Day Client DSO &amp; Reclaim Margins
           </h1>
-          <p className="text-lg text-zinc-400 max-w-3xl leading-relaxed">
-            Staffing agencies must fund contractor payroll every single week, but enterprise clients take 45 to 75+ days to pay invoices. Jaktra automates client collection cadences, triages timesheet approval bottlenecks with AI, and unlocks operating cash flow without expensive payroll factoring.
+          <p className="text-base sm:text-lg text-zinc-400 max-w-3xl mx-auto leading-relaxed mb-8">
+            Staffing agencies fund contractor payroll every Friday, but corporate clients take 45 to 75+ days to pay invoices. Jaktra automates client collection cadences, triages timesheet approval bottlenecks with AI, and unlocks operating cash flow without expensive payroll factoring.
           </p>
-        </header>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/register"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-200 transition-all shadow-md"
+            >
+              Get started free
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/pricing"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white font-medium text-sm hover:bg-white/10 transition-all"
+            >
+              Calculate your DSO ROI
+            </Link>
+          </div>
+        </section>
 
         {/* The Payroll Float Callout */}
-        <section className="mb-16 p-6 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-sm">
+        <section className="mb-16 p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08]">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="max-w-2xl">
-              <div className="flex items-center gap-2 text-purple-400 text-sm font-semibold mb-2">
+              <div className="flex items-center gap-2 text-[#b7d2f8] text-sm font-semibold mb-2">
                 <AlertCircle className="w-4 h-4" />
                 <span>The Staffing Payroll Dilemma: Weekly Outflows vs. Net 60 Inflows</span>
               </div>
               <p className="text-sm text-zinc-400 leading-relaxed">
-                You cannot delay paying placed software developers, nurses, or temp workers on Friday. When corporate clients stretch payment terms past Day 50, agencies surrender <strong className="text-zinc-200">2.0% to 4.0% of top-line revenue</strong> to payroll factoring facilities, destroying net operating margins.
+                You cannot delay paying placed software developers, healthcare professionals, or temporary staff on Friday. When clients stretch payment terms past Day 50, agencies surrender <strong className="text-white">2.0% to 4.0% of top-line revenue</strong> to payroll factoring facilities, destroying net operating margins.
               </p>
             </div>
             <Link
@@ -148,62 +261,18 @@ export default function StaffingRecruitingUseCase() {
           </div>
         </section>
 
-        {/* 4 Core Pillars for Staffing AR */}
-        <section className="mb-20 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-3">
-            <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <h2 className="text-lg font-bold text-white">Timesheet & Overtime Dispute Triage</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              When a client AP contact replies stating that an onsite manager hasn't signed a weekly timesheet or questions an overtime multiplier, Jaktra’s <code className="text-purple-300">dispute_agent.py</code> automatically tags the dispute, halts automated dunning cadences, and alerts your staffing recruiter.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
-              <FileCheck className="w-5 h-5" />
-            </div>
-            <h2 className="text-lg font-bold text-white">VMS Pre-Due Verification Cadences</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Never let an invoice sit unapproved in Fieldglass, Beeline, or Coupa. Jaktra coordinates collaborative Stage 1 check-ins 3 days prior to due date, ensuring timesheet releases are validated by hiring managers before the client's bi-weekly AP check run locks.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-              <Clock className="w-5 h-5" />
-            </div>
-            <h2 className="text-lg font-bold text-white">Zero-Login Client Settlement Portals</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Client AP departments can view full invoice details, breakdown hours, and remit payment in 30 seconds via Razorpay (corporate cards, NetBanking, UPI, and dedicated virtual bank accounts) using cryptographic <code className="text-emerald-300">/i/:token</code> links with zero password barriers.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/10 space-y-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
-              <Users className="w-5 h-5" />
-            </div>
-            <h2 className="text-lg font-bold text-white">Account Manager & Placement Protection</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Client hiring managers control placement renewals. Jaktra acts as an institutional finance desk buffer, using Groq LLaMA 3.1 to modulate tone professionally across early stages, protecting recruiter-client relationships from awkward collection friction.
-            </p>
-          </div>
-        </section>
-
         {/* Interactive Payroll Factoring vs Jaktra ROI Calculator */}
-        <section className="mb-20 p-8 rounded-2xl bg-zinc-900/40 border border-white/10">
-          <div className="max-w-2xl mb-8">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">
-              <Calculator className="w-3.5 h-3.5" />
-              <span>Staffing Payroll Factoring Simulator</span>
+        <section className="mb-20 p-8 sm:p-10 rounded-2xl bg-[#111113] border border-white/[0.08]">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-9 h-9 rounded-lg bg-[#b7d2f8]/10 border border-[#b7d2f8]/20 flex items-center justify-center">
+              <Calculator className="w-5 h-5 text-[#b7d2f8]" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Calculate Your Payroll Factoring Profit Reclaim
-            </h2>
-            <p className="text-sm text-zinc-400">
-              See how much net margin your staffing agency loses to payroll factoring fees, and how cutting client DSO with Jaktra lets you self-fund contractor payroll.
-            </p>
+            <div>
+              <h2 className="text-xl font-bold text-white">Staffing Payroll Factoring Profit Reclaim Calculator</h2>
+              <p className="text-xs sm:text-sm text-zinc-400">
+                See how much net margin your agency loses to payroll factoring fees, and how shortening client DSO lets you self-fund contractor payroll.
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -221,7 +290,7 @@ export default function StaffingRecruitingUseCase() {
                   step="50000"
                   value={monthlyPayroll}
                   onChange={(e) => setMonthlyPayroll(Number(e.target.value))}
-                  className="w-full accent-purple-500 cursor-pointer"
+                  className="w-full accent-[#b7d2f8] cursor-pointer"
                 />
               </div>
 
@@ -237,7 +306,7 @@ export default function StaffingRecruitingUseCase() {
                   step="0.1"
                   value={factoringRate}
                   onChange={(e) => setFactoringRate(Number(e.target.value))}
-                  className="w-full accent-purple-500 cursor-pointer"
+                  className="w-full accent-[#b7d2f8] cursor-pointer"
                 />
               </div>
 
@@ -253,40 +322,56 @@ export default function StaffingRecruitingUseCase() {
                   step="1"
                   value={clientDso}
                   onChange={(e) => setClientDso(Number(e.target.value))}
-                  className="w-full accent-purple-500 cursor-pointer"
+                  className="w-full accent-[#b7d2f8] cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs text-zinc-400 mb-2">
+                  <span>Simulated Client DSO Reduction Goal:</span>
+                  <span className="text-white font-mono font-semibold">-{targetDsoReduction} days</span>
+                </div>
+                <input
+                  type="range"
+                  min="5"
+                  max="35"
+                  step="1"
+                  value={targetDsoReduction}
+                  onChange={(e) => setTargetDsoReduction(Number(e.target.value))}
+                  className="w-full accent-[#b7d2f8] cursor-pointer"
                 />
               </div>
             </div>
 
             {/* Right Metrics Box */}
-            <div className="lg:col-span-6 p-6 rounded-xl bg-black/60 border border-white/10 space-y-4">
+            <div className="lg:col-span-6 p-6 rounded-xl bg-black/40 border border-white/[0.08] space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-zinc-900/60 border border-white/5">
+                <div className="p-4 rounded-lg bg-zinc-900 border border-white/[0.05]">
                   <div className="text-xs text-zinc-500 mb-1">Monthly Factoring Cost</div>
-                  <div className="text-2xl font-bold text-red-400 font-mono">
+                  <div className="text-2xl font-bold text-white font-mono">
                     ${Math.round(monthlyFactoringCost).toLocaleString()}/mo
                   </div>
                   <div className="text-[11px] text-zinc-400 mt-1">Paid to factoring lender</div>
                 </div>
 
-                <div className="p-4 rounded-lg bg-zinc-900/60 border border-white/5">
+                <div className="p-4 rounded-lg bg-zinc-900 border border-white/[0.05]">
                   <div className="text-xs text-zinc-500 mb-1">Trapped Payroll Float</div>
                   <div className="text-2xl font-bold text-white font-mono">
                     ${Math.round(trappedPayrollCapital).toLocaleString()}
                   </div>
-                  <div className="text-[11px] text-zinc-400 mt-1">Locked in outstanding client AP</div>
+                  <div className="text-[11px] text-zinc-400 mt-1">Locked in client AP runs</div>
                 </div>
               </div>
 
-              <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <div className="p-4 rounded-lg bg-white/[0.04] border border-white/[0.12]">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-zinc-300">Annual Net Profit Reclaimed with Jaktra:</span>
-                  <span className="text-lg font-bold text-emerald-400 font-mono">
+                  <span className="text-xs text-zinc-300">Modeled Net Profit Reclaimed (Factoring vs Platform):</span>
+                  <span className="text-lg font-bold text-white font-mono">
                     +${Math.round(annualProfitReclaimed).toLocaleString()} / yr
                   </span>
                 </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-emerald-500/15">
-                  <span className="text-[11px] text-zinc-400">Cash Flow Accelerated (-{dsoReduction} Days DSO):</span>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.08]">
+                  <span className="text-[11px] text-zinc-400">Modeled Cash Flow Accelerated (-{targetDsoReduction} Days DSO):</span>
                   <span className="text-sm font-semibold text-white font-mono">
                     +${Math.round(freedCashFlow).toLocaleString()}
                   </span>
@@ -296,140 +381,253 @@ export default function StaffingRecruitingUseCase() {
           </div>
         </section>
 
-        {/* 5-Stage Staffing Escalation */}
-        <section className="mb-20">
+        {/* 5-STAGE CADENCE INTERACTIVE ACCORDION */}
+        {/* 5-STAGE TONE ESCALATION - Open Cadence Architecture */}
+        <section className="mb-20 sm:mb-24">
           <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+              Staffing AR Cadence
+            </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-              Staffing & Recruiting 5-Stage Escalation Workflow
+              Staffing &amp; Recruiting 5-Stage Escalation Cadence
             </h2>
-            <p className="text-sm text-zinc-400">
-              How Jaktra secures timely invoice payment while protecting recruiter-client relationships.
+            <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+              How Jaktra secures timely invoice payment without creating awkward friction between recruiters and corporate hiring managers.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-blue-500/20">
-              <div className="text-xs font-bold text-blue-400 mb-1">Stage 1</div>
-              <div className="text-sm font-semibold text-white mb-1">Timesheet Confirmation</div>
-              <div className="text-xs text-zinc-500 mb-2">Day -3 to Due Date</div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Verifies that contractor hours, bill rates, and manager signoffs are logged in the client's VMS portal.
-              </p>
-            </div>
+          {/* Quick-Glance Cadence Table */}
+          <div className="mb-10 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#111113]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-white/[0.08] bg-white/[0.02]">
+                  <th className="py-3.5 px-4 font-semibold text-zinc-300">Stage &amp; Timing</th>
+                  <th className="py-3.5 px-4 font-semibold text-zinc-300">Tone Classification</th>
+                  <th className="py-3.5 px-4 font-semibold text-zinc-300">Staffing Safeguard</th>
+                  <th className="py-3.5 px-4 font-semibold text-zinc-300">Operational Objective</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {STAFFING_STAGES.map((s) => (
+                  <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[#b7d2f8] font-bold">{s.number}</span>
+                        <span className="font-medium text-white">{s.title}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white/[0.04] text-zinc-300 border border-white/[0.06]">
+                        {s.tone}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-zinc-300 font-medium">
+                      <span className="text-[#b7d2f8] font-mono text-[11px] mr-1">[{s.safeguardTitle}]</span>
+                      <span className="text-xs text-zinc-400">{s.safeguardDesc}</span>
+                    </td>
+                    <td className="py-3 px-4 text-zinc-400 font-mono text-[11px]">{s.timing}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-emerald-500/20">
-              <div className="text-xs font-bold text-emerald-400 mb-1">Stage 2</div>
-              <div className="text-sm font-semibold text-white mb-1">AP Disbursement Check</div>
-              <div className="text-xs text-zinc-500 mb-2">Days 1–7 Overdue</div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Polite administrative inquiry asking if the invoice is approved for the upcoming weekly payment run.
-              </p>
-            </div>
+          {/* Unrolled 5 Stage Cards */}
+          <div className="space-y-5">
+            {STAFFING_STAGES.map((stage) => (
+              <div
+                key={stage.id}
+                className="rounded-2xl border border-white/[0.08] bg-[#111113] p-6 sm:p-7 hover:border-white/20 transition-all duration-300"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  <div className="lg:col-span-7 space-y-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-mono font-bold text-[#b7d2f8] bg-[#b7d2f8]/10 px-2.5 py-0.5 rounded-full border border-[#b7d2f8]/20">
+                        Stage {stage.number}
+                      </span>
+                      <span className="text-xs font-mono text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">
+                        {stage.badge}
+                      </span>
+                      <span className="text-xs text-zinc-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-zinc-400" />
+                        {stage.timing}
+                      </span>
+                    </div>
 
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-amber-500/20">
-              <div className="text-xs font-bold text-amber-400 mb-1">Stage 3</div>
-              <div className="text-sm font-semibold text-white mb-1">Direct Accounting Notice</div>
-              <div className="text-xs text-zinc-500 mb-2">Days 8–14 Overdue</div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Direct outreach to client controller; offers installment splits if corporate cash release is delayed.
-              </p>
-            </div>
+                    <h3 className="text-lg font-bold text-white tracking-tight">
+                      {stage.title}
+                    </h3>
+                    <p className="text-xs text-[#b7d2f8] font-medium">
+                      {stage.subtitle}
+                    </p>
+                    <p className="text-sm text-zinc-400 leading-relaxed pt-1">
+                      {stage.description}
+                    </p>
+                  </div>
 
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-orange-500/20">
-              <div className="text-xs font-bold text-orange-400 mb-1">Stage 4</div>
-              <div className="text-sm font-semibold text-white mb-1">Placement Pause Warning</div>
-              <div className="text-xs text-zinc-500 mb-2">Days 15–30 Overdue</div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Authoritative notice stating that active contractor deployment or new candidate submittals are at risk.
-              </p>
-            </div>
+                  <div className="lg:col-span-5 rounded-xl bg-[#0a0a0b]/80 border border-white/[0.06] p-4 sm:p-5 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-white">
+                      <Shield className="w-4 h-4 text-[#b7d2f8] shrink-0" />
+                      <span>{stage.safeguardTitle}</span>
+                    </div>
+                    <p className="text-xs text-zinc-300 leading-relaxed">
+                      {stage.safeguardDesc}
+                    </p>
+                    <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                      <span>Tone Profile:</span>
+                      <span className="text-zinc-300">{stage.tone}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-red-500/20">
-              <div className="text-xs font-bold text-red-400 mb-1">Stage 5</div>
-              <div className="text-sm font-semibold text-white mb-1">Legal Stop & Review</div>
-              <div className="text-xs text-zinc-500 mb-2">Day 31+ Overdue</div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Automation strictly halts. Escalates file to agency leadership and legal counsel for formal demand.
-              </p>
+        {/* 4 CORE PILLARS */}
+        <section className="mb-20 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.08] space-y-3">
+            <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Timesheet &amp; Overtime Dispute Triage</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              When a client AP contact replies stating that an onsite manager hasn't signed a weekly timesheet or questions an overtime multiplier, Jaktra’s NLP DisputeAgent automatically tags the dispute, halts automated dunning cadences, and alerts your staffing recruiter.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.08] space-y-3">
+            <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
+              <FileCheck className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-bold text-white">VMS Pre-Due Verification Cadences</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Never let an invoice sit unapproved in Fieldglass, Beeline, or Coupa. Jaktra coordinates collaborative Stage 1 check-ins 3 days prior to due date, ensuring timesheet releases are validated by hiring managers before the client's bi-weekly AP check run locks.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.08] space-y-3">
+            <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
+              <Clock className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Zero-Login Client Settlement Portals</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Client AP departments can view full invoice details, breakdown hours, and remit payment in 30 seconds via Razorpay (corporate cards, NetBanking, UPI, and dedicated virtual bank accounts) using cryptographic <code className="text-xs">/i/:token</code> links with zero password barriers.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.08] space-y-3">
+            <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
+              <Users className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Placement &amp; Relationship Protection</h3>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Client hiring managers control placement renewals. Jaktra acts as an institutional finance desk buffer, using professional tone modulation across early stages, protecting recruiter-client relationships from awkward collection friction.
+            </p>
+          </div>
+        </section>
+
+        {/* COMPARISON TABLE */}
+        <section className="mb-20">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+              Traditional Payroll Factoring vs. Jaktra
+            </h2>
+            <p className="text-zinc-400 text-sm sm:text-base">
+              Why fast-growing recruitment agencies are ditching 2%–4% factoring fees for autonomous AR.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/[0.08] bg-[#111113] overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse min-w-[680px]">
+                <thead>
+                  <tr className="border-b border-white/[0.08] bg-white/[0.03] text-xs font-mono uppercase tracking-wider text-zinc-300">
+                    <th className="py-4 px-6 font-semibold">Metric</th>
+                    <th className="py-4 px-6 font-semibold text-[#b7d2f8]">Jaktra Autonomous AR</th>
+                    <th className="py-4 px-6 font-semibold text-zinc-400">Payroll Factoring Lenders</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.05] text-xs sm:text-sm">
+                  <tr className="hover:bg-white/[0.015] transition-colors">
+                    <td className="py-4 px-6 font-medium text-white">Annual Cost</td>
+                    <td className="py-4 px-6 text-zinc-100 font-medium bg-white/[0.02]">Flat software subscription ($0 during Early Access)</td>
+                    <td className="py-4 px-6 text-zinc-400">2.0%–4.0% of total contractor payroll ($120k+/yr)</td>
+                  </tr>
+                  <tr className="hover:bg-white/[0.015] transition-colors">
+                    <td className="py-4 px-6 font-medium text-white">Client Experience</td>
+                    <td className="py-4 px-6 text-zinc-100 font-medium bg-white/[0.02]">Branded in your agency name with collaborative tone</td>
+                    <td className="py-4 px-6 text-zinc-400">Aggressive third-party collection calls that annoy clients</td>
+                  </tr>
+                  <tr className="hover:bg-white/[0.015] transition-colors">
+                    <td className="py-4 px-6 font-medium text-white">VMS &amp; Timesheets</td>
+                    <td className="py-4 px-6 text-zinc-100 font-medium bg-white/[0.02]">Automated pre-due verification of Fieldglass/Beeline approvals</td>
+                    <td className="py-4 px-6 text-zinc-400">No VMS integration; delayed approvals trigger penalties</td>
+                  </tr>
+                  <tr className="hover:bg-white/[0.015] transition-colors">
+                    <td className="py-4 px-6 font-medium text-white">Safeguards</td>
+                    <td className="py-4 px-6 text-zinc-100 font-medium bg-white/[0.02]">Strict 20-hour contact barrier; Stage 5 Legal Stop</td>
+                    <td className="py-4 px-6 text-zinc-400">Frequent repetitive calls that damage commercial goodwill</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </section>
 
         {/* FAQs */}
-        <section className="mb-20">
-          <div className="text-center max-w-2xl mx-auto mb-10">
+        <section className="max-w-4xl mx-auto px-2 py-12 mb-16 border-t border-white/[0.08]">
+          <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-              Frequently Asked Questions: Staffing & Recruiting AR
+              Frequently Asked Questions: Staffing &amp; Recruiting AR
             </h2>
-            <p className="text-sm text-zinc-400">
+            <p className="text-zinc-400 text-sm sm:text-base">
               Operational guidance on eliminating payroll factoring, managing VMS approvals, and preserving client accounts.
             </p>
           </div>
 
-          <div className="space-y-3 max-w-3xl mx-auto">
-            {faqs.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div key={idx} className="rounded-xl border border-white/10 bg-zinc-900/40 overflow-hidden">
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-zinc-900/60 transition-colors"
-                  >
-                    <span className="text-sm font-medium text-white">{faq.q}</span>
-                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {isOpen && (
-                    <div className="px-5 pb-4 text-xs sm:text-sm text-zinc-400 leading-relaxed border-t border-white/5 pt-3">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <Accordion type="single" variant="outline" defaultValue="faq-0" collapsible className="w-full">
+            {faqs.map((faq, idx) => (
+              <AccordionItem key={idx} value={`faq-${idx}`}>
+                <AccordionTrigger>{faq.q}</AccordionTrigger>
+                <AccordionContent>{faq.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </section>
 
-        {/* Bottom CTA */}
-        <section className="p-8 sm:p-12 rounded-2xl bg-gradient-to-b from-zinc-900 to-black border border-white/15 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-            Accelerate Staffing Collections in 15 Minutes
-          </h2>
-          <p className="text-sm text-zinc-400 max-w-xl mx-auto mb-8">
-            Connect your invoicing or applicant tracking system to Jaktra today. 100% free during Early Access with zero credit card required.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to="/register"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-lg"
-            >
-              Get started free
-            </Link>
-            <Link
-              to="/pricing"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-sm transition-colors"
-            >
-              Explore Free Early Access
-            </Link>
+        {/* BOTTOM CTA */}
+        <section className="max-w-4xl mx-auto text-center border-t border-white/[0.08] pt-16">
+          <div className="p-8 sm:p-12 rounded-2xl bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.08]">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 font-display">
+              Accelerate Staffing Collections in 15 Minutes
+            </h2>
+            <p className="text-zinc-400 max-w-xl mx-auto text-sm sm:text-base mb-8">
+              Connect your invoicing or applicant tracking system to Jaktra today. Free during Early Access with zero credit card required.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                to="/register"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-200 transition-all shadow-lg"
+              >
+                Get started free
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/pricing"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-white/5 border border-white/10 text-white font-medium text-sm hover:bg-white/10 transition-all"
+              >
+                Calculate your DSO ROI
+              </Link>
+            </div>
+            <p className="text-xs text-zinc-500 mt-4">
+              No credit card required • Deploy in 15 minutes • AES-256 encrypted
+            </p>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-12 px-6 bg-black">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <img src={jaktraLogo} alt="Jaktra" width={18} height={18} className="h-4.5 w-4.5 block" />
-            <span>&copy; {new Date().getFullYear()} Jaktra. All rights reserved.</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link to="/pricing" className="hover:text-zinc-300 transition-colors">Pricing</Link>
-            <Link to="/features/5-stage-escalation" className="hover:text-zinc-300 transition-colors">Tone Escalation</Link>
-            <Link to="/resources/how-to-reduce-dso" className="hover:text-zinc-300 transition-colors">DSO Guide</Link>
-            <Link to="/privacy" className="hover:text-zinc-300 transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-zinc-300 transition-colors">Terms</Link>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

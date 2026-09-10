@@ -1,31 +1,43 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Bot, Shield, Layers, ChevronDown, Check, Scale, ExternalLink } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  Shield,
+  Layers,
+  Check,
+  ExternalLink,
+  CheckCircle2,
+} from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { SEOHead } from "../components/common/SEOHead";
 import { compareHubSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 function HeaderNav() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#010102]/85 backdrop-blur-md border-b border-white/10">
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
+      <div className="w-full h-full px-4 sm:px-8 lg:px-12 xl:px-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
           <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
           <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
             Pricing
           </Link>
+          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Features
+          </Link>
           <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Industries
+            Use Cases
           </Link>
-          <Link to="/features/5-stage-escalation" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Tone Escalation
+          <Link to="/compare" className="text-sm text-white font-medium transition-colors hidden sm:block">
+            Compare
           </Link>
-          <Link to="/resources/how-to-reduce-dso" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            DSO Guide
+          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Resources
           </Link>
           <Link
             to="/login"
@@ -35,7 +47,7 @@ function HeaderNav() {
           </Link>
           <Link
             to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-md hover:bg-zinc-200 transition-colors shadow-sm"
+            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
           >
             Get started free
           </Link>
@@ -216,11 +228,11 @@ const COMPETITORS: CompetitorCard[] = [
 
 export default function CompareHub() {
   const [selectedCategory, setSelectedCategory] = useState<"all" | "direct" | "portal" | "enterprise">("all");
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const filteredCompetitors = selectedCategory === "all"
-    ? COMPETITORS
-    : COMPETITORS.filter((c) => c.category === selectedCategory);
+  const filteredCompetitors =
+    selectedCategory === "all"
+      ? COMPETITORS
+      : COMPETITORS.filter((c) => c.category === selectedCategory);
 
   const faqs = [
     {
@@ -246,7 +258,7 @@ export default function CompareHub() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#010102] text-zinc-100 font-sans selection:bg-purple-500/30 selection:text-white">
+    <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
         title="B2B Accounts Receivable Software Buyer's Guide & Alternatives Hub | Jaktra"
         description="Compare the leading B2B accounts receivable automation and dunning software. In-depth architectural comparisons of Jaktra vs HighRadius, Upflow, Chaser, Invoiced, Kolleno, Billtrust, and more."
@@ -262,282 +274,351 @@ export default function CompareHub() {
 
       <HeaderNav />
 
-      <main className="pt-24 pb-20">
+      <main className="pt-24 pb-20 w-full px-4 sm:px-8 lg:px-12 xl:px-16 relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(183,210,248,0.06),transparent)] pointer-events-none" />
         {/* Breadcrumb Navigation */}
-        <div className="max-w-6xl mx-auto px-6 mb-6">
-          <nav className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
-            <Link to="/" className="hover:text-zinc-200 transition-colors">Home</Link>
-            <span>/</span>
-            <span className="text-purple-400">Software Comparisons & Alternatives</span>
-          </nav>
-        </div>
+        <nav aria-label="Breadcrumb" className="mb-6 text-xs text-zinc-500 font-mono relative z-10">
+          <ol className="flex items-center gap-2">
+            <li>
+              <Link to="/" className="hover:text-zinc-300 transition-colors">
+                Home
+              </Link>
+            </li>
+            <li>/</li>
+            <li className="text-zinc-300 font-medium" aria-current="page">
+              Software Comparisons & Alternatives
+            </li>
+          </ol>
+        </nav>
 
-        {/* Hero Section */}
-        <section className="max-w-6xl mx-auto px-6 pt-6 pb-12 text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-medium mb-6">
-            <Scale className="w-3.5 h-3.5" />
-            B2B Accounts Receivable Software Buyer's Guide
-          </div>
+        {/* Hero Section: Expansive Market Intelligence Masthead with Spacious Flow */}
+        <header className="mb-20 sm:mb-24 pt-8 max-w-7xl mx-auto">
+          <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-4">
+            B2B Accounts Receivable Software Buyer's Matrix
+          </span>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-6 leading-tight">
-            Find the right AR platform. <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300 bg-clip-text text-transparent">
-              Without the vendor marketing spin.
-            </span>
-          </h1>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+            <div className="lg:w-8/12 space-y-4">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
+                Find the Right AR Platform. Without Vendor Marketing Spin.
+              </h1>
+              <p className="text-base sm:text-lg text-zinc-300 leading-relaxed max-w-2xl pt-1">
+                Every accounts receivable vendor claims "AI" and "automation." Here is an objective, architectural breakdown of the 15 leading platforms—evaluating implementation complexity, debtor payment friction, and true autonomous execution.
+              </p>
+            </div>
 
-          <p className="text-base sm:text-xl text-zinc-400 max-w-3xl mb-8 leading-relaxed">
-            Every accounts receivable vendor claims to use "AI" and "automate collections." Here is an objective, architectural breakdown of the 15 leading platforms—evaluating implementation complexity, debtor payment friction, and true autonomous execution.
-          </p>
-
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
-            <button
-              onClick={() => setSelectedCategory("all")}
-              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                selectedCategory === "all"
-                  ? "bg-white text-zinc-950 font-semibold"
-                  : "bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/10"
-              }`}
-            >
-              All Platforms ({COMPETITORS.length})
-            </button>
-            <button
-              onClick={() => setSelectedCategory("direct")}
-              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                selectedCategory === "direct"
-                  ? "bg-purple-600 text-white font-semibold"
-                  : "bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/10"
-              }`}
-            >
-              Modern Dunning & AI Agents (4)
-            </button>
-            <button
-              onClick={() => setSelectedCategory("portal")}
-              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                selectedCategory === "portal"
-                  ? "bg-purple-600 text-white font-semibold"
-                  : "bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/10"
-              }`}
-            >
-              Portals & Task Queues (4)
-            </button>
-            <button
-              onClick={() => setSelectedCategory("enterprise")}
-              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                selectedCategory === "enterprise"
-                  ? "bg-purple-600 text-white font-semibold"
-                  : "bg-zinc-900/60 text-zinc-400 hover:text-white border border-white/10"
-              }`}
-            >
-              Enterprise O2C & Treasury Suites (7)
-            </button>
-          </div>
-        </section>
-
-        {/* Competitor Grid Section */}
-        <section className="max-w-6xl mx-auto px-6 py-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCompetitors.map((comp, idx) => (
-              <div
-                key={idx}
-                className="p-6 rounded-xl bg-zinc-900/40 border border-white/10 flex flex-col justify-between hover:border-purple-500/40 transition-all group"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/5 text-zinc-400 uppercase tracking-wider">
-                      {comp.category === "direct" ? "AI Dunning Agent" : comp.category === "portal" ? "Portal & Tasks" : "Enterprise Suite"}
-                    </span>
-                    {comp.hasDedicatedPage ? (
-                      <span className="text-xs font-mono text-purple-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                        Read comparison <ArrowRight className="w-3 h-3" />
-                      </span>
-                    ) : (
-                      <span className="text-xs font-mono text-emerald-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                        Direct Alternative <ArrowRight className="w-3 h-3" />
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
-                    {comp.name} vs. Jaktra
-                  </h3>
-
-                  <div className="space-y-3 mb-6">
-                    <div>
-                      <p className="text-[11px] font-mono uppercase text-zinc-500 tracking-wider">When to choose {comp.name}:</p>
-                      <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{comp.bestFor}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] font-mono uppercase text-purple-400 tracking-wider">Why choose Jaktra:</p>
-                      <p className="text-xs text-zinc-300 mt-0.5 leading-relaxed">{comp.jaktraAdvantage}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-4 mt-auto">
-                  <div className="grid grid-cols-2 gap-2 text-[11px] font-mono mb-4 text-zinc-400">
-                    <div>
-                      <span className="text-zinc-500 block">Setup Time:</span>
-                      <span className="text-white">{comp.setupTime}</span>
-                    </div>
-                    <div>
-                      <span className="text-zinc-500 block">Pricing Model:</span>
-                      <span className="text-emerald-400">{comp.pricing}</span>
-                    </div>
-                  </div>
-
-                  {comp.hasDedicatedPage ? (
-                    <Link
-                      to={comp.url}
-                      className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-white/5 hover:bg-purple-600 hover:text-white text-xs font-medium text-zinc-300 transition-all border border-white/10 hover:border-purple-500"
-                    >
-                      View in-depth analysis
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/register"
-                      className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-white/5 hover:bg-emerald-600 hover:text-white text-xs font-medium text-zinc-300 transition-all border border-white/10 hover:border-emerald-500"
-                    >
-                      Get started free
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  )}
-                </div>
+            <div className="lg:w-4/12 flex flex-col gap-3.5 lg:items-end">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { id: "all", label: `All (${COMPETITORS.length})` },
+                  { id: "direct", label: "Dunning & AI (4)" },
+                  { id: "portal", label: "Portals & Tasks (4)" },
+                  { id: "enterprise", label: "Enterprise O2C (7)" },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id as any)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-mono transition-colors ${
+                      selectedCategory === cat.id
+                        ? "bg-white text-zinc-950 font-bold shadow-sm"
+                        : "bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.06]"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
+          </div>
+        </header>
+
+        {/* Unified Monochrome Market Telemetry Ribbon (Spacious, Zero Rainbow Colors) */}
+        <section className="border-y border-white/[0.08] py-10 my-16 sm:my-20 grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.08] max-w-7xl mx-auto">
+          <div className="px-4 sm:px-8 py-6 sm:py-2 space-y-1.5">
+            <div className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+              Setup Velocity
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+              15 Mins
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              vs 6–12 months for enterprise SAP suites.
+            </p>
+          </div>
+
+          <div className="px-4 sm:px-8 py-6 sm:py-2 space-y-1.5">
+            <div className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+              Execution Autonomy
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+              Full AI Agent
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Automates dunning &amp; triage vs human call queues.
+            </p>
+          </div>
+
+          <div className="px-4 sm:px-8 py-6 sm:py-2 space-y-1.5">
+            <div className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+              Debtor Adoption
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+              Zero-Login
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Tokenized /i/:token links eliminate password friction.
+            </p>
+          </div>
+
+          <div className="px-4 sm:px-8 py-6 sm:py-2 space-y-1.5">
+            <div className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+              Commercial Terms
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+              100% Free
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Zero mandatory annual locks ($10k–$150k+/yr saved).
+            </p>
           </div>
         </section>
 
-        {/* 3 Core Architectures Comparison Section */}
-        <section className="max-w-6xl mx-auto px-6 py-16 border-t border-white/10">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+        {/* The 3 Architectural Categories: Full-Width Open Editorial 3-Column Strip */}
+        <section className="border-b border-white/[0.08] pb-24 mb-24 max-w-7xl mx-auto">
+          <div className="mb-14">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">
               Understanding the 3 Architectural Categories
             </h2>
-            <p className="text-sm sm:text-base text-zinc-400">
-              Before evaluating software features, identify which architectural model matches your operational bottleneck.
+            <p className="text-sm sm:text-base text-zinc-400 max-w-2xl">
+              Before comparing specific software features, understand which underlying architecture aligns with your team's bottleneck:
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-xl bg-purple-950/20 border border-purple-500/30">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 mb-4">
-                <Bot className="w-5 h-5" />
+          <div className="border-y border-white/[0.08] divide-y lg:divide-y-0 lg:divide-x divide-white/[0.08] grid grid-cols-1 lg:grid-cols-3">
+            {/* Col 1 */}
+            <div className="py-10 lg:pr-10 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8] shrink-0">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider font-semibold">Jaktra Model</span>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">Autonomous AI Execution</h3>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Autonomous AI Execution</h3>
-              <p className="text-xs font-mono text-purple-300 mb-3">Jaktra Model</p>
-              <p className="text-xs text-zinc-300 leading-relaxed mb-4">
-                AI acts as an autonomous agent that modulates email tone across 5 stages, triages inbound disputes, and executes collections end-to-end. Built for companies that want overdue cash collected without hiring human collectors.
+              <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+                Autonomous agent modulates tone across 5 stages, triages inbound disputes, and collects overdue cash end-to-end without hiring extra staff.
               </p>
-              <ul className="space-y-1.5 text-xs text-zinc-400 border-t border-white/10 pt-3">
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" /> 15-minute cloud setup</li>
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" /> Zero debtor login friction</li>
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" /> 100% Free during Early Access</li>
+              <ul className="space-y-2 text-xs text-zinc-300 pt-3 border-t border-white/[0.06]">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-[#b7d2f8]" /> 15-minute cloud setup</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-[#b7d2f8]" /> Zero debtor login friction</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-[#b7d2f8]" /> 100% Free during Early Access</li>
               </ul>
             </div>
 
-            <div className="p-6 rounded-xl bg-zinc-900/40 border border-white/10">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 mb-4">
-                <Layers className="w-5 h-5" />
+            {/* Col 2 */}
+            <div className="py-10 lg:px-10 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8] shrink-0">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider font-semibold">Invoiced, Gaviti, YayPay</span>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">Portals &amp; Task Lists</h3>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Customer Portals & Task Lists</h3>
-              <p className="text-xs font-mono text-blue-300 mb-3">Invoiced, Gaviti, YayPay Model</p>
-              <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-                Focuses on self-service customer billing portals and task queues that tell human collectors who to call each day. Good for companies with established credit departments that want central task logs.
+              <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+                Focuses on self-service customer billing portals and task queues that tell human collectors who to phone each day. Requires dedicated staff.
               </p>
-              <ul className="space-y-1.5 text-xs text-zinc-400 border-t border-white/10 pt-3">
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-400" /> 2 to 6 week setup</li>
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-400" /> Comprehensive portal dashboards</li>
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-400" /> $10k–$25k/yr contracts</li>
+              <ul className="space-y-2 text-xs text-zinc-300 pt-3 border-t border-white/[0.06]">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-400" /> 2 to 6 week setup</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-400" /> Comprehensive portal dashboards</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-400" /> $10k–$25k/yr contracts</li>
               </ul>
             </div>
 
-            <div className="p-6 rounded-xl bg-zinc-900/40 border border-white/10">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 mb-4">
-                <Shield className="w-5 h-5" />
+            {/* Col 3 */}
+            <div className="py-10 lg:pl-10 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8] shrink-0">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider font-semibold">HighRadius, Serrala</span>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">Enterprise O2C &amp; Treasury</h3>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Enterprise O2C & Treasury</h3>
-              <p className="text-xs font-mono text-amber-300 mb-3">HighRadius, Serrala, BlackLine Model</p>
-              <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-                Deeply integrated suites for Fortune 500 multinationals running SAP or Oracle. Handles physical check lockbox OCR, multi-bank SWIFT/EBICS treasury, and complex balance sheet substantiation.
+              <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+                Deeply integrated suites for Fortune 500 multinationals running SAP or Oracle. Handles physical check lockbox OCR and complex deduction clearing.
               </p>
-              <ul className="space-y-1.5 text-xs text-zinc-400 border-t border-white/10 pt-3">
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-amber-400" /> 6 to 12 month implementation</li>
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-amber-400" /> Heavy ERP cash application</li>
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-amber-400" /> $50k–$150k+/yr licensing</li>
+              <ul className="space-y-2 text-xs text-zinc-300 pt-3 border-t border-white/[0.06]">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-400" /> 6 to 12 month implementation</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-400" /> Heavy ERP cash application</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-zinc-400" /> $50k–$150k+/yr licensing</li>
               </ul>
             </div>
           </div>
         </section>
 
-        {/* FAQs Section */}
-        <section className="max-w-4xl mx-auto px-6 py-16 border-t border-white/10">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              Frequently Asked Questions: Choosing an AR Platform
+        {/* Competitor Battlecards Roster: Full-Width Open Rows (Spacious) */}
+        <section className="border-b border-white/[0.08] pb-24 mb-24 max-w-7xl mx-auto">
+          <div className="mb-14">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2">
+              Objective Competitor Evaluation Directory
             </h2>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              Key considerations for CFOs, Controllers, and Credit Managers evaluating software alternatives.
+            <p className="text-sm sm:text-base text-zinc-400 max-w-2xl">
+              Compare implementation velocity, pricing transparency, and execution models across all 15 platforms:
             </p>
           </div>
 
-          <div className="space-y-3">
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="border border-white/10 rounded-lg overflow-hidden bg-zinc-900/30"
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full text-left px-5 py-4 flex items-center justify-between text-sm font-medium text-white hover:bg-white/5 transition-colors"
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-zinc-400 transition-transform ${
-                      openFaq === idx ? "rotate-180 text-purple-400" : ""
-                    }`}
-                  />
-                </button>
-                {openFaq === idx && (
-                  <div className="px-5 pb-4 text-xs sm:text-sm text-zinc-400 leading-relaxed border-t border-white/5 pt-3">
-                    {faq.a}
+          <div className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
+            {filteredCompetitors.map((comp, idx) => (
+              <div key={idx} className="py-10 lg:py-12 hover:bg-white/[0.015] transition-colors group">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+                  {/* Col 1: Identity & Setup / Pricing Metadata (4 cols) */}
+                  <div className="lg:col-span-4 space-y-3.5">
+                    <div className="flex items-center gap-2 text-xs font-mono">
+                      <span className="uppercase tracking-wider font-semibold text-zinc-400">
+                        {comp.category === "direct" ? "AI Dunning" : comp.category === "portal" ? "Portal & Tasks" : "Enterprise Suite"}
+                      </span>
+                      {comp.hasDedicatedPage && (
+                        <>
+                          <span className="text-zinc-600">·</span>
+                          <span className="text-[#b7d2f8] font-semibold">
+                            Dedicated Guide
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-white group-hover:text-[#b7d2f8] transition-colors">
+                      {comp.name} vs Jaktra
+                    </h3>
+
+                    <div className="pt-3 border-t border-white/[0.06] grid grid-cols-2 gap-4 text-xs font-mono">
+                      <div>
+                        <span className="text-zinc-500 block mb-0.5">Setup Time</span>
+                        <span className="text-white font-medium">{comp.setupTime}</span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 block mb-0.5">Pricing Model</span>
+                        <span className="text-white font-medium">{comp.pricing}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      {comp.hasDedicatedPage ? (
+                        <Link
+                          to={comp.url}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#b7d2f8] hover:text-white transition-colors"
+                        >
+                          <span>Read In-Depth Comparison</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Link>
+                      ) : (
+                        <Link
+                          to="/register"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
+                        >
+                          <span>Get Started Free</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      )}
+                    </div>
                   </div>
-                )}
+
+                  {/* Col 2: Objective When to Choose (4 cols, vertical border) */}
+                  <div className="lg:col-span-4 lg:border-x lg:border-white/[0.08] lg:px-8 space-y-2">
+                    <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block">
+                      When to choose {comp.name}:
+                    </span>
+                    <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+                      {comp.bestFor}
+                    </p>
+                  </div>
+
+                  {/* Col 3: Jaktra Advantage (4 cols, pl-4) */}
+                  <div className="lg:col-span-4 lg:pl-6 space-y-3">
+                    <span className="text-xs font-mono uppercase tracking-wider text-[#b7d2f8] font-semibold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#b7d2f8]" />
+                      <span>The Jaktra Advantage:</span>
+                    </span>
+                    <p className="text-sm sm:text-base text-zinc-200 leading-relaxed">
+                      {comp.jaktraAdvantage}
+                    </p>
+                    <div className="flex flex-wrap gap-2 text-[11px] pt-1">
+                      <span className="px-2.5 py-1 rounded-md bg-white/[0.03] text-zinc-300 border border-white/[0.06]">
+                        ✓ 5-stage tone escalation
+                      </span>
+                      <span className="px-2.5 py-1 rounded-md bg-white/[0.03] text-zinc-300 border border-white/[0.06]">
+                        ✓ Zero debtor login friction
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Bottom CTA Section */}
-        <section className="max-w-6xl mx-auto px-6 py-16">
-          <div className="p-8 sm:p-12 rounded-2xl bg-gradient-to-b from-purple-900/20 via-zinc-900 to-black border border-purple-500/20 text-center">
-            <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4">
-              Try autonomous AI collections free today.
+        {/* FAQs Section (2-Column Open Split) */}
+        <section className="border-b border-white/[0.08] pb-24 mb-24 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+            <div className="lg:col-span-4 space-y-4">
+              <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block">
+                Buyer's FAQs
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-snug">
+                Frequently Asked Buyer Questions
+              </h2>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Key considerations for CFOs, Controllers, and Credit Managers evaluating software alternatives.
+              </p>
+            </div>
+
+            <div className="lg:col-span-8 lg:border-l lg:border-white/[0.08] lg:pl-10">
+              <Accordion type="single" variant="outline" defaultValue="faq-0" collapsible className="w-full">
+                {faqs.map((faq, idx) => (
+                  <AccordionItem key={idx} value={`faq-${idx}`} className="border-b border-white/[0.08] py-2">
+                    <AccordionTrigger className="text-left font-semibold text-white text-base sm:text-lg hover:no-underline hover:text-[#b7d2f8] transition-colors py-4">
+                      {faq.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-zinc-300 text-sm sm:text-base leading-relaxed pb-6">
+                      {faq.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          </div>
+        </section>
+
+        {/* Bottom Horizon CTA (Full-Width Open Horizon) */}
+        <section className="py-12 border-t border-white/[0.08] text-center">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <span className="text-xs font-mono uppercase tracking-wider text-[#b7d2f8] font-semibold block">
+              100% Free During Early Access
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+              Try Autonomous AI Collections Free Today
             </h2>
-            <p className="text-sm sm:text-base text-zinc-400 max-w-2xl mx-auto mb-8">
+            <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
               Skip the multi-month sales demo and systems integration cycle. Connect your transactional email in 15 minutes and start recovering overdue receivables today.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link
                 to="/register"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-zinc-950 px-8 py-3.5 rounded-lg font-medium text-sm hover:bg-zinc-200 transition-colors shadow-lg"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-lg bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-sm"
               >
-                Start collecting free
-                <ArrowRight className="w-4 h-4" />
+                Start Collecting Free
               </Link>
               <Link
                 to="/pricing"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-white/10 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-8 py-3.5 rounded-lg font-medium text-sm transition-colors"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white font-medium text-sm hover:bg-white/[0.08] transition-colors"
               >
-                View transparent pricing
+                View Transparent Pricing
               </Link>
             </div>
-            <p className="text-xs text-zinc-500 mt-4">
-              100% Free Early Access • Deploy in 15 minutes • No credit card required
-            </p>
           </div>
         </section>
       </main>

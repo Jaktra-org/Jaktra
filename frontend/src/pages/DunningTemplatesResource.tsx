@@ -1,37 +1,42 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, Mail, Copy, Check, Sparkles, ShieldAlert, Clock, CheckCircle2, Sliders, ExternalLink } from "lucide-react";
+import { ArrowRight, Copy, Check, Sparkles, ShieldAlert, Clock, CheckCircle2, Sliders, ExternalLink } from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { SEOHead } from "../components/common/SEOHead";
 import { dunningTemplatesSchema, breadcrumbSchema } from "../components/common/seo-schemas";
+import { LandingFooter } from "../components/landing/LandingFooter";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 function HeaderNav() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#010102]/85 backdrop-blur-md border-b border-white/10">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
       <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
           <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
           <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
             Pricing
           </Link>
-          <Link to="/features/5-stage-escalation" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Tone Escalation
+          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Features
           </Link>
-          <Link to="/resources/how-to-reduce-dso" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            DSO Guide
+          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Use Cases
           </Link>
-          <Link to="/docs" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Docs
+          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Compare
+          </Link>
+          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Resources
           </Link>
           <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
             Sign in
           </Link>
           <Link
             to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-md hover:bg-zinc-200 transition-colors shadow-sm"
+            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
           >
             Get started free
           </Link>
@@ -61,7 +66,7 @@ const TEMPLATES: TemplateItem[] = [
     stageName: "Pre-Due & Due Date Courtesy",
     timing: "3 Days Before Due Date → Due Date",
     tone: "Polite, Helpful, Service-Oriented",
-    badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    badgeColor: "bg-white/[0.04] text-zinc-300 border-white/[0.08]",
     title: "1. Advance Courtesy & Invoice Verification",
     subject: "Upcoming: Invoice #{invoiceNumber} for {companyName} due on {dueDate}",
     rawBody: `Hi {recipientName},
@@ -86,7 +91,7 @@ Finance & Accounts Receivable Team
     stageName: "Pre-Due & Due Date Courtesy",
     timing: "Due Date (Day 0)",
     tone: "Friendly Administrative Sync",
-    badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    badgeColor: "bg-white/[0.04] text-zinc-300 border-white/[0.08]",
     title: "2. Due Date Accounts Payable Check-In",
     subject: "Invoice #{invoiceNumber} is due today — {senderCompany}",
     rawBody: `Hi {recipientName},
@@ -108,7 +113,7 @@ Warm regards,
     stageName: "Warm Reminder",
     timing: "Days 1–7 Overdue",
     tone: "Collaborative, Assumes Accidental Oversight",
-    badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    badgeColor: "bg-white/[0.04] text-zinc-300 border-white/[0.08]",
     title: "3. Friendly Post-Due Reminder",
     subject: "Gentle reminder: Invoice #{invoiceNumber} past due ({companyName})",
     rawBody: `Hi {recipientName},
@@ -133,7 +138,7 @@ Accounts Receivable
     stageName: "Warm Reminder",
     timing: "Days 4–7 Overdue",
     tone: "Helpful Inquiry & Troubleshooting",
-    badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    badgeColor: "bg-white/[0.04] text-zinc-300 border-white/[0.08]",
     title: "4. AP Troubleshooting & Resend",
     subject: "Quick check-in regarding Invoice #{invoiceNumber} — {companyName}",
     rawBody: `Hi {recipientName},
@@ -157,7 +162,7 @@ Warm regards,
     stageName: "Firm Notice",
     timing: "Days 8–14 Overdue",
     tone: "Direct, Professional, Action-Oriented",
-    badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    badgeColor: "bg-white/[0.06] text-zinc-200 border-white/[0.12]",
     title: "5. Structured Overdue Follow-Up",
     subject: "Overdue Notice: Invoice #{invoiceNumber} ({amount}) — Action Required",
     rawBody: `Dear {recipientName},
@@ -182,7 +187,7 @@ Credit & Collections Desk
     stageName: "Firm Notice",
     timing: "Days 10–14 Overdue",
     tone: "Flexible & Solution-Oriented",
-    badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    badgeColor: "bg-white/[0.06] text-zinc-200 border-white/[0.12]",
     title: "6. Proactive Installment Plan Split Offer",
     subject: "Payment options for Invoice #{invoiceNumber} — {companyName}",
     rawBody: `Dear {recipientName},
@@ -207,7 +212,7 @@ Finance Management
     stageName: "Urgent Escalation",
     timing: "Days 15–30 Overdue",
     tone: "Urgent, Authoritative, Service Suspension Warning",
-    badgeColor: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    badgeColor: "bg-[#b7d2f8]/10 text-[#b7d2f8] border-[#b7d2f8]/20",
     title: "7. Urgent Warning: Impending Service Suspension",
     subject: "URGENT: Outstanding balance on Invoice #{invoiceNumber} — Risk of account hold",
     rawBody: `Dear {recipientName},
@@ -232,7 +237,7 @@ Financial Controller & Operations
     stageName: "Urgent Escalation",
     timing: "Days 22–30 Overdue",
     tone: "Executive / Leadership Notice",
-    badgeColor: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    badgeColor: "bg-[#b7d2f8]/10 text-[#b7d2f8] border-[#b7d2f8]/20",
     title: "8. Executive Office Escalation Notice",
     subject: "Notice of Impending Credit Hold: {companyName} — Invoice #{invoiceNumber}",
     rawBody: `Dear {recipientName},
@@ -257,7 +262,7 @@ Office of the CFO
     stageName: "Final Demand / Legal Stop",
     timing: "Day 31+ Overdue",
     tone: "Formal, Legalistic, Final Opportunity",
-    badgeColor: "bg-red-500/10 text-red-400 border-red-500/20",
+    badgeColor: "bg-white/[0.12] text-white border-white/20",
     title: "9. Final Demand Notice Before External Collection",
     subject: "FINAL NOTICE: Invoice #{invoiceNumber} — Immediate settlement required",
     rawBody: `FORMAL NOTICE OF DEFAULT
@@ -286,7 +291,7 @@ Legal & Financial Recovery Department
     stageName: "Final Demand / Legal Stop",
     timing: "Day 35+ Overdue",
     tone: "Pre-Litigation Statutory Warning",
-    badgeColor: "bg-red-500/10 text-red-400 border-red-500/20",
+    badgeColor: "bg-white/[0.12] text-white border-white/20",
     title: "10. Pre-Litigation Advisory Notice",
     subject: "PRE-LITIGATION NOTICE: Delinquent Account {companyName} — #{invoiceNumber}",
     rawBody: `PRE-LITIGATION NOTICE
@@ -338,7 +343,6 @@ export default function DunningTemplatesResource() {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem>(TEMPLATES[0]);
   const [activeTab, setActiveTab] = useState<"template" | "aiPrompt">("template");
   const [copied, setCopied] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   // Customizer inputs
   const [recipientName, setRecipientName] = useState("Alex Morgan");
@@ -379,61 +383,61 @@ export default function DunningTemplatesResource() {
   };
 
   return (
-    <div className="min-h-screen bg-[#010102] text-zinc-100 font-sans selection:bg-white selection:text-black">
+    <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
-        title="B2B Dunning Email Templates: 10 Battle-Tested AR Follow-Up Scripts | Jaktra"
-        description="10+ battle-tested B2B dunning email templates across 5 escalation tiers. Explore copy-paste templates alongside Groq LLaMA 3.1 AI prompt directives and compliance safeguards."
+        title="10 Overdue Invoice Payment Reminder Email Templates (From Polite to Final Demand) | Jaktra"
+        description="10 word-for-word payment reminder email templates for overdue invoices. Learn how to follow up politely at Day 1, firmly at Day 14, and formally at Day 30 without damaging client relationships."
         canonicalPath="/resources/b2b-dunning-email-templates"
         jsonLd={[
           dunningTemplatesSchema,
           breadcrumbSchema([
             { name: "Resources", path: "/resources/how-to-reduce-dso" },
-            { name: "B2B Dunning Templates", path: "/resources/b2b-dunning-email-templates" },
+            { name: "Payment Reminder Email Templates", path: "/resources/b2b-dunning-email-templates" },
           ]),
         ]}
       />
 
       <HeaderNav />
 
-      <main className="pt-24 pb-20 px-6 max-w-6xl mx-auto">
+      <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(183,210,248,0.06),transparent)] pointer-events-none" />
         {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-xs text-zinc-500 mb-8" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-zinc-500 mb-8 relative z-10" aria-label="Breadcrumb">
           <Link to="/" className="hover:text-zinc-300 transition-colors">Home</Link>
           <span>/</span>
           <Link to="/resources/how-to-reduce-dso" className="hover:text-zinc-300 transition-colors">Resources</Link>
           <span>/</span>
-          <span className="text-zinc-300">B2B Dunning Email Templates</span>
+          <span className="text-zinc-300">Payment Reminder Email Templates</span>
         </nav>
 
         {/* Hero Section */}
-        <header className="mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-4">
-            <Mail className="w-3.5 h-3.5" />
-            <span>Complete AR Collection Playbook & Template Library</span>
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-6">
-            B2B Dunning Email Templates: 10 Field-Tested Scripts & AI Prompt Directives
+        <header className="mb-20 sm:mb-24 text-center max-w-4xl mx-auto">
+          <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-3">
+            Accounts Receivable Follow-Up Guide &amp; Email Templates
+          </span>
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-6 leading-tight">
+            How to Follow Up on Unpaid Invoices: 10 Word-for-Word Payment Reminder Templates
           </h1>
-          <p className="text-lg text-zinc-400 max-w-3xl leading-relaxed">
-            Stop losing client relationships to cold, generic overdue notices. Explore 10 copy-paste collection email templates mapped across our 5 escalation tiers—paired with the exact Groq LLaMA 3.1 AI prompt directives that eliminate template fatigue.
+          <p className="text-base sm:text-lg text-zinc-400 leading-relaxed">
+            Stop stressing over how to ask clients for overdue payments. Use these 10 field-tested email templates—ranging from friendly pre-due courtesy checks to formal final demand notices—designed to get invoices paid fast while preserving commercial relationships.
           </p>
         </header>
 
         {/* The Problem with Static Templates Callout */}
-        <section className="mb-16 p-6 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-sm">
+        <section className="mb-20 sm:mb-24 p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08]">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="max-w-2xl">
-              <div className="flex items-center gap-2 text-amber-400 text-sm font-semibold mb-2">
-                <ShieldAlert className="w-4 h-4" />
-                <span>Why 70% of Static Dunning Emails Go Unread</span>
+              <div className="flex items-center gap-2 text-white text-sm font-semibold mb-2 font-mono">
+                <ShieldAlert className="w-4 h-4 text-[#b7d2f8]" />
+                <span>Why Copy-Pasting the Same Reminder Template Fails</span>
               </div>
               <p className="text-sm text-zinc-400 leading-relaxed">
-                When accounting teams blast the exact same boilerplate overdue reminder every week, debtors develop <strong className="text-zinc-200">template blindness</strong>. Modern mail providers (Google Workspace, Office 365) detect identical template bulk dispatch, lowering domain deliverability into junk folders. Jaktra solves this by modulating tone, timing, and phrasing dynamically using generative AI.
+                When accounting teams blast the exact same boilerplate overdue reminder every week, debtors develop <strong className="text-zinc-200">template blindness</strong>. If your first two emails were ignored, repeating the identical copy won't work. Below, explore word-for-word scripts categorized by escalation tier—and see how autonomous AI can modulate tone and timing dynamically so you never have to copy-paste manually.
               </p>
             </div>
             <Link
               to="/features/5-stage-escalation"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10 text-sm text-white font-medium transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-sm text-white font-medium transition-colors shrink-0"
             >
               <span>Explore Tone Engine</span>
               <ArrowRight className="w-4 h-4" />
@@ -442,9 +446,9 @@ export default function DunningTemplatesResource() {
         </section>
 
         {/* Live Variable Customizer Bar */}
-        <section className="mb-10 p-5 rounded-xl bg-zinc-900/40 border border-white/10">
-          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-3">
-            <Sliders className="w-3.5 h-3.5 text-blue-400" />
+        <section className="mb-12 p-6 rounded-2xl bg-[#111113] border border-white/[0.08]">
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-4">
+            <Sliders className="w-3.5 h-3.5 text-[#b7d2f8]" />
             <span>Customize Template Preview Variables</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
@@ -454,7 +458,7 @@ export default function DunningTemplatesResource() {
                 type="text"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
-                className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-white/30"
               />
             </div>
             <div>
@@ -463,7 +467,7 @@ export default function DunningTemplatesResource() {
                 type="text"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-white/30"
               />
             </div>
             <div>
@@ -472,7 +476,7 @@ export default function DunningTemplatesResource() {
                 type="text"
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
-                className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-white/30"
               />
             </div>
             <div>
@@ -481,7 +485,7 @@ export default function DunningTemplatesResource() {
                 type="text"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-white/30"
               />
             </div>
             <div>
@@ -490,7 +494,7 @@ export default function DunningTemplatesResource() {
                 type="text"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-white/30"
               />
             </div>
             <div>
@@ -499,14 +503,14 @@ export default function DunningTemplatesResource() {
                 type="text"
                 value={senderCompany}
                 onChange={(e) => setSenderCompany(e.target.value)}
-                className="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-zinc-200 focus:outline-none focus:border-white/30"
               />
             </div>
           </div>
         </section>
 
         {/* Interactive Template Selector & Viewer */}
-        <section className="mb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <section className="mb-20 sm:mb-24 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Template Navigation */}
           <div className="lg:col-span-5 space-y-2">
             <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">
@@ -524,18 +528,18 @@ export default function DunningTemplatesResource() {
                     }}
                     className={`w-full text-left p-3.5 rounded-xl border transition-all ${
                       isSelected
-                        ? "bg-zinc-800/80 border-white/30 shadow-lg shadow-black/40"
-                        : "bg-zinc-900/40 border-white/5 hover:border-white/20 hover:bg-zinc-900/70"
+                        ? "bg-[#18181b] border-white/[0.2] shadow-lg shadow-black/40"
+                        : "bg-[#111113] border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.02]"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded border ${tmpl.badgeColor}`}>
+                      <span className={`text-[11px] font-mono px-2 py-0.5 rounded border ${tmpl.badgeColor}`}>
                         Stage {tmpl.stageNum}: {tmpl.stageName}
                       </span>
-                      <span className="text-[11px] text-zinc-500">{tmpl.timing}</span>
+                      <span className="text-[11px] text-zinc-500 font-mono">{tmpl.timing}</span>
                     </div>
                     <div className="text-sm font-semibold text-white">{tmpl.title}</div>
-                    <div className="text-xs text-zinc-400 truncate mt-1">
+                    <div className="text-xs text-zinc-400 truncate mt-1 font-mono">
                       {tmpl.subject.replace(/{invoiceNumber}/g, invoiceNumber)}
                     </div>
                   </button>
@@ -545,10 +549,10 @@ export default function DunningTemplatesResource() {
           </div>
 
           {/* Right Column: Template Preview & Action Box */}
-          <div className="lg:col-span-7 bg-zinc-900/60 border border-white/10 rounded-2xl p-6 relative">
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10 mb-5">
+          <div className="lg:col-span-7 bg-[#111113] border border-white/[0.08] rounded-2xl p-6 sm:p-8 relative">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/[0.08] mb-5">
               <div>
-                <span className={`text-xs font-medium px-2.5 py-0.5 rounded border ${selectedTemplate.badgeColor}`}>
+                <span className={`text-xs font-mono px-2.5 py-0.5 rounded border ${selectedTemplate.badgeColor}`}>
                   Stage {selectedTemplate.stageNum} — {selectedTemplate.timing}
                 </span>
                 <h3 className="text-lg font-bold text-white mt-2">{selectedTemplate.title}</h3>
@@ -556,7 +560,7 @@ export default function DunningTemplatesResource() {
               </div>
 
               {/* Tab Switcher: Static vs AI Prompt Directive */}
-              <div className="flex items-center gap-1 bg-black/60 p-1 rounded-lg border border-white/10">
+              <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/[0.08]">
                 <button
                   onClick={() => setActiveTab("template")}
                   className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
@@ -568,10 +572,10 @@ export default function DunningTemplatesResource() {
                 <button
                   onClick={() => setActiveTab("aiPrompt")}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${
-                    activeTab === "aiPrompt" ? "bg-blue-600 text-white shadow" : "text-zinc-400 hover:text-white"
+                    activeTab === "aiPrompt" ? "bg-white text-zinc-950 shadow" : "text-zinc-400 hover:text-white"
                   }`}
                 >
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="w-3 h-3 text-[#b7d2f8]" />
                   <span>AI Prompt</span>
                 </button>
               </div>
@@ -580,28 +584,28 @@ export default function DunningTemplatesResource() {
             {activeTab === "template" ? (
               <div>
                 {/* Subject Line Bar */}
-                <div className="mb-4 bg-black/40 border border-white/5 rounded-lg p-3">
+                <div className="mb-4 bg-black/40 border border-white/[0.08] rounded-lg p-3">
                   <div className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1">Subject Line</div>
                   <div className="text-sm font-mono text-zinc-200 select-all">{resolvedSubject}</div>
                 </div>
 
                 {/* Email Body */}
-                <div className="mb-6 bg-black/40 border border-white/5 rounded-lg p-4 font-mono text-xs sm:text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed select-all">
+                <div className="mb-6 bg-black/40 border border-white/[0.08] rounded-lg p-4 font-mono text-xs sm:text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed select-all">
                   {resolvedBody}
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between gap-4 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between gap-4 pt-2 border-t border-white/[0.08]">
                   <div className="text-xs text-zinc-500">
                     One-click payment links use <code className="text-zinc-400">/i/:token</code> zero-login URLs.
                   </div>
                   <button
                     onClick={() => handleCopy(`Subject: ${resolvedSubject}\n\n${resolvedBody}`)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-zinc-950 font-medium text-xs sm:text-sm hover:bg-zinc-200 transition-colors shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-zinc-950 font-semibold text-xs sm:text-sm hover:bg-zinc-200 transition-colors shadow-sm"
                   >
                     {copied ? (
                       <>
-                        <Check className="w-4 h-4 text-emerald-600" />
+                        <Check className="w-4 h-4 text-[#b7d2f8]" />
                         <span>Copied to Clipboard</span>
                       </>
                     ) : (
@@ -618,20 +622,20 @@ export default function DunningTemplatesResource() {
                 <div className="mb-4 text-xs text-zinc-400 leading-relaxed">
                   Below is the system prompt directive injected into <strong className="text-white">Groq LLaMA 3.1</strong>. Jaktra replaces static templates with dynamic generative modulation, synthesizing invoice age, payment history, and dispute status.
                 </div>
-                <div className="mb-6 bg-black/60 border border-blue-500/20 rounded-lg p-4 font-mono text-xs sm:text-sm text-blue-200 whitespace-pre-wrap leading-relaxed select-all">
+                <div className="mb-6 bg-black/40 border border-white/[0.08] rounded-lg p-4 font-mono text-xs sm:text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed select-all">
                   {resolvedAiPrompt}
                 </div>
-                <div className="flex items-center justify-between gap-4 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between gap-4 pt-2 border-t border-white/[0.08]">
                   <div className="text-xs text-zinc-500">
                     Groq LLaMA 3.1 8B inference runs in &lt;300ms per generated notice.
                   </div>
                   <button
                     onClick={() => handleCopy(resolvedAiPrompt)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs sm:text-sm hover:bg-blue-500 transition-colors shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-zinc-950 font-semibold text-xs sm:text-sm hover:bg-zinc-200 transition-colors shadow-sm"
                   >
                     {copied ? (
                       <>
-                        <Check className="w-4 h-4" />
+                        <Check className="w-4 h-4 text-[#b7d2f8]" />
                         <span>Copied Prompt</span>
                       </>
                     ) : (
@@ -648,7 +652,7 @@ export default function DunningTemplatesResource() {
         </section>
 
         {/* 5-Stage AR Escalation Architecture Overview */}
-        <section className="mb-20">
+        <section className="mb-20 sm:mb-24">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
               The 5-Stage Tone Escalation Architecture
@@ -659,46 +663,46 @@ export default function DunningTemplatesResource() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-blue-500/20">
-              <div className="text-xs font-bold text-blue-400 mb-1">Stage 1</div>
+            <div className="p-5 rounded-xl bg-[#111113] border border-white/[0.08]">
+              <div className="text-xs font-bold text-white font-mono mb-1">Stage 1</div>
               <div className="text-sm font-semibold text-white mb-1">Collaborative Courtesy</div>
-              <div className="text-xs text-zinc-500 mb-2">Days 0–7 Overdue</div>
+              <div className="text-xs text-zinc-500 mb-2 font-mono">Days 0–7 Overdue</div>
               <p className="text-xs text-zinc-400 leading-relaxed">
                 Assumes accidental oversight. Verifies PO receipt and provides instant one-click payment portal links.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-emerald-500/20">
-              <div className="text-xs font-bold text-emerald-400 mb-1">Stage 2</div>
+            <div className="p-5 rounded-xl bg-[#111113] border border-white/[0.08]">
+              <div className="text-xs font-bold text-white font-mono mb-1">Stage 2</div>
               <div className="text-sm font-semibold text-white mb-1">Administrative Sync</div>
-              <div className="text-xs text-zinc-500 mb-2">Days 8–14 Overdue</div>
+              <div className="text-xs text-zinc-500 mb-2 font-mono">Days 8–14 Overdue</div>
               <p className="text-xs text-zinc-400 leading-relaxed">
                 Polite administrative check-in. Inquires if internal approval paperwork or routing assistance is needed.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-amber-500/20">
-              <div className="text-xs font-bold text-amber-400 mb-1">Stage 3</div>
-              <div className="text-sm font-semibold text-white mb-1">Firm Notice & Plans</div>
-              <div className="text-xs text-zinc-500 mb-2">Days 15–21 Overdue</div>
+            <div className="p-5 rounded-xl bg-[#111113] border border-white/[0.08]">
+              <div className="text-xs font-bold text-white font-mono mb-1">Stage 3</div>
+              <div className="text-sm font-semibold text-white mb-1">Firm Notice &amp; Plans</div>
+              <div className="text-xs text-zinc-500 mb-2 font-mono">Days 15–21 Overdue</div>
               <p className="text-xs text-zinc-400 leading-relaxed">
                 Direct accountability. Offers self-serve installment plans (2x/3x/4x) to recover cash without confrontation.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-orange-500/20">
-              <div className="text-xs font-bold text-orange-400 mb-1">Stage 4</div>
+            <div className="p-5 rounded-xl bg-[#111113] border border-white/[0.08]">
+              <div className="text-xs font-bold text-[#b7d2f8] font-mono mb-1">Stage 4</div>
               <div className="text-sm font-semibold text-white mb-1">Urgent Hold Warning</div>
-              <div className="text-xs text-zinc-500 mb-2">Days 22–30 Overdue</div>
+              <div className="text-xs text-zinc-500 mb-2 font-mono">Days 22–30 Overdue</div>
               <p className="text-xs text-zinc-400 leading-relaxed">
                 Authoritative executive notice. Clearly states that continued default risks credit hold or service pause.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-red-500/20">
-              <div className="text-xs font-bold text-red-400 mb-1">Stage 5</div>
-              <div className="text-sm font-semibold text-white mb-1">Legal Stop & Review</div>
-              <div className="text-xs text-zinc-500 mb-2">Day 31+ Overdue</div>
+            <div className="p-5 rounded-xl bg-[#111113] border border-white/[0.08]">
+              <div className="text-xs font-bold text-white font-mono mb-1">Stage 5</div>
+              <div className="text-sm font-semibold text-white mb-1">Legal Stop &amp; Review</div>
+              <div className="text-xs text-zinc-500 mb-2 font-mono">Day 31+ Overdue</div>
               <p className="text-xs text-zinc-400 leading-relaxed">
                 Automation halts completely. The file is locked and routed to human counsel to protect legal enforceability.
               </p>
@@ -707,7 +711,7 @@ export default function DunningTemplatesResource() {
         </section>
 
         {/* 4 Deliverability Pillars */}
-        <section className="mb-20 p-8 rounded-2xl bg-zinc-900/40 border border-white/10">
+        <section className="mb-20 sm:mb-24 p-8 rounded-2xl bg-[#111113] border border-white/[0.08]">
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
             Why High-Performance Dunning Requires Deliverability Infrastructure
           </h2>
@@ -717,7 +721,7 @@ export default function DunningTemplatesResource() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
                 <Clock className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-semibold text-white">20-Hour Rolling Idempotency</h3>
@@ -727,7 +731,7 @@ export default function DunningTemplatesResource() {
             </div>
 
             <div className="space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
                 <ShieldAlert className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-semibold text-white">Dead Letter Queue (DLQ)</h3>
@@ -737,7 +741,7 @@ export default function DunningTemplatesResource() {
             </div>
 
             <div className="space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-semibold text-white">3-Drop Circuit Breaker</h3>
@@ -747,7 +751,7 @@ export default function DunningTemplatesResource() {
             </div>
 
             <div className="space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8]">
                 <Sparkles className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-semibold text-white">Automated Dispute Triage</h3>
@@ -769,31 +773,24 @@ export default function DunningTemplatesResource() {
             </p>
           </div>
 
-          <div className="space-y-3 max-w-3xl mx-auto">
-            {FAQS.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div key={idx} className="rounded-xl border border-white/10 bg-zinc-900/40 overflow-hidden">
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-zinc-900/60 transition-colors"
-                  >
-                    <span className="text-sm font-medium text-white">{faq.q}</span>
-                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {isOpen && (
-                    <div className="px-5 pb-4 text-xs sm:text-sm text-zinc-400 leading-relaxed border-t border-white/5 pt-3">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="max-w-3xl mx-auto">
+            <Accordion type="single" variant="outline" defaultValue="faq-0" collapsible className="w-full">
+              {FAQS.map((faq, idx) => (
+                <AccordionItem key={idx} value={`faq-${idx}`}>
+                  <AccordionTrigger className="text-left font-medium text-white text-base">
+                    {faq.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-zinc-400 text-sm leading-relaxed">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </section>
 
         {/* Bottom CTA */}
-        <section className="p-8 sm:p-12 rounded-2xl bg-gradient-to-b from-zinc-900 to-black border border-white/15 text-center">
+        <section className="p-8 sm:p-12 rounded-2xl bg-[#111113] border border-white/[0.08] text-center shadow-xl">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Automate These Email Cadences with AI in 15 Minutes
           </h2>
@@ -809,7 +806,7 @@ export default function DunningTemplatesResource() {
             </Link>
             <Link
               to="/features/5-stage-escalation"
-              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
             >
               <span>See How Tone Engine Works</span>
               <ExternalLink className="w-4 h-4 text-zinc-400" />
@@ -818,22 +815,7 @@ export default function DunningTemplatesResource() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-12 px-6 bg-black">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <img src={jaktraLogo} alt="Jaktra" width={18} height={18} className="h-4.5 w-4.5 block" />
-            <span>&copy; {new Date().getFullYear()} Jaktra. All rights reserved.</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link to="/pricing" className="hover:text-zinc-300 transition-colors">Pricing</Link>
-            <Link to="/features/5-stage-escalation" className="hover:text-zinc-300 transition-colors">Tone Escalation</Link>
-            <Link to="/resources/how-to-reduce-dso" className="hover:text-zinc-300 transition-colors">DSO Guide</Link>
-            <Link to="/privacy" className="hover:text-zinc-300 transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-zinc-300 transition-colors">Terms</Link>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

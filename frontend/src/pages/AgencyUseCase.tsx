@@ -2,51 +2,53 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  ChevronDown,
-  Palette,
-  ShieldCheck,
-  Calculator,
   DollarSign,
   AlertTriangle,
   Users,
-  Sparkles,
   Layers,
+  CheckCircle2,
+  Copy,
+  Check,
+  Calendar,
+  Sparkles,
+  Shield,
 } from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { SEOHead } from "../components/common/SEOHead";
 import { agencyUseCaseSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 function HeaderNav() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#010102]/85 backdrop-blur-md border-b border-white/10">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
       <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
           <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
           <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
             Pricing
           </Link>
+          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Features
+          </Link>
           <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Industries
+            Use Cases
           </Link>
           <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
             Compare
           </Link>
-          <Link to="/features/5-stage-escalation" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Tone Escalation
-          </Link>
-          <Link to="/resources/how-to-reduce-dso" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            DSO Guide
+          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
+            Resources
           </Link>
           <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
             Sign in
           </Link>
           <Link
             to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-md hover:bg-zinc-200 transition-colors shadow-sm"
+            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
           >
             Get started free
           </Link>
@@ -56,46 +58,85 @@ function HeaderNav() {
   );
 }
 
-const AGENCY_STAGES = [
+interface AgencyStageItem {
+  id: string;
+  number: string;
+  title: string;
+  subtitle: string;
+  badge: string;
+  timing: string;
+  tone: string;
+  targetAudience: string;
+  guardrail: string;
+  description: string;
+  excerpt: string;
+}
+
+const AGENCY_STAGES: AgencyStageItem[] = [
   {
-    stage: "Stage 1 (Day -3)",
+    id: "stage-1",
+    number: "01",
     title: "Retainer Courtesy Check-in",
-    tone: "Polite & Administrative",
-    badge: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    description: "Sends a courtesy verification 3 days before the 1st of the month with the itemized retainer invoice and direct payment link to ensure accounts payable schedules it.",
-    sample: "Hi Alex — Sending over invoice #AG-8192 for next month's creative retainer due on the 1st. Let us know if your AP team requires any PO signoffs!",
+    subtitle: "Sends a courtesy verification 3 days before the 1st of the month",
+    badge: "Day -3 Courtesy",
+    timing: "3 Days Pre-Due",
+    tone: "Warm Administrative",
+    targetAudience: "Primary Client Contact & Account Manager",
+    guardrail: "Attaches verified SOW deliverable log and automated direct link",
+    description: "Sends a courtesy verification 3 days before the 1st of the month with the itemized retainer invoice and direct payment link to ensure accounts payable schedules it before the billing cycle begins.",
+    excerpt: "Hi Alex — Sending over invoice #AG-8192 for next month's creative retainer due on the 1st. Let us know if your AP team requires any PO signoffs!",
   },
   {
-    stage: "Stage 2 (Day +3)",
+    id: "stage-2",
+    number: "02",
     title: "Friendly Milestone Prompt",
-    tone: "Warm & Collaborative",
-    badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    subtitle: "Warm check-in with one-click tokenized payment portal link",
+    badge: "Day +3 Prompt",
+    timing: "Day +3 Post-Due",
+    tone: "Collaborative Service-Minded",
+    targetAudience: "Billing Lead & Creative Director",
+    guardrail: "Delivers zero-login cryptographic payment portal link (UPI/Card/NEFT)",
     description: "Politely checks in after due date, providing one-click zero-login settlement links for corporate credit cards, ACH, or wire transfers.",
-    sample: "Hi Alex — Just a friendly reminder regarding retainer invoice #AG-8192. You can review the deliverables summary and settle instantly via the secure link below.",
+    excerpt: "Hi Alex — Just a friendly reminder regarding retainer invoice #AG-8192. You can review the deliverables summary and settle instantly via the secure link below.",
   },
   {
-    stage: "Stage 3 (Day +14)",
+    id: "stage-3",
+    number: "03",
     title: "Commercial AP Escalation",
-    tone: "Firm & Professional",
-    badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    subtitle: "Firm follow-up directly referencing contract terms to AP & controller",
+    badge: "Day +14 Escalation",
+    timing: "Day +14 Post-Due",
+    tone: "Objective Commercial",
+    targetAudience: "Client Finance Controller & AP Inbox",
+    guardrail: "Cites Master Services Agreement payment schedule & requests disbursement date",
     description: "Escalates to the client's finance controller and accounts payable inbox, referencing contract payment terms and requesting a firm disbursement date.",
-    sample: "Attention Accounts Payable — Retainer invoice #AG-8192 is now 14 days overdue. Please confirm whether remittance has been scheduled for this week's payment cycle.",
+    excerpt: "Attention Accounts Payable — Retainer invoice #AG-8192 is now 14 days overdue. Please confirm whether remittance has been scheduled for this week's payment cycle.",
   },
   {
-    stage: "Stage 4 (Day +30)",
+    id: "stage-4",
+    number: "04",
     title: "Executive Account Notice",
-    tone: "Direct & Formal",
-    badge: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    subtitle: "Direct notification to CMO/VP Marketing with structured installment options",
+    badge: "Day +30 Executive",
+    timing: "Day +30 Delinquent",
+    tone: "Firm Executive Leadership",
+    targetAudience: "CMO / VP Marketing & Agency Founder",
+    guardrail: "Offers automated 2-part milestone installment plan to maintain account momentum",
     description: "Informs executive sponsors (CMO/VP Marketing) and agency leadership. Offers structured installment options for project milestone balances.",
-    sample: "Notice of Overdue Account: Balance #AG-8192 is 30 days overdue. To prevent workflow bottlenecks and maintain dedicated creative staffing, please settle the outstanding balance.",
+    excerpt: "Notice of Overdue Account: Balance #AG-8192 is 30 days overdue. To prevent workflow bottlenecks and maintain dedicated creative staffing, please settle the outstanding balance.",
   },
   {
-    stage: "Stage 5 (Day +45)",
+    id: "stage-5",
+    number: "05",
     title: "Deliverable & Media Pause Notice",
-    tone: "Definitive & Compliance",
-    badge: "bg-red-500/10 text-red-400 border-red-500/20",
+    subtitle: "Definitive compliance cutoff prior to freezing deliverables or ad spend",
+    badge: "Day +45 Pause Halt",
+    timing: "Day +45 Critical",
+    tone: "Contractual Enforcement",
+    targetAudience: "Executive Sponsor, Legal Counsel & CFO",
+    guardrail: "Mandatory human-in-the-loop review before suspending active ad campaigns or Figma access",
     description: "Final formal notice prior to freezing creative deliverables, campaign ad spend, and staging server access. Strict commercial language with one-click payment cure.",
-    sample: "Final Notice: Retainer #AG-8192 remains unpaid. In accordance with Section 4 of our Master Services Agreement, creative deliverables and ad management will pause in 48 hours unless payment is received.",
+    excerpt: "Final Notice: Retainer #AG-8192 remains unpaid. In accordance with Section 4 of our Master Services Agreement, creative deliverables and ad management will pause in 48 hours unless payment is received.",
   },
 ];
 
@@ -127,9 +168,6 @@ const FAQS = [
 ];
 
 export function AgencyUseCase() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [activeStage, setActiveStage] = useState<number>(0);
-
   // Agency Cashflow Simulator State
   const [monthlyRetainers, setMonthlyRetainers] = useState<number>(250000); // $250k/mo
   const [passThroughMedia, setPassThroughMedia] = useState<number>(75000); // $75k/mo ad spend
@@ -144,27 +182,35 @@ export function AgencyUseCase() {
   const mediaFloatProtected = Math.round((passThroughMedia / 30) * dsoReduction);
   const interestSaved = Math.round(capitalUnlocked * 0.08); // 8% cost of capital
 
+  const [copiedStage, setCopiedStage] = useState<string | null>(null);
+  const handleCopyExcerpt = (stageId: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedStage(stageId);
+    setTimeout(() => setCopiedStage(null), 2000);
+  };
+
   return (
-    <div className="min-h-screen bg-[#010102] text-zinc-100 font-sans selection:bg-purple-500/30 selection:text-white">
+    <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="AI Accounts Receivable Automation for Digital & Creative Agencies — Jaktra"
-        description="Eliminate awkward client retainer chasing for creative and digital agencies. Protect client relationships, resolve scope disputes autonomously, protect out-of-pocket ad spend, and cut DSO with Jaktra."
+        title="How Agencies Get Clients to Pay Retainers on Time (Cash Flow Guide) | Jaktra"
+        description="Stop awkward retainer chasing and protect out-of-pocket ad spend. Discover how creative and digital agencies get clients to pay retainers and project milestones on time."
         canonicalPath="/use-cases/agencies"
         jsonLd={[
           agencyUseCaseSchema,
           breadcrumbSchema([
             { name: "Home", path: "/" },
             { name: "Industry Solutions", path: "/use-cases" },
-            { name: "Digital Agencies AR", path: "/use-cases/agencies" },
+            { name: "Agency Cash Flow Playbook", path: "/use-cases/agencies" },
           ]),
         ]}
       />
 
       <HeaderNav />
 
-      <main className="pt-24 pb-20 px-6 max-w-6xl mx-auto">
+      <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(183,210,248,0.06),transparent)] pointer-events-none" />
         {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="mb-6 text-xs text-zinc-500">
+        <nav aria-label="Breadcrumb" className="mb-6 text-xs text-zinc-500 relative z-10">
           <ol className="flex items-center gap-2">
             <li>
               <Link to="/" className="hover:text-zinc-300 transition-colors">
@@ -179,57 +225,55 @@ export function AgencyUseCase() {
             </li>
             <li>/</li>
             <li className="text-zinc-300 font-medium" aria-current="page">
-              Digital Agencies
+              Agency Cash Flow Playbook
             </li>
           </ol>
         </nav>
 
         {/* Hero Section */}
-        <header className="mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/20 bg-purple-500/10 text-purple-400 text-xs font-medium mb-4">
-            <Palette className="w-3.5 h-3.5" />
-            <span>Built for Creative Agencies, Consultancies & Dev Boutiques</span>
-          </div>
+        <header className="mb-16 sm:mb-20">
+          <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-3">
+            Agency Cash Flow &amp; Retainer Billing Playbook
+          </span>
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-6 leading-tight max-w-4xl">
-            AI Accounts Receivable Automation for Digital & Creative Agencies
+            The Agency Cash Flow Playbook: How to Eliminate Retainer Chasing &amp; Protect Out-of-Pocket Ad Spend
           </h1>
           <p className="text-base sm:text-lg text-zinc-400 max-w-3xl leading-relaxed">
-            Stop making creative directors and account managers chase overdue retainers before pitch presentations. Jaktra acts as an objective institutional finance buffer, resolves scope disputes via AI, and recovers cash without damaging client goodwill.
+            Stop making account directors and project managers make awkward payment calls to clients while trying to sell more work. Discover how an automated finance buffer recovers overdue retainers, eliminates pass-through media float, and preserves client rapport.
           </p>
         </header>
 
-        {/* Metrics Banner */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-16 p-5 rounded-xl bg-white/[0.02] border border-white/10">
+        {/* Capability Architecture Banner */}
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-20 sm:mb-24 p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08] shadow-sm">
           <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">-24 Days</div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider mt-1">DSO Compression (62d → 38d)</div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">5 Stages</div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider mt-1">Tone Escalation Cadence</div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">100%</div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider mt-1">Media Pass-Through Protected</div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">Zero Login</div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider mt-1">Tokenized Settlement Portal</div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">99.1%</div>
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider mt-1">Scope Dispute Accuracy</div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">Auto-Pause</div>
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider mt-1">Scope Dispute NLP Triage</div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-indigo-400 font-mono">15 Mins</div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">15 Mins</div>
             <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider mt-1">Setup (QBO, Xero, Stripe)</div>
           </div>
         </section>
 
         {/* Interactive Agency Cashflow & Media Float Simulator */}
-        <section className="mb-20 p-8 rounded-2xl bg-gradient-to-br from-purple-950/30 via-black to-zinc-950 border border-purple-500/20 shadow-xl">
+        <section className="mb-20 sm:mb-24 p-8 sm:p-10 rounded-2xl bg-[#111113] border border-white/[0.08] shadow-sm">
           <div className="max-w-3xl mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-300 border border-purple-500/20 mb-3">
-              <Calculator className="w-3.5 h-3.5" />
-              Agency Retainer & Media Float Simulator
-            </div>
+            <span className="text-xs font-mono uppercase tracking-wider text-[#b7d2f8] font-semibold block mb-2">
+              Agency Retainer &amp; Media Float Simulator
+            </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               Calculate Cash Unlocked & Media Out-of-Pocket Risk Eliminated
             </h2>
             <p className="text-sm text-zinc-400 leading-relaxed">
-              Model how compressing your client collections cycle from 62 days to 38 days releases locked retainer capital and shields your agency from floating pass-through ad budgets:
+              Model how compressing your client collections cycle releases locked retainer capital and shields your agency from floating pass-through ad budgets:
             </p>
           </div>
 
@@ -252,7 +296,7 @@ export function AgencyUseCase() {
                   step={25000}
                   value={monthlyRetainers}
                   onChange={(e) => setMonthlyRetainers(Number(e.target.value))}
-                  className="w-full accent-purple-500 cursor-pointer"
+                  className="w-full accent-[#b7d2f8] cursor-pointer"
                 />
                 <div className="flex justify-between text-[11px] text-zinc-500 mt-1">
                   <span>$25K/mo</span>
@@ -266,7 +310,7 @@ export function AgencyUseCase() {
                   <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
                     Monthly Pass-Through Ad / Media Spend
                   </label>
-                  <span className="text-sm font-mono font-bold text-amber-400">
+                  <span className="text-sm font-mono font-bold text-white">
                     ${(passThroughMedia / 1000).toFixed(0)}K / mo
                   </span>
                 </div>
@@ -277,7 +321,7 @@ export function AgencyUseCase() {
                   step={10000}
                   value={passThroughMedia}
                   onChange={(e) => setPassThroughMedia(Number(e.target.value))}
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-[#b7d2f8] cursor-pointer"
                 />
                 <div className="flex justify-between text-[11px] text-zinc-500 mt-1">
                   <span>$0 (Pure retainer)</span>
@@ -305,16 +349,16 @@ export function AgencyUseCase() {
                       setCurrentDso(val);
                       if (val <= targetDso) setTargetDso(Math.max(20, val - 10));
                     }}
-                    className="w-full accent-zinc-400 cursor-pointer"
+                    className="w-full accent-[#b7d2f8] cursor-pointer"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                      Target Jaktra DSO
+                      Simulated Target DSO Goal
                     </label>
-                    <span className="text-sm font-mono font-bold text-emerald-400">{targetDso} days</span>
+                    <span className="text-sm font-mono font-bold text-white">{targetDso} days</span>
                   </div>
                   <input
                     type="range"
@@ -323,19 +367,19 @@ export function AgencyUseCase() {
                     step={1}
                     value={targetDso}
                     onChange={(e) => setTargetDso(Number(e.target.value))}
-                    className="w-full accent-emerald-500 cursor-pointer"
+                    className="w-full accent-[#b7d2f8] cursor-pointer"
                   />
                 </div>
               </div>
             </div>
 
             {/* Results Box */}
-            <div className="lg:col-span-5 bg-black/60 rounded-xl p-6 border border-white/10 space-y-4">
+            <div className="lg:col-span-5 bg-black/40 rounded-xl p-6 border border-white/[0.08] space-y-4">
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-semibold uppercase tracking-wider mb-1">
-                  <DollarSign className="w-4 h-4 text-emerald-400" /> Working Capital Reclaimed
+                  <DollarSign className="w-4 h-4 text-[#b7d2f8]" /> Working Capital Reclaimed
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-emerald-400 font-mono tracking-tight">
+                <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono tracking-tight">
                   ${capitalUnlocked.toLocaleString()}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">
@@ -343,7 +387,7 @@ export function AgencyUseCase() {
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-white/10 grid grid-cols-2 gap-4">
+              <div className="pt-4 border-t border-white/[0.08] grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-[11px] text-zinc-400 uppercase font-semibold">
                     Media Float Protected
@@ -367,7 +411,7 @@ export function AgencyUseCase() {
               <div className="pt-2">
                 <Link
                   to="/register"
-                  className="w-full py-2.5 px-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg"
+                  className="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
                 >
                   Accelerate Agency Cash Flow Free <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
@@ -376,189 +420,272 @@ export function AgencyUseCase() {
           </div>
         </section>
 
-        {/* 3 Core Agency AR Dilemmas Solved */}
-        <section className="mb-20">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+        {/* 3 Core Agency AR Dilemmas Solved: Standard Horizontal Design */}
+        <section className="mb-20 sm:mb-24">
+          <div className="max-w-3xl mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
               Why Agency Client Collections Break Down
             </h2>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm sm:text-base text-zinc-400 leading-relaxed">
               Creative partnerships are fragile. Chasing money creates tension right before pitch presentations or contract renewals. Here is how Jaktra fixes it:
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-xl bg-white/[0.02] border border-white/10 flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4">
-                  <Users className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">
-                  Preserving Creative & Account Goodwill
-                </h3>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  When account leads chase unpaid invoices, clients become defensive during creative reviews. Jaktra acts as an objective, polite third-party finance department, keeping your account team positioned entirely on strategy and delivery.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-white/5 text-[11px] text-purple-300 font-medium">
-                Zero awkward debt conversations for creative directors
-              </div>
-            </div>
-
-            <div className="p-6 rounded-xl bg-white/[0.02] border border-white/10 flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">
-                  Scope-Creep & Revision Dispute Triage
-                </h3>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Clients often delay an entire invoice over a dispute regarding 3 hours of out-of-scope work. Jaktra’s NLP DisputeAgent detects the issue, pauses automated reminders, and briefs your ops director with signed SOW clauses to resolve it immediately.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-white/5 text-[11px] text-emerald-300 font-medium">
-                Automated dispute quarantine protects client trust
-              </div>
-            </div>
-
-            <div className="p-6 rounded-xl bg-white/[0.02] border border-white/10 flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2">
-                  Stopping Media Budget Float
-                </h3>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Agencies cannot afford to fund hundreds of thousands in Google, Meta, or TikTok media spend on internal credit lines. Jaktra runs dedicated pre-due verification cadences for media pass-throughs, ensuring prompt client reimbursement.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-white/5 text-[11px] text-blue-300 font-medium">
-                Shields agency operating lines from media defaults
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* The 5-Stage Agency Cadence Walkthrough */}
-        <section className="mb-20 p-8 rounded-2xl bg-white/[0.02] border border-white/10">
-          <div className="max-w-2xl mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-300 border border-purple-500/20 mb-3">
-              <Sparkles className="w-3.5 h-3.5" />
-              Groq LLaMA 3.1 Tone Escalation
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              The 5-Stage Agency Retainer Cadence
-            </h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Jaktra modulates communication urgency as overdue days accumulate, preserving customer goodwill early and escalating firmly when accounts become delinquent:
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Stage Selector */}
-            <div className="lg:col-span-5 space-y-2">
-              {AGENCY_STAGES.map((s, idx) => (
-                <button
-                  key={s.stage}
-                  onClick={() => setActiveStage(idx)}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between ${
-                    activeStage === idx
-                      ? "bg-white/10 border-white/30 shadow-sm"
-                      : "bg-white/[0.01] border-white/5 hover:border-white/15 text-zinc-400"
-                  }`}
-                >
+          <div className="space-y-4">
+            {/* Dilemma 1 */}
+            <div className="p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08] hover:border-white/[0.18] transition-all duration-200 shadow-sm">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="lg:w-5/12 flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8] shrink-0">
+                    <Users className="w-6 h-6" />
+                  </div>
                   <div>
-                    <div className="text-xs font-mono font-semibold text-zinc-400">{s.stage}</div>
-                    <div className="text-sm font-bold text-white mt-0.5">{s.title}</div>
+                    <span className="text-xs font-semibold text-[#b7d2f8] uppercase tracking-wider">Account Protection</span>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mt-1">
+                      Preserving Creative &amp; Account Goodwill
+                    </h3>
+                    <div className="mt-1 text-xs font-mono text-zinc-400">
+                      Zero awkward debt conversations for creative directors
+                    </div>
                   </div>
-                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded border ${s.badge}`}>
-                    {s.tone}
-                  </span>
-                </button>
-              ))}
+                </div>
+
+                <div className="lg:w-7/12 lg:border-l lg:border-white/[0.08] lg:pl-8">
+                  <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+                    When account leads chase unpaid invoices, clients become defensive during creative reviews. Jaktra acts as an objective, polite third-party finance department, keeping your account team positioned entirely on strategy and delivery.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-zinc-400">
+                    <CheckCircle2 className="w-4 h-4 text-[#b7d2f8] shrink-0" />
+                    <span>Creative directors never have to ask clients for money during pitch or review calls</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Stage Detail Card */}
-            <div className="lg:col-span-7 p-6 rounded-xl bg-black/60 border border-white/10 space-y-4">
-              <div>
-                <span className={`text-xs font-mono font-semibold px-2.5 py-1 rounded border ${AGENCY_STAGES[activeStage].badge}`}>
-                  {AGENCY_STAGES[activeStage].stage} • {AGENCY_STAGES[activeStage].tone}
-                </span>
-                <h3 className="text-xl font-bold text-white mt-3">
-                  {AGENCY_STAGES[activeStage].title}
-                </h3>
-                <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                  {AGENCY_STAGES[activeStage].description}
-                </p>
-              </div>
+            {/* Dilemma 2 */}
+            <div className="p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08] hover:border-white/[0.18] transition-all duration-200 shadow-sm">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="lg:w-5/12 flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8] shrink-0">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-[#b7d2f8] uppercase tracking-wider">Dispute Triage</span>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mt-1">
+                      Scope-Creep &amp; Revision Dispute Triage
+                    </h3>
+                    <div className="mt-1 text-xs font-mono text-zinc-400">
+                      Automated dispute quarantine protects client trust
+                    </div>
+                  </div>
+                </div>
 
-              <div className="p-4 rounded-lg bg-white/[0.03] border border-white/10">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold block mb-1">
-                  AI Communication Excerpt
-                </span>
-                <p className="text-xs font-mono text-zinc-300 italic leading-relaxed">
-                  "{AGENCY_STAGES[activeStage].sample}"
-                </p>
+                <div className="lg:w-7/12 lg:border-l lg:border-white/[0.08] lg:pl-8">
+                  <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+                    Clients often delay an entire invoice over a dispute regarding 3 hours of out-of-scope work. Jaktra’s NLP DisputeAgent detects the issue, pauses automated reminders, and briefs your ops director with signed SOW clauses to resolve it immediately.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-zinc-400">
+                    <CheckCircle2 className="w-4 h-4 text-[#b7d2f8] shrink-0" />
+                    <span>Automatic freeze prevents spamming client while scope adjustments are finalized</span>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-zinc-500">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  Protected by 20-hour contact barrier
-                </span>
-                <Link
-                  to="/features/5-stage-escalation"
-                  className="text-purple-400 hover:text-purple-300 font-medium inline-flex items-center gap-1"
-                >
-                  Full Escalation Spec <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+            {/* Dilemma 3 */}
+            <div className="p-6 sm:p-8 rounded-2xl bg-[#111113] border border-white/[0.08] hover:border-white/[0.18] transition-all duration-200 shadow-sm">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="lg:w-5/12 flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#b7d2f8] shrink-0">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-[#b7d2f8] uppercase tracking-wider">Cash Flow Safeguard</span>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mt-1">
+                      Stopping Media Budget Float
+                    </h3>
+                    <div className="mt-1 text-xs font-mono text-zinc-400">
+                      Shields agency operating lines from media defaults
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:w-7/12 lg:border-l lg:border-white/[0.08] lg:pl-8">
+                  <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">
+                    Agencies cannot afford to fund hundreds of thousands in Google, Meta, or TikTok media spend on internal credit lines. Jaktra runs dedicated pre-due verification cadences for media pass-throughs, ensuring prompt client reimbursement.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-zinc-400">
+                    <CheckCircle2 className="w-4 h-4 text-[#b7d2f8] shrink-0" />
+                    <span>Dedicated pass-through cadences ensure ad budgets arrive before vendor debit dates</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* FAQs */}
-        <section className="mb-20">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Frequently Asked Questions for Agency Leaders
+        {/* The 5-Stage Agency Cadence Walkthrough - Open Editorial Presentation */}
+        <section className="mb-20 sm:mb-24">
+          <div className="text-center mb-10">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+              Groq LLaMA 3.1 Tone Escalation
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+              The 5-Stage Agency Retainer &amp; Milestone Cadence
             </h2>
-            <p className="text-sm text-zinc-400">
-              Common questions about deploying automated AR across your client roster:
+            <p className="text-sm text-zinc-400 max-w-xl mx-auto">
+              Jaktra modulates communication urgency as overdue days accumulate, preserving customer goodwill early and escalating firmly when accounts become delinquent.
             </p>
           </div>
 
-          <div className="space-y-3">
-            {FAQS.map((faq, i) => (
+          {/* Quick-Glance Cadence Table */}
+          <div className="mb-10 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#111113]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-white/[0.08] bg-white/[0.02]">
+                  <th className="py-3.5 px-4 font-semibold text-zinc-300">Stage &amp; Timing</th>
+                  <th className="py-3.5 px-4 font-semibold text-zinc-300">Tone Classification</th>
+                  <th className="py-3.5 px-4 font-semibold text-zinc-300">Target Recipient</th>
+                  <th className="py-3.5 px-4 font-semibold text-zinc-300">Automated Guardrail</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {AGENCY_STAGES.map((s) => (
+                  <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[#b7d2f8] font-bold">{s.number}</span>
+                        <span className="font-medium text-white">{s.title}</span>
+                        <span className="text-[11px] font-mono text-zinc-400 ml-1">({s.timing})</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white/[0.04] text-zinc-300 border border-white/[0.06]">
+                        {s.tone}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-zinc-400">{s.targetAudience}</td>
+                    <td className="py-3 px-4 text-zinc-400 flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-[#b7d2f8] shrink-0" />
+                      <span>{s.guardrail}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Unrolled Stage Cards */}
+          <div className="space-y-6">
+            {AGENCY_STAGES.map((stage) => (
               <div
-                key={i}
-                className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden transition-colors"
+                key={stage.id}
+                className="rounded-2xl border border-white/[0.08] bg-[#111113] p-6 sm:p-7 hover:border-white/20 transition-all duration-300"
               >
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-5 text-left text-sm font-semibold text-white hover:text-purple-300 transition-colors"
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-zinc-400 transition-transform duration-200 shrink-0 ${
-                      openFaq === i ? "rotate-180 text-white" : ""
-                    }`}
-                  />
-                </button>
-                {openFaq === i && (
-                  <div className="px-5 pb-5 text-xs text-zinc-400 leading-relaxed border-t border-white/5 pt-3">
-                    {faq.a}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left Column: Context & Metadata */}
+                  <div className="lg:col-span-6 space-y-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-mono font-bold text-[#b7d2f8] bg-[#b7d2f8]/10 px-2.5 py-0.5 rounded-full border border-[#b7d2f8]/20">
+                        Stage {stage.number}
+                      </span>
+                      <span className="text-xs font-mono text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">
+                        {stage.badge}
+                      </span>
+                      <span className="text-xs text-zinc-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-zinc-400" />
+                        {stage.timing}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-white tracking-tight">
+                      {stage.title}
+                    </h3>
+                    <p className="text-xs text-[#b7d2f8] font-medium">
+                      {stage.subtitle}
+                    </p>
+                    <p className="text-sm text-zinc-400 leading-relaxed pt-1">
+                      {stage.description}
+                    </p>
+
+                    <div className="pt-2 flex items-center gap-2 text-xs text-zinc-400">
+                      <Sparkles className="w-3.5 h-3.5 text-[#b7d2f8] shrink-0" />
+                      <span><strong className="text-zinc-300">Guardrail:</strong> {stage.guardrail}</span>
+                    </div>
                   </div>
-                )}
+
+                  {/* Right Column: Autonomous Email Directive & Excerpt */}
+                  <div className="lg:col-span-6 flex flex-col justify-between rounded-xl bg-[#0a0a0b]/80 border border-white/[0.06] p-4 sm:p-5">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-white/[0.06]">
+                        <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
+                          Autonomous Email Directive
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyExcerpt(stage.id, stage.excerpt)}
+                          className="inline-flex items-center gap-1 text-[11px] font-mono text-zinc-400 hover:text-white transition-colors bg-white/[0.04] hover:bg-white/[0.08] px-2 py-1 rounded border border-white/[0.08]"
+                          title="Copy sample copy"
+                        >
+                          {copiedStage === stage.id ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-400" />
+                              <span className="text-emerald-400">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <p className="text-xs font-mono text-zinc-300 italic leading-relaxed py-1">
+                        &ldquo;{stage.excerpt}&rdquo;
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-2 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                      <span>Audience: {stage.targetAudience}</span>
+                      <span className="text-[#b7d2f8]">{stage.tone}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
+        {/* FAQs with outline Accordion */}
+        <section className="mb-20 sm:mb-24">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+              Frequently Asked Questions for Agency Leaders
+            </h2>
+            <p className="text-sm text-zinc-400 max-w-xl mx-auto">
+              Common questions about deploying automated AR across your client roster:
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            <Accordion type="single" variant="outline" defaultValue="faq-0" collapsible className="w-full">
+              {FAQS.map((faq, i) => (
+                <AccordionItem key={i} value={`faq-${i}`}>
+                  <AccordionTrigger className="text-left font-medium text-white text-base">
+                    {faq.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-zinc-400 text-sm leading-relaxed">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+
         {/* CTA Banner */}
-        <section className="rounded-2xl border border-purple-500/30 bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-black p-10 text-center">
+        <section className="rounded-2xl border border-white/[0.08] bg-[#111113] p-8 sm:p-12 text-center shadow-sm">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
             Accelerate Retainer Cash Flow & Protect Client Trust
           </h2>

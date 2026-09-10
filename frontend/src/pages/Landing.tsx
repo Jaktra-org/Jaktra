@@ -583,18 +583,15 @@ function StatBand() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   const stats = [
-    { val: 3.1, suf: "×", label: "Faster collection cycle", note: "vs manual AR process" },
-    { val: 68, suf: "%", label: "Less manual follow-up time", note: "for AR teams weekly" },
-    { val: 94, suf: "%", label: "Email delivery success", note: "across all providers" },
-    { val: 4, suf: " min", label: "Dispute classification time", note: "reply received → draft" },
+    { val: 5, suf: " Stages", label: "Tone Escalation Cadence", note: "Courtesy reminder to legal notice" },
+    { val: 20, suf: " Hours", label: "Rolling Idempotency Barrier", note: "Deterministic anti-spam guard" },
+    { val: 15, suf: " Mins", label: "Ledger Connection Setup", note: "QuickBooks, Xero, Stripe & CSV" },
+    { val: 100, suf: "%", label: "Free in Early Access", note: "Full platform, no credit card required" },
   ];
 
   return (
     <section style={{ borderTop: "1px solid var(--border)", backgroundColor: "var(--bg)" }}>
       <div className="gl-section" ref={ref}>
-        <p style={{ fontSize: 11, color: "var(--fg-faint)", fontFamily: "var(--mono)", marginBottom: 24, letterSpacing: "0.05em" }}>
-          * Estimated performance benchmarks based on internal modelling. Individual results may vary.
-        </p>
         <div className="gl-stats-grid">
           {stats.map((s, i) => (
             <div key={s.label} className={`gl-stat-cell gl-reveal${inView ? " visible" : ""}`} style={{ transitionDelay: `${i * 0.10}s` }}>
@@ -602,7 +599,7 @@ function StatBand() {
                 <CountUp to={s.val} suffix={s.suf} active={inView} />
               </div>
               <div className="gl-stat-label">{s.label}</div>
-              <div className="gl-stat-note">{s.note}*</div>
+              <div className="gl-stat-note">{s.note}</div>
             </div>
           ))}
         </div>

@@ -2,18 +2,19 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  ChevronDown,
   BookOpen,
   Clock,
   Sparkles,
   List,
-  ShieldCheck,
   ExternalLink,
+  AlertCircle,
+  Zap,
 } from "lucide-react";
 import jaktraLogo from "../assets/jaktra_svg.svg";
 import { SEOHead } from "../components/common/SEOHead";
 import { dsoGuideSchema, dsoGuideFaqSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 function HeaderNav() {
   return (
@@ -69,7 +70,74 @@ export function DSOGuide() {
   const [month2Sales, setMonth2Sales] = useState<number>(100000);
   const [month3Sales, setMonth3Sales] = useState<number>(90000);
 
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  interface DsoLeverItem {
+    id: string;
+    number: string;
+    title: string;
+    subtitle: string;
+    impactArea: string;
+    badge: string;
+    actionPill: string;
+    content: string;
+  }
+
+  const leversItems: DsoLeverItem[] = [
+    {
+      id: "lever-1",
+      number: "01",
+      title: "Invoice Immediately on Day 0",
+      subtitle: "Eliminate clerical billing lag",
+      impactArea: "Upstream Billing Velocity",
+      badge: "Day 0 Dispatch",
+      actionPill: "Automate billing dispatch directly upon milestone completion",
+      content:
+        "Internal invoicing delays create immediate latency. If your finance team takes 4 to 6 days after milestone completion or shipment to send the invoice, your collection cycle is already delayed by nearly a week. Automate billing dispatch directly upon delivery.",
+    },
+    {
+      id: "lever-2",
+      number: "02",
+      title: "Automate Consistent Reminder Cadences",
+      subtitle: "Polite, structured follow-up sequences",
+      impactArea: "Remittance Discipline",
+      badge: "Predictable Cadence",
+      actionPill: "Deploy automated multi-stage reminders before & after due dates",
+      content:
+        "Most late payments occur simply because accounts payable teams juggle hundreds of vendor bills. Deploy polite, automated email cadences: an upcoming due date reminder (3 days before), a due-date confirmation, and structured follow-ups at 7, 14, and 21 days past due.",
+    },
+    {
+      id: "lever-3",
+      number: "03",
+      title: "Eliminate Payment Friction with Direct Links",
+      subtitle: "Zero-login tokenized payment checkout",
+      impactArea: "Payer Conversion",
+      badge: "1-Click Checkout",
+      actionPill: "Zero-login cryptographic payment links (/i/:token) via Razorpay",
+      content:
+        "Forcing customers to create login credentials, reset forgotten passwords, or manually write and mail paper checks causes significant checkout abandonment. Embed secure direct payment links with instant ACH, card, and bank transfers inside every reminder.",
+    },
+    {
+      id: "lever-4",
+      number: "04",
+      title: "Triage Invoicing Disputes Immediately",
+      subtitle: "Auto-detect objections and pause dunning",
+      impactArea: "Dispute Friction",
+      badge: "NLP Sentiment Detection",
+      actionPill: "Isolate disputed line items while securing payment on undisputed funds",
+      content:
+        "Over 30% of delinquent invoices are delayed because the customer replied with a simple clerical question (such as a missing PO number or line-item clarification) that sat unanswered in a collector's inbox. Automatically detect dispute sentiment and pause aggressive dunning until resolved.",
+    },
+    {
+      id: "lever-5",
+      number: "05",
+      title: "Offer Structured Installment Plans for Stalled Accounts",
+      subtitle: "Convert delinquent balances into milestone recovery",
+      impactArea: "Delinquency Recovery",
+      badge: "Milestone Tranches",
+      actionPill: "Offer 2x or 3x installment plans directly inside the payment portal",
+      content:
+        "When a trusted customer experiences temporary cash flow constraints, demanding immediate 100% lump-sum payment often leads to ghosting and default. Offering structured 2x or 3x installment plans helps recover the balance predictably while preserving the client relationship.",
+    },
+  ];
 
   // Simple DSO calculation
   const simpleDso = creditSales > 0 ? Number(((arBalance / creditSales) * periodDays).toFixed(1)) : 0;
@@ -102,9 +170,9 @@ export function DSOGuide() {
 
   // Evaluation status
   const getDsoStatus = (dso: number) => {
-    if (dso <= 35) return { label: "Optimal (< 35 Days)", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" };
+    if (dso <= 35) return { label: "Optimal (< 35 Days)", color: "text-white bg-white/[0.04] border-white/[0.08]" };
     if (dso <= 50) return { label: "Typical B2B (35–50 Days)", color: "text-[#b7d2f8] bg-[#b7d2f8]/10 border-[#b7d2f8]/20" };
-    return { label: "Elevated (> 50 Days)", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" };
+    return { label: "Elevated (> 50 Days)", color: "text-white bg-white/[0.08] border-white/[0.12]" };
   };
 
   const status = getDsoStatus(activeDso);
@@ -195,7 +263,9 @@ export function DSOGuide() {
 
       <HeaderNav />
 
-      <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
+      <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full relative">
+        {/* Subtle Ambient Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-96 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(183,210,248,0.08),transparent)] pointer-events-none" />
         {/* Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="mb-6 text-xs text-zinc-500">
           <ol className="flex items-center gap-2">
@@ -219,17 +289,16 @@ export function DSOGuide() {
 
         {/* Hero Section */}
         <header className="max-w-4xl mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#b7d2f8]/20 bg-[#b7d2f8]/10 text-[#b7d2f8] text-xs font-medium mb-4">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Finance & Working Capital Guide</span>
-          </div>
+          <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-3">
+            Finance &amp; Working Capital Guide
+          </span>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-5 leading-[1.15]">
             How to Reduce Days Sales Outstanding (DSO): Calculation & 5 Best Practices
           </h1>
 
           <p className="text-base sm:text-lg text-zinc-400 leading-relaxed mb-6">
-            Days Sales Outstanding (DSO) measures how quickly your business converts credit sales into cash. Learn the standard calculation formulas, benchmark against your industry, and discover 5 proven operational strategies to compress your collection cycle.
+            Days Sales Outstanding (DSO) measures how quickly your business converts credit sales into cash. Learn the standard calculation formulas, understand B2B industry payment patterns, and discover 5 operational strategies to compress your collection cycle.
           </p>
 
           {/* Author & Reading Info */}
@@ -559,35 +628,43 @@ export function DSOGuide() {
                 </p>
               </div>
 
-              {/* Data Table */}
-              <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-[#111113]">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-white/[0.08] bg-white/[0.02] text-zinc-400">
-                      <th className="py-3 px-4 font-semibold">Industry Sector</th>
-                      <th className="py-3 px-4 font-semibold">Typical Median DSO</th>
-                      <th className="py-3 px-4 font-semibold text-white">Target DSO</th>
-                      <th className="py-3 px-4 font-semibold">Common Bottleneck</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
-                    {benchmarks.map((row) => (
-                      <tr key={row.sector} className="hover:bg-white/[0.01] transition-colors">
-                        <td className="py-3 px-4 font-medium text-white">{row.sector}</td>
-                        <td className="py-3 px-4 font-mono text-zinc-400">{row.baseline}</td>
-                        <td className="py-3 px-4 font-mono font-bold text-[#b7d2f8]">{row.target}</td>
-                        <td className="py-3 px-4 text-zinc-400">{row.bottleneck}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              {/* Sector Benchmark Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {benchmarks.map((row) => (
+                  <div
+                    key={row.sector}
+                    className="p-5 rounded-xl border border-white/[0.08] bg-[#111113] hover:border-white/[0.18] transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <h3 className="font-bold text-white text-sm leading-snug">{row.sector}</h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#b7d2f8]/10 text-[#b7d2f8] border border-[#b7d2f8]/20 font-bold shrink-0">
+                          Target: {row.target}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 mb-3 pb-3 border-b border-white/[0.06]">
+                        <span className="text-[11px] uppercase font-sans text-zinc-500">Industry Median:</span>
+                        <span className="text-zinc-300 font-semibold">{row.baseline}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider block">
+                        Common Bottleneck
+                      </span>
+                      <p className="text-xs text-zinc-300 leading-relaxed flex items-start gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
+                        <span>{row.bottleneck}</span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p className="text-[11px] text-zinc-500 italic">
+              <p className="text-[11px] text-zinc-500 italic mt-2">
                 * Benchmarks reflect median commercial trade credit performance across standard Net 30 to Net 60 agreements.
               </p>
             </section>
 
-            {/* Section 5: 5 Ways to Reduce DSO */}
+            {/* Section 5: 5 Ways to Reduce DSO - Open Editorial Matrix & Cards */}
             <section id="operational-levers" className="space-y-6">
               <div>
                 <div className="text-xs font-mono uppercase tracking-widest text-[#b7d2f8] mb-1">05 / Best Practices</div>
@@ -595,65 +672,78 @@ export function DSOGuide() {
                   5 Practical Ways to Reduce DSO
                 </h2>
                 <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed">
-                  Shortening your collection cycle requires eliminating the administrative bottlenecks that cause invoices to stall:
+                  Shortening your collection cycle requires eliminating the administrative bottlenecks that cause invoices to stall. Explore the 5 core operational levers:
                 </p>
               </div>
 
+              {/* Quick-Glance Levers Matrix */}
+              <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-[#111113]">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/[0.08] bg-white/[0.02]">
+                      <th className="py-3 px-4 font-semibold text-zinc-300">Lever # &amp; Action</th>
+                      <th className="py-3 px-4 font-semibold text-zinc-300">Impact Domain</th>
+                      <th className="py-3 px-4 font-semibold text-zinc-300">Execution Mechanism</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {leversItems.map((lever) => (
+                      <tr key={lever.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[#b7d2f8] font-bold">{lever.number}</span>
+                            <span className="font-medium text-white">{lever.title}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white/[0.04] text-zinc-300 border border-white/[0.06]">
+                            {lever.impactArea}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-zinc-400 text-xs">
+                          {lever.actionPill}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Unrolled Lever Cards */}
               <div className="space-y-4">
-                {/* Lever 1 */}
-                <div className="p-4 rounded-xl border border-white/[0.08] bg-[#111113] space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#b7d2f8]">01</span>
-                    <h3 className="text-sm font-bold text-white">Invoice Immediately on Day 0</h3>
-                  </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    Internal invoicing delays create immediate latency. If your finance team takes 4 to 6 days after milestone completion or shipment to send the invoice, your collection cycle is already delayed by nearly a week. Automate billing dispatch directly upon delivery.
-                  </p>
-                </div>
+                {leversItems.map((lever) => (
+                  <div
+                    key={lever.id}
+                    className="rounded-xl border border-white/[0.08] bg-[#111113] p-5 sm:p-6 hover:border-white/20 transition-all duration-300"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-[#b7d2f8] bg-[#b7d2f8]/10 px-2 py-0.5 rounded border border-[#b7d2f8]/20">
+                          Lever {lever.number}
+                        </span>
+                        <h3 className="text-base font-bold text-white tracking-tight">
+                          {lever.title}
+                        </h3>
+                      </div>
+                      <span className="text-[11px] font-mono text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06] w-fit">
+                        {lever.badge}
+                      </span>
+                    </div>
 
-                {/* Lever 2 */}
-                <div className="p-4 rounded-xl border border-white/[0.08] bg-[#111113] space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#b7d2f8]">02</span>
-                    <h3 className="text-sm font-bold text-white">Automate Consistent Reminder Cadences</h3>
-                  </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    Most late payments occur simply because accounts payable teams juggle hundreds of vendor bills. Deploy polite, automated email cadences: an upcoming due date reminder (3 days before), a due-date confirmation, and structured follow-ups at 7, 14, and 21 days past due.
-                  </p>
-                </div>
+                    <p className="text-xs text-[#b7d2f8] font-medium mb-3">
+                      {lever.subtitle}
+                    </p>
 
-                {/* Lever 3 */}
-                <div className="p-4 rounded-xl border border-white/[0.08] bg-[#111113] space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#b7d2f8]">03</span>
-                    <h3 className="text-sm font-bold text-white">Eliminate Payment Friction with Direct Links</h3>
-                  </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    Forcing customers to create login credentials, reset forgotten passwords, or manually write and mail paper checks causes significant checkout abandonment. Embed secure direct payment links with instant ACH, card, and bank transfers inside every reminder.
-                  </p>
-                </div>
+                    <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed mb-4">
+                      {lever.content}
+                    </p>
 
-                {/* Lever 4 */}
-                <div className="p-4 rounded-xl border border-white/[0.08] bg-[#111113] space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#b7d2f8]">04</span>
-                    <h3 className="text-sm font-bold text-white">Triage Invoicing Disputes Immediately</h3>
+                    <div className="pt-3 border-t border-white/[0.04] flex items-center gap-2 text-xs text-zinc-400">
+                      <Zap className="w-3.5 h-3.5 text-[#b7d2f8] shrink-0" />
+                      <span><strong>Key Recommendation:</strong> {lever.actionPill}</span>
+                    </div>
                   </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    Over 30% of delinquent invoices are delayed because the customer replied with a simple clerical question (such as a missing PO number or line-item clarification) that sat unanswered in a collector's inbox. Automatically detect dispute sentiment and pause aggressive dunning until resolved.
-                  </p>
-                </div>
-
-                {/* Lever 5 */}
-                <div className="p-4 rounded-xl border border-white/[0.08] bg-[#111113] space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#b7d2f8]">05</span>
-                    <h3 className="text-sm font-bold text-white">Offer Structured Installment Plans for Stalled Accounts</h3>
-                  </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    When a trusted customer experiences temporary cash flow constraints, demanding immediate 100% lump-sum payment often leads to ghosting and default. Offering structured 2x or 3x installment plans helps recover the balance predictably while preserving the client relationship.
-                  </p>
-                </div>
+                ))}
               </div>
             </section>
 
@@ -666,29 +756,14 @@ export function DSOGuide() {
                 </h2>
               </div>
 
-              <div className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
+              <Accordion type="single" variant="outline" defaultValue="faq-0" collapsible className="w-full">
                 {faqs.map((faq, i) => (
-                  <div key={i} className="py-4">
-                    <button
-                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                      className="w-full flex items-center justify-between text-left text-sm sm:text-base font-medium text-white hover:text-[#b7d2f8] focus:outline-none transition-colors"
-                      aria-expanded={openFaq === i}
-                    >
-                      <span className="pr-4">{faq.q}</span>
-                      <ChevronDown
-                        className={`w-4 h-4 text-zinc-400 transition-transform duration-200 shrink-0 ${
-                          openFaq === i ? "rotate-180 text-white" : ""
-                        }`}
-                      />
-                    </button>
-                    {openFaq === i && (
-                      <div className="pt-3 text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                        {faq.a}
-                      </div>
-                    )}
-                  </div>
+                  <AccordionItem key={i} value={`faq-${i}`}>
+                    <AccordionTrigger>{faq.q}</AccordionTrigger>
+                    <AccordionContent>{faq.a}</AccordionContent>
+                  </AccordionItem>
                 ))}
-              </div>
+              </Accordion>
             </section>
 
             {/* Section 7: Final Conversion Module */}

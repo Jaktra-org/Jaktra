@@ -5,6 +5,7 @@
 ## Core Pages
 
 - [Overview](https://jaktra.site/): Main product landing page featuring accounts receivable automation, platform capabilities, interactive demo, and security architecture.
+- [Pricing](https://jaktra.site/pricing): 100% free during Early Access with zero credit card required and no invoice caps.
 - [Documentation](https://jaktra.site/docs): Developer documentation, API setup guides, webhook integration specifications, and payment gateway configuration.
 - [Privacy Policy](https://jaktra.site/privacy): Detailed information on data isolation, tenant security, AES-256 encryption, and GDPR compliance.
 - [Terms of Service](https://jaktra.site/terms): Complete legal terms governing accounts, subscriptions, usage limits, and liability.
@@ -15,15 +16,28 @@
 - [Software Buyer's Guide & Compare Hub](https://jaktra.site/compare): Objective comparisons of Jaktra vs HighRadius, Upflow, Chaser, PaidNice, and Kolleno.
 - [Industry Solutions Directory](https://jaktra.site/use-cases): B2B DSO benchmarks and tailored dunning workflows across 14 commercial industries.
 - [Resources & Knowledge Hub](https://jaktra.site/resources): Research-backed DSO reduction guides, 5-stage tone escalation playbooks, email templates, and working capital ROI calculators.
-- [Pricing](https://jaktra.site/pricing): 100% free during Early Access with zero credit card required and no invoice caps.
-- [Documentation](https://jaktra.site/docs): Developer documentation, API setup guides, webhook integration specifications, and payment gateway configuration.
 
 ## Capabilities & Deep Dives
 
 - [5-Stage AI Tone Escalation](https://jaktra.site/features/5-stage-escalation): Dynamic LLaMA 3.1 tone escalation from friendly reminders to Stage 5 legal hold.
 - [AI Dispute Triage](https://jaktra.site/features/dispute-triage): NLP sentiment classifier that freezes collection cadences upon debtor disputes.
+- [Installment Payment Plans](https://jaktra.site/features/installment-plans): Self-service debtor installment scheduling with automated tracking.
 - [Tokenized Debtor Portal](https://jaktra.site/features/zero-login-portal): Zero-login payment links (/i/:token) with instant statement of account review.
+- [Email Deliverability Engine](https://jaktra.site/features/email-deliverability): DKIM, SPF, DMARC alignment and automated Dead Letter Queue retry system.
+- [Predictive Risk Scoring](https://jaktra.site/features/risk-scoring): Machine learning payment default hazard scoring and adaptive dunning speed.
+
+## Resources & Guides
+
 - [How to Reduce DSO Guide](https://jaktra.site/resources/how-to-reduce-dso): Comprehensive Countback DSO calculation methodology and 5 operational reduction levers.
+- [5-Stage AR Tone Escalation Playbook](https://jaktra.site/resources/5-stage-ar-tone-escalation): Complete cadence, timing, and copy templates for accounts receivable dunning.
+- [B2B Dunning Email Templates](https://jaktra.site/resources/b2b-dunning-email-templates): Field-tested collection email templates for SaaS, agencies, and enterprise B2B.
+- [AR Automation ROI Calculator](https://jaktra.site/resources/ar-automation-roi-calculator): Interactive working capital liberation and bad debt recovery calculator.
+- [Invoice Dispute Response Templates](https://jaktra.site/resources/invoice-dispute-response-templates): Free email templates for responding to disputed invoices.
+- [AR Query Management Guide](https://jaktra.site/resources/accounts-receivable-query-management): How to manage inbound AR queries and billing emails.
+- [Client Questioning Billable Hours](https://jaktra.site/resources/client-questioning-billable-hours): How to respond when clients question invoice hours.
+- [Client Disputed Invoice Guide](https://jaktra.site/resources/client-disputed-invoice-what-to-do): Step-by-step guide for when a client disputes an invoice.
+- [Managing AR Emails](https://jaktra.site/resources/how-to-manage-accounts-receivable-emails): How to manage shared AR inboxes without chaos.
+- [Best B2B Finance Automation Tools 2026](https://jaktra.site/resources/best-b2b-finance-automation-tools): Objective comparison of B2B finance automation tools.
 
 ## Optional
 
