@@ -52,7 +52,7 @@ import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { ForgotPassword } from "./pages/ForgotPassword";
 
-export const ROUTE_COMPONENTS: Record<string, React.ComponentType<any>> = {
+export const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
   "/": Landing,
   "/privacy": Privacy,
   "/terms": Terms,
@@ -100,7 +100,7 @@ export const ROUTE_COMPONENTS: Record<string, React.ComponentType<any>> = {
 
 export interface RenderResult {
   html: string;
-  helmet: any;
+  helmet: unknown;
 }
 
 export function render(url: string): RenderResult {
@@ -118,7 +118,7 @@ export function render(url: string): RenderResult {
     },
   });
 
-  const helmetContext: { helmet?: any } = {};
+  const helmetContext: { helmet?: unknown } = {};
 
   const appHtml = renderToString(
     <HelmetProvider context={helmetContext}>

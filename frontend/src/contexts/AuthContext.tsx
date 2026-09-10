@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = typeof localStorage !== "undefined" ? localStorage.getItem("auth_token") : null;
     if (token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Two-phase hydration mount pattern: SSR starts with isLoading: false, post-mount syncs auth state
       setIsLoading(true);
       authService
         .getMe()

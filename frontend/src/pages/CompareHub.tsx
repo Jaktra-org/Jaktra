@@ -309,15 +309,17 @@ export default function CompareHub() {
 
             <div className="lg:w-4/12 flex flex-col gap-3.5 lg:items-end">
               <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { id: "all", label: `All (${COMPETITORS.length})` },
-                  { id: "direct", label: "Dunning & AI (4)" },
-                  { id: "portal", label: "Portals & Tasks (4)" },
-                  { id: "enterprise", label: "Enterprise O2C (7)" },
-                ].map((cat) => (
+                {(
+                  [
+                    { id: "all", label: `All (${COMPETITORS.length})` },
+                    { id: "direct", label: "Dunning & AI (4)" },
+                    { id: "portal", label: "Portals & Tasks (4)" },
+                    { id: "enterprise", label: "Enterprise O2C (7)" },
+                  ] as const
+                ).map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id as any)}
+                    onClick={() => setSelectedCategory(cat.id)}
                     className={`px-3 py-1.5 rounded-md text-xs font-mono transition-colors ${
                       selectedCategory === cat.id
                         ? "bg-white text-zinc-950 font-bold shadow-sm"
