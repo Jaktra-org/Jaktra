@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 const SITE_URL = "https://jaktra.site";
 const SITE_NAME = "Jaktra";
@@ -34,9 +34,10 @@ export function SEOHead({
   const canonicalUrl = !noindex && canonicalPath ? `${SITE_URL}${canonicalPath}` : undefined;
 
   // Normalize JSON-LD into an array
-  const jsonLdItems = jsonLd
-    ? Array.isArray(jsonLd) ? jsonLd : [jsonLd]
-    : [];
+  const jsonLdItems = useMemo(() => {
+    if (!jsonLd) return [];
+    return Array.isArray(jsonLd) ? jsonLd : [jsonLd];
+  }, [jsonLd]);
 
   // Client-side effect: keep document.title and meta in sync during SPA navigation
   // without creating duplicate DOM nodes during React 19 client hydration.
@@ -95,7 +96,10 @@ export function SEOHead({
         if (!script) {
           // Check if server-rendered script with matching schema exists before creating new one
           const existing = document.querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]');
-          const itemType = (item as any)["@type"];
+          const itemType =
+            typeof item === "object" && item !== null && "@type" in item
+              ? String((item as Record<string, unknown>)["@type"])
+              : undefined;
           for (const s of existing) {
             if (s.textContent && itemType && (s.textContent.includes(`"@type":"${itemType}"`) || s.textContent.includes(`"@type": "${itemType}"`))) {
               s.id = scriptId;
