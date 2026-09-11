@@ -5,6 +5,7 @@ import { SEOHead } from "../components/common/SEOHead";
 import { upflowCompareSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { CompareDisclaimer } from "../components/common/CompareDisclaimer";
 
 function HeaderNav() {
   return (
@@ -251,7 +252,7 @@ export function UpflowCompare() {
                         <span>100% Free during Early Access (No credit card required)</span>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-zinc-400">Opaque sales demos; annual contract minimums</td>
+                    <td className="py-4 px-6 text-zinc-400">Sales-led custom quoting; annual contract commitments</td>
                   </tr>
                 </tbody>
               </table>
@@ -310,6 +311,49 @@ export function UpflowCompare() {
           </div>
         </section>
 
+        {/* Objective Decision Guide */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#111113] p-6 sm:p-7">
+            <h3 className="text-base font-semibold text-zinc-300 mb-3">When Upflow is the Right Choice</h3>
+            <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-400">
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>You want fixed, calendar-based dunning sequences with visual drag-and-drop workflow builders.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>Your finance department maintains dedicated human credit controllers who collaborate across shared team inboxes.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>You have an established budget for sales-contracted SaaS tools and prioritize European multi-currency ledger analytics.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-white/[0.12] bg-[#111113] p-6">
+            <h3 className="text-base font-semibold text-white mb-3">When Jaktra is the Right Architectural Fit</h3>
+            <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-300">
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want autonomous AI that modulates tone across 5 stages without sending repetitive, identical templates.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You need inbound dispute triage that immediately halts cadences when customers query an invoice item.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want zero-login tokenized payment links (/i/:token) that allow 30-second digital settlement and installment plans.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want an active solution running today with 100% Free Early Access (no credit card or sales call required).</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         {/* FAQ Section */}
         <section className="mb-20">
           <div className="text-center mb-8">
@@ -351,6 +395,8 @@ export function UpflowCompare() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </section>
+
+        <CompareDisclaimer />
       </main>
 
       <LandingFooter />

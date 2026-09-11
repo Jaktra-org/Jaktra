@@ -5,6 +5,7 @@ import { SEOHead } from "../components/common/SEOHead";
 import { chaserCompareSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { CompareDisclaimer } from "../components/common/CompareDisclaimer";
 
 function HeaderNav() {
   return (
@@ -369,6 +370,49 @@ export function ChaserCompare() {
           </div>
         </section>
 
+        {/* Objective Decision Guide */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#111113] p-6 sm:p-7">
+            <h3 className="text-base font-semibold text-zinc-300 mb-3">When Chaser is the Right Choice</h3>
+            <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-400">
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>Your credit control team conducts phone calls and requires an integrated call logging and task tracking workflow.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>You want scheduled email reminders based on fixed day counts (e.g. +7, +14, +21 days).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>You prefer an established Xero/QuickBooks ecosystem app with manual credit control notes.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-white/[0.12] bg-[#111113] p-6">
+            <h3 className="text-base font-semibold text-white mb-3">When Jaktra is the Right Architectural Fit</h3>
+            <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-300">
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want autonomous AI execution that eliminates manual phone calling lists and generates personalized tone-modulated emails.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want NLP dispute triage that freezes cadences automatically the moment a customer replies with questions.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want zero-login tokenized payment portals (/i/:token) that let debtors settle immediately or split into installment plans.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want 100% Free Early Access without credit card requirements or seat-based upsells.</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         {/* FAQ Section with outline Accordion */}
         <section className="mb-20">
           <div className="text-center mb-8">
@@ -409,6 +453,8 @@ export function ChaserCompare() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </section>
+
+        <CompareDisclaimer />
       </main>
 
       <LandingFooter />

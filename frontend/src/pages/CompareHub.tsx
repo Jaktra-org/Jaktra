@@ -14,6 +14,7 @@ import { SEOHead } from "../components/common/SEOHead";
 import { compareHubSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { CompareDisclaimer } from "../components/common/CompareDisclaimer";
 
 function HeaderNav() {
   return (
@@ -623,6 +624,8 @@ export default function CompareHub() {
             </div>
           </div>
         </section>
+
+        <CompareDisclaimer />
       </main>
 
       <LandingFooter />

@@ -5,6 +5,7 @@ import { SEOHead } from "../components/common/SEOHead";
 import { paidniceCompareSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { CompareDisclaimer } from "../components/common/CompareDisclaimer";
 
 function HeaderNav() {
   return (
@@ -118,7 +119,7 @@ export function PaidNiceCompare() {
   const faqs = [
     {
       q: "Why do B2B finance teams look for an alternative to PaidNice?",
-      a: "PaidNice's primary mechanism is automatically calculating and adding late payment fees and interest to invoices in Xero or QuickBooks. In business-to-business commerce, slapping late fees on enterprise clients, long-standing partners, or distributor accounts often triggers angry billing disputes, stalls principal recovery, and burns client goodwill. Finance teams switch to Jaktra to replace punitive fees with intelligent tone escalation and constructive installment options.",
+      a: "PaidNice's primary mechanism is automatically calculating and adding late payment fees and interest to invoices in Xero or QuickBooks. In business-to-business commerce, imposing automated late fee penalties on enterprise clients, long-standing partners, or distributor accounts often triggers billing disputes, stalls principal recovery, and strains commercial goodwill. Finance teams switch to Jaktra to replace punitive fee compounding with intelligent tone escalation and constructive installment options.",
     },
     {
       q: "How does Jaktra recover overdue receivables without adding late fees?",
@@ -187,7 +188,7 @@ export function PaidNiceCompare() {
             The Modern Alternative to PaidNice
           </h1>
           <p className="text-base sm:text-lg text-zinc-400 leading-relaxed">
-            In B2B commerce, slapping automated late fees on key clients destroys goodwill and sparks billing disputes.
+            In B2B commerce, applying automated late fee penalties on key clients can harm commercial goodwill and spark billing disputes.
             Jaktra replaces punitive penalties with Groq LLaMA 3.1 generative tone escalation, automated dispute triage,
             and self-serve installment recovery.
           </p>
@@ -386,6 +387,49 @@ export function PaidNiceCompare() {
           </div>
         </section>
 
+        {/* Objective Decision Guide */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#111113] p-6 sm:p-7">
+            <h3 className="text-base font-semibold text-zinc-300 mb-3">When PaidNice is the Right Choice</h3>
+            <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-400">
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>Your customer contracts explicitly specify and mandate automated late payment fees and interest charges.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>You operate primarily with small business customers in Xero or QuickBooks who accept line-item penalties.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-zinc-500 font-mono">•</span>
+                <span>Your primary accounts receivable policy relies on interest compounding to deter delinquent payers.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-white/[0.12] bg-[#111113] p-6">
+            <h3 className="text-base font-semibold text-white mb-3">When Jaktra is the Right Architectural Fit</h3>
+            <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-300">
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You sell to B2B or enterprise accounts where adding late fee line items causes Purchase Order (PO) mismatches and invoice rejections.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want generative AI tone escalation that urges payment while protecting executive and client relationships.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want to offer self-serve 2x/3x/4x installment payment plans via tokenized portals (/i/:token) to recover cash from constrained debtors.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#b7d2f8] shrink-0 mt-0.5" />
+                <span>You want automated NLP dispute triage and a hardcoded Stage 5 Legal Stop at 31+ days overdue.</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         {/* FAQ Section with outline Accordion */}
         <section className="mb-20">
           <div className="text-center mb-8">
@@ -426,6 +470,8 @@ export function PaidNiceCompare() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </section>
+
+        <CompareDisclaimer />
       </main>
 
       <LandingFooter />

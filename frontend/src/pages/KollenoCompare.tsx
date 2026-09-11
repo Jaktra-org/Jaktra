@@ -6,6 +6,7 @@ import { SEOHead } from "../components/common/SEOHead";
 import { kollenoCompareSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { CompareDisclaimer } from "../components/common/CompareDisclaimer";
 
 function HeaderNav() {
   return (
@@ -100,7 +101,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "Contract Terms & Annual Pricing",
     category: "Commercial",
-    kolleno: "$8,000 to $18,000+/yr annual contracts with sales demo gates",
+    kolleno: "$8,000 to $18,000+/yr annual contracts (quote-based enterprise tiers)",
     jaktra: "100% Free during Early Access (No credit card required)",
     highlight: true,
   },
@@ -575,6 +576,8 @@ export function KollenoCompare() {
             No credit card required • 15-minute onboarding • AES-256 bank-grade encryption
           </p>
         </section>
+
+        <CompareDisclaimer />
       </main>
 
       <LandingFooter />

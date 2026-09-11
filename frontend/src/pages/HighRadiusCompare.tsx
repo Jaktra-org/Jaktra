@@ -5,6 +5,7 @@ import { SEOHead } from "../components/common/SEOHead";
 import { highRadiusCompareSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { CompareDisclaimer } from "../components/common/CompareDisclaimer";
 
 function HeaderNav() {
   return (
@@ -338,6 +339,8 @@ export function HighRadiusCompare() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </section>
+
+        <CompareDisclaimer />
       </main>
 
       <LandingFooter />
