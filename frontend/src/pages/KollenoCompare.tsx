@@ -101,7 +101,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "Contract Terms & Annual Pricing",
     category: "Commercial",
-    kolleno: "$8,000 to $18,000+/yr annual contracts (quote-based enterprise tiers)",
+    kolleno: "Custom quote-based annual enterprise plans",
     jaktra: "100% Free during Early Access (No credit card required)",
     highlight: true,
   },
@@ -248,7 +248,7 @@ export function KollenoCompare() {
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
-                    <span>$8k–$18k/year software budget with multi-week onboarding</span>
+                    <span>Enterprise software budget with custom annual contract terms and onboarding</span>
                   </li>
                 </ul>
               </div>
@@ -354,7 +354,7 @@ export function KollenoCompare() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="text-xs text-zinc-300 font-medium flex justify-between mb-2">
-                  <span>Kolleno Quoted Annual Cost</span>
+                  <span>Estimated Enterprise Annual Software Cost</span>
                   <span className="text-[#b7d2f8] font-mono">${kollenoAnnualFee.toLocaleString()}</span>
                 </label>
                 <input
@@ -366,7 +366,7 @@ export function KollenoCompare() {
                   onChange={(e) => setKollenoAnnualFee(Number(e.target.value))}
                   className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#b7d2f8]"
                 />
-                <span className="text-[11px] text-zinc-500 mt-1 block">Typical Kolleno contract ($8k–$18k+/yr)</span>
+                <span className="text-[11px] text-zinc-500 mt-1 block">Benchmark quote range for mid-market AR suites</span>
               </div>
 
               <div>

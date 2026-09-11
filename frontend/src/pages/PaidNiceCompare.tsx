@@ -72,7 +72,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "Dispute Reply Handling",
     category: "Workflow",
-    paidNice: "Manual email monitoring; fee continues compounding",
+    paidNice: "Manual workflow adjustment required in accounting software",
     jaktra: "NLP DisputeAgent auto-classifies replies & halts cadences",
     highlight: true,
   },
@@ -86,7 +86,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "Regulatory & Compliance Safety",
     category: "Compliance",
-    paidNice: "No automated stop; continues charging interest",
+    paidNice: "Runs on schedule unless manually paused or excluded",
     jaktra: "Hardcoded Stage 5 Legal Stop at 31+ days overdue",
     highlight: true,
   },
@@ -224,8 +224,8 @@ export function PaidNiceCompare() {
             </div>
             <h2 className="text-base font-bold text-white mb-2">Dispute Triage & Legal Stops</h2>
             <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-              PaidNice continues compounding interest even if an invoice is disputed. Jaktra automatically freezes cadences
-              on customer inquiries and enforces a hardcoded Stage 5 Legal Stop at 31+ days overdue.
+              Standard late fee utilities continue applying schedule rules unless an administrator manually intervenes.
+              Jaktra automatically freezes cadences on customer inquiries and enforces a hardcoded Stage 5 Legal Stop at 31+ days overdue.
             </p>
           </div>
         </section>

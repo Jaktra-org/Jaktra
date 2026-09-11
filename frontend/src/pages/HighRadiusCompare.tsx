@@ -63,7 +63,7 @@ export function HighRadiusCompare() {
     },
     {
       q: "When should an organization choose HighRadius over Jaktra?",
-      a: "Choose HighRadius if you are a multi-billion-dollar enterprise with on-premise SAP or Oracle ERPs, process physical paper checks sent to bank lockboxes requiring OCR cash application, or manage complex consumer-goods deduction claims from retailers like Walmart or Target.",
+      a: "Choose HighRadius if you are a multi-billion-dollar enterprise with on-premise SAP or Oracle ERPs, process physical paper checks sent to bank lockboxes requiring OCR cash application, or manage high-volume consumer-goods retail deduction and trade promotion claims.",
     },
     {
       q: "When should an organization choose Jaktra?",
@@ -148,7 +148,7 @@ export function HighRadiusCompare() {
                 Heavyweights for Fortune 500 SAP Back-Offices
               </h3>
               <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                HighRadius automates the broad Order-to-Cash spectrum: credit risk underwriting, bank lockbox paper check scanning (OCR cash matching), deduction clearing for consumer goods vendors (Walmart/Target chargebacks), and complex SAP S/4HANA integrations. It requires multi-month IT rollouts and six-figure annual contract floors.
+                HighRadius automates the broad Order-to-Cash spectrum: credit risk underwriting, bank lockbox paper check scanning (OCR cash matching), deduction and trade promotion clearing for consumer goods vendors, and complex SAP S/4HANA integrations. It requires multi-month IT rollouts and enterprise contract floors.
               </p>
             </div>
 
@@ -266,7 +266,7 @@ export function HighRadiusCompare() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-zinc-500 font-mono">•</span>
-                <span>You supply big-box retailers (Walmart, Target) and require deduction resolution for freight and inventory claims.</span>
+                <span>You distribute consumer goods or manufactured products requiring automated trade promotion and retail deduction resolution.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-zinc-500 font-mono">•</span>
