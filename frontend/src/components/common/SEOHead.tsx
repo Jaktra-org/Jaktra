@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 
 const SITE_URL = "https://jaktra.site";
 const SITE_NAME = "Jaktra";
@@ -31,30 +31,89 @@ export function SEOHead({
   jsonLd,
 }: SEOHeadProps) {
   const fullTitle = title.includes(SITE_NAME) ? title : `${title} — ${SITE_NAME}`;
-  const canonicalUrl = canonicalPath ? `${SITE_URL}${canonicalPath}` : undefined;
+  const canonicalUrl = !noindex && canonicalPath ? `${SITE_URL}${canonicalPath}` : undefined;
 
-  // Normalize JSON-LD into an array and filter out any schemas already present in DOM
+  // Normalize JSON-LD into an array
   const jsonLdItems = jsonLd
     ? Array.isArray(jsonLd) ? jsonLd : [jsonLd]
     : [];
 
-  const deduplicatedJsonLd = jsonLdItems.filter((item) => {
-    if (typeof document === "undefined") return true;
-    const type = item["@type"];
-    if (!type || typeof type !== "string") return true;
-    const typePattern = new RegExp(`"@type"\\s*:\\s*"${type}"`);
-    const existingScripts = document.querySelectorAll('script[type="application/ld+json"]');
-    for (const script of existingScripts) {
-      if (script.textContent && typePattern.test(script.textContent)) {
-        return false;
+  // Client-side effect: keep document.title and meta in sync during SPA navigation
+  // without creating duplicate DOM nodes during React 19 client hydration.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    // 1. Single authoritative title update
+    document.title = fullTitle;
+
+    // 2. Helper to idempotently update or create meta tags
+    const setMeta = (attr: "name" | "property", key: string, content?: string) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!content) {
+        if (el) el.remove();
+        return;
       }
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+
+    setMeta("name", "description", description);
+    setMeta("name", "robots", noindex ? "noindex, nofollow" : undefined);
+    setMeta("property", "og:type", ogType);
+    setMeta("property", "og:title", fullTitle);
+    setMeta("property", "og:description", description);
+    setMeta("property", "og:site_name", SITE_NAME);
+    setMeta("property", "og:url", canonicalUrl);
+    setMeta("property", "og:image", ogImage);
+    setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:title", fullTitle);
+    setMeta("name", "twitter:description", description);
+    setMeta("name", "twitter:image", ogImage);
+
+    // 3. Canonical link update
+    let canonicalEl = document.querySelector('link[rel="canonical"]');
+    if (canonicalUrl) {
+      if (!canonicalEl) {
+        canonicalEl = document.createElement("link");
+        canonicalEl.setAttribute("rel", "canonical");
+        document.head.appendChild(canonicalEl);
+      }
+      canonicalEl.setAttribute("href", canonicalUrl);
+    } else if (canonicalEl && noindex) {
+      canonicalEl.remove();
     }
-    return true;
-  });
+
+    // 4. Page-specific JSON-LD updates during SPA client navigation
+    if (jsonLdItems.length > 0) {
+      jsonLdItems.forEach((item, idx) => {
+        const scriptId = `page-jsonld-${idx}`;
+        let script = document.getElementById(scriptId);
+        if (!script) {
+          script = document.createElement("script");
+          script.id = scriptId;
+          script.setAttribute("type", "application/ld+json");
+          document.head.appendChild(script);
+        }
+        script.textContent = JSON.stringify(item);
+      });
+    }
+  }, [fullTitle, description, canonicalUrl, ogType, ogImage, noindex, jsonLdItems]);
+
+  // On the server (Node SSG / prerender):
+  // Render React 19 native metadata tags into the SSR stream so prerender.mjs
+  // can extract them and stamp them into dist/*/index.html.
+  // In the browser, return null so React 19's reconciler does NOT insert duplicate
+  // <title> or <meta> tags into document.head during hydration.
+  if (typeof document !== "undefined") {
+    return null;
+  }
 
   return (
-    <Helmet>
-      {/* Core */}
+    <>
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
@@ -76,12 +135,12 @@ export function SEOHead({
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
 
-      {/* JSON-LD Structured Data — Idempotent injection */}
-      {deduplicatedJsonLd.map((item, i) => (
+      {/* JSON-LD Structured Data */}
+      {jsonLdItems.map((item, i) => (
         <script key={`jsonld-${i}`} type="application/ld+json">
           {JSON.stringify(item)}
         </script>
       ))}
-    </Helmet>
+    </>
   );
 }
