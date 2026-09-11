@@ -167,8 +167,8 @@ export const highRadiusCompareSchema = {
   description: "Compare HighRadius and Jaktra. Understand why Jaktra is not a complete O2C suite replacement, but a focused, autonomous AI collections agent built for fast deployment and high recovery.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/compare/highradius-vs-jaktra`,
 };
 
@@ -179,8 +179,8 @@ export const saasUseCaseSchema = {
   description: "Learn how to collect overdue B2B SaaS invoices without damaging customer relationships or churning accounts. Automate seat/usage dispute triage, polite tone escalation, and protect Net Retention.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/use-cases/saas`,
 };
 
@@ -191,8 +191,8 @@ export const upflowCompareSchema = {
   description: "Compare Upflow vs Jaktra. Discover why finance teams upgrade from Upflow's static email templates to Jaktra's autonomous Groq LLaMA 3.1 tone escalation, NLP dispute triage, and tokenized payment portals.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/compare/upflow-alternative`,
 };
 
@@ -203,8 +203,8 @@ export const fiveStageEscalationSchema = {
   description: "Explore Jaktra's 5-stage generative tone escalation engine. How Groq LLaMA 3.1, predictive ML delinquency risk scoring, the 20-hour idempotency guard, and Stage 5 Legal Stop recover cash without client friction.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/features/5-stage-escalation`,
 };
 
@@ -215,8 +215,8 @@ export const disputeTriageSchema = {
   description: "Stop collection emails from irritating clients who already replied. Discover how automatic inbound email reply catch and NLP dispute triage pause dunning and resolve invoice disputes fast.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/features/dispute-triage`,
 };
 
@@ -227,8 +227,8 @@ export const chaserCompareSchema = {
   description: "Compare Chaser vs Jaktra. Learn why finance leaders upgrade from Chaser's static email templates and manual phone call tracking to Jaktra's autonomous AI agent, tokenized debtor portals, and Razorpay settlement.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/compare/chaser-alternative`,
 };
 
@@ -239,8 +239,8 @@ export const agencyUseCaseSchema = {
   description: "Stop awkward retainer chasing and protect out-of-pocket ad spend. Discover how creative and digital agencies get clients to pay retainers and project milestones on time.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/use-cases/agencies`,
 };
 
@@ -251,8 +251,8 @@ export const installmentPlansSchema = {
   description: "Learn what to do when a B2B client can't pay their invoice. Discover how to offer structured installment plans, agreement terms, and automated milestone tracking to recover cash.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/features/installment-plans`,
 };
 
@@ -266,8 +266,8 @@ export const dsoGuideSchema = {
   totalTime: "P18D",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-09",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-09T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/how-to-reduce-dso`,
   step: [
     {
@@ -357,8 +357,8 @@ export const manufacturingUseCaseSchema = {
   description: "Accelerate cash flow in manufacturing. Resolve PO matching disputes, manage Net 60/90 terms, and eliminate receivables drag with autonomous AI dunning.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/use-cases/manufacturing`,
 };
 
@@ -369,8 +369,8 @@ export const toneEscalationPlaybookSchema = {
   description: "Learn how to escalate overdue invoice email tone professionally across 5 aging stages. Understand when to be polite, when to be firm, and when to enforce a formal legal cutoff.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/5-stage-ar-tone-escalation`,
 };
 
@@ -382,8 +382,8 @@ export const zeroLoginPortalSchema = {
   description: "Discover why traditional customer billing portals fail with 70%+ abandonment. See how 1-click zero-login payment links and self-service installments get B2B invoices paid 2x faster.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/features/zero-login-portal`,
 };
 
@@ -394,8 +394,8 @@ export const emailDeliverabilitySchema = {
   description: "Discover why invoice emails go to spam, how to fix SPF/DKIM/DMARC deliverability, and how automated Dead Letter Queues (DLQ) and circuit breakers protect corporate sender reputation.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/features/email-deliverability`,
 };
 
@@ -406,8 +406,8 @@ export const riskScoringSchema = {
   description: "Learn how to identify at-risk debtors before invoices default. A practical guide to AR delinquency scoring, aging velocity, balance exposure, and collection prioritization.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/features/risk-scoring`,
 };
 
@@ -418,8 +418,8 @@ export const paidniceCompareSchema = {
   description: "Compare PaidNice vs Jaktra. Learn why finance teams upgrade from PaidNice's punitive static late fees to Jaktra's autonomous Groq LLaMA 3.1 tone escalation, NLP dispute triage, and self-serve installment recovery.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/compare/paidnice-alternative`,
 };
 
@@ -430,8 +430,8 @@ export const professionalServicesSchema = {
   description: "Eliminate partner billing friction for law firms, consultancies, and accounting practices. Triage billable hours scope disputes, automate retainer top-ups, and accelerate cash flow with Jaktra.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/use-cases/professional-services`,
 };
 
@@ -442,8 +442,8 @@ export const dunningTemplatesSchema = {
   description: "10 word-for-word payment reminder email templates for overdue invoices. Learn how to follow up politely at Day 1, firmly at Day 14, and formally at Day 30 without damaging client relationships.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/b2b-dunning-email-templates`,
 };
 
@@ -455,8 +455,8 @@ export const constructionUseCaseSchema = {
   description: "Accelerate cash flow for commercial contractors and subcontractors. Automate progress billing reminders, triage change-order disputes, track retainage releases, and cut construction DSO with Jaktra.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/use-cases/construction`,
 };
 
@@ -468,8 +468,8 @@ export const logisticsUseCaseSchema = {
   description: "Eliminate the freight working capital crunch. Automate shipper collection cadences, triage detention and accessorial disputes, cut freight factoring dependence, and accelerate cash flow with Jaktra.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/use-cases/logistics-freight`,
 };
 
@@ -481,8 +481,8 @@ export const staffingUseCaseSchema = {
   description: "Bridge the weekly contractor payroll gap for staffing and recruitment agencies. Automate client collection cadences, triage timesheet disputes via AI, eliminate payroll factoring fees, and accelerate cash flow.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/use-cases/staffing-recruiting`,
 };
 
@@ -494,8 +494,8 @@ export const wholesaleUseCaseSchema = {
   description: "How wholesale distributors resolve delivery deductions, isolate disputed line items, and protect margins on Net 60 commercial credit terms.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/use-cases/wholesale-distribution`,
 };
 
@@ -507,8 +507,8 @@ export const roiCalculatorSchema = {
   description: "Calculate your DSO reduction, working capital released, debt interest saved, and net 3-year ROI from automating accounts receivable collections with Jaktra.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/ar-automation-roi-calculator`,
 };
 
@@ -519,8 +519,8 @@ export const kollenoCompareSchema = {
   description: "Compare Kolleno vs Jaktra. Learn why finance teams choose Jaktra's autonomous Groq LLaMA 3.1 tone escalation and NLP dispute triage over Kolleno's manual collector task lists and multi-channel queues.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-08",
-  dateModified: "2026-09-08",
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-08T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/compare/kolleno-alternative`,
 };
 
@@ -596,8 +596,8 @@ export const bestFinanceAutomationSchema = {
   description: "An objective guide comparing the best B2B finance automation tools in 2026 across Accounts Payable, ERP reconciliation, and autonomous Accounts Receivable collection follow-ups.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-10",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-10T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/best-b2b-finance-automation-tools`,
 };
 
@@ -633,8 +633,8 @@ export const invoiceDisputeTemplatesSchema = {
   description: "Learn how to respond when a client disputes an invoice. Free word-for-word email templates for billable hours pushback, PO mismatches, scope creep, and how AI dispute triage pauses automated dunning to protect client relationships.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-10",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-10T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/invoice-dispute-response-templates`,
 };
 
@@ -645,8 +645,8 @@ export const arQueryManagementSchema = {
   description: "A practical guide for finance teams on handling customer billing inquiries, managing shared accounts receivable mailboxes, responding to W-9 and invoice copy requests, and eliminating collection delays with zero-login debtor portals.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-10",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-10T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/accounts-receivable-query-management`,
 };
 
@@ -657,8 +657,8 @@ export const clientQuestioningHoursSchema = {
   description: "A step-by-step guide for agencies, consultants, and contractors on how to respond when a client questions invoice hours. Includes word-for-word email templates, non-defensive communication tips, and prevention tactics.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-10",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-10T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/client-questioning-billable-hours`,
 };
 
@@ -669,8 +669,8 @@ export const clientDisputedInvoiceSchema = {
   description: "What to do when a customer disputes an invoice or refuses to pay. How to pause collection reminders immediately, diagnose the dispute type, negotiate partial payments, and use tested response scripts.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-10",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-10T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/client-disputed-invoice-what-to-do`,
 };
 
@@ -681,7 +681,7 @@ export const manageArEmailsSchema = {
   description: "How high-efficiency finance teams handle customer billing inquiries, manage shared AR mailboxes, respond to W-9 and invoice copy requests in minutes, and cut Days Sales Outstanding.",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
-  datePublished: "2026-09-10",
-  dateModified: "2026-09-10",
+  datePublished: "2026-09-10T00:00:00Z",
+  dateModified: "2026-09-10T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/how-to-manage-accounts-receivable-emails`,
 };
