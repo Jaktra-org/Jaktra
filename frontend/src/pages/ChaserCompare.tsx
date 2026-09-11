@@ -81,7 +81,7 @@ export function ChaserCompare() {
         jsonLd={[
           chaserCompareSchema,
           breadcrumbSchema([
-            { name: "Compare", path: "/compare/chaser-alternative" },
+            { name: "Compare", path: "/compare" },
             { name: "Chaser Alternative", path: "/compare/chaser-alternative" },
           ]),
         ]}

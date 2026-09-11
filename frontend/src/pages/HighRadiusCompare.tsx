@@ -80,7 +80,7 @@ export function HighRadiusCompare() {
         jsonLd={[
           highRadiusCompareSchema,
           breadcrumbSchema([
-            { name: "Compare", path: "/compare/highradius-vs-jaktra" },
+            { name: "Compare", path: "/compare" },
             { name: "HighRadius vs Jaktra", path: "/compare/highradius-vs-jaktra" },
           ]),
         ]}

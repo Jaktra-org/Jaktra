@@ -195,8 +195,7 @@ export default function ArRoiCalculatorResource() {
         jsonLd={[
           roiCalculatorSchema,
           breadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "Resources", path: "/#resources" },
+            { name: "Resources", path: "/resources" },
             { name: "AR Automation ROI Calculator", path: "/resources/ar-automation-roi-calculator" },
           ]),
         ]}

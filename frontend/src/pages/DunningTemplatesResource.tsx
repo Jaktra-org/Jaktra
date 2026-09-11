@@ -391,7 +391,7 @@ export default function DunningTemplatesResource() {
         jsonLd={[
           dunningTemplatesSchema,
           breadcrumbSchema([
-            { name: "Resources", path: "/resources/how-to-reduce-dso" },
+            { name: "Resources", path: "/resources" },
             { name: "Payment Reminder Email Templates", path: "/resources/b2b-dunning-email-templates" },
           ]),
         ]}

@@ -80,7 +80,7 @@ export function UpflowCompare() {
         jsonLd={[
           upflowCompareSchema,
           breadcrumbSchema([
-            { name: "Compare", path: "/compare/upflow-alternative" },
+            { name: "Compare", path: "/compare" },
             { name: "Upflow Alternative", path: "/compare/upflow-alternative" },
           ]),
         ]}
