@@ -224,19 +224,59 @@ function DecryptText({ text, delay = 0 }: { text: string; delay?: number }) {
     return <span>{text}</span>;
   }
 
+  // To eliminate mobile layout shift (CLS), preserve exact character dimensions by rendering
+  // the original character hidden in the normal layout flow, and overlaying the
+  // scrambled character in an absolutely positioned layer within each word token.
+  const tokens = text.split(/(\s+)/);
+  let globalIndex = 0;
+
   return (
     <span aria-label={text}>
-      {displayed.map((ch, i) => (
-        <span
-          key={i}
-          style={{
-            display: "inline-block",
-            color: ch === text[i] ? "inherit" : "rgba(255,255,255,0.35)",
-          }}
-        >
-          {ch}
-        </span>
-      ))}
+      {tokens.map((token, tokenIdx) => {
+        if (/^\s+$/.test(token)) {
+          globalIndex += token.length;
+          return " ";
+        }
+        const startIndex = globalIndex;
+        globalIndex += token.length;
+
+        return (
+          <span
+            key={tokenIdx}
+            style={{
+              display: "inline-block",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {token.split("").map((origChar, charOffset) => {
+              const charIndex = startIndex + charOffset;
+              const ch = displayed[charIndex] || origChar;
+              return (
+                <span
+                  key={charOffset}
+                  style={{
+                    position: "relative",
+                    display: "inline-block",
+                  }}
+                >
+                  <span style={{ visibility: "hidden" }}>{origChar}</span>
+                  <span
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      textAlign: "center",
+                      color: ch === origChar ? "inherit" : "rgba(255,255,255,0.35)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {ch}
+                  </span>
+                </span>
+              );
+            })}
+          </span>
+        );
+      })}
     </span>
   );
 }
