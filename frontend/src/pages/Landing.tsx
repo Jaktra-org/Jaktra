@@ -227,18 +227,21 @@ function DecryptText({ text, delay = 0 }: { text: string; delay?: number }) {
   // To eliminate mobile layout shift (CLS), preserve exact character dimensions by rendering
   // the original character hidden in the normal layout flow, and overlaying the
   // scrambled character in an absolutely positioned layer within each word token.
-  const tokens = text.split(/(\s+)/);
-  let globalIndex = 0;
+  const parsedTokens: { text: string; isSpace: boolean; startIndex: number }[] = [];
+  let currIndex = 0;
+  for (const t of text.split(/(\s+)/)) {
+    if (!t) continue;
+    const isSpace = /^\s+$/.test(t);
+    parsedTokens.push({ text: t, isSpace, startIndex: currIndex });
+    currIndex += t.length;
+  }
 
   return (
     <span aria-label={text}>
-      {tokens.map((token, tokenIdx) => {
-        if (/^\s+$/.test(token)) {
-          globalIndex += token.length;
-          return " ";
+      {parsedTokens.map((token, tokenIdx) => {
+        if (token.isSpace) {
+          return <span key={tokenIdx}>{" "}</span>;
         }
-        const startIndex = globalIndex;
-        globalIndex += token.length;
 
         return (
           <span
@@ -248,8 +251,8 @@ function DecryptText({ text, delay = 0 }: { text: string; delay?: number }) {
               whiteSpace: "nowrap",
             }}
           >
-            {token.split("").map((origChar, charOffset) => {
-              const charIndex = startIndex + charOffset;
+            {token.text.split("").map((origChar, charOffset) => {
+              const charIndex = token.startIndex + charOffset;
               const ch = displayed[charIndex] || origChar;
               return (
                 <span
