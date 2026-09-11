@@ -91,7 +91,19 @@ export function SEOHead({
     if (jsonLdItems.length > 0) {
       jsonLdItems.forEach((item, idx) => {
         const scriptId = `page-jsonld-${idx}`;
-        let script = document.getElementById(scriptId);
+        let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+        if (!script) {
+          // Check if server-rendered script with matching schema exists before creating new one
+          const existing = document.querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]');
+          const itemType = (item as any)["@type"];
+          for (const s of existing) {
+            if (s.textContent && itemType && (s.textContent.includes(`"@type":"${itemType}"`) || s.textContent.includes(`"@type": "${itemType}"`))) {
+              s.id = scriptId;
+              script = s;
+              break;
+            }
+          }
+        }
         if (!script) {
           script = document.createElement("script");
           script.id = scriptId;
@@ -137,7 +149,7 @@ export function SEOHead({
 
       {/* JSON-LD Structured Data */}
       {jsonLdItems.map((item, i) => (
-        <script key={`jsonld-${i}`} type="application/ld+json">
+        <script key={`jsonld-${i}`} id={`page-jsonld-${i}`} type="application/ld+json">
           {JSON.stringify(item)}
         </script>
       ))}

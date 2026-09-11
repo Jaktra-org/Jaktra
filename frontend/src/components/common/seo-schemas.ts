@@ -105,17 +105,54 @@ export const pricingPageSchema = {
   "@type": "Product",
   name: "Jaktra AR Automation",
   description: "AI-powered accounts receivable automation with 5-stage tone escalation, dispute triage, and self-service debtor payment portals.",
-  brand: { "@id": `${SITE_URL}/#org` },
-  offers: [
-    {
-      "@type": "Offer",
-      name: "Early Access",
-      price: "0",
-      priceCurrency: "USD",
-      description: "100% free during early access with unlimited invoices and all platform features",
-      availability: "https://schema.org/InStock",
+  image: `${SITE_URL}/og-image.png`,
+  sku: "JAKTRA-EARLY-ACCESS",
+  brand: {
+    "@type": "Brand",
+    name: "Jaktra",
+  },
+  offers: {
+    "@type": "Offer",
+    name: "Early Access",
+    price: "0",
+    priceCurrency: "USD",
+    priceValidUntil: "2027-12-31",
+    description: "100% free during early access with unlimited invoices and all platform features",
+    availability: "https://schema.org/InStock",
+    url: `${SITE_URL}/pricing`,
+    shippingDetails: {
+      "@type": "OfferShippingDetails",
+      shippingRate: {
+        "@type": "MonetaryAmount",
+        value: "0",
+        currency: "USD",
+      },
+      shippingDestination: {
+        "@type": "DefinedRegion",
+        addressCountry: "US",
+      },
+      deliveryTime: {
+        "@type": "ShippingDeliveryTime",
+        handlingTime: {
+          "@type": "QuantitativeValue",
+          minValue: 0,
+          maxValue: 0,
+          unitCode: "DAY",
+        },
+        transitTime: {
+          "@type": "QuantitativeValue",
+          minValue: 0,
+          maxValue: 0,
+          unitCode: "DAY",
+        },
+      },
     },
-  ],
+    hasMerchantReturnPolicy: {
+      "@type": "MerchantReturnPolicy",
+      applicableCountry: "US",
+      returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+    },
+  },
 };
 
 export const highRadiusCompareSchema = {
