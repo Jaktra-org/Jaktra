@@ -85,12 +85,17 @@ export const faqPageSchema = {
 export function breadcrumbSchema(
   items: { name: string; path: string }[]
 ): Record<string, unknown> {
+  // If the caller already included "Home" or path "/" as first item, filter it out to prevent duplicate Home entries
+  const normalizedItems = items.filter(
+    (item, idx) => !(idx === 0 && (item.path === "/" || item.name.trim().toLowerCase() === "home"))
+  );
+
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
-      ...items.map((item, i) => ({
+      ...normalizedItems.map((item, i) => ({
         "@type": "ListItem",
         position: i + 2,
         name: item.name,
@@ -253,9 +258,11 @@ export const installmentPlansSchema = {
 
 export const dsoGuideSchema = {
   "@context": "https://schema.org",
-  "@type": "HowTo",
+  "@type": ["Article", "HowTo"],
+  headline: "How to Reduce Days Sales Outstanding (DSO): Countback Math & 5 Operational Levers",
   name: "How to Reduce Days Sales Outstanding (DSO): Countback Math & 5 Operational Levers",
   description: "A comprehensive financial guide for CFOs and Controllers on calculating DSO using the Countback method, understanding B2B industry payment patterns, and accelerating collections with autonomous AI workflows.",
+  image: `${SITE_URL}/og-image.png`,
   totalTime: "P18D",
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
