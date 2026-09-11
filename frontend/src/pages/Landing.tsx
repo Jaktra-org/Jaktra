@@ -175,8 +175,8 @@ function CyclingMetric() {
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 function DecryptText({ text, delay = 0 }: { text: string; delay?: number }) {
-  const [displayed, setDisplayed] = useState(() => text.split("").map(() => CHARS[Math.floor(Math.random() * CHARS.length)]));
-  const [done, setDone] = useState(false);
+  const [isScrambling, setIsScrambling] = useState(false);
+  const [displayed, setDisplayed] = useState<string[]>(() => text.split(""));
 
   useEffect(() => {
     const totalDuration = 1200; // ms to fully resolve
@@ -189,40 +189,54 @@ function DecryptText({ text, delay = 0 }: { text: string; delay?: number }) {
     const animate = (now: number) => {
       if (!startTime) startTime = now;
       const elapsed = now - startTime;
-      if (elapsed < startDelay * 1000) { raf = requestAnimationFrame(animate); return; }
+      if (elapsed < startDelay * 1000) {
+        raf = requestAnimationFrame(animate);
+        return;
+      }
+
+      setIsScrambling(true);
       const adjusted = elapsed - startDelay * 1000;
       const progress = Math.min(adjusted / totalDuration, 1);
 
-      setDisplayed(chars.map((ch, i) => {
-        if (ch === " ") return " ";
-        const revealAt = i / chars.length;
-        if (progress >= revealAt + 0.15) return ch;
-        return CHARS[Math.floor(Math.random() * CHARS.length)];
-      }));
+      if (progress >= 1) {
+        setDisplayed(chars);
+        setIsScrambling(false);
+        return;
+      }
 
-      if (progress < 1) raf = requestAnimationFrame(animate);
-      else setDone(true);
+      setDisplayed(
+        chars.map((ch, i) => {
+          if (ch === " ") return " ";
+          const revealAt = i / chars.length;
+          if (progress >= revealAt + 0.15) return ch;
+          return CHARS[Math.floor(Math.random() * CHARS.length)];
+        })
+      );
+
+      raf = requestAnimationFrame(animate);
     };
 
     raf = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(raf);
   }, [text, delay]);
 
+  if (!isScrambling) {
+    return <span>{text}</span>;
+  }
+
   return (
     <span aria-label={text}>
-      {done
-        ? text
-        : displayed.map((ch, i) => (
-            <span
-              key={i}
-              style={{
-                display: "inline-block",
-                color: ch === text[i] ? "inherit" : "rgba(255,255,255,0.35)",
-              }}
-            >
-              {ch}
-            </span>
-          ))}
+      {displayed.map((ch, i) => (
+        <span
+          key={i}
+          style={{
+            display: "inline-block",
+            color: ch === text[i] ? "inherit" : "rgba(255,255,255,0.35)",
+          }}
+        >
+          {ch}
+        </span>
+      ))}
     </span>
   );
 }
@@ -503,9 +517,8 @@ function HeroSection() {
         {/* Headline — scanline pixel-line font + scramble decrypt */}
         <motion.h1
           className="gl-hero-title"
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.01, delay: 0.1 }}
         >
           <span className="title-line">
             <DecryptText text="Life's too short to waste on" delay={0.1} />

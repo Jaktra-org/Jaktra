@@ -42,7 +42,7 @@ for (const route of routes) {
 
     // 1. Inject rendered React DOM into #root
     pageHtml = pageHtml.replace(
-      '<div id="root"></div>',
+      /<div id="root">[\s\S]*?<\/div>/,
       `<div id="root">${bodyMarkup}</div>`
     );
 
