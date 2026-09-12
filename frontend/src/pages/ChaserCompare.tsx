@@ -59,12 +59,12 @@ export function ChaserCompare() {
       a: "Chaser features a telephone tracker where human staff manually type notes after calling debtors. Jaktra is built on autonomous agent architecture: instead of relying on human phone collectors, our Groq LLaMA 3.1 agent dynamically modulates written tone across 5 escalation tiers, answers debtor inquiries via AI, and provides zero-login digital payment links that minimize the need for manual phone chasing.",
     },
     {
-      q: "How does dispute handling differ between Chaser and Jaktra?",
-      a: "In Chaser, customer replies to dunning emails hit a regular inbox where finance staff must manually spot complaints and manually pause reminder schedules. In Jaktra, our NLP DisputeAgent automatically parses inbound replies, flags disputes or payment promises, immediately halts active cadences, and drafts suggested responses for one-click finance approval.",
+      q: "How does dispute handling differ between Chaser's Chase Feed and Jaktra?",
+      a: "Chaser aggregates debtor replies into a chronological 'Chase Feed' timeline, leaving the heavy lifting of reading inbound emails, tagging query categories, and halting reminder schedules entirely to human credit controllers. If an inbound message goes unread, Chaser's automated schedules can keep reminding a disgruntled client. Jaktra's NLP classifier inspects incoming email sentiment and intent in real time: when a dispute, missing PO claim, or short-payment reason is detected, Jaktra immediately freezes the dunning sequence, assigns a dispute hold state in the dashboard, and generates a context-aware draft response for finance sign-off.",
     },
     {
-      q: "How does debtor payment reconciliation work?",
-      a: "Chaser redirects debtors to generic payment links or provides bank wire details. Jaktra generates a secure, cryptographic debtor portal link (`/i/:token`). Debtors inspect their real-time statement of account, request structured installment plans, and pay instantly via Razorpay (UPI, NetBanking, Cards) with immediate webhook ledger reconciliation.",
+      q: "How does debtor payment reconciliation compare to Chaser's payment portals?",
+      a: "Chaser relies on integrations with third-party payment gateways like Stripe or directs debtors to static bank wire instructions embedded in invoice templates. Jaktra provides an end-to-end proprietary settlement workflow: every reminder includes an authenticated tokenized link (/i/:token) that opens directly on mobile or desktop without login credentials. Debtors can view invoice line items, calculate automated 2x, 3x, or 4x milestone installment plans on overdue balances, and execute instant clearing through Razorpay (UPI, QR, NetBanking, Credit/Debit cards). Webhook handlers verify transaction signatures (HMAC-SHA256) and reconcile the ledger in real time.",
     },
     {
       q: "How do the pricing models compare?",

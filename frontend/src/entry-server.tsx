@@ -59,7 +59,6 @@ export const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
   "/docs": DocsMock,
   "/pricing": Pricing,
   "/compare/highradius-vs-jaktra": HighRadiusCompare,
-  "/compare/highradius-alternative": HighRadiusCompare,
   "/compare/upflow-alternative": UpflowCompare,
   "/features/5-stage-escalation": FiveStageEscalation,
   "/features/dispute-triage": DisputeTriage,

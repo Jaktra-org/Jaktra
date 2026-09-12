@@ -704,12 +704,13 @@ export const clientDisputedInvoiceSchema = {
 export const manageArEmailsSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "How to Manage Inbound Accounts Receivable Emails (Without the Inbox Chaos) — Jaktra",
-  description: "How high-efficiency finance teams handle customer billing inquiries, manage shared AR mailboxes, respond to W-9 and invoice copy requests in minutes, and cut Days Sales Outstanding.",
+  headline: "How to Set Up an Accounts Receivable Shared Inbox in Gmail & Outlook (SLA Matrix & Label Architecture) — Jaktra",
+  description: "A step-by-step IT and finance guide to configuring an AR shared mailbox in Google Workspace and Microsoft 365, establishing a 4-tier triage label architecture, and preventing collision.",
   image: `${SITE_URL}/og-image.png`,
   author: { "@id": `${SITE_URL}/#org` },
   publisher: { "@id": `${SITE_URL}/#org` },
   datePublished: "2026-09-10T00:00:00Z",
-  dateModified: "2026-09-10T00:00:00Z",
+  dateModified: "2026-09-12T00:00:00Z",
   mainEntityOfPage: `${SITE_URL}/resources/how-to-manage-accounts-receivable-emails`,
 };
+

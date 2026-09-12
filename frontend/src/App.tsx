@@ -126,7 +126,7 @@ function App() {
           <Route path="/features/installment-plans" element={<InstallmentPlans />} />
           <Route path="/resources/how-to-reduce-dso" element={<DSOGuide />} />
           <Route path="/compare/highradius-vs-jaktra" element={<HighRadiusCompare />} />
-          <Route path="/compare/highradius-alternative" element={<HighRadiusCompare />} />
+          <Route path="/compare/highradius-alternative" element={<Navigate to="/compare/highradius-vs-jaktra" replace />} />
           <Route path="/compare/upflow-alternative" element={<UpflowCompare />} />
           <Route path="/compare/chaser-alternative" element={<ChaserCompare />} />
           <Route path="/compare/paidnice-alternative" element={<PaidNiceCompare />} />
