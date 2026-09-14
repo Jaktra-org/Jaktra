@@ -3,92 +3,25 @@ import { Check } from "lucide-react";
 
 const tiers = [
   {
-    name: "Free",
-    tagline: "For individuals exploring AR automation",
+    name: "Early Access",
+    tagline: "All features included with zero restrictions. Autonomously accelerate cash flow today.",
     price: "$0",
-    period: "forever",
-    cta: "Start for free",
-    ctaLink: "/register",
-    featured: false,
-    limits: "Up to 10 invoices · 1 user",
-    features: [
-      "5-stage escalation (up to 10 active invoices)",
-      "SendGrid / SMTP email send",
-      "Debtor self-service portal",
-      "CSV import",
-      "Basic dispute classification",
-      "Email support",
-    ],
-    missing: [
-      "Installment payment plans",
-      "AI reply drafting",
-      "Analytics dashboard",
-      "Multi-user team",
-      "Audit log export",
-    ],
-  },
-  {
-    name: "Starter",
-    tagline: "For growing AR teams with regular volume",
-    price: "—",
-    period: "pricing TBD",
-    cta: "Book a demo",
-    ctaLink: "/register",
-    featured: false,
-    limits: "Up to 200 invoices · 5 users",
-    features: [
-      "Everything in Free",
-      "200 active invoices",
-      "5 team members",
-      "AI reply drafting",
-      "Installment payment plans",
-      "Analytics & reporting",
-      "Priority email support",
-    ],
-    missing: [
-      "Custom escalation tone config",
-      "Advanced audit log",
-      "SLA guarantees",
-    ],
-  },
-  {
-    name: "Growth",
-    tagline: "For mid-market finance teams running high volumes",
-    price: "—",
-    period: "pricing TBD",
-    cta: "Book a demo",
+    period: "free early access",
+    cta: "Get started free",
     ctaLink: "/register",
     featured: true,
-    limits: "Up to 1,000 invoices · 15 users",
-    features: [
-      "Everything in Starter",
-      "1,000 active invoices",
-      "15 team members",
-      "Custom escalation tone prompts",
-      "Advanced audit log & export",
-      "Webhook integrations",
-      "Dedicated onboarding call",
-    ],
-    missing: [],
-  },
-  {
-    name: "Enterprise",
-    tagline: "No limits. Custom SLA. Dedicated support.",
-    price: "Custom",
-    period: "talk to sales",
-    cta: "Talk to sales",
-    ctaLink: "/register",
-    featured: false,
     limits: "Unlimited invoices · Unlimited users",
     features: [
-      "Everything in Growth",
-      "Unlimited invoices & users",
-      "Custom integrations (QuickBooks, Xero, NetSuite)",
-      "SSO / SAML",
-      "DPA / BAA on request",
-      "SLA guarantee",
-      "Dedicated success manager",
-      "Custom contract terms",
+      "5-stage autonomous escalation cadence",
+      "AI dispute triage & sentiment classification",
+      "Debtor self-service payment portal (/i/:token)",
+      "Structured installment payment plans",
+      "Dead Letter Queue (DLQ) & deliverability resilience",
+      "Predictive ML delinquency risk scoring",
+      "SendGrid, Resend & custom SMTP integration",
+      "Full activity audit trail & event history",
+      "Razorpay settlement & webhook reconciliation",
+      "Multi-entity isolation & role-based access",
     ],
     missing: [],
   },
@@ -129,19 +62,18 @@ export function PricingSection() {
               marginBottom: "14px",
             }}
           >
-            Priced for the volume you actually collect.
+            100% Free during Early Access.
           </h2>
           <p style={{ fontSize: "15px", color: "#8a8f98", maxWidth: "420px", margin: "0 auto" }}>
-            Start free. Upgrade when your AR volume demands it. Exact pricing for paid tiers is being finalised — book a demo to discuss.
+            Experience the full autonomous collections engine with zero credit card required and no invoice limits.
           </p>
         </div>
 
         {/* Tier grid */}
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "16px",
+            maxWidth: "540px",
+            margin: "0 auto",
           }}
         >
           {tiers.map((tier) => (
