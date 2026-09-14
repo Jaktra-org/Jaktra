@@ -6,14 +6,15 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: string[] }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  const hasToken = typeof localStorage !== "undefined" ? !!localStorage.getItem("auth_token") : false;
+
+  if (isLoading || (!isAuthenticated && hasToken && user === null)) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-[#010102]">
         <Spinner className="h-7 w-7 text-[#f7f8f8]" />
       </div>
     );
   }
-
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
