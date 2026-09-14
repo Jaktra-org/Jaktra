@@ -20,8 +20,8 @@ const faqs = [
     a: "Currently via CSV import and direct invoice entry. Native integrations with QuickBooks Online, Xero, and NetSuite are on the roadmap. If you have a specific integration requirement, raise it during your demo — we're actively prioritising based on customer need.",
   },
   {
-    q: "Is there a free tier or trial?",
-    a: "Yes — the Free plan supports up to 10 active invoices and 1 user with no time limit. It's a permanent free tier, not a trial. If you need to evaluate the full feature set at scale, book a demo and we'll configure a sandbox with your invoice data.",
+    q: "Is Jaktra free to use?",
+    a: "Yes — Jaktra is 100% free during Early Access with zero credit card required. You get full access to all autonomous AR capabilities with no artificial invoice limits or expiration dates.",
   },
   {
     q: "What email providers and payment gateways are supported?",
