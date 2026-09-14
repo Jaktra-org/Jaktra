@@ -71,7 +71,7 @@ export function FinalCTA() {
               position: "relative",
             }}
           >
-            Join finance teams using Jaktra to close collection cycles in days, not months. Start free — no credit card required.
+            Join finance teams using Jaktra to close collection cycles in days, not months. 100% free during Early Access — no credit card required.
           </p>
 
           <div
@@ -101,7 +101,7 @@ export function FinalCTA() {
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--lavender-hover)")}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--lavender)")}
             >
-              Book a demo <ArrowRight size={14} />
+              Get started free <ArrowRight size={14} />
             </Link>
             <Link
               to="/register"
@@ -122,7 +122,7 @@ export function FinalCTA() {
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#18191a")}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#141516")}
             >
-              Start for free
+              Get started free
             </Link>
           </div>
         </div>
