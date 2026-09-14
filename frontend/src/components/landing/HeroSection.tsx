@@ -165,7 +165,7 @@ export function HeroSection() {
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--lavender-hover)")}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "var(--lavender)")}
             >
-              Book a demo <ArrowRight size={14} />
+              Get started free <ArrowRight size={14} />
             </Link>
             <a
               href="#how-it-works"
