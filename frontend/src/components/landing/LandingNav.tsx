@@ -7,7 +7,7 @@ const navLinks = [
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "Security", href: "#security" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Pricing", href: "/pricing" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -70,7 +70,9 @@ export function LandingNav() {
           <img
             src={jaktraLogo}
             alt="Jaktra"
-            style={{ height: "28px", width: "auto", display: "block" }}
+            width={28}
+            height={28}
+            style={{ height: "28px", width: "28px", display: "block" }}
           />
         </a>
 
