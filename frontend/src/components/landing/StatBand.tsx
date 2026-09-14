@@ -2,10 +2,10 @@ import { useRef, useEffect, useState } from "react";
 import { useInView } from "framer-motion";
 
 const stats = [
-  { value: 3.1, suffix: "×", label: "faster average collection cycle", note: "vs. manual email-based AR" },
-  { value: 68, suffix: "%", label: "reduction in manual follow-up time", note: "for AR teams on weekly cycles" },
-  { value: 94, suffix: "%", label: "email delivery success rate", note: "across SendGrid, SMTP, Resend" },
-  { value: 4, suffix: " min", label: "avg. dispute classification time", note: "from reply received to draft queued" },
+  { value: 5, suffix: " Stages", label: "Tone Escalation Cadence", note: "Courtesy reminder to legal notice" },
+  { value: 20, suffix: " Hours", label: "Rolling Idempotency Barrier", note: "Deterministic anti-spam guard" },
+  { value: 15, suffix: " Mins", label: "Ledger Connection Setup", note: "QuickBooks, Xero, Stripe & CSV" },
+  { value: 100, suffix: "%", label: "Free in Early Access", note: "Full platform, no credit card required" },
 ];
 
 function CountUp({ to, suffix, active }: { to: number; suffix: string; active: boolean }) {
@@ -50,18 +50,6 @@ export function StatBand() {
       }}
     >
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        {/* Disclaimer */}
-        <p
-          style={{
-            fontSize: "11px",
-            color: "#3e3e44",
-            textAlign: "center",
-            marginBottom: "40px",
-            letterSpacing: "0.2px",
-          }}
-        >
-          Estimated performance benchmarks based on internal modelling. Individual results may vary.
-        </p>
 
         <div
           style={{
