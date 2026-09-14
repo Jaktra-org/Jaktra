@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem("auth_token"));
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,10 +29,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => authEvents.removeEventListener("unauthorized", handler);
   }, [navigate]);
 
-
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
+    const token = typeof localStorage !== "undefined" ? localStorage.getItem("auth_token") : null;
     if (token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Two-phase hydration mount pattern: SSR starts with isLoading: false, post-mount syncs auth state
+      setIsLoading(true);
       authService
         .getMe()
         .then((userData) => {
@@ -40,7 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
         .catch(() => {
           // Token invalid or expired
-          localStorage.removeItem("auth_token");
+          if (typeof localStorage !== "undefined") {
+            localStorage.removeItem("auth_token");
+          }
           setUser(null);
         })
         .finally(() => {
