@@ -53,9 +53,9 @@ export const FAQS_RIGHT: FAQItem[] = [
       "Yes. Jaktra maintains an immutable, tenant-scoped Activity Log recording every event: email dispatch and delivery status, debtor payment link views, dispute submissions, installment agreements, and manual cadence overrides.",
   },
   {
-    question: "What is included in the Free plan?",
+    question: "Is Jaktra free to use?",
     answer:
-      "The Free plan includes up to 10 active invoices and 1 user seat with full access to the 5-stage cadence engine, debtor portal, CSV import, dispute detection, and SendGrid/SMTP delivery. It is permanently free with no credit card required.",
+      "Yes. Jaktra is 100% free during Early Access with zero credit card required. You get full access to the 5-stage cadence engine, debtor portal, CSV import, dispute triage, and SendGrid/SMTP delivery with no artificial invoice limits.",
   },
   {
     question: "Can multiple team members access the workspace?",
