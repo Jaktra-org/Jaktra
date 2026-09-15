@@ -1,4 +1,4 @@
-import { renderWithProviders, screen, fireEvent } from '../test-utils';
+import { renderWithProviders, screen, fireEvent, waitFor } from '../test-utils';
 import { Landing } from '../../src/pages/Landing';
 import App from '../../src/App';
 
@@ -22,7 +22,7 @@ describe('Landing page & Root routing', () => {
     expect(screen.getAllByRole('link', { name: /get started/i })[0]).toBeInTheDocument();
   });
 
-  it('navigates to /login when Sign in link is clicked', () => {
+  it('navigates to /login when Sign in link is clicked', async () => {
     renderWithProviders(<App />, {
       route: '/',
       authState: { user: null, isLoading: false, isAuthenticated: false },
@@ -31,10 +31,12 @@ describe('Landing page & Root routing', () => {
     const signInLink = screen.getAllByRole('link', { name: /sign in/i })[0];
     fireEvent.click(signInLink);
 
-    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
-  it('navigates to /register when Get started link is clicked', () => {
+  it('navigates to /register when Get started link is clicked', async () => {
     renderWithProviders(<App />, {
       route: '/',
       authState: { user: null, isLoading: false, isAuthenticated: false },
@@ -43,10 +45,12 @@ describe('Landing page & Root routing', () => {
     const getStartedLink = screen.getAllByRole('link', { name: /get started/i })[0];
     fireEvent.click(getStartedLink);
 
-    expect(screen.getByRole('heading', { name: /create an account/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /create an account/i })).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
-  it('renders Dashboard with AppLayout on "/" when user is authenticated', () => {
+  it('renders Dashboard with AppLayout on "/" when user is authenticated', async () => {
     renderWithProviders(<App />, {
       route: '/',
       authState: {
@@ -56,8 +60,10 @@ describe('Landing page & Root routing', () => {
       },
     });
 
+    await waitFor(() => {
+      expect(screen.getByText(/Total Portfolio/i)).toBeInTheDocument();
+    }, { timeout: 5000 });
     expect(screen.queryByText(/Autonomous AR Collection/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Total Portfolio/i)).toBeInTheDocument();
   });
 });
 
