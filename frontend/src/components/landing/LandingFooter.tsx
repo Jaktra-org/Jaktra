@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import jaktraLogo from "../../assets/jaktra_svg.svg";
+import "../../styles/jaktra-theme.css";
 
 interface FooterLink {
   label: string;
@@ -12,11 +13,36 @@ const columns: { heading: string; links: FooterLink[] }[] = [
   {
     heading: "Product",
     links: [
-      { label: "Features", href: "#features" },
-      { label: "How It Works", href: "#how-it-works" },
-      { label: "Security", href: "#security" },
-      { label: "Pricing", href: "#pricing" },
-      { label: "FAQ", href: "#faq" },
+      { label: "5-Stage Escalation", href: "/features/5-stage-escalation", internal: true },
+      { label: "AI Dispute Triage", href: "/features/dispute-triage", internal: true },
+      { label: "Installment Plans", href: "/features/installment-plans", internal: true },
+      { label: "Zero-Login Portal", href: "/features/zero-login-portal", internal: true },
+      { label: "AI Risk Scoring", href: "/features/risk-scoring", internal: true },
+      { label: "Pricing & DSO Math", href: "/pricing", internal: true },
+      { label: "All Platform Features →", href: "/features", internal: true },
+      { label: "All Resources & Guides →", href: "/resources", internal: true },
+    ],
+  },
+  {
+    heading: "Solutions",
+    links: [
+      { label: "B2B SaaS AR", href: "/use-cases/saas", internal: true },
+      { label: "Digital Agencies AR", href: "/use-cases/agencies", internal: true },
+      { label: "Manufacturing AR", href: "/use-cases/manufacturing", internal: true },
+      { label: "Construction AR", href: "/use-cases/construction", internal: true },
+      { label: "Logistics & Freight AR", href: "/use-cases/logistics-freight", internal: true },
+      { label: "View all 14 industries →", href: "/use-cases", internal: true },
+    ],
+  },
+  {
+    heading: "Compare",
+    links: [
+      { label: "HighRadius vs Jaktra", href: "/compare/highradius-vs-jaktra", internal: true },
+      { label: "Upflow Alternative", href: "/compare/upflow-alternative", internal: true },
+      { label: "Chaser Alternative", href: "/compare/chaser-alternative", internal: true },
+      { label: "PaidNice Alternative", href: "/compare/paidnice-alternative", internal: true },
+      { label: "Kolleno Alternative", href: "/compare/kolleno-alternative", internal: true },
+      { label: "All software alternatives →", href: "/compare", internal: true },
     ],
   },
   {
@@ -25,19 +51,17 @@ const columns: { heading: string; links: FooterLink[] }[] = [
       { label: "SendGrid", href: "https://sendgrid.com", external: true },
       { label: "Resend", href: "https://resend.com", external: true },
       { label: "Razorpay", href: "https://razorpay.com", external: true },
-      { label: "SMTP", href: "#faq" },
+      { label: "QuickBooks & Xero", href: "/docs", internal: true },
     ],
   },
   {
     heading: "Company",
     links: [
+      { label: "About", href: "/about", internal: true },
+      { label: "Contact", href: "/contact", internal: true },
+      { label: "Documentation", href: "/docs", internal: true },
       { label: "Sign in", href: "/login", internal: true },
       { label: "Register", href: "/register", internal: true },
-    ],
-  },
-  {
-    heading: "Legal",
-    links: [
       { label: "Privacy Policy", href: "/privacy", internal: true },
       { label: "Terms of Service", href: "/terms", internal: true },
     ],
@@ -54,23 +78,10 @@ export function LandingFooter() {
   };
 
   return (
-    <footer
-      style={{
-        backgroundColor: "#010102",
-        borderTop: "1px solid #23252a",
-        padding: "64px 24px 32px",
-      }}
-    >
+    <footer className="gl-footer">
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         {/* Top row: wordmark + columns */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.5fr repeat(4, 1fr)",
-            gap: "32px",
-            marginBottom: "48px",
-          }}
-        >
+        <div className="gl-footer-grid">
           {/* Brand */}
           <div>
             <div
@@ -83,12 +94,20 @@ export function LandingFooter() {
               <img
                 src={jaktraLogo}
                 alt="Jaktra"
-                style={{ height: "26px", width: "auto", display: "block" }}
+                width={26}
+                height={26}
+                style={{ height: "26px", width: "26px", display: "block" }}
               />
             </div>
             <p style={{ fontSize: "12px", color: "#62666d", lineHeight: 1.6, maxWidth: "200px" }}>
               AI-native accounts-receivable automation for B2B finance teams.
             </p>
+            <div style={{ display: "flex", gap: "8px", marginTop: "16px", alignItems: "center" }}>
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#b7d2f8" }} />
+              <span style={{ fontFamily: "var(--mono, monospace)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>
+                AES-256 &amp; Strict Tenant Isolation
+              </span>
+            </div>
           </div>
 
           {/* Link columns */}
