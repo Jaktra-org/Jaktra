@@ -7,18 +7,19 @@ import "../styles/jaktra-theme.css";
 import { StackedCardsDeck } from "../components/landing/StackedCardsDeck";
 import { PLATFORM_CARDS } from "../components/landing/platformCards";
 import { SEOHead } from "../components/common/SEOHead";
-import {
-  organizationSchema,
-  webSiteSchema,
-  softwareApplicationSchema,
-  faqPageSchema,
-} from "../components/common/seo-schemas";
 import { FAQS_LEFT, FAQS_RIGHT } from "../data/faqs";
+import { LandingFooter } from "../components/landing/LandingFooter";
 
 /* ─── Jaktra brand logo as SVG mark ──────────────────────────────── */
 function JaktraMark({ size = 22 }: { size?: number }) {
   return (
-    <img src={jaktraLogo} alt="Jaktra" style={{ height: size, width: "auto" }} />
+    <img
+      src={jaktraLogo}
+      alt="Jaktra"
+      width={size}
+      height={size}
+      style={{ height: size, width: size, display: "block" }}
+    />
   );
 }
 
@@ -175,8 +176,8 @@ function CyclingMetric() {
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 function DecryptText({ text, delay = 0 }: { text: string; delay?: number }) {
-  const [displayed, setDisplayed] = useState(() => text.split("").map(() => CHARS[Math.floor(Math.random() * CHARS.length)]));
-  const [done, setDone] = useState(false);
+  const [isScrambling, setIsScrambling] = useState(false);
+  const [displayed, setDisplayed] = useState<string[]>(() => text.split(""));
 
   useEffect(() => {
     const totalDuration = 1200; // ms to fully resolve
@@ -189,40 +190,97 @@ function DecryptText({ text, delay = 0 }: { text: string; delay?: number }) {
     const animate = (now: number) => {
       if (!startTime) startTime = now;
       const elapsed = now - startTime;
-      if (elapsed < startDelay * 1000) { raf = requestAnimationFrame(animate); return; }
+      if (elapsed < startDelay * 1000) {
+        raf = requestAnimationFrame(animate);
+        return;
+      }
+
+      setIsScrambling(true);
       const adjusted = elapsed - startDelay * 1000;
       const progress = Math.min(adjusted / totalDuration, 1);
 
-      setDisplayed(chars.map((ch, i) => {
-        if (ch === " ") return " ";
-        const revealAt = i / chars.length;
-        if (progress >= revealAt + 0.15) return ch;
-        return CHARS[Math.floor(Math.random() * CHARS.length)];
-      }));
+      if (progress >= 1) {
+        setDisplayed(chars);
+        setIsScrambling(false);
+        return;
+      }
 
-      if (progress < 1) raf = requestAnimationFrame(animate);
-      else setDone(true);
+      setDisplayed(
+        chars.map((ch, i) => {
+          if (ch === " ") return " ";
+          const revealAt = i / chars.length;
+          if (progress >= revealAt + 0.15) return ch;
+          return CHARS[Math.floor(Math.random() * CHARS.length)];
+        })
+      );
+
+      raf = requestAnimationFrame(animate);
     };
 
     raf = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(raf);
   }, [text, delay]);
 
+  if (!isScrambling) {
+    return <span>{text}</span>;
+  }
+
+  // To eliminate mobile layout shift (CLS), preserve exact character dimensions by rendering
+  // the original character hidden in the normal layout flow, and overlaying the
+  // scrambled character in an absolutely positioned layer within each word token.
+  const parsedTokens: { text: string; isSpace: boolean; startIndex: number }[] = [];
+  let currIndex = 0;
+  for (const t of text.split(/(\s+)/)) {
+    if (!t) continue;
+    const isSpace = /^\s+$/.test(t);
+    parsedTokens.push({ text: t, isSpace, startIndex: currIndex });
+    currIndex += t.length;
+  }
+
   return (
     <span aria-label={text}>
-      {done
-        ? text
-        : displayed.map((ch, i) => (
-            <span
-              key={i}
-              style={{
-                display: "inline-block",
-                color: ch === text[i] ? "inherit" : "rgba(255,255,255,0.35)",
-              }}
-            >
-              {ch}
-            </span>
-          ))}
+      {parsedTokens.map((token, tokenIdx) => {
+        if (token.isSpace) {
+          return <span key={tokenIdx}>{" "}</span>;
+        }
+
+        return (
+          <span
+            key={tokenIdx}
+            style={{
+              display: "inline-block",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {token.text.split("").map((origChar, charOffset) => {
+              const charIndex = token.startIndex + charOffset;
+              const ch = displayed[charIndex] || origChar;
+              return (
+                <span
+                  key={charOffset}
+                  style={{
+                    position: "relative",
+                    display: "inline-block",
+                  }}
+                >
+                  <span style={{ visibility: "hidden" }}>{origChar}</span>
+                  <span
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      textAlign: "center",
+                      color: ch === origChar ? "inherit" : "rgba(255,255,255,0.35)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {ch}
+                  </span>
+                </span>
+              );
+            })}
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -503,9 +561,8 @@ function HeroSection() {
         {/* Headline — scanline pixel-line font + scramble decrypt */}
         <motion.h1
           className="gl-hero-title"
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.01, delay: 0.1 }}
         >
           <span className="title-line">
             <DecryptText text="Life's too short to waste on" delay={0.1} />
@@ -519,8 +576,8 @@ function HeroSection() {
         <div className="gl-hero-sub-wrap">
           <motion.h2
             className="gl-hero-sub-h2"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.8, ease: "easeOut" }}
           >
             <span className="sub-line">AI-native AR automation that autonomously</span>
@@ -532,8 +589,8 @@ function HeroSection() {
           {/* Body copy */}
           <motion.p
             className="gl-hero-body"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.95, ease: "easeOut" }}
           >
             Put your accounts receivable on autopilot. Jaktra orchestrates intelligent collection cadences,
@@ -542,12 +599,12 @@ function HeroSection() {
 
           {/* Hero CTA Button */}
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.45, delay: 1.1 }}
           >
             <Link to="/register" className="gl-btn-demo">
-              Get started
+              Get started free
             </Link>
           </motion.div>
         </div>
@@ -583,18 +640,15 @@ function StatBand() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   const stats = [
-    { val: 3.1, suf: "×", label: "Faster collection cycle", note: "vs manual AR process" },
-    { val: 68, suf: "%", label: "Less manual follow-up time", note: "for AR teams weekly" },
-    { val: 94, suf: "%", label: "Email delivery success", note: "across all providers" },
-    { val: 4, suf: " min", label: "Dispute classification time", note: "reply received → draft" },
+    { val: 5, suf: " Stages", label: "Tone Escalation Cadence", note: "Courtesy reminder to legal notice" },
+    { val: 20, suf: " Hours", label: "Rolling Idempotency Barrier", note: "Deterministic anti-spam guard" },
+    { val: 15, suf: " Mins", label: "Ledger Connection Setup", note: "QuickBooks, Xero, Stripe & CSV" },
+    { val: 100, suf: "%", label: "Free in Early Access", note: "Full platform, no credit card required" },
   ];
 
   return (
     <section style={{ borderTop: "1px solid var(--border)", backgroundColor: "var(--bg)" }}>
       <div className="gl-section" ref={ref}>
-        <p style={{ fontSize: 11, color: "var(--fg-faint)", fontFamily: "var(--mono)", marginBottom: 24, letterSpacing: "0.05em" }}>
-          * Estimated performance benchmarks based on internal modelling. Individual results may vary.
-        </p>
         <div className="gl-stats-grid">
           {stats.map((s, i) => (
             <div key={s.label} className={`gl-stat-cell gl-reveal${inView ? " visible" : ""}`} style={{ transitionDelay: `${i * 0.10}s` }}>
@@ -602,7 +656,7 @@ function StatBand() {
                 <CountUp to={s.val} suffix={s.suf} active={inView} />
               </div>
               <div className="gl-stat-label">{s.label}</div>
-              <div className="gl-stat-note">{s.note}*</div>
+              <div className="gl-stat-note">{s.note}</div>
             </div>
           ))}
         </div>
@@ -767,7 +821,7 @@ function HowItWorks() {
               Jaktra is operational in under a day. Your first automated collection cycle runs before your next stand-up.
             </p>
             <Link to="/register" className="gl-btn-demo">
-              Start for free <ArrowRight size={14} />
+              Get started free <ArrowRight size={14} />
             </Link>
           </div>
 
@@ -1051,16 +1105,18 @@ function PricingSection() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   const freeTier = {
-    name: "Free",
+    name: "Early Access",
     price: "$0",
-    period: "forever",
-    limit: "10 invoices · 1 user",
+    period: "free during early access",
+    limit: "Full platform access · No limits",
     features: [
       "5-stage autonomous escalation cadence",
-      "SendGrid & custom SMTP email delivery",
-      "Debtor self-service payment portal",
-      "CSV invoice import & sync",
-      "Basic dispute classification & hold",
+      "AI dispute triage & sentiment classification",
+      "Debtor self-service payment portal (/i/:token)",
+      "Structured installment payment plans",
+      "Dead Letter Queue (DLQ) deliverability resilience",
+      "Predictive ML delinquency risk scoring",
+      "SendGrid, Resend & custom SMTP integration",
       "Full activity audit trail & event history",
     ],
   };
@@ -1070,17 +1126,17 @@ function PricingSection() {
       <div className="gl-section" ref={ref}>
         <div style={{ textAlign: "center", marginBottom: 48 }}>
           <div className={`gl-reveal${inView ? " visible" : ""}`} style={{ justifyContent: "center", display: "flex", marginBottom: 16 }}>
-            <span className="gl-eye"><span className="gl-eye-dot" />Pricing</span>
+            <span className="gl-eye"><span className="gl-eye-dot" />Early Access</span>
           </div>
           <h2 className={`gl-h2 gl-reveal${inView ? " visible" : ""}`} style={{ textAlign: "center", transitionDelay: "0.08s" }}>
-            Priced for your AR volume.
+            100% Free During Early Access.
           </h2>
-          <p className={`gl-body gl-reveal${inView ? " visible" : ""}`} style={{ maxWidth: 420, margin: "14px auto 0", transitionDelay: "0.14s" }}>
-            Start free. No credit card required.
+          <p className={`gl-body gl-reveal${inView ? " visible" : ""}`} style={{ maxWidth: 460, margin: "14px auto 0", transitionDelay: "0.14s" }}>
+            Get full access to all autonomous AR features. No credit card required.
           </p>
         </div>
 
-        <div style={{ maxWidth: 440, margin: "0 auto" }}>
+        <div style={{ maxWidth: 460, margin: "0 auto" }}>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -1114,7 +1170,7 @@ function PricingSection() {
                   letterSpacing: "0.04em",
                 }}
               >
-                FOREVER FREE
+                100% FREE
               </span>
             </div>
 
@@ -1147,7 +1203,7 @@ function PricingSection() {
                 e.currentTarget.style.color = "#000";
               }}
             >
-              Start for free
+              Get started free
             </Link>
 
             <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1322,7 +1378,7 @@ function FinalCTA() {
             Start recovering overdue invoices today
           </h2>
           <p style={{ fontSize: 15, color: "var(--fg-muted)", marginBottom: 32, maxWidth: 560, marginInline: "auto", lineHeight: 1.6 }}>
-            Upload your first batch of invoices, configure your email and payment providers, and recover cash on autopilot. Free for up to 10 invoices with no credit card required.
+            Upload your first batch of invoices, configure your email and payment providers, and recover cash on autopilot. 100% free during early access with no credit card required.
           </p>
 
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
@@ -1351,112 +1407,7 @@ function FinalCTA() {
   );
 }
 
-/* ─── Footer ──────────────────────────────────────────────────────── */
-function Footer() {
-  const cols = [
-    {
-      head: "Product",
-      links: [
-        { label: "Features", to: "#features" },
-        { label: "How It Works", to: "#how-it-works" },
-        { label: "Security", to: "#security" },
-        { label: "Pricing", to: "#pricing" },
-        { label: "FAQ", to: "#faq" },
-      ],
-    },
-    {
-      head: "Integrations",
-      links: [
-        { label: "SendGrid", to: "#security" },
-        { label: "Resend", to: "#security" },
-        { label: "SMTP", to: "#security" },
-        { label: "Razorpay", to: "#security" },
-      ],
-    },
-    {
-      head: "Company",
-      links: [
-        { label: "Sign In", to: "/login" },
-        { label: "Register", to: "/register" },
-        { label: "Documentation", to: "/docs" },
-      ],
-    },
-    {
-      head: "Legal",
-      links: [
-        { label: "Privacy Policy", to: "/privacy" },
-        { label: "Terms of Service", to: "/terms" },
-      ],
-    },
-  ];
 
-  const handleHashClick = (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
-    e.preventDefault();
-    const id = hash.replace("#", "");
-    const el = document.getElementById(id);
-    if (el) {
-      const nav = document.querySelector(".gl-nav");
-      const navH = nav ? nav.getBoundingClientRect().height : 54;
-      const elementTop = el.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({
-        top: Math.max(0, Math.round(elementTop - navH)),
-        behavior: "smooth",
-      });
-    }
-  };
-
-  return (
-    <footer className="gl-footer">
-      <div className="gl-footer-grid">
-        {/* Brand column */}
-        <div>
-          <div style={{ marginBottom: 14 }}>
-            <JaktraMark size={24} />
-          </div>
-          <p style={{ fontSize: 12, color: "var(--fg-faint)", lineHeight: 1.6, maxWidth: 200 }}>
-            AI-native accounts-receivable automation for B2B finance teams.
-          </p>
-          <div style={{ display: "flex", gap: 8, marginTop: 20, alignItems: "center" }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#b7d2f8" }} />
-            <span style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>
-              AES-256 & Strict Tenant Isolation
-            </span>
-          </div>
-        </div>
-
-        {cols.map((col) => (
-          <div key={col.head}>
-            <p className="gl-footer-col-head">{col.head}</p>
-            {col.links.map((link) =>
-              link.to.startsWith("#") ? (
-                <a
-                  key={link.label}
-                  href={link.to}
-                  onClick={(e) => handleHashClick(e, link.to)}
-                  className="gl-footer-link"
-                >
-                  {link.label}
-                </a>
-              ) : (
-                <Link key={link.label} to={link.to} className="gl-footer-link">
-                  {link.label}
-                </Link>
-              )
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="gl-footer-bottom">
-        <span>© {new Date().getFullYear()} Jaktra. All rights reserved.</span>
-        <div style={{ display: "flex", gap: 20 }}>
-          <Link to="/privacy" style={{ color: "inherit", textDecoration: "none" }}>Privacy</Link>
-          <Link to="/terms" style={{ color: "inherit", textDecoration: "none" }}>Terms</Link>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 const NAV_ITEMS = [
   { label: "Features", target: "features" },
@@ -1472,28 +1423,43 @@ function Nav() {
   const [activeSection, setActiveSection] = useState<string>("");
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 24);
+    let ticking = false;
 
-      // Scroll-spy active section indicator
-      const scrollPos = window.scrollY + 200;
-      let current = "";
-      for (const item of NAV_ITEMS) {
-        const el = document.getElementById(item.target);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPos >= top && scrollPos < top + height) {
-            current = item.target;
-            break;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          setScrolled(scrollY > 24);
+
+          // Only calculate scroll-spy offsets when actually scrolled past the hero
+          if (scrollY > 100) {
+            const scrollPos = scrollY + 200;
+            let current = "";
+            for (const item of NAV_ITEMS) {
+              const el = document.getElementById(item.target);
+              if (el) {
+                const top = el.offsetTop;
+                const height = el.offsetHeight;
+                if (scrollPos >= top && scrollPos < top + height) {
+                  current = item.target;
+                  break;
+                }
+              }
+            }
+            setActiveSection(current);
+          } else {
+            setActiveSection("");
           }
-        }
+          ticking = false;
+        });
+        ticking = true;
       }
-      setActiveSection(current);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    if (window.scrollY > 24) {
+      handleScroll();
+    }
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -1523,24 +1489,29 @@ function Nav() {
           {NAV_ITEMS.map((item) => {
             const isActive = activeSection === item.target;
             return (
-              <button
+              <a
                 key={item.label}
+                href={`#${item.target}`}
                 className={`gl-nav-link${isActive ? " active" : ""}`}
-                onClick={() => scrollTo(item.target)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollTo(item.target);
+                }}
               >
                 {item.label}
-              </button>
+              </a>
             );
           })}
         </nav>
 
         <div className="gl-nav-actions">
           <Link to="/login" className="gl-btn-ghost">Sign in</Link>
-          <Link to="/register" className="gl-btn-primary">Get started</Link>
+          <Link to="/register" className="gl-btn-primary">Get started free</Link>
           <button
+            className="gl-nav-mobile-btn"
             onClick={() => setMobileOpen((v) => !v)}
-            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", display: "none" }}
-            aria-label="Menu"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -1564,13 +1535,32 @@ function Nav() {
             }}
           >
             {NAV_ITEMS.map((item) => (
-              <button key={item.label} onClick={() => scrollTo(item.target)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", fontSize: 15, textAlign: "left", padding: "10px 0", cursor: "pointer", fontFamily: "var(--sans)" }}>
+              <a
+                key={item.label}
+                href={`#${item.target}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollTo(item.target);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "rgba(255,255,255,0.8)",
+                  fontSize: 15,
+                  textAlign: "left",
+                  padding: "10px 0",
+                  cursor: "pointer",
+                  fontFamily: "var(--sans)",
+                  textDecoration: "none",
+                  display: "block",
+                }}
+              >
                 {item.label}
-              </button>
+              </a>
             ))}
             <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
               <Link to="/login" className="gl-btn-ghost" style={{ flex: 1, justifyContent: "center" }}>Sign in</Link>
-              <Link to="/register" className="gl-btn-primary" style={{ flex: 1, justifyContent: "center" }}>Get started</Link>
+              <Link to="/register" className="gl-btn-primary" style={{ flex: 1, justifyContent: "center" }}>Get started free</Link>
             </div>
           </motion.div>
         )}
@@ -1585,14 +1575,8 @@ export function Landing() {
     <div className="gl-root">
       <SEOHead
         title="Jaktra — AI-Powered Accounts Receivable Automation"
-        description="Automate B2B collections with AI-powered 5-stage tone escalation, dispute triage, and installment plans. Replace manual AR follow-up with a closed-loop system. Free tier available."
+        description="Automate B2B collections with Jaktra's AI agent: 5-stage tone escalation, dispute triage, and zero-login debtor portals. 100% free early access."
         canonicalPath="/"
-        jsonLd={[
-          organizationSchema,
-          webSiteSchema,
-          softwareApplicationSchema,
-          faqPageSchema,
-        ]}
       />
       <Nav />
       <main>
@@ -1607,7 +1591,7 @@ export function Landing() {
         <div id="faq" style={{ scrollMarginTop: "var(--nav-h)" }}><FAQSection /></div>
         <FinalCTA />
       </main>
-      <Footer />
+      <LandingFooter />
     </div>
   );
 }
