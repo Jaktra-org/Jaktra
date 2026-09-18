@@ -1,6 +1,10 @@
 # https://jaktra.site/robots.txt
+
+# Conventional Search Engine Crawlers (Google, Bing, etc.)
 User-agent: *
 Allow: /
+
+# Private dashboard routes
 Disallow: /invoices
 Disallow: /agent
 Disallow: /analytics
@@ -11,5 +15,48 @@ Disallow: /activity-log
 Disallow: /dlq
 Disallow: /invite
 Disallow: /i/
+Disallow: /api/
+Disallow: /admin/
+
+# Auth routes (defense-in-depth alongside meta noindex, nofollow)
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+
+# AI Search & Citation Crawlers (Search index & answer grounding - RFC 9309 isolated group)
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+Allow: /
+
+# Private dashboard routes (Mirrored to respect RFC 9309 group isolation)
+Disallow: /invoices
+Disallow: /agent
+Disallow: /analytics
+Disallow: /disputes
+Disallow: /payment-plans
+Disallow: /settings
+Disallow: /activity-log
+Disallow: /dlq
+Disallow: /invite
+Disallow: /i/
+Disallow: /api/
+Disallow: /admin/
+
+# Auth routes
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+
+# AI Foundation Model Training Crawlers (Explicit training access separation)
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: CCBot
+Disallow: /
 
 Sitemap: https://jaktra.site/sitemap.xml
+
