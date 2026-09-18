@@ -5,18 +5,215 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Fallback title/description — overridden per-page by react-helmet-async -->
-    <title data-fallback="true">Jaktra — AI-Powered Accounts Receivable Automation</title>
-    <meta data-fallback="true" name="description" content="Automate B2B collections with AI-powered 5-stage tone escalation, dispute triage, and installment plans. Your AR runs itself." />
+    <title>Jaktra — AI-Powered Accounts Receivable Automation</title>
+    <meta name="description" content="Automate B2B collections with AI-powered 5-stage tone escalation, dispute triage, and installment plans. Replace manual AR follow-up with a closed-loop system. Free tier available." />
+    <link rel="canonical" href="https://jaktra.site/" />
 
-    <!-- Fonts — preconnect + swap for CLS prevention -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Jaktra — AI-Powered Accounts Receivable Automation" />
+    <meta property="og:description" content="Automate B2B collections with AI-powered 5-stage tone escalation, dispute triage, and installment plans. Replace manual AR follow-up with a closed-loop system. Free tier available." />
+    <meta property="og:site_name" content="Jaktra" />
+    <meta property="og:url" content="https://jaktra.site/" />
+    <meta property="og:image" content="https://jaktra.site/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="603" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Jaktra — AI-Powered Accounts Receivable Automation" />
+    <meta name="twitter:description" content="Automate B2B collections with AI-powered 5-stage tone escalation, dispute triage, and installment plans. Replace manual AR follow-up with a closed-loop system. Free tier available." />
+    <meta name="twitter:image" content="https://jaktra.site/og-image.png" />
+
+    <!-- Critical Font Preloading to eliminate chaining & CLS -->
+    <link rel="preload" href="/fonts/jaktra-sans-display.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/geist-pixel-line.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Google Fonts — non-render-blocking async load + preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+    </noscript>
+
+    <!-- Schema.org 1: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://jaktra.site/#org",
+      "name": "Jaktra",
+      "url": "https://jaktra.site",
+      "logo": "https://jaktra.site/logo.webp",
+      "description": "AI-native accounts receivable automation platform for B2B finance teams. Replaces manual collection workflows with intelligent, automated multi-channel follow-up."
+    }
+    </script>
+
+    <!-- Schema.org 2: WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://jaktra.site/#website",
+      "name": "Jaktra",
+      "url": "https://jaktra.site",
+      "publisher": {
+        "@id": "https://jaktra.site/#org"
+      }
+    }
+    </script>
+
+    <!-- Schema.org 3: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Jaktra",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "All modern browsers (Web)",
+      "browserRequirements": "Requires a modern web browser",
+      "url": "https://jaktra.site",
+      "description": "Automate B2B accounts receivable with AI-powered 5-stage tone escalation, dispute triage, installment plans, and multi-channel follow-up. 100% free during early access.",
+      "offers": {
+        "@type": "Offer",
+        "name": "Early Access",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "100% Free during Early Access with zero credit card required",
+        "availability": "https://schema.org/InStock"
+      },
+      "image": "https://jaktra.site/logo.webp",
+      "screenshot": "https://jaktra.site/og-image.png",
+      "creator": {
+        "@id": "https://jaktra.site/#org"
+      },
+      "featureList": [
+        "5-stage AI tone escalation",
+        "Dispute triage and AI reply drafting",
+        "Installment payment plans",
+        "Dead Letter Queue with automatic retries",
+        "Multi-channel communication (email, SMS, WhatsApp)",
+        "Debtor self-service portal",
+        "SendGrid, Resend, and SMTP integration",
+        "Razorpay payment gateway integration",
+        "CSV invoice import",
+        "Role-based team management",
+        "Analytics and reporting dashboard"
+      ]
+    }
+    </script>
+
+    <!-- Schema.org 4: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does the autonomous 5-stage cadence work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Jaktra continuously monitors invoice due dates and aging buckets. Based on your schedule configuration, it automatically advances accounts through 5 staged notices: from courteous pre-due reminders to firm overdue follow-ups and final demand notices. You configure the delay between stages and can require manual approval before any stage dispatches."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens when a debtor disputes an invoice?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The moment a debtor replies or submits a dispute through the self-service portal, Jaktra immediately pauses all cadence timers for that invoice. This prevents inappropriate automated collection notices while an issue is under review. Disputes are categorized with reason and notes, and an AI-drafted reply proposal is prepared for your team."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Jaktra send emails from my own domain?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Jaktra integrates directly with your SendGrid, Resend, or custom SMTP server. All outbound reminders and escalation notices originate from your verified business address (e.g., billing@yourcompany.com) with full SPF, DKIM, and DMARC alignment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can debtors set up installment payment plans?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. When debtors access their secure portal, they can request structured multi-part payment plans. Once approved, Jaktra generates individual installment schedules and tracks partial settlements, keeping collection cadences paused as long as installments remain on track."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do debtors pay invoices through the portal?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every notification includes a tokenized, zero-friction link to a branded Debtor Portal. Debtors require no password or login. They can view line items, download PDF copies, submit notes, and settle immediately via integrated online checkout (e.g., Razorpay)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can we control escalation tones and copy?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely. Each of the 5 escalation stages has customizable subject lines, email templates, and AI tone prompts (from courteous reminders to firm formal demand letters). You retain complete authority over your brand voice."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I import existing invoices into Jaktra?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can bulk-import invoices via CSV upload or synchronize them via our REST API. Jaktra automatically parses customer details, line items, currency, issue dates, and due dates, instantly slotting each account into its correct aging bucket."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is debtor data isolated and secured?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Jaktra enforces strict tenant isolation at the database layer. All sensitive credentials—such as SMTP passwords and payment gateway secrets—are encrypted with AES-256 at rest. Webhook payloads are cryptographically signed using HMAC SHA-256, and data in transit is protected by TLS 1.3."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there an audit log of all communications?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Jaktra maintains an immutable, tenant-scoped Activity Log recording every event: email dispatch and delivery status, debtor payment link views, dispute submissions, installment agreements, and manual cadence overrides."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is included in the Free plan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Free plan includes up to 10 active invoices and 1 user seat with full access to the 5-stage cadence engine, debtor portal, CSV import, dispute detection, and SendGrid/SMTP delivery. It is permanently free with no credit card required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can multiple team members access the workspace?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Jaktra supports role-based team management (Admin, Member, and Auditor). You can invite finance colleagues with specific permissions, allowing AR specialists to manage cadences while safeguarding tenant configuration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens if an email bounces or delivery fails?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Jaktra captures webhook delivery events and tracks bounces or drops. Unrecoverable failures are routed to a built-in Dead-Letter Queue (DLQ) with diagnostics, ensuring your team can inspect issues without losing track of overdue accounts."
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
