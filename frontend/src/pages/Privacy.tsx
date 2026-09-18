@@ -44,7 +44,9 @@ function LegalNav() {
           <img
             src={jaktraLogo}
             alt="Jaktra"
-            style={{ height: "26px", width: "auto", display: "block" }}
+            width={26}
+            height={26}
+            style={{ height: "26px", width: "26px", display: "block" }}
           />
           <span
             style={{

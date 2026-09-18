@@ -44,7 +44,9 @@ function LegalNav() {
           <img
             src={jaktraLogo}
             alt="Jaktra"
-            style={{ height: "26px", width: "auto", display: "block" }}
+            width={26}
+            height={26}
+            style={{ height: "26px", width: "26px", display: "block" }}
           />
           <span
             style={{
@@ -394,7 +396,7 @@ export function Terms() {
                   Ready to automate your collection portfolio?
                 </div>
                 <div style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.6)", marginTop: "4px" }}>
-                  Accept these Terms and start recovering cash on autopilot. Free for up to 10 invoices.
+                  Accept these Terms and start recovering cash on autopilot. 100% free during Early Access.
                 </div>
               </div>
               <Link
