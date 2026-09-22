@@ -161,13 +161,21 @@ export function About() {
           </div>
         </section>
 
-        {/* Research & Editorial Transparency */}
+        {/* Leadership & Editorial Transparency */}
         <section className="p-6 sm:p-7 rounded-xl bg-[#111113] border border-white/[0.08] mb-12">
-          <h2 className="text-lg font-semibold text-white mb-2.5">Research &amp; Content Integrity</h2>
+          <div className="flex items-center gap-3 mb-2.5">
+            <h2 className="text-lg font-semibold text-white">Leadership &amp; Content Integrity</h2>
+          </div>
+          <p className="text-sm text-zinc-300 leading-relaxed mb-3">
+            Founded and architected by <span className="text-white font-medium">Suresh Jakhar</span>, Jaktra is engineered by a specialized team of financial operations practitioners and distributed software engineers. We build software to solve the acute cash flow bottlenecks experienced by growing B2B enterprises.
+          </p>
           <p className="text-sm text-zinc-300 leading-relaxed mb-4">
             Educational resources published by Jaktra Research are authored by our receivables operations and engineering team. Our guides on Days Sales Outstanding (DSO), dunning email cadences, and dispute response frameworks are grounded in verified mathematical formulas (such as Countback DSO), statutory payment compliance requirements, and real-world collections data.
           </p>
           <div className="flex flex-wrap items-center gap-5 pt-1 text-xs text-zinc-300">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#b7d2f8]" /> Founded by Suresh Jakhar
+            </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#b7d2f8]" /> Independent Technical Analysis
             </span>
