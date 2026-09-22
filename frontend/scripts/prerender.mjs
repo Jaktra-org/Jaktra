@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -164,29 +165,72 @@ for (const route of routes) {
 // Auto-generate sitemap.xml for all public routes (Item #10 & #2)
 // -------------------------------------------------------------
 const publicRoutes = routes.filter(r => !NOINDEX_ROUTES.has(r));
-const today = new Date().toISOString().split('T')[0];
 
-function getPriorityAndChangeFreq(route) {
-  if (route === '/') return { priority: '1.0', changefreq: 'daily' };
-  if (route === '/pricing' || route === '/compare' || route === '/features' || route === '/resources' || route === '/use-cases') {
-    return { priority: '0.9', changefreq: 'daily' };
+const ROUTE_FILES = {
+  "/": "Landing.tsx",
+  "/privacy": "Privacy.tsx",
+  "/terms": "Terms.tsx",
+  "/docs": "DocsMock.tsx",
+  "/pricing": "Pricing.tsx",
+  "/about": "About.tsx",
+  "/contact": "Contact.tsx",
+  "/compare/highradius-vs-jaktra": "HighRadiusCompare.tsx",
+  "/compare/upflow-alternative": "UpflowCompare.tsx",
+  "/features/5-stage-escalation": "FiveStageEscalation.tsx",
+  "/features/dispute-triage": "DisputeTriage.tsx",
+  "/features/installment-plans": "InstallmentPlans.tsx",
+  "/resources/how-to-reduce-dso": "DSOGuide.tsx",
+  "/compare/chaser-alternative": "ChaserCompare.tsx",
+  "/compare/paidnice-alternative": "PaidNiceCompare.tsx",
+  "/use-cases/saas": "SaasUseCase.tsx",
+  "/use-cases/agencies": "AgencyUseCase.tsx",
+  "/use-cases/manufacturing": "ManufacturingUseCase.tsx",
+  "/resources/5-stage-ar-tone-escalation": "ToneEscalationPlaybook.tsx",
+  "/use-cases/professional-services": "ProfessionalServicesUseCase.tsx",
+  "/features/zero-login-portal": "ZeroLoginPortal.tsx",
+  "/features/email-deliverability": "EmailDeliverability.tsx",
+  "/features/risk-scoring": "RiskScoring.tsx",
+  "/resources/b2b-dunning-email-templates": "DunningTemplatesResource.tsx",
+  "/use-cases/construction": "ConstructionUseCase.tsx",
+  "/use-cases/logistics-freight": "LogisticsFreightUseCase.tsx",
+  "/use-cases/staffing-recruiting": "StaffingRecruitingUseCase.tsx",
+  "/use-cases/wholesale-distribution": "WholesaleDistributionUseCase.tsx",
+  "/resources/best-b2b-finance-automation-tools": "BestFinanceAutomationGuide.tsx",
+  "/resources/ar-automation-roi-calculator": "ArRoiCalculatorResource.tsx",
+  "/compare/kolleno-alternative": "KollenoCompare.tsx",
+  "/compare": "CompareHub.tsx",
+  "/use-cases": "UseCasesHub.tsx",
+  "/features": "FeaturesHub.tsx",
+  "/resources": "ResourcesHub.tsx",
+  "/resources/invoice-dispute-response-templates": "InvoiceDisputeTemplatesResource.tsx",
+  "/resources/accounts-receivable-query-management": "ArQueryManagementResource.tsx",
+  "/resources/client-questioning-billable-hours": "ClientQuestioningBillableHoursArticle.tsx",
+  "/resources/client-disputed-invoice-what-to-do": "ClientDisputedInvoiceArticle.tsx",
+  "/resources/how-to-manage-accounts-receivable-emails": "ManageArEmailsArticle.tsx",
+};
+
+function getLastModDate(route) {
+  const fileName = ROUTE_FILES[route];
+  if (fileName) {
+    try {
+      const filePath = resolve(process.cwd(), 'src', 'pages', fileName);
+      const gitDate = execSync(`git log -1 --format=%cs -- "${filePath}"`, { encoding: 'utf-8' }).trim();
+      if (gitDate && /^\d{4}-\d{2}-\d{2}$/.test(gitDate)) {
+        return gitDate;
+      }
+    } catch {}
   }
-  if (route === '/privacy' || route === '/terms' || route === '/docs') {
-    return { priority: '0.5', changefreq: 'monthly' };
-  }
-  return { priority: '0.8', changefreq: 'weekly' };
+  return '2026-10-05';
 }
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${publicRoutes.map(route => {
   const loc = `https://jaktra.site${route === '/' ? '/' : route}`;
-  const { priority, changefreq } = getPriorityAndChangeFreq(route);
+  const lastmod = getLastModDate(route);
   return `  <url>
     <loc>${loc}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
+    <lastmod>${lastmod}</lastmod>
   </url>`;
 }).join('\n')}
 </urlset>
