@@ -100,6 +100,7 @@ export function AcceptInvitation() {
 
   return (
     <div className="min-h-screen bg-[#010102] text-[#f7f8f8] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <SEOHead title="Accept Invitation" description="Accept your team invitation to Jaktra." noindex />
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center mb-6">
           <div className="w-12 h-12 bg-[#0f1011] border border-[#23252a] rounded-2xl flex items-center justify-center shadow-xl">
