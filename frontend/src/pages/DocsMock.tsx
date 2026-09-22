@@ -85,20 +85,26 @@ function CodeBlock({ code, language, id }: { code: string; language: string; id:
 const docsSchema = {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  "headline": "Jaktra Technical Documentation & Integration Guide",
-  "description": "Complete technical reference for Jaktra accounts receivable automation: API specifications, Razorpay webhook signature verification, CSV schema, and email deliverability setup.",
-  "articleSection": "Developer Documentation",
-  "author": {
+  headline: "Jaktra Technical Documentation & Integration Guide",
+  name: "Jaktra Technical Documentation & Integration Guide",
+  description: "Complete technical reference for Jaktra accounts receivable automation: API specifications, Razorpay webhook signature verification, CSV schema, and email deliverability setup.",
+  articleSection: "Developer Documentation",
+  image: "https://jaktra.site/og-image.png",
+  author: {
     "@type": "Organization",
-    "name": "Jaktra Engineering"
+    name: "Jaktra Engineering",
+    url: "https://jaktra.site",
   },
-  "publisher": {
+  publisher: {
     "@type": "Organization",
     "@id": "https://jaktra.site/#org",
-    "name": "Jaktra",
-    "url": "https://jaktra.site",
-    "logo": "https://jaktra.site/logo.webp"
-  }
+    name: "Jaktra",
+    url: "https://jaktra.site",
+    logo: "https://jaktra.site/logo.webp",
+  },
+  datePublished: "2026-09-08T00:00:00Z",
+  dateModified: "2026-09-09T00:00:00Z",
+  mainEntityOfPage: "https://jaktra.site/docs",
 };
 
 export function DocsMock() {
@@ -176,7 +182,7 @@ INV-2026-003,Starlight Media LLC,finance@starlight.io,4200.00,EUR,2026-10-05,202
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="Jaktra Technical Documentation — Integration, Webhooks & API Reference"
+        title="Technical Documentation & API Reference — Jaktra"
         description="Technical documentation for Jaktra AR automation. Guides for SMTP email setup, Razorpay webhook HMAC verification, CSV schemas, and AI dunning controls."
         canonicalPath="/docs"
         jsonLd={[
