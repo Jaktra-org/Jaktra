@@ -7,8 +7,8 @@
 - [Overview](https://jaktra.site/): Main product landing page featuring accounts receivable automation, platform capabilities, interactive demo, and security architecture.
 - [Pricing](https://jaktra.site/pricing): 100% free during Early Access with zero credit card required and no invoice caps.
 - [Documentation](https://jaktra.site/docs): Developer documentation, API setup guides, webhook integration specifications, and payment gateway configuration.
-- [About Us](https://jaktra.site/about): Company mission, autonomous accounts receivable engineering principles, leadership, and security certifications.
-- [Contact & Support](https://jaktra.site/contact): Direct contact channels, sales inquiries, integration support, and office locations.
+- [About Us](https://jaktra.site/about): Company mission, autonomous accounts receivable engineering principles, and security architecture.
+- [Contact & Support](https://jaktra.site/contact): Direct contact channels, sales inquiries, integration support, and verified communication lines.
 - [Privacy Policy](https://jaktra.site/privacy): Detailed information on data isolation, tenant security, AES-256 encryption, and GDPR compliance.
 - [Terms of Service](https://jaktra.site/terms): Complete legal terms governing accounts, subscriptions, usage limits, and liability.
 
@@ -16,7 +16,7 @@
 
 - [Features Hub](https://jaktra.site/features): The complete autonomous AR execution stack — 5-stage tone escalation, dispute triage, tokenized portals, DLQ deliverability, and predictive risk scoring.
 - [Software Buyer's Guide & Compare Hub](https://jaktra.site/compare): Objective comparisons of Jaktra vs HighRadius, Upflow, Chaser, PaidNice, and Kolleno.
-- [Industry Solutions Directory](https://jaktra.site/use-cases): B2B DSO benchmarks and tailored dunning workflows across 14 commercial industries.
+- [Industry Solutions Directory](https://jaktra.site/use-cases): B2B DSO benchmarks and tailored dunning workflows across 8 commercial industries.
 - [Resources & Knowledge Hub](https://jaktra.site/resources): Research-backed DSO reduction guides, 5-stage tone escalation playbooks, email templates, and working capital ROI calculators.
 
 ## Capabilities & Deep Dives
