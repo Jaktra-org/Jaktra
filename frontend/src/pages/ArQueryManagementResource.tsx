@@ -364,6 +364,11 @@ export default function ArQueryManagementResource() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-zinc-400">
+            <Link to="/about" className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors">
+              <span className="w-5 h-5 rounded-full bg-[#b7d2f8]/10 border border-[#b7d2f8]/30 flex items-center justify-center font-bold text-[10px] text-[#b7d2f8]">S</span>
+              <span className="font-medium">By Suresh Jakhar &amp; Jaktra Research</span>
+            </Link>
+            <span>•</span>
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-zinc-400" /> 10 min read
             </span>
