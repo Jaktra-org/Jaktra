@@ -398,7 +398,7 @@ export function BestFinanceAutomationGuide() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="Best B2B Finance Automation Tools in 2026 (Invoicing, Follow-Ups & Cash Flow) | Jaktra"
+        title="Best B2B Finance Automation Tools in 2026 (Invoicing & AR) | Jaktra"
         description="Compare the best B2B finance automation software in 2026 across Accounts Payable, ERP accounting, and autonomous Accounts Receivable collection agents."
         canonicalPath="/resources/best-b2b-finance-automation-tools"
         jsonLd={[
@@ -457,10 +457,12 @@ export function BestFinanceAutomationGuide() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 text-xs text-zinc-400 border-t border-white/[0.06]">
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-[#b7d2f8]/10 border border-[#b7d2f8]/30 flex items-center justify-center font-bold text-xs text-[#b7d2f8]">
-                  J
+                  S
                 </div>
                 <div>
-                  <div className="text-white font-medium">Jaktra Finance Research Team</div>
+                  <Link to="/about" className="text-white font-medium hover:text-[#b7d2f8] transition-colors">
+                    Suresh Jakhar &amp; Jaktra Research Team
+                  </Link>
                   <div className="text-[11px] text-zinc-500">Last Updated On September 2026 · 12 min read</div>
                 </div>
               </div>
