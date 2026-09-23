@@ -248,7 +248,7 @@ export function DSOGuide() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="How to Reduce Days Sales Outstanding (DSO): Calculation & 5 Best Practices — Jaktra"
+        title="How to Reduce DSO: Formula & 5 Reduction Tactics — Jaktra"
         description="A financial guide on calculating DSO accurately, comparing Simple vs. Countback methods, benchmarking B2B industries, and shortening collection cycles."
         canonicalPath="/resources/how-to-reduce-dso"
         jsonLd={[
@@ -306,7 +306,7 @@ export function DSOGuide() {
           <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500 py-3 border-y border-white/[0.08]">
             <Link to="/about" className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors">
               <BookOpen className="w-3.5 h-3.5 text-[#b7d2f8]" />
-              <span className="font-medium">Jaktra Research</span>
+              <span className="font-medium">By Suresh Jakhar &amp; Jaktra Research</span>
             </Link>
             <span className="text-zinc-700">•</span>
             <div className="flex items-center gap-1.5">
