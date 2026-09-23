@@ -124,7 +124,7 @@ Warm regards,
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white font-sans antialiased selection:bg-white/20 selection:text-white">
       <SEOHead
-        title="Client Questioning Your Billable Hours? How to Respond Without Losing the Client"
+        title="Client Questioning Billable Hours? How to Respond & Resolve | Jaktra"
         description="How agencies and consultancies handle questioned invoice hours. Word-for-word email templates, non-defensive communication tips, and dispute prevention."
         canonicalPath="/resources/client-questioning-billable-hours"
         jsonLd={[
@@ -163,9 +163,10 @@ Warm regards,
           </p>
 
           <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400">
-            <span className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-zinc-400" /> Jaktra Research Team
-            </span>
+            <Link to="/about" className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors">
+              <User className="w-3.5 h-3.5 text-[#b7d2f8]" />
+              <span className="font-medium">By Suresh Jakhar &amp; Jaktra Research</span>
+            </Link>
             <span>•</span>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-zinc-400" /> September 2026
