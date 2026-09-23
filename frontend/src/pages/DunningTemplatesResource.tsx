@@ -385,7 +385,7 @@ export default function DunningTemplatesResource() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
-        title="10 Overdue Invoice Payment Reminder Email Templates (From Polite to Final Demand) | Jaktra"
+        title="10 Overdue Invoice Payment Reminder Email Templates | Jaktra"
         description="10 proven payment reminder email templates for overdue B2B invoices. Follow up politely at Day 1, firmly at Day 14, and formally without harming trust."
         canonicalPath="/resources/b2b-dunning-email-templates"
         jsonLd={[
@@ -418,9 +418,21 @@ export default function DunningTemplatesResource() {
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-6 leading-tight">
             How to Follow Up on Unpaid Invoices: 10 Word-for-Word Payment Reminder Templates
           </h1>
-          <p className="text-base sm:text-lg text-zinc-400 leading-relaxed">
+          <p className="text-base sm:text-lg text-zinc-400 leading-relaxed mb-6">
             Stop stressing over how to ask clients for overdue payments. Use these 10 field-tested email templates—ranging from friendly pre-due courtesy checks to formal final demand notices—designed to get invoices paid fast while preserving commercial relationships.
           </p>
+
+          {/* Author & Reading Info */}
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-zinc-500 py-3 border-y border-white/[0.08]">
+            <Link to="/about" className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors">
+              <span className="w-5 h-5 rounded-full bg-[#b7d2f8]/10 border border-[#b7d2f8]/30 flex items-center justify-center font-bold text-[10px] text-[#b7d2f8]">S</span>
+              <span className="font-medium">By Suresh Jakhar &amp; Jaktra Research</span>
+            </Link>
+            <span className="text-zinc-700">•</span>
+            <span>10 min read</span>
+            <span className="text-zinc-700">•</span>
+            <span>Updated September 2026</span>
+          </div>
         </header>
 
         {/* The Problem with Static Templates Callout */}
