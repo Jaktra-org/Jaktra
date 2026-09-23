@@ -85,7 +85,7 @@ export default function ManageArEmailsArticle() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white font-sans antialiased selection:bg-white/20 selection:text-white">
       <SEOHead
-        title="How to Set Up an Accounts Receivable Shared Inbox in Gmail & Outlook (SLA Matrix & Label Architecture)"
+        title="Accounts Receivable Shared Inbox: Gmail & Outlook Setup | Jaktra"
         description="Step-by-step IT and finance guide to configuring an AR shared mailbox in Google Workspace and M365, establishing 4-tier triage, and stopping collision."
         canonicalPath="/resources/how-to-manage-accounts-receivable-emails"
         jsonLd={[
@@ -129,9 +129,10 @@ export default function ManageArEmailsArticle() {
           </p>
 
           <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400">
-            <span className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-zinc-400" /> Jaktra AR Architecture Team
-            </span>
+            <Link to="/about" className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors">
+              <User className="w-3.5 h-3.5 text-[#b7d2f8]" />
+              <span className="font-medium">By Suresh Jakhar &amp; Jaktra Research</span>
+            </Link>
             <span>•</span>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-zinc-400" /> Updated September 2026
