@@ -189,7 +189,7 @@ export default function ArRoiCalculatorResource() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
-        title="B2B Accounts Receivable Automation ROI & Working Capital Calculator | Jaktra"
+        title="AR Automation ROI & Working Capital Calculator — Jaktra"
         description="Calculate your DSO reduction, working capital released, debt interest saved, and net 3-year ROI from automating accounts receivable collections with Jaktra."
         canonicalPath="/resources/ar-automation-roi-calculator"
         jsonLd={[
@@ -215,9 +215,20 @@ export default function ArRoiCalculatorResource() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-6 leading-tight font-display">
             Accounts Receivable Automation ROI &amp; Working Capital Calculator
           </h1>
-          <p className="text-base sm:text-lg text-zinc-400 max-w-3xl mx-auto leading-relaxed mb-8">
+          <p className="text-base sm:text-lg text-zinc-400 max-w-3xl mx-auto leading-relaxed mb-6">
             Model the exact financial return of replacing manual collection calling queues with autonomous AI execution. Calculate working capital unlocked, interest expenses avoided, and collector labor reclaimed.
           </p>
+
+          {/* Author & Model Info */}
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-zinc-500 py-2.5 border-y border-white/[0.08] max-w-md mx-auto mb-8">
+            <Link to="/about" className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors">
+              <span className="w-5 h-5 rounded-full bg-[#b7d2f8]/10 border border-[#b7d2f8]/30 flex items-center justify-center font-bold text-[10px] text-[#b7d2f8]">S</span>
+              <span className="font-medium">By Suresh Jakhar &amp; Jaktra Research</span>
+            </Link>
+            <span className="text-zinc-700">•</span>
+            <span>Updated September 2026</span>
+          </div>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="#calculator"
