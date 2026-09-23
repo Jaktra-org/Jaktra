@@ -806,7 +806,7 @@ export default function UseCasesHub() {
               </p>
               <div className="pt-4">
                 <Link
-                  to="/features/ai-agent"
+                  to="/features/5-stage-escalation"
                   className="inline-flex items-center gap-2 text-xs font-semibold text-[#b7d2f8] hover:text-white transition-colors"
                 >
                   Learn more about Jaktra's AI Agent <ArrowRight className="w-3.5 h-3.5" />
