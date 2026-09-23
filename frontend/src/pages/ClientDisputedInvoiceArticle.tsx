@@ -109,7 +109,7 @@ Best regards,
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white font-sans antialiased selection:bg-white/20 selection:text-white">
       <SEOHead
-        title="Client Disputed an Invoice? What to Do Immediately (Step-by-Step Guide)"
+        title="Client Disputed an Invoice? Step-by-Step Guide — Jaktra"
         description="What to do when a customer disputes an invoice. How to immediately freeze reminders, diagnose root causes, negotiate partial payments, and resolve terms."
         canonicalPath="/resources/client-disputed-invoice-what-to-do"
         jsonLd={[
@@ -148,9 +148,10 @@ Best regards,
           </p>
 
           <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400">
-            <span className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-zinc-400" /> Jaktra Credit & Risk Team
-            </span>
+            <Link to="/about" className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors">
+              <User className="w-3.5 h-3.5 text-[#b7d2f8]" />
+              <span className="font-medium">By Suresh Jakhar &amp; Jaktra Research</span>
+            </Link>
             <span>•</span>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-zinc-400" /> September 2026
