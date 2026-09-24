@@ -75,7 +75,7 @@ export function ChaserCompare() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="Chaser Alternative — Autonomous Generative AI AR Agent vs Static Dunning"
+        title="Chaser Alternative: Autonomous AI Collections — Jaktra"
         description="Compare Chaser vs Jaktra. Upgrade from manual phone call logging and static dunning to Jaktra's autonomous AI collections agent and zero-login portals."
         canonicalPath="/compare/chaser-alternative"
         jsonLd={[
