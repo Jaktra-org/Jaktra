@@ -84,7 +84,7 @@ export function ZeroLoginPortal() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="1-Click B2B Invoice Payment Links: Eliminate Passwords & Get Paid 2x Faster | Jaktra"
+        title="1-Click Zero-Login B2B Invoice Payment Links — Jaktra"
         description="Why traditional billing portals fail. Discover how Jaktra's 1-click zero-login payment links and self-serve installments get B2B invoices paid 2x faster."
         canonicalPath="/features/zero-login-portal"
         jsonLd={[
