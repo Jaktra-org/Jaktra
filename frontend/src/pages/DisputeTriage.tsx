@@ -136,7 +136,7 @@ export function DisputeTriage() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="Automatic Email Reply Catch & Dispute Triage for Accounts Receivable | Jaktra"
+        title="Automatic AR Dispute Triage & Email Catch — Jaktra"
         description="Prevent awkward collection emails. Learn how Jaktra's NLP dispute triage detects debtor replies, pauses dunning cadences, and aids review."
         canonicalPath="/features/dispute-triage"
         jsonLd={[
