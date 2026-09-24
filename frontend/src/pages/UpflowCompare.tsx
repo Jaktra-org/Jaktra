@@ -74,7 +74,7 @@ export function UpflowCompare() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
-        title="Upflow Alternative — Autonomous AI Tone Escalation vs Static Dunning"
+        title="Upflow Alternative: Autonomous AI Collections — Jaktra"
         description="Compare Upflow vs Jaktra. Learn why finance teams upgrade from static email templates to Jaktra's autonomous AI tone escalation and NLP dispute triage."
         canonicalPath="/compare/upflow-alternative"
         jsonLd={[
