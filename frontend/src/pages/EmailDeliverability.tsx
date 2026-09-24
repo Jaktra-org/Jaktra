@@ -88,7 +88,7 @@ export function EmailDeliverability() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
-        title="Why Invoice Emails Go to Spam (And 7 Ways to Ensure Clients Actually Receive Them) | Jaktra"
+        title="Why Invoice Emails Go to Spam & How to Fix Deliverability | Jaktra"
         description="Stop invoice emails from landing in spam. Configure SPF, DKIM, and DMARC correctly, and use automated Dead Letter Queues to protect sender reputation."
         canonicalPath="/features/email-deliverability"
         jsonLd={[
