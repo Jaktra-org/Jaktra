@@ -253,7 +253,7 @@ export function ToneEscalationPlaybook() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="Overdue Invoice Escalation: How to Shift Tone from Polite Reminder to Final Demand | Jaktra"
+        title="Overdue Invoice Escalation: Polite Reminders to Final Demand | Jaktra"
         description="Escalate overdue invoice email tone professionally across 5 stages. Learn when to be polite, when to be firm, and when to enforce a formal legal stop."
         canonicalPath="/resources/5-stage-ar-tone-escalation"
         jsonLd={[
@@ -311,10 +311,12 @@ export function ToneEscalationPlaybook() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 text-xs text-zinc-400 border-t border-white/[0.06]">
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-[#b7d2f8]/10 border border-[#b7d2f8]/30 flex items-center justify-center font-bold text-xs text-[#b7d2f8]">
-                  J
+                  S
                 </div>
                 <div>
-                  <div className="text-white font-medium">Jaktra Credit &amp; Collections Research</div>
+                  <Link to="/about" className="text-white font-medium hover:text-[#b7d2f8] transition-colors">
+                    Suresh Jakhar &amp; Jaktra Research
+                  </Link>
                   <div className="text-[11px] text-zinc-500">Last Updated On September 2026 · 10 min read</div>
                 </div>
               </div>
