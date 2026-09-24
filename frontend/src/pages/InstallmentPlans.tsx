@@ -87,7 +87,7 @@ export function InstallmentPlans() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
-        title="How to Offer Payment Plans to Overdue B2B Clients (Templates & Recovery Strategy) | Jaktra"
+        title="How to Offer Payment Plans to Overdue B2B Clients | Jaktra"
         description="Recover overdue cash faster. Offer structured installment plans, agreement terms, and automated milestone payment tracking through zero-login debtor links."
         canonicalPath="/features/installment-plans"
         jsonLd={[
