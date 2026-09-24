@@ -74,7 +74,7 @@ export function HighRadiusCompare() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
-        title="HighRadius vs Jaktra — Enterprise O2C Suite vs Focused AI Collections Agent"
+        title="HighRadius vs Jaktra: Enterprise O2C vs AI Agent — Jaktra"
         description="Compare HighRadius vs Jaktra. Learn why Jaktra is a lightweight, autonomous AI collections agent built for rapid mid-market deployment and cash recovery."
         canonicalPath="/compare/highradius-vs-jaktra"
         jsonLd={[
