@@ -146,7 +146,7 @@ export function KollenoCompare() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="Kolleno Alternative — Autonomous Conversational AI vs Manual Collector Task Lists | Jaktra"
+        title="Kolleno Alternative: Autonomous AI vs Collector Task Lists | Jaktra"
         description="Compare Kolleno vs Jaktra. Learn why finance teams prefer Jaktra's autonomous AI tone escalation and NLP dispute triage over manual collector task lists."
         canonicalPath="/compare/kolleno-alternative"
         jsonLd={[
