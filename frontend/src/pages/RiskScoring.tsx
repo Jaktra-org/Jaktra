@@ -113,7 +113,7 @@ export function RiskScoring() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="How to Predict Late Payments: B2B Accounts Receivable Risk Scoring Guide | Jaktra"
+        title="Predict Late Payments: B2B AR Risk Scoring — Jaktra"
         description="Identify at-risk debtors before invoices default. A practical guide to AR delinquency scoring, aging velocity, exposure tiers, and triage priorities."
         canonicalPath="/features/risk-scoring"
         jsonLd={[
