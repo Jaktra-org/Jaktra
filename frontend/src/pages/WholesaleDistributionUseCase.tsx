@@ -164,7 +164,7 @@ export function WholesaleDistributionUseCase() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="How Wholesale Distributors Stop Delivery Deductions & Accelerate Net-60 Terms | Jaktra"
+        title="Wholesale AR Automation: Stop Deductions & Accelerate Net-60 | Jaktra"
         description="Stop short-shipment claims and delivery deductions from eroding margins. Automate distributor invoice follow-ups and isolate disputed line items with AI."
         canonicalPath="/use-cases/wholesale-distribution"
         jsonLd={[
