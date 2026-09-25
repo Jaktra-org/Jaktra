@@ -192,7 +192,7 @@ export function SaasUseCase() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100 font-sans selection:bg-[#b7d2f8]/20 selection:text-white">
       <SEOHead
-        title="How to Collect Overdue B2B SaaS Invoices Without Churning Accounts | Jaktra"
+        title="Collect Overdue B2B SaaS Invoices Without Churn — Jaktra"
         description="Collect overdue B2B SaaS invoices without churning accounts. Automate seat and usage dispute triage, maintain polite tone escalation, and protect NRR."
         canonicalPath="/use-cases/saas"
         jsonLd={[
