@@ -173,7 +173,7 @@ export default function LogisticsFreightUseCase() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="AI Accounts Receivable Automation for Logistics, Freight & 3PLs | Jaktra"
+        title="AI Accounts Receivable for Logistics & 3PLs — Jaktra"
         description="Eliminate the freight working capital crunch. Automate shipper collection cadences, triage detention disputes, reduce factoring dependence, and speed cash."
         canonicalPath="/use-cases/logistics-freight"
         jsonLd={[
