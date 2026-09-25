@@ -142,7 +142,7 @@ export function PaidNiceCompare() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="PaidNice Alternative — Autonomous AI Tone Escalation vs Static Late Fees | Jaktra"
+        title="PaidNice Alternative: AI Tone Escalation — Jaktra"
         description="Compare PaidNice vs Jaktra. Replace punitive static late fees with Jaktra's autonomous AI tone escalation, NLP dispute triage, and installment options."
         canonicalPath="/compare/paidnice-alternative"
         jsonLd={[
