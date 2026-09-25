@@ -173,7 +173,7 @@ export default function StaffingRecruitingUseCase() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="AI Accounts Receivable Automation for Staffing & Recruitment Agencies | Jaktra"
+        title="AI Accounts Receivable for Staffing Agencies — Jaktra"
         description="Bridge contractor payroll gaps for staffing agencies. Automate client collection cadences, triage timesheet disputes, and eliminate factoring fees."
         canonicalPath="/use-cases/staffing-recruiting"
         jsonLd={[
