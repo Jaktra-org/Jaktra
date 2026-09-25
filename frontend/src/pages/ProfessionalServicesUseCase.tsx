@@ -168,7 +168,7 @@ export function ProfessionalServicesUseCase() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="AI Accounts Receivable Automation for Professional Services & Legal | Jaktra"
+        title="AI Accounts Receivable for Professional Services — Jaktra"
         description="Eliminate partner billing friction for law and consulting firms. Triage billable hours disputes, automate retainer top-ups, and accelerate cash flow."
         canonicalPath="/use-cases/professional-services"
         jsonLd={[
