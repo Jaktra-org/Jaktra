@@ -174,7 +174,7 @@ export default function ConstructionUseCase() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="AI Accounts Receivable Automation for Construction & Subcontractors | Jaktra"
+        title="AI Accounts Receivable for Construction & Trades — Jaktra"
         description="Accelerate contractor cash flow. Automate progress billing reminders, triage change-order disputes, track retainage releases, and reduce construction DSO."
         canonicalPath="/use-cases/construction"
         jsonLd={[
