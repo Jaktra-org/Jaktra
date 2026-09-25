@@ -178,7 +178,7 @@ export function ManufacturingUseCase() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="AI Accounts Receivable Automation for Manufacturing & Industrial | Jaktra"
+        title="AI Accounts Receivable for Manufacturing — Jaktra"
         description="Accelerate industrial supply chain cash flow. Resolve PO matching disputes, manage Net 60/90 terms, and cut receivables drag with Jaktra's AI AR agent."
         canonicalPath="/use-cases/manufacturing"
         jsonLd={[
