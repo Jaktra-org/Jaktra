@@ -192,7 +192,7 @@ export function AgencyUseCase() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
       <SEOHead
-        title="How Agencies Get Clients to Pay Retainers on Time (Cash Flow Guide) | Jaktra"
+        title="How Agencies Collect Client Retainers on Time — Jaktra"
         description="Stop awkward client chasing and protect ad spend. Discover how creative and digital agencies automate retainer collections and milestone payments on time."
         canonicalPath="/use-cases/agencies"
         jsonLd={[
