@@ -264,60 +264,61 @@ export function Register() {
                     </div>
                   </div>
 
-                  {/* Password & Confirm Password */}
-                  <div className="grid gap-3.5 sm:grid-cols-2">
-                    <div className="space-y-1.5 text-left w-full">
-                      <label className="text-xs font-semibold text-white/70">
-                        Password <span className="text-red-400">*</span>
-                      </label>
-                      <div className={`relative flex h-11 items-center rounded-lg border bg-white/5 px-3.5 transition-colors focus-within:border-[#b7d2f8] ${fieldErrors.password ? 'border-red-500/70' : 'border-white/10'}`}>
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          required
-                          value={password}
-                          onChange={(e) => {
-                            setPassword(e.target.value);
-                            if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: false }));
-                          }}
-                          placeholder="••••••••"
-                          disabled={isLoading}
-                          className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30 pr-7"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 text-white/40 hover:text-white cursor-pointer"
-                        >
-                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                        </button>
-                      </div>
+                  {/* Password Field */}
+                  <div className="space-y-1.5 text-left w-full">
+                    <label className="text-xs font-semibold text-white/70">
+                      Password <span className="text-red-400">*</span>
+                    </label>
+                    <div className={`relative flex h-11 items-center rounded-lg border bg-white/5 px-3.5 transition-colors focus-within:border-[#5e6ad2] focus-within:ring-2 focus-within:ring-[#5e69d1]/40 ${fieldErrors.password ? 'border-red-500/70' : 'border-white/10'}`}>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: false }));
+                        }}
+                        placeholder="••••••••"
+                        disabled={isLoading}
+                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30 pr-7"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 text-white/40 hover:text-white cursor-pointer"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
                     </div>
+                  </div>
 
-                    <div className="space-y-1.5 text-left w-full">
-                      <label className="text-xs font-semibold text-white/70">
-                        Confirm password <span className="text-red-400">*</span>
-                      </label>
-                      <div className={`relative flex h-11 items-center rounded-lg border bg-white/5 px-3.5 transition-colors focus-within:border-[#b7d2f8] ${fieldErrors.confirmPassword ? 'border-red-500/70' : 'border-white/10'}`}>
-                        <input
-                          type={showConfirmPassword ? "text" : "password"}
-                          required
-                          value={confirmPassword}
-                          onChange={(e) => {
-                            setConfirmPassword(e.target.value);
-                            if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: false }));
-                          }}
-                          placeholder="••••••••"
-                          disabled={isLoading}
-                          className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30 pr-7"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 text-white/40 hover:text-white cursor-pointer"
-                        >
-                          {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                        </button>
-                      </div>
+                  {/* Confirm Password Field */}
+                  <div className="space-y-1.5 text-left w-full">
+                    <label className="text-xs font-semibold text-white/70">
+                      Confirm password <span className="text-red-400">*</span>
+                    </label>
+                    <div className={`relative flex h-11 items-center rounded-lg border bg-white/5 px-3.5 transition-colors focus-within:border-[#5e6ad2] focus-within:ring-2 focus-within:ring-[#5e69d1]/40 ${fieldErrors.confirmPassword ? 'border-red-500/70' : 'border-white/10'}`}>
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: false }));
+                        }}
+                        placeholder="••••••••"
+                        disabled={isLoading}
+                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30 pr-7"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 text-white/40 hover:text-white cursor-pointer"
+                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
                     </div>
                   </div>
 
@@ -329,6 +330,7 @@ export function Register() {
                           type="checkbox"
                           checked={acceptTerms}
                           onChange={(e) => setAcceptTerms(e.target.checked)}
+                          aria-label="I agree to the Terms of Service and Privacy Policy"
                           className="peer size-full cursor-pointer appearance-none rounded-[4px] border border-white/20 bg-white/5 checked:border-[#b7d2f8] checked:bg-[#b7d2f8]"
                         />
                         <svg
