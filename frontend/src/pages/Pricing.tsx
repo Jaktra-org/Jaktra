@@ -1,50 +1,13 @@
 import { useState, useId } from "react";
 import { Link } from "react-router-dom";
-import { Check, ArrowRight, Calculator, Zap, Sparkles } from "lucide-react";
-import jaktraLogo from "../assets/jaktra_svg.svg";
+import { Check, ArrowRight, Calculator, Sparkles } from "lucide-react";
 import { SEOHead } from "../components/common/SEOHead";
 import { pricingPageSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LandingFooter } from "../components/landing/LandingFooter";
+import { GlobalNav } from "../components/common/GlobalNav";
 
-function HeaderNav() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
-          <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
-          <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
-        </Link>
-        <div className="flex items-center gap-4 sm:gap-6">
-          <Link to="/pricing" className="text-sm text-white font-medium transition-colors hidden sm:block">
-            Pricing
-          </Link>
-          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Features
-          </Link>
-          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Use Cases
-          </Link>
-          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Compare
-          </Link>
-          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Resources
-          </Link>
-          <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
-          >
-            Get started free
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+
 
 interface EarlyAccessPillar {
   id: string;
@@ -201,56 +164,46 @@ export function Pricing() {
         jsonLd={[pricingPageSchema, breadcrumbSchema([{ name: "Pricing", path: "/pricing" }])]}
       />
 
-      <HeaderNav />
+      <GlobalNav />
 
       <main className="pt-24 pb-20 px-6 max-w-6xl mx-auto">
         {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="mb-6 text-xs text-zinc-500">
-          <ol className="flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-4 text-xs text-zinc-400 font-sans">
+          <ol className="flex items-center gap-1.5">
             <li>
-              <Link to="/" className="hover:text-zinc-300 transition-colors">
+              <Link to="/" className="hover:text-zinc-200 transition-colors">
                 Home
               </Link>
             </li>
-            <li>/</li>
-            <li className="text-zinc-300 font-medium" aria-current="page">
+            <li className="text-zinc-600">/</li>
+            <li className="text-zinc-200 font-medium" aria-current="page">
               Pricing
             </li>
           </ol>
         </nav>
 
-        {/* Hero Title & Subheading with Spacious Flow */}
-        <div className="text-center max-w-3xl mx-auto mb-20 sm:mb-24 pt-8">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] text-zinc-300 text-xs font-mono mb-6">
-            <Zap className="w-3.5 h-3.5 text-[#b7d2f8]" />
-            <span>100% Free During Early Access • Zero Credit Card Required</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6 leading-[1.12]">
+        {/* Hero Title & Subheading with Clean Flow */}
+        <div className="text-center max-w-3xl mx-auto mb-8 pt-2">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
             Simple, 100% Free Accounts Receivable Automation
           </h1>
-          <p className="text-base sm:text-lg text-zinc-400 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-zinc-300 leading-relaxed max-w-2xl mx-auto">
             Jaktra is completely free during our public Early Access phase. Autonomously accelerate cash flow, cut Days Sales Outstanding (DSO), and resolve invoice disputes with no credit card required.
           </p>
         </div>
 
-        {/* Single Pricing Card — Refined Luxury Glassmorphic Design */}
-        <div className="max-w-3xl mx-auto mb-24">
-          <div className="rounded-2xl border border-white/[0.12] bg-[#111113]/80 p-8 sm:p-14 relative shadow-2xl shadow-black/50 backdrop-blur-xl">
-            {/* Top Pill */}
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-white text-zinc-950 text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-950" />
-              100% Free • Early Access
-            </div>
-
-            <div className="text-center mb-10 pt-2 space-y-3">
+        {/* Single Pricing Card */}
+        <div className="max-w-3xl mx-auto mb-8">
+          <div className="rounded-xl border border-white/[0.12] bg-[#111113]/80 p-6 sm:p-10 relative shadow-xl backdrop-blur-xl">
+            <div className="text-center mb-8 pt-1 space-y-2">
               <div className="text-xs font-mono uppercase tracking-widest text-zinc-400">
                 Early Access Plan
               </div>
               <div className="flex items-baseline justify-center gap-2">
-                <span className="text-5xl sm:text-6xl font-extrabold text-white font-mono tracking-tight">$0</span>
-                <span className="text-zinc-400 text-lg sm:text-xl font-medium">/ Free Early Access</span>
+                <span className="text-4xl sm:text-5xl font-extrabold text-white font-mono tracking-tight">$0</span>
+                <span className="text-zinc-400 text-base sm:text-lg font-medium">/ Free Early Access</span>
               </div>
-              <p className="text-zinc-300 text-base sm:text-lg max-w-xl mx-auto leading-relaxed pt-1">
+              <p className="text-zinc-300 text-sm sm:text-base max-w-lg mx-auto leading-normal pt-1">
                 Full access to all features during Early Access. Automate your collection cadences, triage disputes with AI, and recover overdue receivables with zero commitments.
               </p>
             </div>
@@ -329,31 +282,32 @@ export function Pricing() {
         </div>
 
         {/* Enterprise Capabilities Included Free in Early Access */}
-        <section className="mb-20">
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-2">
+        {/* Enterprise Capabilities Included Free in Early Access */}
+        <section className="mb-8">
+          <div className="text-center max-w-2xl mx-auto mb-5">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold block mb-1">
               Full Production Access
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Why Jaktra Early Access Outperforms Trial-Locked Competitors
             </h2>
-            <p className="text-sm text-zinc-400 mt-2">
+            <p className="text-sm text-zinc-400 mt-1">
               Explore how our zero-friction model compares to opaque enterprise sales cycles.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {EARLY_ACCESS_PILLARS.map((pillar) => (
               <div
                 key={pillar.id}
-                className="rounded-2xl border border-white/[0.08] bg-[#111113] p-6 sm:p-7 flex flex-col justify-between hover:border-white/20 transition-all duration-300"
+                className="rounded-xl border border-white/[0.08] bg-[#111113] p-5 sm:p-6 flex flex-col justify-between hover:border-white/20 transition-all duration-300"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-4">
-                    <span className="text-xs font-mono font-bold text-[#b7d2f8] bg-[#b7d2f8]/10 px-2.5 py-1 rounded-full border border-[#b7d2f8]/20">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-xs font-mono font-bold text-[#b7d2f8]">
                       Pillar {pillar.number}
                     </span>
-                    <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider border border-white/[0.08] px-2 py-0.5 rounded">
+                    <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
                       {pillar.badge}
                     </span>
                   </div>
@@ -361,7 +315,7 @@ export function Pricing() {
                   <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 leading-snug">
                     {pillar.title}
                   </h3>
-                  <p className="text-xs text-zinc-400 mb-5 leading-relaxed font-medium">
+                  <p className="text-xs text-zinc-400 mb-4 leading-normal font-medium">
                     {pillar.subtitle}
                   </p>
 
@@ -375,28 +329,28 @@ export function Pricing() {
         </section>
 
         {/* Interactive Working Capital & DSO ROI Calculator */}
-        <section className="mb-20 rounded-2xl border border-white/[0.08] bg-[#111113] p-8 sm:p-10 shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 rounded-lg bg-[#b7d2f8]/10 text-[#b7d2f8] border border-[#b7d2f8]/20">
-              <Calculator className="w-5 h-5" />
+        <section className="mb-8 rounded-xl border border-white/[0.08] bg-[#111113] p-5 sm:p-7 shadow-lg">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2 rounded-lg bg-[#b7d2f8]/10 text-[#b7d2f8] border border-[#b7d2f8]/20">
+              <Calculator className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
                 Interactive DSO &amp; Working Capital ROI Calculator
               </h2>
-              <p className="text-sm text-zinc-400">
+              <p className="text-xs sm:text-sm text-zinc-400">
                 See how much trapped working capital Jaktra unlocks based on your monthly invoice volume.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Sliders */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
-                <div className="flex justify-between text-sm font-medium mb-2">
+                <div className="flex justify-between text-sm font-medium mb-1.5">
                   <label htmlFor={volumeSliderId} className="text-zinc-300">Monthly Invoiced Volume ($)</label>
-                  <span className="text-[#b7d2f8] font-mono text-base">${invoiceVolume.toLocaleString()}</span>
+                  <span className="text-[#b7d2f8] font-mono text-sm font-bold">${invoiceVolume.toLocaleString()}</span>
                 </div>
                 <input
                   id={volumeSliderId}
@@ -408,7 +362,7 @@ export function Pricing() {
                   onChange={(e) => setInvoiceVolume(Number(e.target.value))}
                   className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#b7d2f8]"
                 />
-                <div className="flex justify-between text-xs text-zinc-500 mt-1">
+                <div className="flex justify-between text-[11px] text-zinc-500 mt-1 font-mono">
                   <span>$50,000</span>
                   <span>$1,000,000</span>
                   <span>$2,000,000+</span>
@@ -416,9 +370,9 @@ export function Pricing() {
               </div>
 
               <div>
-                <div className="flex justify-between text-sm font-medium mb-2">
+                <div className="flex justify-between text-sm font-medium mb-1.5">
                   <label htmlFor={daysSliderId} className="text-zinc-300">Current Average Days Overdue</label>
-                  <span className="text-[#b7d2f8] font-mono text-base">{daysOverdue} days</span>
+                  <span className="text-[#b7d2f8] font-mono text-sm font-bold">{daysOverdue} days</span>
                 </div>
                 <input
                   id={daysSliderId}
@@ -430,72 +384,72 @@ export function Pricing() {
                   onChange={(e) => setDaysOverdue(Number(e.target.value))}
                   className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#b7d2f8]"
                 />
-                <div className="flex justify-between text-xs text-zinc-500 mt-1">
+                <div className="flex justify-between text-[11px] text-zinc-500 mt-1 font-mono">
                   <span>10 days</span>
                   <span>30 days</span>
                   <span>60 days</span>
                 </div>
               </div>
 
-              <div className="text-xs text-zinc-500 leading-relaxed">
+              <div className="text-[11px] text-zinc-500 leading-normal">
                 * Working capital recovery modeled using the standard treasury formula: Released Liquidity = (Annual Revenue / 365) × Days Accelerated, assuming an 8% cost of capital.
               </div>
             </div>
 
             {/* Results Callout Box */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0b] p-6 flex flex-col justify-between">
+            <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0b] p-5 flex flex-col justify-between">
               <div>
                 <div className="text-xs font-semibold text-[#b7d2f8] uppercase tracking-wider mb-1">
                   Modeled Working Capital Release
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-white font-mono mb-2">
+                <div className="text-3xl font-extrabold text-white font-mono mb-1">
                   ${releasedCash.toLocaleString()}
                 </div>
-                <div className="text-sm text-zinc-300 mb-6">
+                <div className="text-xs sm:text-sm text-zinc-300 mb-4">
                   in operating cash flow released from overdue receivables.
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 border-t border-white/[0.08] pt-4">
+                <div className="grid grid-cols-2 gap-4 border-t border-white/[0.08] pt-3">
                   <div>
                     <div className="text-xs text-zinc-400">Modeled DSO Compression</div>
-                    <div className="text-lg font-bold text-white font-mono">-{daysReduction} Days</div>
+                    <div className="text-base font-bold text-white font-mono">-{daysReduction} Days</div>
                   </div>
                   <div>
                     <div className="text-xs text-zinc-400">Annual Interest Saved</div>
-                    <div className="text-lg font-bold text-[#b7d2f8] font-mono">${capitalSavings.toLocaleString()}</div>
+                    <div className="text-base font-bold text-[#b7d2f8] font-mono">${capitalSavings.toLocaleString()}</div>
                   </div>
                 </div>
               </div>
 
               <Link
                 to="/register"
-                className="mt-6 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-white text-zinc-950 text-sm font-semibold hover:bg-zinc-200 transition-colors"
+                className="mt-4 flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-white text-zinc-950 text-xs sm:text-sm font-semibold hover:bg-zinc-200 transition-colors"
               >
                 <span>Unlock this cash with Jaktra</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
         </section>
 
         {/* FAQ Section with Outline Accordion */}
-        <section className="mb-20 max-w-3xl mx-auto">
-          <div className="text-center mb-8">
+        <section className="mb-8 max-w-3xl mx-auto">
+          <div className="text-center mb-5">
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Frequently Asked Questions
             </h2>
-            <p className="text-sm text-zinc-400 mt-2">
+            <p className="text-sm text-zinc-400 mt-1">
               Common questions about Jaktra&apos;s pricing, Early Access, and enterprise features.
             </p>
           </div>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#111113] p-6 sm:p-8 shadow-xl">
+          <div className="rounded-xl border border-white/[0.08] bg-[#111113] p-5 sm:p-7 shadow-lg">
             <Accordion type="single" variant="outline" defaultValue="faq-0" collapsible className="w-full">
               {faqs.map((faq, i) => (
                 <AccordionItem key={i} value={`faq-${i}`}>
-                  <AccordionTrigger className="text-left font-medium text-white hover:text-[#b7d2f8]">
+                  <AccordionTrigger className="text-left font-medium text-white hover:text-[#b7d2f8] py-3">
                     {faq.q}
                   </AccordionTrigger>
-                  <AccordionContent className="text-sm text-zinc-400 leading-relaxed">
+                  <AccordionContent className="text-sm text-zinc-400 leading-normal pb-4">
                     {faq.a}
                   </AccordionContent>
                 </AccordionItem>
@@ -505,25 +459,25 @@ export function Pricing() {
         </section>
 
         {/* Final CTA Banner */}
-        <section className="rounded-2xl border border-white/[0.08] bg-[#111113] p-8 sm:p-12 text-center relative overflow-hidden shadow-2xl">
+        <section className="rounded-xl border border-white/[0.08] bg-[#111113] p-6 sm:p-8 text-center relative overflow-hidden shadow-lg mb-8">
           <div className="relative z-10 max-w-2xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               Ready to Automate Your Accounts Receivable?
             </h2>
-            <p className="text-sm sm:text-base text-zinc-400 mb-6 leading-relaxed">
+            <p className="text-sm sm:text-base text-zinc-400 mb-5 leading-normal">
               Join hundreds of forward-thinking finance teams. Create your free account in under 60 seconds with zero credit card required.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-zinc-950 text-sm font-semibold hover:bg-zinc-200 transition-colors shadow-lg w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-white text-zinc-950 text-xs sm:text-sm font-semibold hover:bg-zinc-200 transition-colors shadow-sm w-full sm:w-auto"
               >
                 <span>Get started free</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/features"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-white/[0.12] bg-white/[0.04] text-white text-sm font-medium hover:bg-white/[0.08] transition-colors w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-white/[0.12] bg-white/[0.04] text-white text-xs sm:text-sm font-medium hover:bg-white/[0.08] transition-colors w-full sm:w-auto"
               >
                 <span>Explore all features</span>
               </Link>
