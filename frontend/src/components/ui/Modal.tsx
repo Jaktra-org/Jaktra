@@ -33,13 +33,50 @@ export function Modal({ isOpen, onClose, title, description, children, className
     };
   }, [isOpen, onClose]);
 
+  // Focus trap implementation
+  useEffect(() => {
+    if (!isOpen || !modalRef.current) return;
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (first) {
+      first.focus();
+    }
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || focusable.length === 0) return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150"
+    >
       <div
         ref={modalRef}
-        className={`bg-[#0f1011] border border-[#23252a] text-[#f7f8f8] w-full rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 ${className}`}
+        className={`bg-[#0f1011] border border-[#23252a] text-[#f7f8f8] w-full rounded-xl shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 ${className}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -51,7 +88,7 @@ export function Modal({ isOpen, onClose, title, description, children, className
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 -mr-1.5 text-[#8a8f98] hover:text-[#f7f8f8] rounded-lg hover:bg-[#18191c] transition-colors cursor-pointer"
+            className="p-1.5 -mr-1.5 text-[#8a8f98] hover:text-[#f7f8f8] rounded-lg hover:bg-[#141516] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5e69d1] transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="h-4 w-4" />
