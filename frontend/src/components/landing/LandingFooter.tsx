@@ -37,12 +37,12 @@ const columns: { heading: string; links: FooterLink[] }[] = [
   {
     heading: "Compare",
     links: [
-      { label: "HighRadius vs Jaktra", href: "/compare/highradius-vs-jaktra", internal: true },
-      { label: "Upflow Alternative", href: "/compare/upflow-alternative", internal: true },
-      { label: "Chaser Alternative", href: "/compare/chaser-alternative", internal: true },
-      { label: "PaidNice Alternative", href: "/compare/paidnice-alternative", internal: true },
-      { label: "Kolleno Alternative", href: "/compare/kolleno-alternative", internal: true },
-      { label: "All software alternatives →", href: "/compare", internal: true },
+      { label: "Jaktra vs HighRadius", href: "/compare/jaktra-vs-highradius", internal: true },
+      { label: "Jaktra vs Upflow", href: "/compare/jaktra-vs-upflow", internal: true },
+      { label: "Jaktra vs Chaser", href: "/compare/jaktra-vs-chaser", internal: true },
+      { label: "Jaktra vs PaidNice", href: "/compare/jaktra-vs-paidnice", internal: true },
+      { label: "Jaktra vs Kolleno", href: "/compare/jaktra-vs-kolleno", internal: true },
+      { label: "All software comparisons →", href: "/compare", internal: true },
     ],
   },
   {
@@ -102,12 +102,6 @@ export function LandingFooter() {
             <p style={{ fontSize: "12px", color: "#62666d", lineHeight: 1.6, maxWidth: "200px" }}>
               AI-native accounts-receivable automation for B2B finance teams.
             </p>
-            <div style={{ display: "flex", gap: "8px", marginTop: "16px", alignItems: "center" }}>
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#b7d2f8" }} />
-              <span style={{ fontFamily: "var(--mono, monospace)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>
-                AES-256 &amp; Strict Tenant Isolation
-              </span>
-            </div>
           </div>
 
           {/* Link columns */}
