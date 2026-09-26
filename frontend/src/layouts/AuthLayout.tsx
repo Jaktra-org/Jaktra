@@ -8,22 +8,22 @@ import { AuthLayoutContext } from "../contexts/AuthLayoutContext";
 export function AuthLayout({ children }: { children?: React.ReactNode }) {
   return (
     <AuthLayoutContext.Provider value={true}>
-      <section className="min-h-screen bg-[#050505] text-white antialiased [font-synthesis:none]">
+      <section className="min-h-screen bg-[#010102] text-[#f7f8f8] antialiased [font-synthesis:none]">
         <div className="grid min-h-screen lg:grid-cols-[0.94fr_1.06fr]">
           {/* Left Side - Form Container */}
-          <div className="flex min-h-[760px] items-center justify-center bg-[#0a0a0c] border-b lg:border-b-0 lg:border-r border-white/10 px-6 py-10 sm:px-10 lg:min-h-screen lg:px-14 lg:py-16 xl:px-20">
+          <div className="flex min-h-[760px] items-center justify-center bg-[#0f1011] border-b lg:border-b-0 lg:border-r border-[#23252a] px-6 py-10 sm:px-10 lg:min-h-screen lg:px-14 lg:py-16 xl:px-20">
             <div className="mx-auto w-full max-w-[460px]">
               {/* Brand Header */}
               <div className="flex items-center justify-between mb-7">
-                <Link to="/" className="inline-flex items-center gap-2.5 text-white no-underline">
+                <Link to="/" className="inline-flex items-center gap-2.5 text-[#f7f8f8] no-underline">
                   <img src={jaktraLogo} alt="Jaktra Logo" className="h-6 w-auto object-contain" />
                   <span className="font-semibold text-lg tracking-tight">Jaktra</span>
                 </Link>
                 <Link
                   to="/"
-                  className="text-xs text-white/50 hover:text-white transition-colors no-underline inline-flex items-center gap-1.5"
+                  className="text-xs text-[#8a8f98] hover:text-[#f7f8f8] transition-colors no-underline inline-flex items-center gap-1.5"
                 >
-                  <ArrowLeft className="w-3 h-3" />
+                  <ArrowLeft className="w-3.5 h-3.5" />
                   Back to Home
                 </Link>
               </div>
