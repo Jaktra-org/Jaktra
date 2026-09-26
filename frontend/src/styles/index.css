@@ -11,6 +11,11 @@
   --color-surface-3: #18191a;
   --color-surface-4: #191a1b;
 
+  /* Jaktra SEO Surface Ladder (Mapped to canonical DESIGN.md surfaces) */
+  --color-surface-seo-0: #010102;
+  --color-surface-seo-1: #0f1011;
+  --color-surface-seo-2: #141516;
+
   /* Linear Hairline Borders */
   --color-hairline: #23252a;
   --color-hairline-strong: #34343a;
@@ -26,9 +31,16 @@
 
   /* Jaktra Lavender Accent (DESIGN.md §primary) */
   --color-lavender: #5e6ad2;
+  --color-lavender-text: #606cd2; /* WCAG AA 4.54:1 contrast on #010102 */
   --color-lavender-hover: #828fff;
   --color-lavender-focus: #5e69d1;
   --color-lavender-muted: #7a7fad;
+
+  /* Jaktra Ice Blue Accent */
+  --color-ice-blue: #b7d2f8;
+  --color-ice-blue-hover: #cfe2fc;
+  --color-ice-blue-muted: #8bb4e8;
+  --color-ice-blue-subtle: rgba(183, 210, 248, 0.12);
 
   /* Linear Ink / Typography */
   --color-ink: #f7f8f8;
@@ -61,12 +73,17 @@
     --muted-foreground: #8a8f98;
     --border: #23252a;
     --hairline: #23252a;
-    --primary: #f7f8f8;
-    --primary-hover: #e1e4e8;
+    --primary: #5e6ad2;
+    --primary-hover: #828fff;
     /* Landing page lavender accent */
     --lavender: #5e6ad2;
     --lavender-hover: #828fff;
     --lavender-focus: #5e69d1;
+    /* SEO surfaces and accents mapped to canonical DESIGN.md */
+    --seo-canvas: #010102;
+    --seo-surface-1: #0f1011;
+    --seo-surface-2: #141516;
+    --ice-blue: #b7d2f8;
   }
 
   * {
@@ -80,6 +97,14 @@
     -webkit-font-smoothing: antialiased;
     color-scheme: dark;
   }
+}
+
+.seo-container {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 
 /* Style HTML native select options to prevent browser default gray/white dropdown menus */
