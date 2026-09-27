@@ -41,34 +41,29 @@ export function NotFound() {
       </header>
 
       {/* Main 404 Content */}
-      <main className="flex-1 flex items-center justify-center px-6 pt-28 pb-20 relative">
+      <main className="flex-1 flex items-center justify-center px-6 pt-16 pb-12 relative">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(183,210,248,0.08),transparent_70%)] pointer-events-none" />
 
         <div className="max-w-2xl w-full text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-zinc-400 text-xs font-mono mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
-            <span>404 ERROR • RESOURCE NOT FOUND</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-5 leading-tight">
-            Page Not Found
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
+            Page Not Found (404)
           </h1>
 
-          <p className="text-base sm:text-lg text-zinc-400 leading-relaxed max-w-xl mx-auto mb-10">
+          <p className="text-sm sm:text-base text-zinc-400 leading-normal max-w-lg mx-auto mb-6">
             The link you followed may be broken, the page may have been moved, or the URL might be misspelled.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
             <Link
               to="/"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-zinc-950 text-sm font-bold hover:bg-zinc-200 transition-colors shadow-lg"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-white text-zinc-950 text-xs sm:text-sm font-semibold hover:bg-zinc-200 transition-colors shadow-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Return to Homepage</span>
             </Link>
             <Link
               to="/features"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-white/[0.12] bg-white/[0.04] text-white text-sm font-medium hover:bg-white/[0.08] transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-white/[0.12] bg-white/[0.04] text-white text-xs sm:text-sm font-medium hover:bg-white/[0.08] transition-colors"
             >
               <Compass className="w-4 h-4 text-[#b7d2f8]" />
               <span>Explore Features</span>
