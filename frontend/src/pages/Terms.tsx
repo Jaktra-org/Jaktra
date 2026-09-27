@@ -288,6 +288,9 @@ export function Terms() {
               <p>
                 Jaktra and its licensors retain all intellectual property rights in and to the Service, including the software, design, trademarks, and documentation. Nothing in these Terms grants you any rights in the Jaktra brand, software, or intellectual property beyond the limited right to use the Service as described herein.
               </p>
+              <p style={{ marginTop: "12px" }}>
+                All third-party product names, logos, registered trademarks, and company brands referenced on our website or within comparative evaluation resources are the property of their respective trademark owners. Nominative reference to such brands does not imply endorsement, affiliation, sponsorship, or recommendation by those respective holders.
+              </p>
             </section>
 
             <section>
