@@ -1,48 +1,11 @@
 import { Link } from "react-router-dom";
-import { Mail, Clock, ShieldCheck, FileText, ArrowRight, MessageSquare, BookOpen, ExternalLink } from "lucide-react";
-import jaktraLogo from "../assets/jaktra_svg.svg";
+import { Clock, ShieldCheck, FileText, ArrowRight, MessageSquare, BookOpen, ExternalLink } from "lucide-react";
 import { SEOHead } from "../components/common/SEOHead";
 import { contactPageSchema, breadcrumbSchema } from "../components/common/seo-schemas";
 import { LandingFooter } from "../components/landing/LandingFooter";
+import { GlobalNav } from "../components/common/GlobalNav";
 
-function HeaderNav() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
-          <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
-          <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
-        </Link>
-        <div className="flex items-center gap-4 sm:gap-6">
-          <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Pricing
-          </Link>
-          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Features
-          </Link>
-          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Use Cases
-          </Link>
-          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Compare
-          </Link>
-          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Resources
-          </Link>
-          <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
-          >
-            Get started free
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+
 
 export function Contact() {
   return (
@@ -54,7 +17,7 @@ export function Contact() {
         jsonLd={[contactPageSchema, breadcrumbSchema([{ name: "Contact", path: "/contact" }])]}
       />
 
-      <HeaderNav />
+      <GlobalNav />
 
       <main className="pt-24 pb-20 px-6 max-w-6xl mx-auto">
         {/* Breadcrumb Navigation */}
@@ -73,35 +36,31 @@ export function Contact() {
         </nav>
 
         {/* Hero Section */}
-        <div className="max-w-3xl mb-16 pt-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-zinc-300 text-xs font-mono mb-6">
-            <Mail className="w-3.5 h-3.5 text-[#b7d2f8]" />
-            <span>Support &amp; Communications Hub</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-6 leading-[1.15]">
+        <div className="max-w-3xl mb-8 pt-2">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3 leading-tight">
             We&apos;re Here to Help Your Finance Team
           </h1>
-          <p className="text-base sm:text-lg text-zinc-400 leading-relaxed">
+          <p className="text-sm sm:text-base text-zinc-400 leading-normal">
             Have questions about connecting your billing stack, configuring 5-stage cadences, or security architecture? Reach out directly to our team.
           </p>
         </div>
 
         {/* Contact Channels Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="p-7 rounded-2xl bg-[#111113] border border-white/[0.08] flex flex-col justify-between">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="p-5 sm:p-6 rounded-xl bg-[#111113] border border-white/[0.08] flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-xl bg-[#b7d2f8]/10 border border-[#b7d2f8]/20 flex items-center justify-center text-[#b7d2f8] mb-5">
-                <MessageSquare className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-[#b7d2f8]/10 border border-[#b7d2f8]/20 flex items-center justify-center text-[#b7d2f8] mb-4">
+                <MessageSquare className="w-4 h-4" />
               </div>
-              <h2 className="text-lg font-bold text-white mb-2">Customer &amp; Product Support</h2>
-              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+              <h2 className="text-base font-bold text-white mb-1.5">Customer &amp; Product Support</h2>
+              <p className="text-xs text-zinc-400 leading-normal mb-5">
                 Assistance with account onboarding, CSV invoice sync, email integration (SendGrid/Resend/SMTP), and debtor portal management.
               </p>
             </div>
             <div>
               <a
                 href="mailto:support@jaktra.site?subject=Product%20Support%20Inquiry"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-[#b7d2f8] transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white hover:text-[#b7d2f8] transition-colors"
               >
                 <span>support@jaktra.site</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -109,20 +68,20 @@ export function Contact() {
             </div>
           </div>
 
-          <div className="p-7 rounded-2xl bg-[#111113] border border-white/[0.08] flex flex-col justify-between">
+          <div className="p-5 sm:p-6 rounded-xl bg-[#111113] border border-white/[0.08] flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-5">
-                <ShieldCheck className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
+                <ShieldCheck className="w-4 h-4" />
               </div>
-              <h2 className="text-lg font-bold text-white mb-2">Security &amp; Compliance</h2>
-              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+              <h2 className="text-base font-bold text-white mb-1.5">Security &amp; Compliance</h2>
+              <p className="text-xs text-zinc-400 leading-normal mb-5">
                 Technical inquiries regarding our tenant isolation, cryptographic webhook signatures, encryption at rest, or responsible vulnerability disclosure.
               </p>
             </div>
             <div>
               <a
                 href="mailto:support@jaktra.site?subject=Security%20Inquiry"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-[#b7d2f8] transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white hover:text-[#b7d2f8] transition-colors"
               >
                 <span>support@jaktra.site</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -130,20 +89,20 @@ export function Contact() {
             </div>
           </div>
 
-          <div className="p-7 rounded-2xl bg-[#111113] border border-white/[0.08] flex flex-col justify-between">
+          <div className="p-5 sm:p-6 rounded-xl bg-[#111113] border border-white/[0.08] flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-5">
-                <FileText className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4">
+                <FileText className="w-4 h-4" />
               </div>
-              <h2 className="text-lg font-bold text-white mb-2">Privacy &amp; Data Subject Rights</h2>
-              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+              <h2 className="text-base font-bold text-white mb-1.5">Privacy &amp; Data Subject Rights</h2>
+              <p className="text-xs text-zinc-400 leading-normal mb-5">
                 Requests relating to GDPR data rights, account deletion, or Data Processing Addenda (DPA) requests as detailed in our Privacy Policy.
               </p>
             </div>
             <div>
               <a
                 href="mailto:support@jaktra.site?subject=Data%20Privacy%20Request"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-[#b7d2f8] transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white hover:text-[#b7d2f8] transition-colors"
               >
                 <span>support@jaktra.site</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -153,8 +112,8 @@ export function Contact() {
         </section>
 
         {/* Operating Hours & Self-Service Info */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-          <div className="p-8 rounded-2xl bg-[#111113] border border-white/[0.08]">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="p-5 sm:p-6 rounded-xl bg-[#111113] border border-white/[0.08]">
             <div className="flex items-center gap-3 mb-4">
               <Clock className="w-5 h-5 text-[#b7d2f8]" />
               <h2 className="text-base font-bold text-white">Support Availability &amp; Response SLA</h2>
