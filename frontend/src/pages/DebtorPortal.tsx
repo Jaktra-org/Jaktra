@@ -29,13 +29,16 @@ function DebtorPortalInner() {
   });
 
   const [payError, setPayError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const payMutation = useMutation({
     mutationFn: () => portalService.payInvoice(token!),
     onSuccess: (data) => {
+      setIsRedirecting(true);
       window.location.href = data.paymentUrl;
     },
     onError: () => {
+      setIsRedirecting(false);
       setPayError("Something went wrong generating your payment link, please try again.");
     }
   });
@@ -181,7 +184,7 @@ function DebtorPortalInner() {
         </div>
 
         {/* Unified Vertical Portal Card */}
-        <div className="bg-[#0f1011] border border-[#23252a] rounded-2xl p-6 space-y-6 shadow-xl">
+        <div className="bg-[#0f1011] border border-[#23252a] rounded-xl p-6 space-y-6 shadow-xl">
           
           {/* Top: Invoice Summary Hero */}
           <div className="space-y-4">
@@ -450,19 +453,29 @@ function DebtorPortalInner() {
                   ) : (
                     <div className="space-y-3.5">
                       <div>
-                        <label className="block text-xs font-medium text-[#8a8f98] mb-1">Reason for dispute</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label htmlFor="dispute-reason-input" className="block text-xs font-medium text-[#8a8f98]">
+                            Reason for dispute <span className="text-red-400">*</span>
+                          </label>
+                          <span className="text-[11px] text-[#8a8f98] font-mono">
+                            {disputeReason.length} / 500
+                          </span>
+                        </div>
                         <textarea
+                          id="dispute-reason-input"
                           value={disputeReason}
-                          onChange={(e) => setDisputeReason(e.target.value)}
+                          onChange={(e) => setDisputeReason(e.target.value.slice(0, 500))}
                           rows={4}
-                          placeholder="Please explain the reason for raising a dispute..."
-                          className="w-full bg-[#010102] border border-[#23252a] rounded-xl px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#555761] focus:ring-1 focus:ring-white/20 transition-colors"
+                          maxLength={500}
+                          aria-required="true"
+                          placeholder="Please explain the reason for raising a dispute (invoice discrepancy, goods not received, etc.)..."
+                          className="w-full bg-[#010102] border border-[#23252a] rounded-lg px-3 py-2 text-xs text-[#f7f8f8] placeholder-[#8a8f98] focus:outline-none focus:border-[#5e6ad2] focus:ring-2 focus:ring-[#5e69d1]/40 transition-colors"
                         />
                       </div>
 
                       {disputeError && (
-                        <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex items-start space-x-2.5 text-red-400">
-                          <AlertCircle className="h-4 h-4 shrink-0 mt-0.5" />
+                        <div className="bg-red-950/40 border border-red-900/50 rounded-lg p-3 flex items-start space-x-2.5 text-red-400">
+                          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                           <p className="text-xs">{disputeError}</p>
                         </div>
                       )}
@@ -472,12 +485,12 @@ function DebtorPortalInner() {
                           setDisputeError(null);
                           disputeMutation.mutate();
                         }}
-                        disabled={disputeMutation.isPending}
-                        className="w-full py-2.5 px-4 rounded-xl bg-[#f7f8f8] hover:bg-[#e1e4e8] active:bg-[#d0d6e0] text-[#010102] font-semibold text-xs transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-40 cursor-pointer shadow-xs"
+                        disabled={disputeMutation.isPending || !disputeReason.trim()}
+                        className="w-full py-2.5 px-4 rounded-lg bg-[#5e6ad2] hover:bg-[#828fff] active:bg-[#5e69d1] text-white font-medium text-xs transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-40 cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5e69d1]"
                       >
                         {disputeMutation.isPending ? (
                           <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#010102]" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
                             <span>Submitting Dispute...</span>
                           </>
                         ) : (
@@ -533,6 +546,19 @@ function DebtorPortalInner() {
         </div>
 
       </div>
+
+      {/* Gateway Redirection Modal Overlay */}
+      {isRedirecting && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+          <div className="bg-[#0f1011] border border-[#23252a] rounded-xl p-6 max-w-sm w-full flex flex-col items-center shadow-2xl">
+            <Loader2 className="h-8 w-8 text-[#5e6ad2] animate-spin mb-4" />
+            <h3 className="text-sm font-semibold text-[#f7f8f8]">Connecting to Secure Gateway</h3>
+            <p className="text-xs text-[#8a8f98] mt-1.5 leading-relaxed">
+              Redirecting to encrypted payment terminal. Please do not refresh or close this window.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
