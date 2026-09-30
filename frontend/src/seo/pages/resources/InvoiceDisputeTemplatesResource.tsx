@@ -14,50 +14,13 @@ import {
   ChevronRight,
   Scale,
 } from "lucide-react";
-import jaktraLogo from "../assets/jaktra_svg.svg";
-import { SEOHead } from "../components/common/SEOHead";
-import { invoiceDisputeTemplatesSchema, breadcrumbSchema } from "../components/common/seo-schemas";
-import { LandingFooter } from "../components/landing/LandingFooter";
+import { SEOHead } from "@/seo/components/SEOHead";
+import { invoiceDisputeTemplatesSchema, breadcrumbSchema } from "@/seo/schemas";
+import { LandingFooter } from "@/components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { GlobalNav } from "@/components/common/GlobalNav";
 
-function HeaderNav() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
-          <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
-          <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
-        </Link>
-        <div className="flex items-center gap-4 sm:gap-6">
-          <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Pricing
-          </Link>
-          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Features
-          </Link>
-          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Use Cases
-          </Link>
-          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Compare
-          </Link>
-          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Resources
-          </Link>
-          <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
-          >
-            Get started free
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+
 
 interface DisputeTemplate {
   id: string;
@@ -322,9 +285,9 @@ export default function InvoiceDisputeTemplatesResource() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white font-sans antialiased selection:bg-white/20 selection:text-white">
+    <div className="min-h-screen bg-[#010102] text-[#f7f8f8] font-sans antialiased selection:bg-[#5e6ad2]/30 selection:text-white">
       <SEOHead
-        title="How to Respond to a Disputed Invoice: Free Email Templates | Jaktra"
+        title="Disputed Invoice Response Email Templates | Jaktra"
         description="How to respond when a client disputes an invoice. Free email templates for billable hours pushback, PO mismatches, and how AI triage freezes dunning."
         canonicalPath="/resources/invoice-dispute-response-templates"
         jsonLd={[
@@ -336,7 +299,7 @@ export default function InvoiceDisputeTemplatesResource() {
         ]}
       />
 
-      <HeaderNav />
+      <GlobalNav />
 
       <main className="pt-24 pb-20 px-4 sm:px-6 max-w-6xl mx-auto">
         {/* Breadcrumb Navigation */}
@@ -353,17 +316,12 @@ export default function InvoiceDisputeTemplatesResource() {
         </nav>
 
         {/* Hero Section */}
-        <header className="mb-14 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-medium text-amber-300 mb-6">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span>Operational Playbook & Response Library</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+        <header className="mb-8 pt-2 text-center max-w-3xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
             How to Respond to a Disputed Invoice: Free Email Templates & Resolution Guide
           </h1>
 
-          <p className="text-base sm:text-lg text-zinc-400 leading-relaxed mb-6">
+          <p className="text-sm sm:text-base text-zinc-400 leading-normal mb-4 max-w-2xl mx-auto">
             When a client disputes an invoice, a defensive reaction can destroy a profitable relationship—while continuing to send automated payment reminders infuriates them. Here are 5 battle-tested, word-for-word response templates and a step-by-step resolution framework to protect your revenue and client goodwill.
           </p>
 
@@ -433,8 +391,8 @@ export default function InvoiceDisputeTemplatesResource() {
                     onClick={() => setSelectedTemplate(tmpl)}
                     className={`w-full text-left p-4 rounded-xl border transition-all duration-150 flex flex-col gap-1.5 ${
                       isSelected
-                        ? "bg-[#111113] border-white/20 text-white shadow-lg shadow-black/40 ring-1 ring-white/10"
-                        : "bg-[#0a0a0b] hover:bg-[#111113]/60 border-white/[0.06] text-zinc-400 hover:text-zinc-200"
+                        ? "bg-[#141516] border-[#5e6ad2] text-white shadow-lg ring-1 ring-[#5e6ad2]"
+                        : "bg-[#0f1011] hover:bg-[#141516] border-[#23252a] text-[#8a8f98] hover:text-[#f7f8f8]"
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -569,7 +527,7 @@ export default function InvoiceDisputeTemplatesResource() {
             })}
 
             {/* Final Summary Card */}
-            <div className="p-6 rounded-xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.1] flex flex-col justify-center">
+            <div className="p-6 rounded-xl bg-[#0e0f11] border border-white/[0.1] flex flex-col justify-center">
               <h3 className="text-base font-semibold text-white mb-2">Automate this with Jaktra</h3>
               <p className="text-xs text-zinc-400 leading-relaxed mb-4">
                 Instead of manually monitoring replies and coordinating timesheets, Jaktra’s NLP agent intercepts disputes, freezes dunning, and drafts verified responses automatically.
