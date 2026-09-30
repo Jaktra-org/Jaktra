@@ -4,60 +4,19 @@ import {
   ArrowRight,
   BookOpen,
   Clock,
-  Sparkles,
   List,
   ExternalLink,
   AlertCircle,
   Zap,
   CheckCircle2,
 } from "lucide-react";
-import jaktraLogo from "../assets/jaktra_svg.svg";
-import { SEOHead } from "../components/common/SEOHead";
-import { dsoGuideSchema, dsoGuideFaqSchema, breadcrumbSchema } from "../components/common/seo-schemas";
-import { LandingFooter } from "../components/landing/LandingFooter";
+import { SEOHead } from "@/seo/components/SEOHead";
+import { dsoGuideSchema, dsoGuideFaqSchema, breadcrumbSchema } from "@/seo/schemas";
+import { LandingFooter } from "@/components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { GlobalNav } from "@/components/common/GlobalNav";
 
-function HeaderNav() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
-          <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
-          <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
-        </Link>
-        <div className="flex items-center gap-4 sm:gap-6">
-          <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Pricing
-          </Link>
-          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Features
-          </Link>
-          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Use Cases
-          </Link>
-          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Compare
-          </Link>
-          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Resources
-          </Link>
-          <Link
-            to="/login"
-            className="text-xs sm:text-sm text-zinc-300 hover:text-white transition-colors"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
-          >
-            Get started free
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+
 
 export function DSOGuide() {
   // Calculator state
@@ -246,7 +205,7 @@ export function DSOGuide() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-[#f5f5f5] font-sans selection:bg-[#b7d2f8]/20 selection:text-white antialiased">
+    <div className="min-h-screen bg-[#010102] text-[#f7f8f8] font-sans antialiased selection:bg-[#5e6ad2]/30 selection:text-white">
       <SEOHead
         title="How to Reduce DSO: Formula & 5 Reduction Tactics — Jaktra"
         description="A financial guide on calculating DSO accurately, comparing Simple vs. Countback methods, benchmarking B2B industries, and shortening collection cycles."
@@ -262,7 +221,7 @@ export function DSOGuide() {
         ]}
       />
 
-      <HeaderNav />
+      <GlobalNav />
 
       <main className="pt-28 sm:pt-32 pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full relative">
         {/* Subtle Ambient Glow */}
@@ -349,9 +308,8 @@ export function DSOGuide() {
 
             {/* Action Card */}
             <div className="p-5 rounded-xl bg-[#111113] border border-white/[0.08]">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#b7d2f8]/10 text-[#b7d2f8] border border-[#b7d2f8]/20 mb-3">
-                <Sparkles className="w-3 h-3" />
-                <span>Free Early Access</span>
+              <div className="text-[11px] font-mono text-[#b7d2f8] font-semibold mb-2">
+                Free Early Access
               </div>
               <h3 className="text-sm font-bold text-white mb-1.5">
                 Automate Invoice Follow-Ups
@@ -378,7 +336,7 @@ export function DSOGuide() {
                 What is Days Sales Outstanding (DSO)?
               </h2>
 
-              <div className="border-l-2 border-[#b7d2f8] pl-5 py-2 my-4 bg-gradient-to-r from-[#b7d2f8]/5 to-transparent">
+              <div className="border-l-2 border-[#b7d2f8] pl-5 py-2 my-4 bg-[#0e0f11]">
                 <p className="text-base text-zinc-200 leading-relaxed">
                   <strong>Days Sales Outstanding (DSO)</strong> is a financial metric that measures the average number of calendar days it takes for a company to collect payment after completing a B2B credit sale.
                 </p>
@@ -402,15 +360,15 @@ export function DSOGuide() {
               </div>
 
               {/* Calculator Box */}
-              <div className="rounded-xl border border-white/[0.08] bg-[#111113] p-5 sm:p-6 space-y-5">
+              <div className="rounded-xl border border-[#23252a] bg-[#0f1011] p-5 sm:p-6 space-y-5">
                 {/* Method Switcher */}
-                <div className="flex items-center gap-2 p-1 rounded-lg bg-[#0a0a0b] border border-white/[0.06] w-fit">
+                <div className="flex items-center gap-2 p-1 rounded-lg bg-[#141516] border border-[#23252a] w-fit">
                   <button
                     onClick={() => setCalcMethod("simple")}
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                       calcMethod === "simple"
-                        ? "bg-white text-zinc-950 shadow-sm"
-                        : "text-zinc-400 hover:text-white"
+                        ? "bg-[#5e6ad2] text-white shadow-sm"
+                        : "text-[#8a8f98] hover:text-white"
                     }`}
                   >
                     Simple DSO (Standard)
@@ -419,8 +377,8 @@ export function DSOGuide() {
                     onClick={() => setCalcMethod("countback")}
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                       calcMethod === "countback"
-                        ? "bg-white text-zinc-950 shadow-sm"
-                        : "text-zinc-400 hover:text-white"
+                        ? "bg-[#5e6ad2] text-white shadow-sm"
+                        : "text-[#8a8f98] hover:text-white"
                     }`}
                   >
                     Countback Method (Monthly)
@@ -441,7 +399,7 @@ export function DSOGuide() {
                           type="number"
                           value={arBalance}
                           onChange={(e) => setArBalance(Math.max(0, Number(e.target.value)))}
-                          className="w-full bg-[#0a0a0b] border border-white/[0.1] rounded-lg pl-7 pr-3 py-2 text-white font-mono text-xs focus:border-[#b7d2f8]/50 focus:outline-none transition-colors"
+                          className="w-full bg-[#141516] border border-[#23252a] rounded-lg pl-7 pr-3 py-2 text-white font-mono text-xs focus:border-[#5e6ad2] focus:outline-none transition-colors"
                         />
                       </div>
                       <span className="text-[10px] text-zinc-500 block">Current total unpaid trade balance</span>
@@ -458,7 +416,7 @@ export function DSOGuide() {
                           type="number"
                           value={creditSales}
                           onChange={(e) => setCreditSales(Math.max(0, Number(e.target.value)))}
-                          className="w-full bg-[#0a0a0b] border border-white/[0.1] rounded-lg pl-7 pr-3 py-2 text-white font-mono text-xs focus:border-[#b7d2f8]/50 focus:outline-none transition-colors"
+                          className="w-full bg-[#141516] border border-[#23252a] rounded-lg pl-7 pr-3 py-2 text-white font-mono text-xs focus:border-[#5e6ad2] focus:outline-none transition-colors"
                         />
                       </div>
                       <span className="text-[10px] text-zinc-500 block">Total gross billings across period</span>
@@ -479,8 +437,8 @@ export function DSOGuide() {
                             onClick={() => setPeriodDays(p.days)}
                             className={`py-1.5 px-2 rounded-lg text-xs font-mono border transition-colors ${
                               periodDays === p.days
-                                ? "bg-[#b7d2f8]/10 text-[#b7d2f8] border-[#b7d2f8]/30 font-semibold"
-                                : "bg-[#0a0a0b] text-zinc-400 border-white/[0.08] hover:border-white/[0.2]"
+                                ? "bg-[#5e6ad2]/10 text-[#606cd2] border-[#5e6ad2]/30 font-semibold"
+                                : "bg-[#141516] text-[#8a8f98] border-[#23252a] hover:border-[#5e6ad2]/50"
                             }`}
                           >
                             {p.label}
@@ -502,7 +460,7 @@ export function DSOGuide() {
                           type="number"
                           value={arBalance}
                           onChange={(e) => setArBalance(Math.max(0, Number(e.target.value)))}
-                          className="w-full bg-[#0a0a0b] border border-white/[0.1] rounded-lg pl-7 pr-3 py-2 text-white font-mono text-xs focus:border-[#b7d2f8]/50 focus:outline-none transition-colors"
+                          className="w-full bg-[#141516] border border-[#23252a] rounded-lg pl-7 pr-3 py-2 text-white font-mono text-xs focus:border-[#5e6ad2] focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
@@ -516,7 +474,7 @@ export function DSOGuide() {
                         type="number"
                         value={month1Sales}
                         onChange={(e) => setMonth1Sales(Math.max(0, Number(e.target.value)))}
-                        className="w-full bg-[#0a0a0b] border border-white/[0.1] rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-[#b7d2f8]/50 focus:outline-none"
+                        className="w-full bg-[#141516] border border-[#23252a] rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-[#5e6ad2] focus:outline-none"
                       />
                     </div>
 
@@ -529,7 +487,7 @@ export function DSOGuide() {
                         type="number"
                         value={month2Sales}
                         onChange={(e) => setMonth2Sales(Math.max(0, Number(e.target.value)))}
-                        className="w-full bg-[#0a0a0b] border border-white/[0.1] rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-[#b7d2f8]/50 focus:outline-none"
+                        className="w-full bg-[#141516] border border-[#23252a] rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-[#5e6ad2] focus:outline-none"
                       />
                     </div>
 
@@ -542,21 +500,21 @@ export function DSOGuide() {
                         type="number"
                         value={month3Sales}
                         onChange={(e) => setMonth3Sales(Math.max(0, Number(e.target.value)))}
-                        className="w-full bg-[#0a0a0b] border border-white/[0.1] rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-[#b7d2f8]/50 focus:outline-none"
+                        className="w-full bg-[#141516] border border-[#23252a] rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-[#5e6ad2] focus:outline-none"
                       />
                     </div>
                   </div>
                 )}
 
                 {/* Compact, Clean Result Display */}
-                <div className="p-4 rounded-xl bg-[#0a0a0b] border border-white/[0.08] space-y-3">
+                <div className="p-4 rounded-xl bg-[#141516] border border-[#23252a] space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <span className="text-[11px] text-zinc-400 uppercase tracking-wider font-medium block">
+                      <span className="text-[11px] text-[#8a8f98] uppercase tracking-wider font-medium block">
                         {calcMethod === "simple" ? "Simple DSO Result" : "Countback DSO Result"}
                       </span>
                       <div className="text-2xl sm:text-3xl font-bold text-white font-mono mt-0.5">
-                        {activeDso} <span className="text-base font-normal text-zinc-400">Days</span>
+                        {activeDso} <span className="text-base font-normal text-[#8a8f98]">Days</span>
                       </div>
                     </div>
 
@@ -565,7 +523,7 @@ export function DSOGuide() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-white/[0.06] text-xs text-zinc-400 space-y-1">
+                  <div className="pt-2 border-t border-[#23252a] text-xs text-[#8a8f98] space-y-1">
                     <p>
                       <strong>Benchmark Context:</strong> On standard Net 30 payment terms, your business collects payment an average of{" "}
                       <span className="text-white font-mono font-medium">
@@ -597,22 +555,22 @@ export function DSOGuide() {
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl border border-white/[0.08] bg-[#111113] space-y-2">
+                <div className="p-4 rounded-xl border border-[#23252a] bg-[#0f1011] space-y-2">
                   <div className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Simple DSO</div>
-                  <div className="p-2 rounded bg-[#0a0a0b] font-mono text-xs text-zinc-300 border border-white/[0.06]">
+                  <div className="p-2 rounded bg-[#010102] font-mono text-xs text-zinc-300 border border-[#23252a]">
                     DSO = (Ending AR ÷ Period Sales) × Days
                   </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
+                  <p className="text-xs text-[#8a8f98] leading-relaxed">
                     Averages total sales across the entire period. If your company closes a huge volume of sales at the end of the quarter, those fresh invoices are not yet due, but Simple DSO will treat them as collection delay, artificially inflating your number.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl border border-[#b7d2f8]/20 bg-[#111113] space-y-2">
-                  <div className="text-xs font-bold text-[#b7d2f8] uppercase tracking-wider">Countback Method</div>
-                  <div className="p-2 rounded bg-[#0a0a0b] font-mono text-xs text-[#b7d2f8] border border-white/[0.06]">
+                <div className="p-4 rounded-xl border border-[#23252a] bg-[#0f1011] space-y-2">
+                  <div className="text-xs font-bold text-[#606cd2] uppercase tracking-wider">Countback Method</div>
+                  <div className="p-2 rounded bg-[#010102] font-mono text-xs text-[#606cd2] border border-[#23252a]">
                     Exhausts AR month-by-month backward
                   </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
+                  <p className="text-xs text-[#8a8f98] leading-relaxed">
                     Walks backward through trailing monthly sales in 30-day blocks. Outstanding balances are matched against the specific months in which they originated, providing an unskewed reflection of true collection efficiency.
                   </p>
                 </div>
@@ -787,7 +745,7 @@ export function DSOGuide() {
             </div>
 
             {/* Section 7: Final Conversion Module */}
-            <section className="p-8 sm:p-10 rounded-2xl bg-gradient-to-b from-[#111113] to-[#0a0a0b] border border-white/[0.08] text-center space-y-4">
+            <section className="p-8 sm:p-10 rounded-2xl bg-[#0e0f11] border border-white/[0.08] text-center space-y-4">
               <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 Accelerate Cash Collections with Jaktra
               </h2>
