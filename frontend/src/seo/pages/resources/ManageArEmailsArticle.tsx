@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   ChevronRight,
   ExternalLink,
-  Sparkles,
   User,
   Calendar,
   Layers,
@@ -13,50 +12,13 @@ import {
   Server,
   ArrowRight,
 } from "lucide-react";
-import jaktraLogo from "../assets/jaktra_svg.svg";
-import { SEOHead } from "../components/common/SEOHead";
-import { manageArEmailsSchema, breadcrumbSchema } from "../components/common/seo-schemas";
-import { LandingFooter } from "../components/landing/LandingFooter";
+import { SEOHead } from "@/seo/components/SEOHead";
+import { manageArEmailsSchema, breadcrumbSchema } from "@/seo/schemas";
+import { LandingFooter } from "@/components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { GlobalNav } from "@/components/common/GlobalNav";
 
-function HeaderNav() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
-          <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
-          <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
-        </Link>
-        <div className="flex items-center gap-4 sm:gap-6">
-          <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Pricing
-          </Link>
-          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Features
-          </Link>
-          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Use Cases
-          </Link>
-          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Compare
-          </Link>
-          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Resources
-          </Link>
-          <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
-          >
-            Get started free
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+
 
 const FAQS = [
   {
@@ -83,9 +45,9 @@ const FAQS = [
 
 export default function ManageArEmailsArticle() {
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white font-sans antialiased selection:bg-white/20 selection:text-white">
+    <div className="min-h-screen bg-[#010102] text-[#f7f8f8] font-sans antialiased selection:bg-[#5e6ad2]/30 selection:text-white">
       <SEOHead
-        title="Accounts Receivable Shared Inbox: Gmail & Outlook Setup | Jaktra"
+        title="Accounts Receivable Shared Inbox Setup Guide | Jaktra"
         description="Step-by-step IT and finance guide to configuring an AR shared mailbox in Google Workspace and M365, establishing 4-tier triage, and stopping collision."
         canonicalPath="/resources/how-to-manage-accounts-receivable-emails"
         jsonLd={[
@@ -97,7 +59,7 @@ export default function ManageArEmailsArticle() {
         ]}
       />
 
-      <HeaderNav />
+      <GlobalNav />
 
       <main className="pt-24 pb-20 px-4 sm:px-6 max-w-4xl mx-auto">
         {/* Breadcrumb Navigation */}
@@ -114,17 +76,12 @@ export default function ManageArEmailsArticle() {
         </nav>
 
         {/* Article Header */}
-        <header className="mb-10 pb-8 border-b border-white/[0.08]">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono font-medium text-blue-300 mb-4">
-            <Layers className="w-3.5 h-3.5 text-blue-400" />
-            <span>IT &amp; Finance Operations Guide</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+        <header className="mb-6 pb-6 border-b border-white/[0.08]">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
             How to Set Up an Accounts Receivable Shared Inbox in Gmail &amp; Outlook (SLA Matrix &amp; Label Architecture)
           </h1>
 
-          <p className="text-lg sm:text-xl text-zinc-300 leading-relaxed mb-6 font-normal">
+          <p className="text-base sm:text-lg text-zinc-300 leading-normal mb-4 font-normal">
             When customer billing inquiries arrive at <code className="text-[#b7d2f8] bg-white/[0.06] px-1.5 py-0.5 rounded font-mono text-sm">ar@company.com</code> or <code className="text-[#b7d2f8] bg-white/[0.06] px-1.5 py-0.5 rounded font-mono text-sm">billing@company.com</code>, lack of structure causes duplicate outreach, missed pay run deadlines, and customer disputes. Here is the exact operational framework to configure your mailbox, build a 4-tier triage hierarchy, and enforce a 4-hour SLA.
           </p>
 
@@ -408,13 +365,8 @@ export default function ManageArEmailsArticle() {
           </section>
 
           {/* Section 5: How Jaktra Automates Shared Inboxes */}
-          <section className="p-8 rounded-2xl bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.08] relative overflow-hidden">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-medium text-blue-300 mb-4">
-              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-              <span>Programmatic Receivables Automation</span>
-            </div>
-
-            <h2 className="text-2xl font-bold text-white mb-3">
+          <section className="p-6 sm:p-8 rounded-xl bg-[#0e0f11] border border-white/[0.08] relative overflow-hidden">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
               How Jaktra Replaces Manual Shared Inbox Triage
             </h2>
 
