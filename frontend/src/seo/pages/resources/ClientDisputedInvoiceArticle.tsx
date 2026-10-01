@@ -6,55 +6,17 @@ import {
   Clock,
   ChevronRight,
   ExternalLink,
-  Sparkles,
   Calendar,
   User,
   PauseCircle,
 } from "lucide-react";
-import jaktraLogo from "../assets/jaktra_svg.svg";
-import { SEOHead } from "../components/common/SEOHead";
-import { clientDisputedInvoiceSchema, breadcrumbSchema } from "../components/common/seo-schemas";
-import { LandingFooter } from "../components/landing/LandingFooter";
+import { SEOHead } from "@/seo/components/SEOHead";
+import { clientDisputedInvoiceSchema, breadcrumbSchema } from "@/seo/schemas";
+import { LandingFooter } from "@/components/landing/LandingFooter";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { GlobalNav } from "@/components/common/GlobalNav";
 
-function HeaderNav() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0a0b]/90 backdrop-blur-md border-b border-white/[0.08]">
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 text-decoration-none">
-          <img src={jaktraLogo} alt="Jaktra" width={24} height={24} className="h-6 w-6 block" />
-          <span className="font-semibold text-white text-lg tracking-tight font-sans">Jaktra</span>
-        </Link>
-        <div className="flex items-center gap-4 sm:gap-6">
-          <Link to="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Pricing
-          </Link>
-          <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Features
-          </Link>
-          <Link to="/use-cases" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Use Cases
-          </Link>
-          <Link to="/compare" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Compare
-          </Link>
-          <Link to="/resources" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:block">
-            Resources
-          </Link>
-          <Link to="/login" className="text-sm text-zinc-300 hover:text-white transition-colors">
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="text-xs sm:text-sm font-medium bg-white text-zinc-950 px-3.5 py-1.5 rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
-          >
-            Get started free
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+
 
 const FAQS = [
   {
@@ -107,7 +69,7 @@ Best regards,
 {senderCompany}`;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white font-sans antialiased selection:bg-white/20 selection:text-white">
+    <div className="min-h-screen bg-[#010102] text-[#f7f8f8] font-sans antialiased selection:bg-[#5e6ad2]/30 selection:text-white">
       <SEOHead
         title="Client Disputed an Invoice? Step-by-Step Guide — Jaktra"
         description="What to do when a customer disputes an invoice. How to immediately freeze reminders, diagnose root causes, negotiate partial payments, and resolve terms."
@@ -121,11 +83,11 @@ Best regards,
         ]}
       />
 
-      <HeaderNav />
+      <GlobalNav />
 
-      <main className="pt-24 pb-20 px-4 sm:px-6 max-w-4xl mx-auto">
+      <main className="pt-16 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
         {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-xs text-zinc-400">
+        <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-2 text-xs text-zinc-400">
           <Link to="/" className="hover:text-white transition-colors">
             Home
           </Link>
@@ -138,12 +100,12 @@ Best regards,
         </nav>
 
         {/* Article Header */}
-        <header className="mb-10 pb-8 border-b border-white/[0.08]">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+        <header className="mb-6 pb-6 border-b border-white/[0.08]">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
             Client Disputed an Invoice? What to Do Immediately (Step-by-Step Guide)
           </h1>
 
-          <p className="text-lg sm:text-xl text-zinc-300 leading-relaxed mb-6 font-normal">
+          <p className="text-base sm:text-lg text-zinc-300 leading-normal mb-4 font-normal">
             You sent an invoice expecting a routine payment, but instead you get an email saying: <em className="text-white font-medium">"We're not paying this invoice. The amount is incorrect and we never approved these charges."</em> Here is the exact step-by-step playbook to protect your cash and de-escalate the conflict.
           </p>
 
@@ -281,12 +243,7 @@ Best regards,
           </section>
 
           {/* Section 5: The Automated Solution Bridge (Jaktra) */}
-          <section className="p-8 rounded-2xl bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.08] relative overflow-hidden">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-300 mb-4">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>How Modern Teams Automate This</span>
-            </div>
-
+          <section className="p-8 rounded-2xl bg-[#0e0f11] border border-white/[0.08] relative overflow-hidden">
             <h2 className="text-2xl font-bold text-white mb-3">
               Eliminate Dispute Anxiety with Automated Reply Triage
             </h2>
