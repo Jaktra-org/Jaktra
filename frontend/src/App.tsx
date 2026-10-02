@@ -12,39 +12,60 @@ import { Register } from "./pages/Register";
 import { ForgotPassword } from "./pages/ForgotPassword";
 
 const Pricing = lazy(() => import("./pages/Pricing").then(m => ({ default: m.Pricing })));
-const HighRadiusCompare = lazy(() => import("./pages/HighRadiusCompare").then(m => ({ default: m.HighRadiusCompare })));
-const UpflowCompare = lazy(() => import("./pages/UpflowCompare").then(m => ({ default: m.UpflowCompare })));
-const ChaserCompare = lazy(() => import("./pages/ChaserCompare").then(m => ({ default: m.ChaserCompare })));
-const FiveStageEscalation = lazy(() => import("./pages/FiveStageEscalation").then(m => ({ default: m.FiveStageEscalation })));
-const DisputeTriage = lazy(() => import("./pages/DisputeTriage").then(m => ({ default: m.DisputeTriage })));
-const InstallmentPlans = lazy(() => import("./pages/InstallmentPlans").then(m => ({ default: m.InstallmentPlans })));
-const DSOGuide = lazy(() => import("./pages/DSOGuide").then(m => ({ default: m.DSOGuide })));
-const SaasUseCase = lazy(() => import("./pages/SaasUseCase").then(m => ({ default: m.SaasUseCase })));
-const AgencyUseCase = lazy(() => import("./pages/AgencyUseCase").then(m => ({ default: m.AgencyUseCase })));
-const ManufacturingUseCase = lazy(() => import("./pages/ManufacturingUseCase").then(m => ({ default: m.ManufacturingUseCase })));
-const ToneEscalationPlaybook = lazy(() => import("./pages/ToneEscalationPlaybook").then(m => ({ default: m.ToneEscalationPlaybook })));
-const ZeroLoginPortal = lazy(() => import("./pages/ZeroLoginPortal").then(m => ({ default: m.ZeroLoginPortal })));
-const EmailDeliverability = lazy(() => import("./pages/EmailDeliverability").then(m => ({ default: m.EmailDeliverability })));
-const RiskScoring = lazy(() => import("./pages/RiskScoring").then(m => ({ default: m.RiskScoring })));
-const PaidNiceCompare = lazy(() => import("./pages/PaidNiceCompare").then(m => ({ default: m.PaidNiceCompare })));
-const ProfessionalServicesUseCase = lazy(() => import("./pages/ProfessionalServicesUseCase").then(m => ({ default: m.ProfessionalServicesUseCase })));
-const DunningTemplatesResource = lazy(() => import("./pages/DunningTemplatesResource"));
-const ConstructionUseCase = lazy(() => import("./pages/ConstructionUseCase"));
-const LogisticsFreightUseCase = lazy(() => import("./pages/LogisticsFreightUseCase"));
-const StaffingRecruitingUseCase = lazy(() => import("./pages/StaffingRecruitingUseCase"));
-const WholesaleDistributionUseCase = lazy(() => import("./pages/WholesaleDistributionUseCase"));
-const ArRoiCalculatorResource = lazy(() => import("./pages/ArRoiCalculatorResource"));
-const KollenoCompare = lazy(() => import("./pages/KollenoCompare"));
-const CompareHub = lazy(() => import("./pages/CompareHub"));
-const UseCasesHub = lazy(() => import("./pages/UseCasesHub"));
-const FeaturesHub = lazy(() => import("./pages/FeaturesHub"));
-const ResourcesHub = lazy(() => import("./pages/ResourcesHub"));
-const BestFinanceAutomationGuide = lazy(() => import("./pages/BestFinanceAutomationGuide"));
-const InvoiceDisputeTemplatesResource = lazy(() => import("./pages/InvoiceDisputeTemplatesResource"));
-const ArQueryManagementResource = lazy(() => import("./pages/ArQueryManagementResource"));
-const ClientQuestioningBillableHoursArticle = lazy(() => import("./pages/ClientQuestioningBillableHoursArticle"));
-const ClientDisputedInvoiceArticle = lazy(() => import("./pages/ClientDisputedInvoiceArticle"));
-const ManageArEmailsArticle = lazy(() => import("./pages/ManageArEmailsArticle"));
+// Direct Comparisons
+const HighRadiusCompare = lazy(() => import("./seo/pages/compare/HighRadiusCompare").then(m => ({ default: m.HighRadiusCompare })));
+const UpflowCompare = lazy(() => import("./seo/pages/compare/UpflowCompare").then(m => ({ default: m.UpflowCompare })));
+const ChaserCompare = lazy(() => import("./seo/pages/compare/ChaserCompare").then(m => ({ default: m.ChaserCompare })));
+const PaidNiceCompare = lazy(() => import("./seo/pages/compare/PaidNiceCompare").then(m => ({ default: m.PaidNiceCompare })));
+const KollenoCompare = lazy(() => import("./seo/pages/compare/KollenoCompare"));
+
+// Feature Deep Dives
+const FiveStageEscalation = lazy(() => import("./seo/pages/features/FiveStageEscalation").then(m => ({ default: m.FiveStageEscalation })));
+const DisputeTriage = lazy(() => import("./seo/pages/features/DisputeTriage").then(m => ({ default: m.DisputeTriage })));
+const InstallmentPlans = lazy(() => import("./seo/pages/features/InstallmentPlans").then(m => ({ default: m.InstallmentPlans })));
+const ZeroLoginPortal = lazy(() => import("./seo/pages/features/ZeroLoginPortal").then(m => ({ default: m.ZeroLoginPortal })));
+const EmailDeliverability = lazy(() => import("./seo/pages/features/EmailDeliverability").then(m => ({ default: m.EmailDeliverability })));
+const RiskScoring = lazy(() => import("./seo/pages/features/RiskScoring").then(m => ({ default: m.RiskScoring })));
+
+// Resources, Playbooks, and Guides
+const DSOGuide = lazy(() => import("./seo/pages/resources/DSOGuide").then(m => ({ default: m.DSOGuide })));
+const ToneEscalationPlaybook = lazy(() => import("./seo/pages/resources/ToneEscalationPlaybook").then(m => ({ default: m.ToneEscalationPlaybook })));
+const DunningTemplatesResource = lazy(() => import("./seo/pages/resources/DunningTemplatesResource"));
+const BestFinanceAutomationGuide = lazy(() => import("./seo/pages/resources/BestFinanceAutomationGuide"));
+const ArRoiCalculatorResource = lazy(() => import("./seo/pages/resources/ArRoiCalculatorResource"));
+const InvoiceDisputeTemplatesResource = lazy(() => import("./seo/pages/resources/InvoiceDisputeTemplatesResource"));
+const ArQueryManagementResource = lazy(() => import("./seo/pages/resources/ArQueryManagementResource"));
+const ClientQuestioningBillableHoursArticle = lazy(() => import("./seo/pages/resources/ClientQuestioningBillableHoursArticle"));
+const ClientDisputedInvoiceArticle = lazy(() => import("./seo/pages/resources/ClientDisputedInvoiceArticle"));
+const ManageArEmailsArticle = lazy(() => import("./seo/pages/resources/ManageArEmailsArticle"));
+
+// Industry Use Cases
+const SaasUseCase = lazy(() => import("./seo/pages/use-cases/SaasUseCase").then(m => ({ default: m.SaasUseCase })));
+const AgencyUseCase = lazy(() => import("./seo/pages/use-cases/AgencyUseCase").then(m => ({ default: m.AgencyUseCase })));
+const ManufacturingUseCase = lazy(() => import("./seo/pages/use-cases/ManufacturingUseCase").then(m => ({ default: m.ManufacturingUseCase })));
+const ProfessionalServicesUseCase = lazy(() => import("./seo/pages/use-cases/ProfessionalServicesUseCase").then(m => ({ default: m.ProfessionalServicesUseCase })));
+const ConstructionUseCase = lazy(() => import("./seo/pages/use-cases/ConstructionUseCase"));
+const LogisticsFreightUseCase = lazy(() => import("./seo/pages/use-cases/LogisticsFreightUseCase"));
+const StaffingRecruitingUseCase = lazy(() => import("./seo/pages/use-cases/StaffingRecruitingUseCase"));
+const WholesaleDistributionUseCase = lazy(() => import("./seo/pages/use-cases/WholesaleDistributionUseCase"));
+
+// Topic Hubs
+const CompareHub = lazy(() => import("./seo/pages/hubs/CompareHub"));
+const UseCasesHub = lazy(() => import("./seo/pages/hubs/UseCasesHub"));
+const FeaturesHub = lazy(() => import("./seo/pages/hubs/FeaturesHub"));
+const ResourcesHub = lazy(() => import("./seo/pages/hubs/ResourcesHub"));
+
+// Alternatives Roundup Guides
+const HighRadiusAlternatives = lazy(() => import("./seo/pages/alternatives/HighRadiusAlternatives").then(m => ({ default: m.HighRadiusAlternatives })));
+const UpflowAlternatives = lazy(() => import("./seo/pages/alternatives/UpflowAlternatives").then(m => ({ default: m.UpflowAlternatives })));
+const ChaserAlternatives = lazy(() => import("./seo/pages/alternatives/ChaserAlternatives").then(m => ({ default: m.ChaserAlternatives })));
+const PaidNiceAlternatives = lazy(() => import("./seo/pages/alternatives/PaidNiceAlternatives").then(m => ({ default: m.PaidNiceAlternatives })));
+const KollenoAlternatives = lazy(() => import("./seo/pages/alternatives/KollenoAlternatives").then(m => ({ default: m.KollenoAlternatives })));
+const GavitiAlternatives = lazy(() => import("./seo/pages/alternatives/GavitiAlternatives").then(m => ({ default: m.GavitiAlternatives })));
+const InvoicedAlternatives = lazy(() => import("./seo/pages/alternatives/InvoicedAlternatives").then(m => ({ default: m.InvoicedAlternatives })));
+const VersapayAlternatives = lazy(() => import("./seo/pages/alternatives/VersapayAlternatives").then(m => ({ default: m.VersapayAlternatives })));
+const YayPayAlternatives = lazy(() => import("./seo/pages/alternatives/YayPayAlternatives").then(m => ({ default: m.YayPayAlternatives })));
+const TesorioAlternatives = lazy(() => import("./seo/pages/alternatives/TesorioAlternatives").then(m => ({ default: m.TesorioAlternatives })));
 
 // Lazy-loaded heavy dashboard, analytics, settings, and secondary routes
 const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
@@ -130,11 +151,37 @@ function App() {
           <Route path="/features/dispute-triage" element={<DisputeTriage />} />
           <Route path="/features/installment-plans" element={<InstallmentPlans />} />
           <Route path="/resources/how-to-reduce-dso" element={<DSOGuide />} />
-          <Route path="/compare/highradius-vs-jaktra" element={<HighRadiusCompare />} />
-          <Route path="/compare/highradius-alternative" element={<Navigate to="/compare/highradius-vs-jaktra" replace />} />
-          <Route path="/compare/upflow-alternative" element={<UpflowCompare />} />
-          <Route path="/compare/chaser-alternative" element={<ChaserCompare />} />
-          <Route path="/compare/paidnice-alternative" element={<PaidNiceCompare />} />
+          {/* Comparison Routes */}
+          <Route path="/compare/jaktra-vs-highradius" element={<HighRadiusCompare />} />
+          <Route path="/compare/jaktra-vs-upflow" element={<UpflowCompare />} />
+          <Route path="/compare/jaktra-vs-chaser" element={<ChaserCompare />} />
+          <Route path="/compare/jaktra-vs-paidnice" element={<PaidNiceCompare />} />
+          <Route path="/compare/jaktra-vs-kolleno" element={<KollenoCompare />} />
+
+          {/* Alternatives Roundup Guides */}
+          <Route path="/compare/highradius-alternatives" element={<HighRadiusAlternatives />} />
+          <Route path="/compare/upflow-alternatives" element={<UpflowAlternatives />} />
+          <Route path="/compare/chaser-alternatives" element={<ChaserAlternatives />} />
+          <Route path="/compare/paidnice-alternatives" element={<PaidNiceAlternatives />} />
+          <Route path="/compare/kolleno-alternatives" element={<KollenoAlternatives />} />
+          <Route path="/compare/gaviti-alternatives" element={<GavitiAlternatives />} />
+          <Route path="/compare/invoiced-alternatives" element={<InvoicedAlternatives />} />
+          <Route path="/compare/versapay-alternatives" element={<VersapayAlternatives />} />
+          <Route path="/compare/yaypay-alternatives" element={<YayPayAlternatives />} />
+          <Route path="/compare/tesorio-alternatives" element={<TesorioAlternatives />} />
+
+          {/* Backward compatibility redirects */}
+          <Route path="/compare/highradius-vs-jaktra" element={<Navigate to="/compare/jaktra-vs-highradius" replace />} />
+          <Route path="/compare/highradius-alternative" element={<Navigate to="/compare/highradius-alternatives" replace />} />
+          <Route path="/compare/upflow-alternative" element={<Navigate to="/compare/upflow-alternatives" replace />} />
+          <Route path="/compare/upflow-vs-jaktra" element={<Navigate to="/compare/jaktra-vs-upflow" replace />} />
+          <Route path="/compare/chaser-alternative" element={<Navigate to="/compare/chaser-alternatives" replace />} />
+          <Route path="/compare/chaser-vs-jaktra" element={<Navigate to="/compare/jaktra-vs-chaser" replace />} />
+          <Route path="/compare/paidnice-alternative" element={<Navigate to="/compare/paidnice-alternatives" replace />} />
+          <Route path="/compare/paidnice-vs-jaktra" element={<Navigate to="/compare/jaktra-vs-paidnice" replace />} />
+          <Route path="/compare/kolleno-alternative" element={<Navigate to="/compare/kolleno-alternatives" replace />} />
+          <Route path="/compare/kolleno-vs-jaktra" element={<Navigate to="/compare/jaktra-vs-kolleno" replace />} />
+
           <Route path="/use-cases/saas" element={<SaasUseCase />} />
           <Route path="/use-cases/agencies" element={<AgencyUseCase />} />
           <Route path="/use-cases/manufacturing" element={<ManufacturingUseCase />} />
@@ -150,7 +197,6 @@ function App() {
           <Route path="/use-cases/wholesale-distribution" element={<WholesaleDistributionUseCase />} />
           <Route path="/resources/ar-automation-roi-calculator" element={<ArRoiCalculatorResource />} />
           <Route path="/resources/best-b2b-finance-automation-tools" element={<BestFinanceAutomationGuide />} />
-          <Route path="/compare/kolleno-alternative" element={<KollenoCompare />} />
           <Route path="/compare" element={<CompareHub />} />
           <Route path="/use-cases" element={<UseCasesHub />} />
           <Route path="/features" element={<FeaturesHub />} />
