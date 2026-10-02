@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync, statSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -107,22 +107,23 @@ for (const route of routes) {
     }
 
     // Route-aware schema filtering:
-    // templateHtml contains homepage-only schemas: SoftwareApplication and FAQPage.
+    // templateHtml contains homepage-only schemas: WebSite, SoftwareApplication and FAQPage.
     // For all subpages (route !== '/'), strip these homepage-only schemas so they
     // do not bleed into subpages.
-    // Global Organization and WebSite schemas are preserved.
+    // Global Organization schema is preserved.
     if (route !== '/') {
       pageHtml = pageHtml.replace(
-        /(?:<!--\s*Schema\.org\s*[34]:\s*(?:SoftwareApplication|FAQPage)\s*-->\s*)?<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>\s*/gi,
+        /(?:<!--\s*Schema\.org\s*[234]:\s*(?:WebSite|SoftwareApplication|FAQPage)\s*-->\s*)?<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>\s*/gi,
         (fullMatch, jsonContent) => {
           try {
             const parsed = JSON.parse(jsonContent.trim());
             const type = parsed['@type'];
-            if (type === 'SoftwareApplication' || type === 'FAQPage') {
+            if (type === 'WebSite' || type === 'SoftwareApplication' || type === 'FAQPage') {
               return '';
             }
           } catch {
             if (
+              jsonContent.includes('"WebSite"') ||
               jsonContent.includes('"SoftwareApplication"') ||
               jsonContent.includes('"FAQPage"')
             ) {
@@ -167,56 +168,73 @@ for (const route of routes) {
 const publicRoutes = routes.filter(r => !NOINDEX_ROUTES.has(r));
 
 const ROUTE_FILES = {
-  "/": "Landing.tsx",
-  "/privacy": "Privacy.tsx",
-  "/terms": "Terms.tsx",
-  "/docs": "DocsMock.tsx",
-  "/pricing": "Pricing.tsx",
-  "/about": "About.tsx",
-  "/contact": "Contact.tsx",
-  "/compare/highradius-vs-jaktra": "HighRadiusCompare.tsx",
-  "/compare/upflow-alternative": "UpflowCompare.tsx",
-  "/features/5-stage-escalation": "FiveStageEscalation.tsx",
-  "/features/dispute-triage": "DisputeTriage.tsx",
-  "/features/installment-plans": "InstallmentPlans.tsx",
-  "/resources/how-to-reduce-dso": "DSOGuide.tsx",
-  "/compare/chaser-alternative": "ChaserCompare.tsx",
-  "/compare/paidnice-alternative": "PaidNiceCompare.tsx",
-  "/use-cases/saas": "SaasUseCase.tsx",
-  "/use-cases/agencies": "AgencyUseCase.tsx",
-  "/use-cases/manufacturing": "ManufacturingUseCase.tsx",
-  "/resources/5-stage-ar-tone-escalation": "ToneEscalationPlaybook.tsx",
-  "/use-cases/professional-services": "ProfessionalServicesUseCase.tsx",
-  "/features/zero-login-portal": "ZeroLoginPortal.tsx",
-  "/features/email-deliverability": "EmailDeliverability.tsx",
-  "/features/risk-scoring": "RiskScoring.tsx",
-  "/resources/b2b-dunning-email-templates": "DunningTemplatesResource.tsx",
-  "/use-cases/construction": "ConstructionUseCase.tsx",
-  "/use-cases/logistics-freight": "LogisticsFreightUseCase.tsx",
-  "/use-cases/staffing-recruiting": "StaffingRecruitingUseCase.tsx",
-  "/use-cases/wholesale-distribution": "WholesaleDistributionUseCase.tsx",
-  "/resources/best-b2b-finance-automation-tools": "BestFinanceAutomationGuide.tsx",
-  "/resources/ar-automation-roi-calculator": "ArRoiCalculatorResource.tsx",
-  "/compare/kolleno-alternative": "KollenoCompare.tsx",
-  "/compare": "CompareHub.tsx",
-  "/use-cases": "UseCasesHub.tsx",
-  "/features": "FeaturesHub.tsx",
-  "/resources": "ResourcesHub.tsx",
-  "/resources/invoice-dispute-response-templates": "InvoiceDisputeTemplatesResource.tsx",
-  "/resources/accounts-receivable-query-management": "ArQueryManagementResource.tsx",
-  "/resources/client-questioning-billable-hours": "ClientQuestioningBillableHoursArticle.tsx",
-  "/resources/client-disputed-invoice-what-to-do": "ClientDisputedInvoiceArticle.tsx",
-  "/resources/how-to-manage-accounts-receivable-emails": "ManageArEmailsArticle.tsx",
+  "/": "pages/Landing.tsx",
+  "/privacy": "pages/Privacy.tsx",
+  "/terms": "pages/Terms.tsx",
+  "/docs": "pages/DocsMock.tsx",
+  "/pricing": "pages/Pricing.tsx",
+  "/about": "pages/About.tsx",
+  "/contact": "pages/Contact.tsx",
+  "/compare/jaktra-vs-highradius": "seo/pages/compare/HighRadiusCompare.tsx",
+  "/compare/jaktra-vs-upflow": "seo/pages/compare/UpflowCompare.tsx",
+  "/compare/jaktra-vs-chaser": "seo/pages/compare/ChaserCompare.tsx",
+  "/compare/jaktra-vs-paidnice": "seo/pages/compare/PaidNiceCompare.tsx",
+  "/compare/jaktra-vs-kolleno": "seo/pages/compare/KollenoCompare.tsx",
+  "/features/5-stage-escalation": "seo/pages/features/FiveStageEscalation.tsx",
+  "/features/dispute-triage": "seo/pages/features/DisputeTriage.tsx",
+  "/features/installment-plans": "seo/pages/features/InstallmentPlans.tsx",
+  "/features/zero-login-portal": "seo/pages/features/ZeroLoginPortal.tsx",
+  "/features/email-deliverability": "seo/pages/features/EmailDeliverability.tsx",
+  "/features/risk-scoring": "seo/pages/features/RiskScoring.tsx",
+  "/resources/how-to-reduce-dso": "seo/pages/resources/DSOGuide.tsx",
+  "/resources/5-stage-ar-tone-escalation": "seo/pages/resources/ToneEscalationPlaybook.tsx",
+  "/resources/b2b-dunning-email-templates": "seo/pages/resources/DunningTemplatesResource.tsx",
+  "/resources/best-b2b-finance-automation-tools": "seo/pages/resources/BestFinanceAutomationGuide.tsx",
+  "/resources/ar-automation-roi-calculator": "seo/pages/resources/ArRoiCalculatorResource.tsx",
+  "/resources/invoice-dispute-response-templates": "seo/pages/resources/InvoiceDisputeTemplatesResource.tsx",
+  "/resources/accounts-receivable-query-management": "seo/pages/resources/ArQueryManagementResource.tsx",
+  "/resources/client-questioning-billable-hours": "seo/pages/resources/ClientQuestioningBillableHoursArticle.tsx",
+  "/resources/client-disputed-invoice-what-to-do": "seo/pages/resources/ClientDisputedInvoiceArticle.tsx",
+  "/resources/how-to-manage-accounts-receivable-emails": "seo/pages/resources/ManageArEmailsArticle.tsx",
+  "/use-cases/saas": "seo/pages/use-cases/SaasUseCase.tsx",
+  "/use-cases/agencies": "seo/pages/use-cases/AgencyUseCase.tsx",
+  "/use-cases/manufacturing": "seo/pages/use-cases/ManufacturingUseCase.tsx",
+  "/use-cases/professional-services": "seo/pages/use-cases/ProfessionalServicesUseCase.tsx",
+  "/use-cases/construction": "seo/pages/use-cases/ConstructionUseCase.tsx",
+  "/use-cases/logistics-freight": "seo/pages/use-cases/LogisticsFreightUseCase.tsx",
+  "/use-cases/staffing-recruiting": "seo/pages/use-cases/StaffingRecruitingUseCase.tsx",
+  "/use-cases/wholesale-distribution": "seo/pages/use-cases/WholesaleDistributionUseCase.tsx",
+  "/compare": "seo/pages/hubs/CompareHub.tsx",
+  "/use-cases": "seo/pages/hubs/UseCasesHub.tsx",
+  "/features": "seo/pages/hubs/FeaturesHub.tsx",
+  "/resources": "seo/pages/hubs/ResourcesHub.tsx",
+  "/compare/highradius-alternatives": "seo/pages/alternatives/HighRadiusAlternatives.tsx",
+  "/compare/upflow-alternatives": "seo/pages/alternatives/UpflowAlternatives.tsx",
+  "/compare/chaser-alternatives": "seo/pages/alternatives/ChaserAlternatives.tsx",
+  "/compare/paidnice-alternatives": "seo/pages/alternatives/PaidNiceAlternatives.tsx",
+  "/compare/kolleno-alternatives": "seo/pages/alternatives/KollenoAlternatives.tsx",
+  "/compare/gaviti-alternatives": "seo/pages/alternatives/GavitiAlternatives.tsx",
+  "/compare/invoiced-alternatives": "seo/pages/alternatives/InvoicedAlternatives.tsx",
+  "/compare/versapay-alternatives": "seo/pages/alternatives/VersapayAlternatives.tsx",
+  "/compare/yaypay-alternatives": "seo/pages/alternatives/YayPayAlternatives.tsx",
+  "/compare/tesorio-alternatives": "seo/pages/alternatives/TesorioAlternatives.tsx",
 };
 
 function getLastModDate(route) {
-  const fileName = ROUTE_FILES[route];
-  if (fileName) {
+  const relFile = ROUTE_FILES[route];
+  if (relFile) {
     try {
-      const filePath = resolve(process.cwd(), 'src', 'pages', fileName);
-      const gitDate = execSync(`git log -1 --format=%cs -- "${filePath}"`, { encoding: 'utf-8' }).trim();
-      if (gitDate && /^\d{4}-\d{2}-\d{2}$/.test(gitDate)) {
-        return gitDate;
+      const filePath = resolve(process.cwd(), 'src', relFile);
+      try {
+        const gitDate = execSync(`git log -1 --format=%cs -- "${filePath}"`, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+        if (gitDate && /^\d{4}-\d{2}-\d{2}$/.test(gitDate)) {
+          return gitDate;
+        }
+      } catch {}
+
+      if (existsSync(filePath)) {
+        const stats = statSync(filePath);
+        return stats.mtime.toISOString().split('T')[0];
       }
     } catch {}
   }
