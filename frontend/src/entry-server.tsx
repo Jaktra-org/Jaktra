@@ -13,41 +13,52 @@ import { DocsMock } from "./pages/DocsMock";
 import { Pricing } from "./pages/Pricing";
 import { About } from "./pages/About";
 import { Contact } from "./pages/Contact";
-import { HighRadiusCompare } from "./pages/HighRadiusCompare";
-import { UpflowCompare } from "./pages/UpflowCompare";
-import { ChaserCompare } from "./pages/ChaserCompare";
-import { FiveStageEscalation } from "./pages/FiveStageEscalation";
-import { DisputeTriage } from "./pages/DisputeTriage";
-import { InstallmentPlans } from "./pages/InstallmentPlans";
-import { DSOGuide } from "./pages/DSOGuide";
-import { SaasUseCase } from "./pages/SaasUseCase";
-import { AgencyUseCase } from "./pages/AgencyUseCase";
-import { ManufacturingUseCase } from "./pages/ManufacturingUseCase";
-import { ToneEscalationPlaybook } from "./pages/ToneEscalationPlaybook";
-import { ZeroLoginPortal } from "./pages/ZeroLoginPortal";
-import { EmailDeliverability } from "./pages/EmailDeliverability";
-import { RiskScoring } from "./pages/RiskScoring";
-import { PaidNiceCompare } from "./pages/PaidNiceCompare";
-import { ProfessionalServicesUseCase } from "./pages/ProfessionalServicesUseCase";
-
-// Default page exports
-import DunningTemplatesResource from "./pages/DunningTemplatesResource";
-import ConstructionUseCase from "./pages/ConstructionUseCase";
-import LogisticsFreightUseCase from "./pages/LogisticsFreightUseCase";
-import StaffingRecruitingUseCase from "./pages/StaffingRecruitingUseCase";
-import WholesaleDistributionUseCase from "./pages/WholesaleDistributionUseCase";
-import ArRoiCalculatorResource from "./pages/ArRoiCalculatorResource";
-import KollenoCompare from "./pages/KollenoCompare";
-import CompareHub from "./pages/CompareHub";
-import UseCasesHub from "./pages/UseCasesHub";
-import FeaturesHub from "./pages/FeaturesHub";
-import ResourcesHub from "./pages/ResourcesHub";
-import BestFinanceAutomationGuide from "./pages/BestFinanceAutomationGuide";
-import InvoiceDisputeTemplatesResource from "./pages/InvoiceDisputeTemplatesResource";
-import ArQueryManagementResource from "./pages/ArQueryManagementResource";
-import ClientQuestioningBillableHoursArticle from "./pages/ClientQuestioningBillableHoursArticle";
-import ClientDisputedInvoiceArticle from "./pages/ClientDisputedInvoiceArticle";
-import ManageArEmailsArticle from "./pages/ManageArEmailsArticle";
+// SEO & Content Pages (43 programmatic marketing pages)
+import {
+  HighRadiusCompare,
+  UpflowCompare,
+  ChaserCompare,
+  FiveStageEscalation,
+  DisputeTriage,
+  InstallmentPlans,
+  DSOGuide,
+  SaasUseCase,
+  AgencyUseCase,
+  ManufacturingUseCase,
+  ToneEscalationPlaybook,
+  ZeroLoginPortal,
+  EmailDeliverability,
+  RiskScoring,
+  PaidNiceCompare,
+  ProfessionalServicesUseCase,
+  HighRadiusAlternatives,
+  UpflowAlternatives,
+  ChaserAlternatives,
+  PaidNiceAlternatives,
+  KollenoAlternatives,
+  GavitiAlternatives,
+  InvoicedAlternatives,
+  VersapayAlternatives,
+  YayPayAlternatives,
+  TesorioAlternatives,
+  DunningTemplatesResource,
+  ConstructionUseCase,
+  LogisticsFreightUseCase,
+  StaffingRecruitingUseCase,
+  WholesaleDistributionUseCase,
+  ArRoiCalculatorResource,
+  KollenoCompare,
+  CompareHub,
+  UseCasesHub,
+  FeaturesHub,
+  ResourcesHub,
+  BestFinanceAutomationGuide,
+  InvoiceDisputeTemplatesResource,
+  ArQueryManagementResource,
+  ClientQuestioningBillableHoursArticle,
+  ClientDisputedInvoiceArticle,
+  ManageArEmailsArticle,
+} from "./seo/pages";
 
 // Auth utility pages
 import { Login } from "./pages/Login";
@@ -65,14 +76,14 @@ export const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
   "/pricing": Pricing,
   "/about": About,
   "/contact": Contact,
-  "/compare/highradius-vs-jaktra": HighRadiusCompare,
-  "/compare/upflow-alternative": UpflowCompare,
+  "/compare/jaktra-vs-highradius": HighRadiusCompare,
+  "/compare/jaktra-vs-upflow": UpflowCompare,
   "/features/5-stage-escalation": FiveStageEscalation,
   "/features/dispute-triage": DisputeTriage,
   "/features/installment-plans": InstallmentPlans,
   "/resources/how-to-reduce-dso": DSOGuide,
-  "/compare/chaser-alternative": ChaserCompare,
-  "/compare/paidnice-alternative": PaidNiceCompare,
+  "/compare/jaktra-vs-chaser": ChaserCompare,
+  "/compare/jaktra-vs-paidnice": PaidNiceCompare,
   "/use-cases/saas": SaasUseCase,
   "/use-cases/agencies": AgencyUseCase,
   "/use-cases/manufacturing": ManufacturingUseCase,
@@ -88,7 +99,17 @@ export const ROUTE_COMPONENTS: Record<string, React.ComponentType> = {
   "/use-cases/wholesale-distribution": WholesaleDistributionUseCase,
   "/resources/best-b2b-finance-automation-tools": BestFinanceAutomationGuide,
   "/resources/ar-automation-roi-calculator": ArRoiCalculatorResource,
-  "/compare/kolleno-alternative": KollenoCompare,
+  "/compare/jaktra-vs-kolleno": KollenoCompare,
+  "/compare/highradius-alternatives": HighRadiusAlternatives,
+  "/compare/upflow-alternatives": UpflowAlternatives,
+  "/compare/chaser-alternatives": ChaserAlternatives,
+  "/compare/paidnice-alternatives": PaidNiceAlternatives,
+  "/compare/kolleno-alternatives": KollenoAlternatives,
+  "/compare/gaviti-alternatives": GavitiAlternatives,
+  "/compare/invoiced-alternatives": InvoicedAlternatives,
+  "/compare/versapay-alternatives": VersapayAlternatives,
+  "/compare/yaypay-alternatives": YayPayAlternatives,
+  "/compare/tesorio-alternatives": TesorioAlternatives,
   "/compare": CompareHub,
   "/use-cases": UseCasesHub,
   "/features": FeaturesHub,
