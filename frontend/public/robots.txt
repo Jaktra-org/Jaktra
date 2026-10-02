@@ -20,6 +20,8 @@ Disallow: /api/
 Disallow: /admin/
 
 # AI Search & Citation Crawlers (Search index & answer grounding - RFC 9309 isolated group)
+User-agent: bingbot
+User-agent: BingPreview
 User-agent: OAI-SearchBot
 User-agent: ChatGPT-User
 User-agent: Claude-SearchBot
