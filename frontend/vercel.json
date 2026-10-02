@@ -44,7 +44,52 @@
   "redirects": [
     {
       "source": "/compare/highradius-alternative",
-      "destination": "/compare/highradius-vs-jaktra",
+      "destination": "/compare/highradius-alternatives",
+      "permanent": true
+    },
+    {
+      "source": "/compare/highradius-vs-jaktra",
+      "destination": "/compare/jaktra-vs-highradius",
+      "permanent": true
+    },
+    {
+      "source": "/compare/upflow-alternative",
+      "destination": "/compare/upflow-alternatives",
+      "permanent": true
+    },
+    {
+      "source": "/compare/upflow-vs-jaktra",
+      "destination": "/compare/jaktra-vs-upflow",
+      "permanent": true
+    },
+    {
+      "source": "/compare/chaser-alternative",
+      "destination": "/compare/chaser-alternatives",
+      "permanent": true
+    },
+    {
+      "source": "/compare/chaser-vs-jaktra",
+      "destination": "/compare/jaktra-vs-chaser",
+      "permanent": true
+    },
+    {
+      "source": "/compare/paidnice-alternative",
+      "destination": "/compare/paidnice-alternatives",
+      "permanent": true
+    },
+    {
+      "source": "/compare/paidnice-vs-jaktra",
+      "destination": "/compare/jaktra-vs-paidnice",
+      "permanent": true
+    },
+    {
+      "source": "/compare/kolleno-alternative",
+      "destination": "/compare/kolleno-alternatives",
+      "permanent": true
+    },
+    {
+      "source": "/compare/kolleno-vs-jaktra",
+      "destination": "/compare/jaktra-vs-kolleno",
       "permanent": true
     }
   ],
