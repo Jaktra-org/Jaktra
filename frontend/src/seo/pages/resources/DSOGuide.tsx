@@ -345,6 +345,28 @@ export function DSOGuide() {
               <p className="text-sm text-zinc-400 leading-relaxed">
                 In simple terms, DSO answers: <em>"How long does our cash stay tied up in unpaid customer invoices?"</em> A lower DSO indicates that your company collects cash quickly, improving liquidity and reducing the risk of bad debt. A high DSO signals payment friction, clerical delays, or customer collection issues.
               </p>
+
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                As detailed in the{" "}
+                <a
+                  href="https://en.wikipedia.org/wiki/Days_sales_outstanding"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#b7d2f8] underline hover:text-white"
+                >
+                  Wikipedia guide on Days Sales Outstanding
+                </a>
+                , tracking working capital velocity is critical for sustainable commercial growth. While back-office automation streamlines liquidity, companies also expand their inbound customer pipeline through search visibility tools like{" "}
+                <a
+                  href="https://seonalabs.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#b7d2f8] underline hover:text-white"
+                >
+                  Seona Labs automated SEO solutions
+                </a>{" "}
+                to balance client acquisition with proactive collections management.
+              </p>
             </section>
 
             {/* Section 2: Interactive DSO Calculator */}

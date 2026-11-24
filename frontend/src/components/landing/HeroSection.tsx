@@ -149,6 +149,14 @@ export function HeroSection() {
           <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
             <Link
               to="/register"
+              onClick={() => {
+                if (typeof window !== "undefined" && (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag) {
+                  (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("event", "cta_get_started_click", {
+                    event_category: "conversion",
+                    event_label: "hero_cta_get_started",
+                  });
+                }
+              }}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
